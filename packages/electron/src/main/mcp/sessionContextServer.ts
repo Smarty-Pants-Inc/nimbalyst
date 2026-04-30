@@ -393,14 +393,16 @@ async function handleListRecentSessions(
   limit: number,
   offset: number,
   workspaceId: string,
-  currentSessionId: string
+  currentSessionId: string,
+  includeArchived: boolean
 ): Promise<string> {
   let sessions: SessionMeta[];
 
+  const options = { includeArchived };
   if (query && query.trim().length > 0) {
-    sessions = await AISessionsRepository.search(workspaceId, query.trim());
+    sessions = await AISessionsRepository.search(workspaceId, query.trim(), options);
   } else {
-    sessions = await AISessionsRepository.list(workspaceId);
+    sessions = await AISessionsRepository.list(workspaceId, options);
   }
 
   const leafSessions = sessions.filter(
@@ -475,6 +477,9 @@ async function handleListRecentSessions(
       line += " [ERROR]";
     } else if (status === "interrupted") {
       line += " [INTERRUPTED]";
+    }
+    if (s.isArchived) {
+      line += " [ARCHIVED]";
     }
     if (isCurrentSession) {
       line += " [CURRENT]";
@@ -699,7 +704,7 @@ function createSessionContextMcpServer(
         {
           name: "list_recent_sessions",
           description:
-            "List recent AI sessions in the current workspace. Optionally search by title or content. Use this when the user references a previous session or asks about past work (e.g., 'implement the plan from our session about X').",
+            "List recent AI sessions in the current workspace. Optionally search by title or content. Use this when the user references a previous session or asks about past work (e.g., 'implement the plan from our session about X'). By default, archived sessions are excluded -- pass includeArchived: true to search across archived sessions as well.",
           inputSchema: {
             type: "object",
             properties: {
@@ -717,6 +722,11 @@ function createSessionContextMcpServer(
                 type: "number",
                 description:
                   "Number of sessions to skip before returning results (default 0). Use with limit for pagination.",
+              },
+              includeArchived: {
+                type: "boolean",
+                description:
+                  "If true, include archived sessions in the results. Defaults to false. Archived sessions are marked with [ARCHIVED] in the output.",
               },
             },
             required: [],
@@ -845,12 +855,14 @@ function createSessionContextMcpServer(
             250
           );
           const offset = Math.max((args?.offset as number) || 0, 0);
+          const includeArchived = Boolean(args?.includeArchived);
           const result = await handleListRecentSessions(
             args?.query as string | undefined,
             limit,
             offset,
             workspaceId,
-            aiSessionId
+            aiSessionId,
+            includeArchived
           );
           return {
             content: [{ type: "text", text: result }],
