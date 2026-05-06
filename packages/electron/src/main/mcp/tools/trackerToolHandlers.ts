@@ -15,6 +15,7 @@ import {
 } from '../../services/TrackerPolicyService';
 import { isTrackerSyncActive, syncTrackerItem } from '../../services/TrackerSyncManager';
 import { getWorkspaceState } from '../../utils/store';
+import { getVisibleTrackerLinkedSessions, shouldPersistTrackerLinkedSessions } from '../../../shared/trackerSessionLinks';
 
 type McpToolResult = {
   content: Array<{ type: string; text?: string }>;
@@ -153,18 +154,27 @@ export async function createBidirectionalLink(
   const db = getDatabase();
   let changed = false;
 
-  // 1. Add session to tracker item's linkedSessions
+  // 1. Add session to tracker item's linkedSessions only for local trackers.
   const trackerResult = await db.query<any>(
-    `SELECT data FROM tracker_items WHERE id = $1`,
+    `SELECT workspace, type, sync_status, data FROM tracker_items WHERE id = $1`,
     [trackerId]
   );
   if (trackerResult.rows.length > 0) {
     const row = trackerResult.rows[0];
     const data = typeof row.data === "string" ? JSON.parse(row.data) : row.data || {};
-    const linkedSessions: string[] = data.linkedSessions || [];
-    if (!linkedSessions.includes(sessionId)) {
-      linkedSessions.push(sessionId);
-      data.linkedSessions = linkedSessions;
+    if (shouldPersistTrackerLinkedSessions(row)) {
+      const linkedSessions: string[] = Array.isArray(data.linkedSessions) ? data.linkedSessions : [];
+      if (!linkedSessions.includes(sessionId)) {
+        linkedSessions.push(sessionId);
+        data.linkedSessions = linkedSessions;
+        await db.query(
+          `UPDATE tracker_items SET data = $1, updated = NOW() WHERE id = $2`,
+          [JSON.stringify(data), trackerId]
+        );
+        changed = true;
+      }
+    } else if (data.linkedSessions !== undefined) {
+      delete data.linkedSessions;
       await db.query(
         `UPDATE tracker_items SET data = $1, updated = NOW() WHERE id = $2`,
         [JSON.stringify(data), trackerId]
@@ -208,22 +218,31 @@ export async function removeBidirectionalLink(
   const db = getDatabase();
   let changed = false;
 
-  // 1. Remove session from tracker item's linkedSessions
+  // 1. Remove session from tracker item's linkedSessions only for local trackers.
   const trackerResult = await db.query<any>(
-    `SELECT data FROM tracker_items WHERE id = $1`,
+    `SELECT workspace, type, sync_status, data FROM tracker_items WHERE id = $1`,
     [trackerId]
   );
   if (trackerResult.rows.length > 0) {
     const row = trackerResult.rows[0];
     const data = typeof row.data === "string" ? JSON.parse(row.data) : row.data || {};
-    const linkedSessions: string[] = Array.isArray(data.linkedSessions) ? data.linkedSessions : [];
-    const nextLinkedSessions = linkedSessions.filter((linkedSessionId) => linkedSessionId !== sessionId);
-    if (nextLinkedSessions.length !== linkedSessions.length) {
-      if (nextLinkedSessions.length > 0) {
-        data.linkedSessions = nextLinkedSessions;
-      } else {
-        delete data.linkedSessions;
+    if (shouldPersistTrackerLinkedSessions(row)) {
+      const linkedSessions: string[] = Array.isArray(data.linkedSessions) ? data.linkedSessions : [];
+      const nextLinkedSessions = linkedSessions.filter((linkedSessionId) => linkedSessionId !== sessionId);
+      if (nextLinkedSessions.length !== linkedSessions.length) {
+        if (nextLinkedSessions.length > 0) {
+          data.linkedSessions = nextLinkedSessions;
+        } else {
+          delete data.linkedSessions;
+        }
+        await db.query(
+          `UPDATE tracker_items SET data = $1, updated = NOW() WHERE id = $2`,
+          [JSON.stringify(data), trackerId]
+        );
+        changed = true;
       }
+    } else if (data.linkedSessions !== undefined) {
+      delete data.linkedSessions;
       await db.query(
         `UPDATE tracker_items SET data = $1, updated = NOW() WHERE id = $2`,
         [JSON.stringify(data), trackerId]
@@ -300,7 +319,10 @@ function rowToTrackerItem(row: any): any {
     assigneeId: data.assigneeId || undefined,
     reporterId: data.reporterId || undefined,
     labels: data.labels || undefined,
-    linkedSessions: data.linkedSessions || undefined,
+    linkedSessions: (() => {
+      const linkedSessions = getVisibleTrackerLinkedSessions(row, data.linkedSessions);
+      return linkedSessions.length > 0 ? linkedSessions : undefined;
+    })(),
     linkedCommitSha: data.linkedCommitSha || undefined,
     linkedCommits: data.linkedCommits || undefined,
     documentId: data.documentId || undefined,
@@ -317,6 +339,25 @@ function rowToTrackerItem(row: any): any {
   }
   if (Object.keys(extra).length > 0) result.customFields = extra;
   return result;
+}
+
+async function countLinkedSessionsFromSessionMetadata(
+  db: { query: <T = any>(sql: string, params?: any[]) => Promise<{ rows: T[] }> },
+  trackerId: string,
+): Promise<number> {
+  const result = await db.query<any>(`SELECT metadata FROM ai_sessions WHERE metadata IS NOT NULL`);
+  let count = 0;
+  for (const row of result.rows) {
+    const metadata =
+      typeof row.metadata === 'string'
+        ? JSON.parse(row.metadata)
+        : row.metadata || {};
+    const linkedTrackerItemIds: string[] = Array.isArray(metadata.linkedTrackerItemIds)
+      ? metadata.linkedTrackerItemIds
+      : [];
+    if (linkedTrackerItemIds.includes(trackerId)) count += 1;
+  }
+  return count;
 }
 
 function buildTrackerSchemaFromArgs(args: any): any {
