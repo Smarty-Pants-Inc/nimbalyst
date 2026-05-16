@@ -28,6 +28,7 @@ import { registerThemeHandlers } from './ipc/ThemeHandlers';
 import { registerWorkspaceWatcherHandlers } from './file/WorkspaceWatcher';
 import { setupSessionFileHandlers } from './ipc/SessionFileHandlers';
 import { registerSlashCommandHandlers } from './ipc/SlashCommandHandlers';
+import { registerActionPromptHandlers } from './ipc/ActionPromptHandlers';
 import { registerClaudeCodeHandlers } from './ipc/ClaudeCodeHandlers';
 import { registerCodexAuthHandlers } from './ipc/CodexAuthHandlers';
 import { initializeClaudeCodeSessionHandlers } from './ipc/ClaudeCodeSessionHandlers';
@@ -1116,6 +1117,7 @@ app.whenReady().then(async () => {
     setupWorkspaceManagerHandlers();
     setupSessionFileHandlers();
     registerSlashCommandHandlers();
+    registerActionPromptHandlers();
     await registerUsageAnalyticsHandlers();
     registerAttachmentHandlers();
     registerProjectSelectionHandlers();

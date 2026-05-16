@@ -93,6 +93,7 @@ A concise reference of all features in the product. Keep this up to date as feat
 - Image attachment support
 - Queued prompts display
 - Slash command typeahead
+- Action prompts dropdown in composer (reusable prompt presets defined in `nimbalyst-local/ai-actions.md`; pick to insert verbatim into the draft, with undo support)
 
 ## Multi-Agent / Teams
 

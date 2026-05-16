@@ -227,6 +227,10 @@ export const HelpContent: Record<string, HelpEntry> = {
     title: 'Select AI Model',
     body: 'Choose which AI model to use. Different models have different capabilities and speeds.',
   },
+  'action-prompts-dropdown': {
+    title: 'Action Prompts',
+    body: 'Reusable prompts you define in nimbalyst-local/ai-actions.md. Picking one inserts its body into the draft so you can tweak it before sending.',
+  },
   'context-indicator': {
     title: 'Context Window',
     body: 'Shows how much of the AI context window is used. Includes files, conversation history, and tools.',

@@ -14,6 +14,7 @@ import { registerPendingVoiceCommandSetter } from './VoiceModeButton.tsx';
 import { PendingVoiceCommand } from './PendingVoiceCommand';
 import { pendingVoiceCommandAtom, voiceActiveSessionIdAtom, type PendingVoiceCommand as PendingVoiceCommandType } from '../../store/atoms/voiceModeState';
 import { ContextUsageDisplay } from './ContextUsageDisplay';
+import { ActionPromptsDropdown } from './ActionPromptsDropdown';
 import { MockupAnnotationIndicator } from './MockupAnnotationIndicator';
 import { TextSelectionIndicator } from './TextSelectionIndicator';
 import { EditorContextIndicator } from './EditorContextIndicator';
@@ -238,6 +239,24 @@ export const AIInput = forwardRef<AIInputRef, AIInputProps>(
         }
       });
     }, [onChange, attachments, onAttachmentAdd, onAttachmentRemove]);
+
+    // Replace the draft with an action-prompt body and place the cursor at
+    // the end. Pushes a boundary undo snapshot so Cmd+Z restores the prior
+    // draft instead of coalescing with the user's next keystroke.
+    const handleActionPromptInsert = useCallback((body: string) => {
+      pushSnapshot(captureSnapshot(), { boundary: true });
+      onChange(body);
+      requestAnimationFrame(() => {
+        const ta = textareaRef.current;
+        if (!ta) return;
+        ta.focus();
+        try {
+          ta.setSelectionRange(body.length, body.length);
+        } catch {
+          // best-effort cursor placement
+        }
+      });
+    }, [pushSnapshot, captureSnapshot, onChange]);
 
     // File mention state via Jotai atoms
     // Subscribes directly to atoms instead of receiving props (no prop drilling)
@@ -1224,7 +1243,7 @@ export const AIInput = forwardRef<AIInputRef, AIInputProps>(
         />
 
         {/* Inline controls row - hidden in memory mode */}
-        {!isMemoryMode && (onModeChange || onModelChange || (tokenUsage && provider === 'claude-code')) && (
+        {!isMemoryMode && (onModeChange || onModelChange || workspacePath || (tokenUsage && provider === 'claude-code')) && (
           <div style={{
             display: 'flex',
             alignItems: 'center',
@@ -1249,6 +1268,16 @@ export const AIInput = forwardRef<AIInputRef, AIInputProps>(
                 level={effortLevel}
                 onLevelChange={onEffortLevelChange}
               />
+            )}
+            {workspacePath && (
+              <HelpTooltip testId="action-prompts-dropdown">
+                <span style={{ display: 'inline-flex' }}>
+                  <ActionPromptsDropdown
+                    workspacePath={workspacePath}
+                    onInsert={handleActionPromptInsert}
+                  />
+                </span>
+              </HelpTooltip>
             )}
             {/* Show token usage for all providers - displays "--" if no data yet */}
             <ContextUsageDisplay
