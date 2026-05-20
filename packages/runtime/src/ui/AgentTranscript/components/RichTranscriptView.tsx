@@ -523,6 +523,12 @@ interface RichTranscriptViewProps {
    * / close buttons on narrow widths. See #309.
    */
   onSearchBarVisibilityChange?: (visible: boolean) => void;
+  /**
+   * Optional: persist at-bottom state in the global per-session atom.
+   * Disable for secondary transcript mounts like hover previews so they
+   * don't stomp the main transcript's scroll-follow state.
+   */
+  persistScrollState?: boolean;
   // Note: Interactive widgets read their host from interactiveWidgetHostAtom(sessionId)
 }
 
@@ -546,6 +552,21 @@ const EDIT_TOOL_NAMES = new Set([
   'edit', 'write', 'multi-edit', 'multiedit', 'multi_edit',
   'applypatch', 'apply_patch',
 ]);
+
+const TRANSCRIPT_BOTTOM_THRESHOLD_PX = 50;
+const DESKTOP_TRANSCRIPT_BUFFER_PX = 10000;
+const MOBILE_TRANSCRIPT_BUFFER_PX = 800;
+
+export function isTranscriptAtBottom(distanceFromBottom: number): boolean {
+  return distanceFromBottom < TRANSCRIPT_BOTTOM_THRESHOLD_PX;
+}
+
+export function shouldAutoScrollTranscript(
+  wasAtBottom: boolean,
+  distanceFromBottom: number
+): boolean {
+  return wasAtBottom || isTranscriptAtBottom(distanceFromBottom);
+}
 
 const isEditToolName = (name?: string): boolean => {
   if (!name) return false;
@@ -1098,7 +1119,7 @@ function LazyMount({
 export const RichTranscriptView = React.forwardRef<
   { scrollToMessage: (index: number) => void; scrollToTop: () => void },
   RichTranscriptViewProps
->(({ sessionId, sessionStatus, isProcessing, hasPendingInteractivePrompt, messages, provider, settings: propsSettings, onSettingsChange, showSettings, documentContext, workspacePath, renderEmptyExtra, readFile, onOpenFile, onOpenSession, onCompact, promptAdditions, currentTeammates, waitingForNoun, appStartTime, getToolCallDiffs, renderEmbeddedFile, canEmbedFile, onSearchBarVisibilityChange }, ref) => {
+>(({ sessionId, sessionStatus, isProcessing, hasPendingInteractivePrompt, messages, provider, settings: propsSettings, onSettingsChange, showSettings, documentContext, workspacePath, renderEmptyExtra, readFile, onOpenFile, onOpenSession, onCompact, promptAdditions, currentTeammates, waitingForNoun, appStartTime, getToolCallDiffs, renderEmbeddedFile, canEmbedFile, onSearchBarVisibilityChange, persistScrollState = true }, ref) => {
   const [collapsedMessages, setCollapsedMessages] = useState<Set<number>>(new Set());
   const [expandedTools, setExpandedTools] = useState<Set<string>>(new Set());
   const scrollButtonRef = useRef<HTMLDivElement>(null);
@@ -1128,18 +1149,32 @@ export const RichTranscriptView = React.forwardRef<
   const flatListRef = useRef<HTMLDivElement>(null);
   const flatBottomSentinelRef = useRef<HTMLDivElement>(null);
   const messageRefs = useRef<Map<number, HTMLDivElement>>(new Map());
+  const isAtBottomRef = useRef(
+    persistScrollState ? getSessionIsAtBottom(sessionId) : true
+  );
 
-  // iOS WKWebView (memory-constrained mobile hardware) keeps the existing
-  // virtua-based path. Every other host renders the full transcript as plain
-  // DOM. Virtualization fundamentally breaks the Selection API -- DOM nodes
-  // get unmounted on scroll, anchors die. Selection is the desktop user's
-  // primary complaint; on iOS it's rarely used, so the tradeoff is worth it.
-  // Browsers handle paint optimization for off-screen content on their own;
-  // they don't need our help, and content-visibility-style lazy paint tricks
-  // produce hit-test divergence during drag-selection.
-  const useVirtualization = useMemo(() => isAppleMobileWebKit(), []);
+  // Keep VList on every host. Desktop gets a wider buffer to reduce churn
+  // near the viewport without switching to the flat-list experiment.
+  const isMobileWebKit = useMemo(() => isAppleMobileWebKit(), []);
+  const useVirtualization = true;
+  const vlistBufferSize = isMobileWebKit ? MOBILE_TRANSCRIPT_BUFFER_PX : DESKTOP_TRANSCRIPT_BUFFER_PX;
 
   const settings = propsSettings || defaultSettings;
+
+  useEffect(() => {
+    isAtBottomRef.current = persistScrollState ? getSessionIsAtBottom(sessionId) : true;
+  }, [persistScrollState, sessionId]);
+
+  const setAtBottomState = useCallback((isAtBottom: boolean) => {
+    isAtBottomRef.current = isAtBottom;
+    if (persistScrollState) {
+      setSessionIsAtBottom(sessionId, isAtBottom);
+    }
+  }, [persistScrollState, sessionId]);
+
+  const getAtBottomState = useCallback(() => {
+    return isAtBottomRef.current;
+  }, []);
 
   // Save VList cache when switching sessions or unmounting.
   // This lets returning to a session skip expensive re-measurement of all item sizes.
@@ -1401,8 +1436,7 @@ export const RichTranscriptView = React.forwardRef<
 
   // Auto-scroll to bottom when messages change (if user was at bottom)
   useEffect(() => {
-    // Read scroll state from atom - this is stable across renders
-    const wasAtBottom = getSessionIsAtBottom(sessionId);
+    const wasAtBottom = getAtBottomState();
 
     requestAnimationFrame(() => {
       if (useVirtualization) {
@@ -1411,27 +1445,25 @@ export const RichTranscriptView = React.forwardRef<
         const viewportSize = vlistRef.current.viewportSize;
         const scrollOffset = vlistRef.current.scrollOffset;
         const distanceFromBottom = scrollSize - scrollOffset - viewportSize;
-        const isCurrentlyAtBottom = distanceFromBottom < 100;
 
-        if (wasAtBottom || isCurrentlyAtBottom) {
+        if (shouldAutoScrollTranscript(wasAtBottom, distanceFromBottom)) {
           // Account for the "Thinking..." indicator which is an extra item after messages
           const lastIndex = isWaitingForResponse ? messages.length : messages.length - 1;
           vlistRef.current.scrollToIndex(lastIndex, { align: 'end' });
-          setSessionIsAtBottom(sessionId, true);
+          setAtBottomState(true);
         }
       } else {
         const container = scrollContainerRef.current;
         if (!container) return;
         const distanceFromBottom = container.scrollHeight - container.scrollTop - container.clientHeight;
-        const isCurrentlyAtBottom = distanceFromBottom < 100;
 
-        if (wasAtBottom || isCurrentlyAtBottom) {
+        if (shouldAutoScrollTranscript(wasAtBottom, distanceFromBottom)) {
           flatBottomSentinelRef.current?.scrollIntoView({ block: 'end', behavior: 'auto' });
-          setSessionIsAtBottom(sessionId, true);
+          setAtBottomState(true);
         }
       }
     });
-  }, [messages, isWaitingForResponse, sessionId, useVirtualization]);
+  }, [getAtBottomState, messages, isWaitingForResponse, setAtBottomState, useVirtualization]);
 
   // Flat-list mode: bind a scroll handler to the container to mirror the
   // tracking that VList does internally (isAtBottom atom, scroll-to-bottom
@@ -1455,12 +1487,12 @@ export const RichTranscriptView = React.forwardRef<
       const scrollTopChanged = scrollOffset !== lastScrollTop;
       lastScrollTop = scrollOffset;
       const distanceFromBottom = scrollSize - scrollOffset - viewportSize;
-      const isAtBottom = distanceFromBottom < 50;
+      const isAtBottom = isTranscriptAtBottom(distanceFromBottom);
       // If the user actually scrolled, reflect their position. If only the
       // layout shifted, only sync the atom when it would set true (so we
       // never drop sticky-bottom due to content expansion).
       if (scrollTopChanged || isAtBottom) {
-        setSessionIsAtBottom(sessionId, isAtBottom);
+        setAtBottomState(isAtBottom);
       }
       if (scrollButtonRef.current) {
         const show = distanceFromBottom > viewportSize;
@@ -1486,7 +1518,7 @@ export const RichTranscriptView = React.forwardRef<
 
     container.addEventListener('scroll', handleScroll, { passive: true });
     return () => container.removeEventListener('scroll', handleScroll);
-  }, [useVirtualization, sessionId, pendingPermissionIndices, showPermissionBanner]);
+  }, [useVirtualization, setAtBottomState, pendingPermissionIndices, showPermissionBanner]);
 
   // Flat-list mode: when content grows (new streamed chunk, async-loaded
   // image, code block syntax-highlighting, etc.), re-pin to the bottom as
@@ -1502,14 +1534,14 @@ export const RichTranscriptView = React.forwardRef<
     let lastHeight = flatList.scrollHeight;
     const ro = new ResizeObserver(() => {
       const nextHeight = flatList.scrollHeight;
-      if (nextHeight > lastHeight && getSessionIsAtBottom(sessionId)) {
+      if (nextHeight > lastHeight && getAtBottomState()) {
         flatBottomSentinelRef.current?.scrollIntoView({ block: 'end', behavior: 'auto' });
       }
       lastHeight = nextHeight;
     });
     ro.observe(flatList);
     return () => ro.disconnect();
-  }, [useVirtualization, sessionId]);
+  }, [getAtBottomState, useVirtualization]);
 
 
 
@@ -2159,7 +2191,11 @@ export const RichTranscriptView = React.forwardRef<
           key={messageKey}
           data-message-index={index}
           ref={(el) => {
-            if (el) messageRefs.current.set(index, el);
+            if (el) {
+              messageRefs.current.set(index, el);
+            } else {
+              messageRefs.current.delete(index);
+            }
           }}
           className="rich-transcript-message rich-transcript-teammate-notification rounded-md relative max-w-full overflow-x-hidden break-words mb-1"
         >
@@ -2191,7 +2227,11 @@ export const RichTranscriptView = React.forwardRef<
           key={messageKey}
           data-message-index={index}
           ref={(el) => {
-            if (el) messageRefs.current.set(index, el);
+            if (el) {
+              messageRefs.current.set(index, el);
+            } else {
+              messageRefs.current.delete(index);
+            }
           }}
         >
           <SystemReminderCard message={message} />
@@ -2204,7 +2244,11 @@ export const RichTranscriptView = React.forwardRef<
         key={messageKey}
         data-message-index={index}
         ref={(el) => {
-          if (el) messageRefs.current.set(index, el);
+          if (el) {
+            messageRefs.current.set(index, el);
+          } else {
+            messageRefs.current.delete(index);
+          }
         }}
         className={`rich-transcript-message rounded-md relative max-w-full overflow-x-hidden break-words mb-2 ${isUser ? 'user bg-[var(--nim-bg-secondary)]' : 'assistant bg-[var(--nim-bg)]'} ${settings.compactMode ? 'compact p-2' : 'normal p-3'} ${!isNewGroup ? 'continuation -mt-1' : ''}`}
       >
@@ -2444,7 +2488,7 @@ export const RichTranscriptView = React.forwardRef<
                   ref={vlistRef}
                   className="rich-transcript-vlist !h-full !w-full"
                   style={{ height: '100%' }}
-                  bufferSize={800}
+                  bufferSize={vlistBufferSize}
                   itemSize={90}
                   cache={vlistCacheMap.get(sessionId)}
                   onScroll={(offset) => {
@@ -2453,9 +2497,9 @@ export const RichTranscriptView = React.forwardRef<
                       const scrollSize = vlistRef.current.scrollSize;
                       const viewportSize = vlistRef.current.viewportSize;
                       const distanceFromBottom = scrollSize - offset - viewportSize;
-                      const isAtBottom = distanceFromBottom < 50;
+                      const isAtBottom = isTranscriptAtBottom(distanceFromBottom);
                       // Update the per-session atom - this persists across component remounts
-                      setSessionIsAtBottom(sessionId, isAtBottom);
+                      setAtBottomState(isAtBottom);
                       if (scrollButtonRef.current) {
                         const show = distanceFromBottom > viewportSize;
                         scrollButtonRef.current.style.opacity = show ? '1' : '0';
@@ -2475,7 +2519,7 @@ export const RichTranscriptView = React.forwardRef<
                       } else if (showPermissionBanner) {
                         setShowPermissionBanner(false);
                       }
-                    }
+                  }
                   }}
                 >
                   {renderedMessages}
