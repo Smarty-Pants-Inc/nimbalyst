@@ -795,7 +795,7 @@ export function registerSettingsHandlers() {
         ensureStytchInitialized();
 
         // Sync is "configured" if the user is authenticated with Stytch
-        // The serverUrl is derived from environment (defaults to wss://sync.nimbalyst.com)
+        // The serverUrl is derived from environment (defaults to wss://smarty-sync-dev.frosty-wildflower-6a9b.workers.dev)
         // so we don't need to check config.serverUrl anymore
         if (!StytchAuth.isAuthenticated()) {
             return {
@@ -1058,7 +1058,7 @@ export function registerSettingsHandlers() {
             serverUrl = 'ws://localhost:8790';
         } else {
             // Production is the default (for both prod builds and when not explicitly set in dev)
-            serverUrl = 'wss://sync.nimbalyst.com';
+            serverUrl = 'wss://smarty-sync-dev.frosty-wildflower-6a9b.workers.dev';
         }
 
         // Convert WebSocket URLs to HTTP: wss:// -> https://, ws:// -> http://
@@ -1086,7 +1086,7 @@ export function registerSettingsHandlers() {
             serverUrl = 'ws://localhost:8790';
         } else {
             // Production is the default (for both prod builds and when not explicitly set in dev)
-            serverUrl = 'wss://sync.nimbalyst.com';
+            serverUrl = 'wss://smarty-sync-dev.frosty-wildflower-6a9b.workers.dev';
         }
 
         // Convert WebSocket URLs to HTTP: wss:// -> https://, ws:// -> http://
@@ -1114,7 +1114,7 @@ export function registerSettingsHandlers() {
         } else if (syncConfig?.serverUrl) {
             serverUrl = syncConfig.serverUrl.replace(/^wss:/, 'https:').replace(/^ws:/, 'http:');
         } else {
-            serverUrl = 'https://sync.nimbalyst.com';
+            serverUrl = 'https://smarty-sync-dev.frosty-wildflower-6a9b.workers.dev';
         }
         return StytchAuth.addAccount(serverUrl);
     });
@@ -1137,7 +1137,7 @@ export function registerSettingsHandlers() {
         if (effectiveEnvironment === 'development') {
             serverUrl = 'ws://localhost:8790';
         } else {
-            serverUrl = 'wss://sync.nimbalyst.com';
+            serverUrl = 'wss://smarty-sync-dev.frosty-wildflower-6a9b.workers.dev';
         }
         return StytchAuth.deleteAccount(serverUrl);
     });

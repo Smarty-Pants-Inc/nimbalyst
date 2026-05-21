@@ -1,33 +1,35 @@
 /**
- * StytchAuthService - Manages user authentication via Stytch B2B platform.
+ * StytchAuthService - compatibility-named auth service backed by the smarty-sync auth Worker.
  *
  * This service handles:
- * - Google OAuth sign-in/sign-up (via browser redirect to collabv3 server)
- * - Email magic link authentication (via collabv3 server)
+ * - Google OAuth sign-in/sign-up (via browser redirect to auth Worker)
+ * - Email magic link authentication (via auth Worker)
  * - Session token/JWT management
- * - Organization context (B2B org_id)
+ * - Organization context (org_id)
  *
  * Security architecture:
- * - All authentication flows go through the collabv3 Cloudflare Worker
- * - The desktop app NEVER has access to the Stytch secret key
- * - OAuth flow: opens browser -> collabv3/auth/login/google -> Stytch -> collabv3/auth/callback -> nimbalyst:// deep link
- * - Magic links: collabv3 sends email (has secret key), callback to collabv3, then deep link to app
+ * - All authentication flows go through the auth Worker
+ * - The desktop app never has access to provider secrets
+ * - OAuth flow: opens browser -> auth Worker -> provider -> nimbalyst:// deep link
+ * - Magic links: auth Worker sends email/validates token, then this service stores the returned session
  * - Session tokens received via deep link are stored securely using Electron's safeStorage
- * - JWT is used for sync server authentication, includes org context for B2B
+ * - JWT is used for sync server authentication and includes org context
  *
  * Deep link format: nimbalyst://auth/callback?session_token=...&session_jwt=...&user_id=...&email=...&org_id=...
  */
 
-import { safeStorage, shell, net } from 'electron';
+import { safeStorage, shell } from 'electron';
 import { app } from 'electron';
 import * as fs from 'fs';
 import * as path from 'path';
 import { logger } from '../utils/logger';
-import { STYTCH_CONFIG } from '@nimbalyst/runtime';
 import { getSessionSyncConfig, setSessionSyncConfig } from '../utils/store';
 import { AnalyticsService } from './analytics/AnalyticsService';
 
-// Stytch types
+const AUTH_WORKER_BASE_URL = 'https://smarty-sync-auth-dev.frosty-wildflower-6a9b.workers.dev';
+const AUTH_CALLBACK_BASE_URL = 'nimbalyst://auth/callback';
+
+// Compatibility types retained for existing callers.
 interface StytchUser {
   user_id: string;
   emails: Array<{
@@ -68,7 +70,7 @@ interface StytchAuthState {
    *  Used for session sync room IDs so they stay stable across org switches. */
   personalOrgId: string | null;
   /** Personal org member ID -- set once on initial auth, never overwritten by session exchanges.
-   *  In Stytch B2B, each org has its own member record. After a team session exchange,
+   *  Each org can have its own member record. After a team session exchange,
    *  the JWT sub claim changes to the team org member ID. This field preserves the
    *  personal org member ID so sync room IDs and encryption keys stay stable. */
   personalUserId: string | null;
@@ -81,6 +83,7 @@ interface StytchAuthState {
 interface StoredStytchCredentials {
   sessionToken: string;
   sessionJwt: string;
+  refreshToken?: string;
   userId: string;
   email?: string;
   expiresAt: number;
@@ -114,16 +117,16 @@ export interface AccountInfo {
 }
 
 
-// Stytch configuration - PUBLIC TOKEN ONLY, no secret key!
+// Legacy initialization shape retained for existing callers.
 interface StytchConfig {
   projectId: string;
   publicToken: string;
-  apiBase: string; // 'https://test.stytch.com/v1' for test, 'https://api.stytch.com/v1' for live
+  apiBase: string;
 }
 
 // File names for persistent storage
-const STYTCH_CREDENTIALS_FILE = 'stytch-credentials.enc'; // v1 (single account)
-const STYTCH_ACCOUNTS_FILE = 'stytch-accounts.enc'; // v2 (multi-account)
+const AUTH_CREDENTIALS_FILE = 'auth-worker-credentials.enc'; // v1 (single account)
+const AUTH_ACCOUNTS_FILE = 'auth-worker-accounts.enc'; // v2 (multi-account)
 
 // Singleton state -- represents the primary account for backward compat.
 // All existing getters (getAuthState, getSessionJwt, etc.) read from this.
@@ -143,7 +146,7 @@ let authState: StytchAuthState = {
 const accounts = new Map<string, StoredStytchCredentials>();
 let primaryAccountId: string | null = null;
 
-let stytchConfig: StytchConfig | null = null;
+let authWorkerConfig: StytchConfig | null = null;
 
 // Event listeners for auth state changes
 type AuthStateListener = (state: StytchAuthState) => void;
@@ -154,7 +157,7 @@ const authStateListeners = new Set<AuthStateListener>();
  */
 function getCredentialsPath(): string {
   const userDataPath = app.getPath('userData');
-  return path.join(userDataPath, STYTCH_CREDENTIALS_FILE);
+  return path.join(userDataPath, AUTH_CREDENTIALS_FILE);
 }
 
 /**
@@ -162,7 +165,7 @@ function getCredentialsPath(): string {
  */
 function getAccountsPath(): string {
   const userDataPath = app.getPath('userData');
-  return path.join(userDataPath, STYTCH_ACCOUNTS_FILE);
+  return path.join(userDataPath, AUTH_ACCOUNTS_FILE);
 }
 
 
@@ -178,7 +181,7 @@ function isSafeStorageAvailable(): boolean {
 }
 
 /**
- * Save Stytch credentials securely.
+ * Save auth credentials securely.
  */
 function saveStytchCredentials(credentials: StoredStytchCredentials): void {
   const credentialsPath = getCredentialsPath();
@@ -195,7 +198,7 @@ function saveStytchCredentials(credentials: StoredStytchCredentials): void {
 }
 
 /**
- * Load Stytch credentials from secure storage.
+ * Load auth credentials from secure storage.
  */
 function loadStytchCredentials(): StoredStytchCredentials | null {
   const credentialsPath = getCredentialsPath();
@@ -221,7 +224,7 @@ function loadStytchCredentials(): StoredStytchCredentials | null {
 }
 
 /**
- * Clear stored Stytch credentials.
+ * Clear stored auth credentials.
  */
 function clearStytchCredentials(): void {
   const credentialsPath = getCredentialsPath();
@@ -350,21 +353,83 @@ function updateAuthState(update: Partial<StytchAuthState>): void {
   notifyAuthStateChange();
 }
 
+interface AuthWorkerEmailStartResponse {
+  ok?: boolean;
+  devToken?: string;
+  error?: string;
+}
+
+interface AuthWorkerSessionResponse {
+  sessionJwt: string;
+  refreshToken?: string;
+  userId?: string;
+  orgId?: string;
+  email?: string;
+}
+
+function buildAuthCallbackUrl(params: {
+  sessionJwt: string;
+  userId: string;
+  email: string;
+  orgId: string;
+}): string {
+  const searchParams = new URLSearchParams();
+  searchParams.set('session_token', params.sessionJwt);
+  searchParams.set('session_jwt', params.sessionJwt);
+  searchParams.set('user_id', params.userId);
+  searchParams.set('email', params.email);
+  searchParams.set('org_id', params.orgId);
+  return `${AUTH_CALLBACK_BASE_URL}?${searchParams.toString()}`;
+}
+
+function decodeJwtSub(jwt: string | null): string | null {
+  if (!jwt) return null;
+  const parts = jwt.split('.');
+  if (parts.length !== 3) return null;
+
+  try {
+    const payloadBase64 = parts[1].replace(/-/g, '+').replace(/_/g, '/');
+    const paddedPayload = payloadBase64.padEnd(payloadBase64.length + ((4 - payloadBase64.length % 4) % 4), '=');
+    const payload = JSON.parse(Buffer.from(paddedPayload, 'base64').toString('utf8')) as { sub?: string };
+    return payload.sub || null;
+  } catch {
+    return null;
+  }
+}
+
+async function postAuthWorker<T>(pathName: string, body: unknown): Promise<T> {
+  const response = await fetch(`${AUTH_WORKER_BASE_URL}${pathName}`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(body),
+  });
+
+  const data = await response.json().catch(() => ({})) as T & { error?: string };
+  if (!response.ok) {
+    const error = new Error(data.error || `Auth worker request failed: ${response.status}`);
+    (error as any).status = response.status;
+    throw error;
+  }
+  return data;
+}
+
 
 // ============================================================================
 // Public API
 // ============================================================================
 
 /**
- * Initialize the Stytch auth service.
+ * Initialize the compatibility auth service.
  * Call this during app startup.
  *
- * IMPORTANT: Only pass the public token, never the secret key!
+ * IMPORTANT: Do not pass provider secrets to the desktop app.
  */
 export function initializeStytchAuth(config: StytchConfig): void {
-  stytchConfig = config;
+  authWorkerConfig = config;
 
-  logger.main.info('[StytchAuthService] Initialized with project:', config.projectId);
+  logger.main.info('[StytchAuthService] Initialized auth worker:', AUTH_WORKER_BASE_URL, config.projectId);
 
   // Try to load multi-account data (v2), migrating from v1 if needed
   loadAllAccounts();
@@ -493,7 +558,19 @@ export async function handleAuthCallback(params: {
   expiresAt?: string;
   orgId?: string;
 }): Promise<void> {
-  const { sessionToken, sessionJwt, userId, email, expiresAt, orgId } = params;
+  await persistAuthCallback(params);
+}
+
+async function persistAuthCallback(params: {
+  sessionToken: string;
+  sessionJwt?: string;
+  refreshToken?: string;
+  userId?: string;
+  email?: string;
+  expiresAt?: string;
+  orgId?: string;
+}): Promise<void> {
+  const { sessionToken, sessionJwt, refreshToken, userId, email, expiresAt, orgId } = params;
 
   // Calculate expiry time
   let expiresAtMs = Date.now() + (7 * 24 * 60 * 60 * 1000); // Default: 1 week
@@ -523,10 +600,12 @@ export async function handleAuthCallback(params: {
   const isSecondaryAccount = primaryIsActive && incomingPersonalOrgId !== null
     && incomingPersonalOrgId !== primaryAccountId;
 
-  // Build credentials to persist
+  // Build credentials to persist. sessionToken is legacy host surface; for auth-worker
+  // callbacks without a separate token, it is the same opaque value as sessionJwt.
   const credsToSave: StoredStytchCredentials = {
     sessionToken,
     sessionJwt: validatedJwt || '',
+    refreshToken,
     userId: userId || '',
     email: email || '',
     expiresAt: expiresAtMs,
@@ -635,7 +714,7 @@ export function isAuthenticated(): boolean {
 }
 
 /**
- * Get the current user's Stytch user ID.
+ * Get the current user's auth worker user ID.
  */
 export function getStytchUserId(): string | null {
   return authState.user?.user_id || null;
@@ -667,7 +746,7 @@ export function getPersonalOrgId(): string | null {
 
 /**
  * Get the personal org member ID (stable across session exchanges).
- * In Stytch B2B, each org has its own member record with a unique member ID.
+ * Each org can have its own member record with a unique member ID.
  * After a team session exchange, the JWT sub claim and authState.user.user_id
  * change to the team org's member ID. This function returns the original
  * personal org member ID so sync room IDs and encryption keys stay consistent.
@@ -677,104 +756,42 @@ export function getPersonalUserId(): string | null {
 }
 
 /**
- * Resolve the personal org member ID by exchanging the session to the personal org.
- * This is needed when personalUserId is missing because a team session exchange
- * corrupted the stored userId. Does a session exchange to the personal org,
- * extracts the member ID from the resulting JWT, and persists it.
+ * Resolve the personal org member ID from the current JWT's sub claim.
+ * This is needed when personalUserId is missing in persisted credentials.
  *
  * Returns the personal member ID, or null if resolution fails.
  */
 export async function resolvePersonalUserId(serverUrl: string): Promise<string | null> {
+  void serverUrl;
+
   // Already resolved
   if (authState.personalUserId) {
     return authState.personalUserId;
   }
 
-  const personalOrgId = authState.personalOrgId;
-  if (!personalOrgId) {
-    logger.main.warn('[StytchAuthService] Cannot resolve personalUserId: no personalOrgId');
-    return null;
-  }
-
-  const sessionToken = authState.sessionToken;
-  if (!sessionToken) {
-    logger.main.warn('[StytchAuthService] Cannot resolve personalUserId: no session token');
-    return null;
-  }
-
-  const jwt = authState.sessionJwt;
+  const jwt = authState.personalSessionJwt || authState.sessionJwt;
   if (!jwt) {
     logger.main.warn('[StytchAuthService] Cannot resolve personalUserId: no JWT');
     return null;
   }
 
-  try {
-    // Convert ws(s):// to http(s):// for fetch
-    const httpUrl = serverUrl.replace(/^wss:/, 'https:').replace(/^ws:/, 'http:');
-    logger.main.info('[StytchAuthService] Resolving personalUserId via session exchange to personal org:', personalOrgId);
-
-    const response = await net.fetch(`${httpUrl}/api/teams/${personalOrgId}/switch`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${jwt}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ sessionToken }),
-    });
-
-    if (!response.ok) {
-      const errData = await response.json().catch(() => ({ error: `HTTP ${response.status}` })) as { error?: string };
-      logger.main.error('[StytchAuthService] Failed to resolve personalUserId:', errData.error || response.status);
-      return null;
-    }
-
-    const data = await response.json() as {
-      sessionJwt: string;
-      sessionToken: string;
-    };
-
-    if (!data.sessionJwt) {
-      logger.main.error('[StytchAuthService] Session exchange returned no JWT');
-      return null;
-    }
-
-    // Extract member ID from the personal-org-scoped JWT
-    const parts = data.sessionJwt.split('.');
-    if (parts.length !== 3) {
-      logger.main.error('[StytchAuthService] Invalid JWT format from session exchange');
-      return null;
-    }
-    const payload = JSON.parse(Buffer.from(parts[1], 'base64url').toString()) as { sub?: string };
-    const personalUserId = payload.sub;
-    if (!personalUserId) {
-      logger.main.error('[StytchAuthService] JWT sub claim missing from session exchange response');
-      return null;
-    }
-
-    // Persist the resolved personal member ID and personal JWT
-    authState = { ...authState, personalUserId, personalSessionJwt: data.sessionJwt };
-    const creds = loadStytchCredentials();
-    if (creds) {
-      saveStytchCredentials({ ...creds, personalUserId });
-    }
-    // Update accounts map
-    if (personalOrgId) {
-      updateAccountCredentials(personalOrgId, { personalUserId });
-    }
-
-    // The session exchange also updated the session token -- persist that too
-    // so future refreshes work. But do NOT update personalOrgId or personalUserId
-    // from the exchange response -- we just resolved those.
-    if (data.sessionToken) {
-      updateSessionToken(data.sessionToken);
-    }
-
-    logger.main.info('[StytchAuthService] Resolved personalUserId:', personalUserId, 'and stored personal JWT');
-    return personalUserId;
-  } catch (error) {
-    logger.main.error('[StytchAuthService] Error resolving personalUserId:', error);
+  const personalUserId = decodeJwtSub(jwt);
+  if (!personalUserId) {
+    logger.main.error('[StytchAuthService] JWT sub claim missing from session response');
     return null;
   }
+
+  authState = { ...authState, personalUserId, personalSessionJwt: jwt };
+  const creds = loadStytchCredentials();
+  if (creds) {
+    saveStytchCredentials({ ...creds, personalUserId });
+  }
+  if (authState.personalOrgId) {
+    updateAccountCredentials(authState.personalOrgId, { personalUserId });
+  }
+
+  logger.main.info('[StytchAuthService] Resolved personalUserId:', personalUserId);
+  return personalUserId;
 }
 
 /**
@@ -839,111 +856,23 @@ export function getPersonalSessionJwt(): string | null {
 }
 
 /**
- * Refresh the personal-org-scoped JWT via session exchange.
+ * Refresh the personal-org-scoped JWT via auth Worker refresh token rotation.
  * Called by SyncManager to keep the personal JWT fresh for session sync.
  */
 export async function refreshPersonalSession(serverUrl: string): Promise<boolean> {
-  const personalOrgId = authState.personalOrgId;
-  if (!personalOrgId) {
-    logger.main.warn('[StytchAuthService] Cannot refresh personal session: no personalOrgId');
-    return false;
-  }
+  void serverUrl;
 
-  const sessionToken = authState.sessionToken;
-  if (!sessionToken) {
-    logger.main.warn('[StytchAuthService] Cannot refresh personal session: no session token');
-    return false;
-  }
-
-  // If we're already in the personal org (no team exchange happened),
-  // just do a normal refresh -- but verify the JWT sub matches personalUserId.
-  // The session token may have been silently exchanged to a team org, in which
-  // case Stytch returns a team-scoped JWT even though authState.orgId appears
-  // to be the personal org. If the sub doesn't match, fall through to the
-  // session exchange path to get a genuine personal-org JWT.
-  if (!authState.orgId || authState.orgId === personalOrgId) {
-    let result: boolean;
-    try {
-      result = await refreshSession(serverUrl);
-    } catch (error) {
-      if ((error as any)?.isNetworkError) {
-        logger.main.warn('[StytchAuthService] Network error refreshing personal session - will retry later');
-      }
-      return false;
-    }
-    if (result && authState.sessionJwt) {
-      // Verify the JWT sub matches personalUserId
-      try {
-        const parts = authState.sessionJwt.split('.');
-        if (parts.length === 3) {
-          const payload = JSON.parse(Buffer.from(parts[1], 'base64url').toString()) as { sub?: string };
-          if (payload.sub && authState.personalUserId && payload.sub !== authState.personalUserId) {
-            // JWT sub is a team member ID, not personal -- the session was exchanged
-            // to a team org at some point. Fall through to the exchange path.
-            logger.main.warn('[StytchAuthService] Refreshed JWT sub mismatch:',
-              payload.sub, '!==', authState.personalUserId,
-              '-- session was team-exchanged, falling through to personal org exchange');
-          } else {
-            authState = { ...authState, personalSessionJwt: authState.sessionJwt };
-            return true;
-          }
-        }
-      } catch {
-        // Parse failed -- use the JWT as-is
-        authState = { ...authState, personalSessionJwt: authState.sessionJwt };
-        return result;
-      }
-    } else if (result) {
-      authState = { ...authState, personalSessionJwt: authState.sessionJwt };
-      return result;
-    } else {
-      return false;
-    }
-  }
-
-  // We're in a team org (or the refresh above detected a team-scoped JWT)
-  // -- do a session exchange to personal org for a fresh JWT.
-  // The team JWT (authState.sessionJwt) has a short lifetime (5 min from Stytch),
-  // so refresh it first to ensure the Authorization header is valid.
   try {
-    await refreshSession(serverUrl);
-    const httpUrl = serverUrl.replace(/^wss:/, 'https:').replace(/^ws:/, 'http:');
-    const jwt = authState.sessionJwt;
-    if (!jwt) return false;
-
-    const response = await net.fetch(`${httpUrl}/api/teams/${personalOrgId}/switch`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${jwt}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ sessionToken }),
-    });
-
-    if (!response.ok) {
-      logger.main.warn('[StytchAuthService] Personal session refresh failed:', response.status);
-      return false;
+    const refreshed = await refreshSession();
+    if (refreshed && authState.sessionJwt) {
+      authState = { ...authState, personalSessionJwt: authState.sessionJwt };
     }
-
-    const data = await response.json() as {
-      sessionJwt: string;
-      sessionToken: string;
-    };
-
-    if (!data.sessionJwt || data.sessionJwt.split('.').length !== 3) {
-      logger.main.error('[StytchAuthService] Personal session refresh returned invalid JWT');
-      return false;
-    }
-
-    authState = { ...authState, personalSessionJwt: data.sessionJwt };
-
-    // Update the session token (shared across orgs)
-    if (data.sessionToken) {
-      updateSessionToken(data.sessionToken);
-    }
-
-    return true;
+    return refreshed;
   } catch (error) {
+    if ((error as any)?.isNetworkError) {
+      logger.main.warn('[StytchAuthService] Network error refreshing personal session - will retry later');
+      return false;
+    }
     logger.main.error('[StytchAuthService] Error refreshing personal session:', error);
     return false;
   }
@@ -957,7 +886,7 @@ export function getSessionToken(): string | null {
 }
 
 /**
- * Update the persisted session token after a Stytch session exchange.
+ * Update the persisted legacy session token after an org/session exchange.
  * Session exchanges (e.g., org switch) replace the session token -- the old
  * one becomes invalid. This function saves the new token so that future
  * refreshSession() calls use the valid token.
@@ -978,31 +907,26 @@ export function updateSessionToken(newSessionToken: string): void {
 
 /**
  * Start Google OAuth sign-in flow.
- * Opens the collabv3 server's Google OAuth URL in the browser.
+ * Opens the auth Worker's Google OAuth URL in the browser.
  * The server handles the callback and redirects to nimbalyst://auth/callback
  */
 export async function signInWithGoogle(serverUrl?: string): Promise<{ success: boolean; error?: string }> {
-  if (!stytchConfig) {
-    return { success: false, error: 'Stytch not initialized' };
+  void serverUrl;
+
+  if (!authWorkerConfig) {
+    return { success: false, error: 'Auth not initialized' };
   }
 
   try {
-    // Use the collabv3 server to handle OAuth
-    const syncServerUrl = serverUrl || 'https://collabv3.nimbalyst.workers.dev';
-    const oauthUrl = `${syncServerUrl}/auth/login/google`;
+    const oauthUrl = `${AUTH_WORKER_BASE_URL}/auth/google/start?return_to=${encodeURIComponent(AUTH_CALLBACK_BASE_URL)}`;
 
     // Open in default browser
     await shell.openExternal(oauthUrl);
 
-    logger.main.info('[StytchAuthService] Opened Google OAuth flow via server:', oauthUrl);
+    logger.main.info('[StytchAuthService] Opened Google OAuth flow via auth worker:', oauthUrl);
 
-    // The flow is:
-    // 1. Browser opens collabv3/auth/login/google
-    // 2. Server redirects to Stytch OAuth
-    // 3. User authenticates with Google
-    // 4. Stytch redirects to collabv3/auth/callback
-    // 5. Server validates token and redirects to nimbalyst://auth/callback?session_token=...
-    // 6. App receives deep link and calls handleAuthCallback()
+    // TODO(phase1.5): The auth Worker owns Google completion and must redirect to
+    // nimbalyst://auth/callback?session_token=...&session_jwt=...&user_id=...&email=...&org_id=...
     return { success: true };
   } catch (error) {
     logger.main.error('[StytchAuthService] Google OAuth error:', error);
@@ -1011,72 +935,78 @@ export async function signInWithGoogle(serverUrl?: string): Promise<{ success: b
 }
 
 /**
+ * Start email magic-link authentication.
+ */
+export async function signInWithEmail(
+  email: string
+): Promise<{ success: boolean; error?: string; devToken?: string }> {
+  if (!authWorkerConfig) {
+    return { success: false, error: 'Auth not initialized' };
+  }
+
+  try {
+    const data = await postAuthWorker<AuthWorkerEmailStartResponse>('/auth/email/start', { email });
+    if (data.ok === false) {
+      return { success: false, error: data.error || 'Email sign-in failed' };
+    }
+
+    logger.main.info('[StytchAuthService] Email sign-in started for:', email);
+    return { success: true, devToken: data.devToken };
+  } catch (error) {
+    logger.main.error('[StytchAuthService] Email sign-in error:', error);
+    return { success: false, error: String(error) };
+  }
+}
+
+/**
+ * Verify an email magic-link token and persist the resulting auth-worker session.
+ */
+export async function verifyEmailToken(
+  email: string,
+  token: string
+): Promise<{ success: boolean; error?: string; callbackUrl?: string }> {
+  if (!authWorkerConfig) {
+    return { success: false, error: 'Auth not initialized' };
+  }
+
+  try {
+    const data = await postAuthWorker<AuthWorkerSessionResponse>('/auth/email/verify', { email, token });
+    if (!data.sessionJwt || !data.userId || !data.orgId || !data.email) {
+      return { success: false, error: 'Auth worker verify response missing required session fields' };
+    }
+
+    const callbackUrl = buildAuthCallbackUrl({
+      sessionJwt: data.sessionJwt,
+      userId: data.userId,
+      email: data.email,
+      orgId: data.orgId,
+    });
+
+    await persistAuthCallback({
+      sessionToken: data.sessionJwt,
+      sessionJwt: data.sessionJwt,
+      refreshToken: data.refreshToken,
+      userId: data.userId,
+      email: data.email,
+      orgId: data.orgId,
+    });
+
+    return { success: true, callbackUrl };
+  } catch (error) {
+    logger.main.error('[StytchAuthService] Email verification error:', error);
+    return { success: false, error: String(error) };
+  }
+}
+
+/**
  * Send a magic link to the user's email for passwordless authentication.
- * This calls our collabv3 server which has the secret key to send emails.
- * The magic link redirects to collabv3/auth/callback which then redirects to nimbalyst://auth/callback
  */
 export async function sendMagicLink(
   email: string,
   serverUrl?: string
 ): Promise<{ success: boolean; error?: string }> {
-  if (!stytchConfig) {
-    return { success: false, error: 'Stytch not initialized' };
-  }
-
-  try {
-    // Get the sync server URL from settings or use default
-    const syncServerUrl = serverUrl || 'https://collabv3.nimbalyst.workers.dev';
-
-    // The magic link callback URL is the server's auth callback (not local)
-    const callbackUrl = `${syncServerUrl}/auth/callback`;
-
-    // Call our backend server which has the Stytch secret key
-    const response = await new Promise<{ success?: boolean; error?: string }>((resolve, reject) => {
-      const request = net.request({
-        method: 'POST',
-        url: `${syncServerUrl}/api/auth/magic-link`,
-      });
-
-      request.setHeader('Content-Type', 'application/json');
-
-      let responseData = '';
-
-      request.on('response', (res) => {
-        res.on('data', (chunk) => {
-          responseData += chunk.toString();
-        });
-
-        res.on('end', () => {
-          try {
-            const data = JSON.parse(responseData);
-            resolve(data);
-          } catch (e) {
-            reject(new Error(`Failed to parse response: ${responseData}`));
-          }
-        });
-      });
-
-      request.on('error', (error) => {
-        reject(error);
-      });
-
-      request.write(JSON.stringify({
-        email,
-        redirect_url: callbackUrl,
-      }));
-      request.end();
-    });
-
-    if (response.error) {
-      return { success: false, error: response.error };
-    }
-
-    logger.main.info('[StytchAuthService] Magic link sent to:', email);
-    return { success: true };
-  } catch (error) {
-    logger.main.error('[StytchAuthService] Magic link error:', error);
-    return { success: false, error: String(error) };
-  }
+  void serverUrl;
+  return signInWithEmail(email);
 }
 
 /**
@@ -1170,7 +1100,7 @@ export async function addAccount(serverUrl?: string): Promise<{ success: boolean
 /**
  * Delete the user's account and all associated data.
  * Calls the server's /api/account/delete endpoint which cascades
- * deletes across all storage layers and deletes the Stytch member.
+ * deletes across all storage layers.
  * On success, clears local credentials and signs out.
  */
 export async function deleteAccount(serverUrl?: string): Promise<{ success: boolean; error?: string }> {
@@ -1192,7 +1122,7 @@ export async function deleteAccount(serverUrl?: string): Promise<{ success: bool
   try {
     logger.main.info('[StytchAuthService] Deleting account...');
 
-    const response = await net.fetch(`${httpUrl}/api/account/delete`, {
+    const response = await fetch(`${httpUrl}/api/account/delete`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -1223,22 +1153,19 @@ export async function deleteAccount(serverUrl?: string): Promise<{ success: bool
 /**
  * In-flight refresh promise for the primary account.
  *
- * Why: Stytch's /auth/refresh consumes the session_token and returns a new one.
- * Concurrent callers using the same token would each fire a refresh; the first
- * succeeds and invalidates the token, the rest get 401s and trigger MORE refreshes
- * (TeamService 401-retry path), producing a stampede that has been observed to
- * stall workspace cold-start for minutes. Single-flight makes concurrent callers
- * share the result of one in-flight call.
+ * Why: the auth worker rotates refresh tokens. Concurrent callers using the
+ * same stored refresh token can stampede into stale-token failures. Single-flight
+ * makes concurrent callers share the result of one in-flight call.
  */
 let inflightRefreshSession: Promise<boolean> | null = null;
 
 /**
  * Refresh the current session to get a fresh JWT.
- * Calls the collabv3 server's /auth/refresh endpoint.
+ * Calls the auth Worker's /auth/refresh endpoint.
  *
  * Concurrent callers share a single in-flight /auth/refresh request.
  *
- * @param serverUrl - The sync server URL (e.g., 'https://sync.nimbalyst.com')
+ * @param serverUrl - Preserved for existing callers; auth refresh always uses the auth Worker.
  * @returns true if refresh succeeded, false if session expired or failed
  */
 export function refreshSession(serverUrl?: string): Promise<boolean> {
@@ -1252,40 +1179,26 @@ export function refreshSession(serverUrl?: string): Promise<boolean> {
 }
 
 async function doRefreshSession(serverUrl?: string): Promise<boolean> {
+  void serverUrl;
+
   const creds = loadStytchCredentials();
-  if (!creds?.sessionToken) {
-    logger.main.warn('[StytchAuthService] Cannot refresh - no session token');
+  const refreshToken = creds?.refreshToken;
+  if (!refreshToken) {
+    logger.main.warn('[StytchAuthService] Cannot refresh - no refresh token');
     return false;
   }
 
-  // Determine server URL - always resolves to a valid URL
-  const syncServerUrl = serverUrl || getSyncServerUrl();
-
-  // Convert ws:// to http:// for API calls
-  const httpUrl = syncServerUrl
-    .replace(/^ws:/, 'http:')
-    .replace(/^wss:/, 'https:')
-    .replace(/\/$/, '');
-
   try {
-    logger.main.info('[StytchAuthService] Refreshing session...');
+    logger.main.info('[StytchAuthService] Refreshing session via auth worker...');
 
-    let response: Response;
+    let data: AuthWorkerSessionResponse;
     try {
-      response = await net.fetch(`${httpUrl}/auth/refresh`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          session_token: creds.sessionToken,
-        }),
-      });
+      data = await postAuthWorker<AuthWorkerSessionResponse>('/auth/refresh', { refreshToken });
     } catch (fetchError) {
-      // Network-level errors (ERR_INTERNET_DISCONNECTED, ERR_NAME_NOT_RESOLVED, etc.)
-      // are NOT auth failures -- the session may still be valid once connectivity returns.
-      // Tag the error so callers (like validateAndRefreshSession) can distinguish this
-      // from a server-confirmed auth rejection.
+      if ((fetchError as any)?.status) {
+        logger.main.warn('[StytchAuthService] Session refresh failed:', (fetchError as Error).message);
+        return false;
+      }
       logger.main.error('[StytchAuthService] Session refresh error:', fetchError);
       const networkError = new Error('Network error during session refresh');
       (networkError as any).isNetworkError = true;
@@ -1293,77 +1206,48 @@ async function doRefreshSession(serverUrl?: string): Promise<boolean> {
       throw networkError;
     }
 
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({})) as { expired?: boolean; error?: string };
-      logger.main.warn('[StytchAuthService] Session refresh failed:', errorData.error || response.status);
-
-      // Don't auto-signOut here - let callers decide how to handle expired sessions.
-      // Auto-signOut was nuking credentials, which broke fallback logic in share handlers
-      // and could sign users out unexpectedly when background operations triggered refresh.
-      return false;
-    }
-
-    const data = await response.json() as {
-      session_token: string;
-      session_jwt: string;
-      user_id: string;
-      email?: string;
-      expires_at: string;
-      org_id?: string;
-    };
-
-    // Validate the new JWT
-    if (!data.session_jwt || data.session_jwt.split('.').length !== 3) {
+    if (!data.sessionJwt || data.sessionJwt.split('.').length !== 3) {
       logger.main.error('[StytchAuthService] Refresh returned invalid JWT');
       return false;
     }
 
-    // Calculate expiry time
-    let expiresAtMs = Date.now() + (7 * 24 * 60 * 60 * 1000); // Default: 1 week
-    if (data.expires_at) {
-      try {
-        expiresAtMs = new Date(data.expires_at).getTime();
-      } catch {
-        // Use default
-      }
-    }
+    const nextRefreshToken = data.refreshToken || refreshToken;
+    const expiresAtMs = Date.now() + (7 * 24 * 60 * 60 * 1000);
+    const personalOrgId = authState.personalOrgId || creds.personalOrgId || data.orgId || null;
+    const personalUserId = authState.personalUserId || creds.personalUserId || decodeJwtSub(data.sessionJwt);
+    const userId = data.userId || creds.userId || personalUserId || '';
+    const email = data.email || creds.email;
+    const orgId = data.orgId || authState.orgId || creds.orgId || personalOrgId || null;
 
-    const refreshedOrgId = data.org_id || null;
-    // personalOrgId and personalUserId are NEVER overwritten by refresh -- they're
-    // the stable personal org values set during initial auth or migrated on restore.
-    // After a team session exchange, refresh returns the team org's member ID and org ID,
-    // but we preserve the personal values for sync room IDs and encryption keys.
-    const personalOrgId = authState.personalOrgId;
-    const personalUserId = authState.personalUserId;
     updateAuthState({
       isAuthenticated: true,
-      user: data.user_id ? {
-        user_id: data.user_id,
-        emails: data.email ? [{ email_id: '', email: data.email, verified: true }] : [],
+      user: userId ? {
+        user_id: userId,
+        emails: email ? [{ email_id: '', email, verified: true }] : [],
         created_at: new Date().toISOString(),
         status: 'active',
       } : authState.user,
-      sessionToken: data.session_token,
-      sessionJwt: data.session_jwt,
-      orgId: refreshedOrgId,
+      sessionToken: data.sessionJwt,
+      sessionJwt: data.sessionJwt,
+      orgId,
       personalOrgId,
       personalUserId,
+      personalSessionJwt: data.sessionJwt,
     });
 
-    // Save updated credentials
     const refreshedCreds: StoredStytchCredentials = {
-      sessionToken: data.session_token,
-      sessionJwt: data.session_jwt,
-      userId: data.user_id || creds.userId,
-      email: data.email || creds.email,
+      sessionToken: data.sessionJwt,
+      sessionJwt: data.sessionJwt,
+      refreshToken: nextRefreshToken,
+      userId,
+      email,
       expiresAt: expiresAtMs,
-      orgId: refreshedOrgId || undefined,
+      orgId: orgId || undefined,
       personalOrgId: personalOrgId || undefined,
       personalUserId: personalUserId || undefined,
     };
     saveStytchCredentials(refreshedCreds);
 
-    // Update accounts map
     if (personalOrgId) {
       accounts.set(personalOrgId, refreshedCreds);
       saveAllAccounts();
@@ -1372,7 +1256,6 @@ async function doRefreshSession(serverUrl?: string): Promise<boolean> {
     logger.main.info('[StytchAuthService] Session refreshed successfully');
     return true;
   } catch (error) {
-    // Re-throw network errors so callers can distinguish them from auth failures
     if ((error as any)?.isNetworkError) {
       throw error;
     }
@@ -1385,8 +1268,8 @@ async function doRefreshSession(serverUrl?: string): Promise<boolean> {
  * In-flight refresh promises for secondary accounts, keyed by personalOrgId.
  *
  * Why: Same single-flight rationale as inflightRefreshSession, but per-account.
- * Each Stytch session_token is single-use; concurrent callers for the same
- * account would stampede the token and cascade into 401-retry storms.
+ * Each account's refresh token is rotated by the auth Worker; concurrent
+ * callers for the same account share one request.
  */
 const inflightRefreshForAccount = new Map<string, Promise<string | null>>();
 
@@ -1420,82 +1303,43 @@ async function doRefreshSessionForAccount(personalOrgId: string): Promise<string
     }
   }
 
-  // Secondary account: use its session token to hit /auth/refresh
   const creds = accounts.get(personalOrgId);
-  if (!creds?.sessionToken) {
-    logger.main.warn(`[StytchAuthService] Cannot refresh account ${personalOrgId} - no session token`);
+  const refreshToken = creds?.refreshToken;
+  if (!refreshToken) {
+    logger.main.warn(`[StytchAuthService] Cannot refresh account ${personalOrgId} - no refresh token`);
     return null;
   }
-
-  const syncServerUrl = getSyncServerUrl();
-  const httpUrl = syncServerUrl
-    .replace(/^ws:/, 'http:')
-    .replace(/^wss:/, 'https:')
-    .replace(/\/$/, '');
 
   try {
     logger.main.info(`[StytchAuthService] Refreshing secondary account session for ${personalOrgId}...`);
 
-    const response = await net.fetch(`${httpUrl}/auth/refresh`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ session_token: creds.sessionToken }),
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({})) as { error?: string };
-      logger.main.warn(`[StytchAuthService] Secondary account refresh failed for ${personalOrgId}:`, errorData.error || response.status);
-      return null;
-    }
-
-    const data = await response.json() as {
-      session_token: string;
-      session_jwt: string;
-      user_id: string;
-      email?: string;
-      expires_at: string;
-      org_id?: string;
-    };
-
-    if (!data.session_jwt || data.session_jwt.split('.').length !== 3) {
+    const data = await postAuthWorker<AuthWorkerSessionResponse>('/auth/refresh', { refreshToken });
+    if (!data.sessionJwt || data.sessionJwt.split('.').length !== 3) {
       logger.main.error(`[StytchAuthService] Secondary account refresh returned invalid JWT for ${personalOrgId}`);
       return null;
     }
 
-    let expiresAtMs = Date.now() + (7 * 24 * 60 * 60 * 1000);
-    if (data.expires_at) {
-      try { expiresAtMs = new Date(data.expires_at).getTime(); } catch { /* use default */ }
-    }
-
-    // Update the account in the accounts map
     updateAccountCredentials(personalOrgId, {
-      sessionToken: data.session_token,
-      sessionJwt: data.session_jwt,
-      userId: data.user_id || creds.userId,
+      sessionToken: data.sessionJwt,
+      sessionJwt: data.sessionJwt,
+      refreshToken: data.refreshToken || refreshToken,
+      userId: data.userId || creds.userId,
       email: data.email || creds.email,
-      expiresAt: expiresAtMs,
+      expiresAt: Date.now() + (7 * 24 * 60 * 60 * 1000),
     });
 
     logger.main.info(`[StytchAuthService] Secondary account session refreshed for ${personalOrgId}`);
-    return data.session_jwt;
+    return data.sessionJwt;
   } catch (error) {
     logger.main.error(`[StytchAuthService] Secondary account refresh error for ${personalOrgId}:`, error);
     return null;
   }
 }
 
-const PRODUCTION_SYNC_URL = 'https://sync.nimbalyst.com';
-const DEVELOPMENT_SYNC_URL = 'http://localhost:8790';
-
-/**
- * Get the sync server URL. Always returns a valid URL - defaults to production.
- */
 function getSyncServerUrl(): string {
   const config = getSessionSyncConfig();
   if (config?.serverUrl) return config.serverUrl;
-  const isDev = process.env.NODE_ENV !== 'production';
-  const env = isDev ? config?.environment : undefined;
-  return env === 'development' ? DEVELOPMENT_SYNC_URL : PRODUCTION_SYNC_URL;
+  return AUTH_WORKER_BASE_URL;
 }
 
 /**
@@ -1540,22 +1384,13 @@ export async function validateAndRefreshSession(): Promise<boolean> {
  * Call this when the app is closing.
  */
 export function shutdownStytchAuth(): void {
-  // Nothing to clean up - device tokens removed, auth state managed by Stytch
+  // Nothing to clean up - auth state is stored locally and refreshed via the auth Worker.
 }
 
 /**
- * Switch Stytch environment. Signs out and reinitializes.
+ * Switch auth environment.
  */
 export async function switchStytchEnvironment(_environment: 'development' | 'production'): Promise<void> {
-  await signOut();
-
-  const config = STYTCH_CONFIG.live;
-  initializeStytchAuth({
-    projectId: config.projectId,
-    publicToken: config.publicToken,
-    apiBase: config.apiBase,
-  });
-
-  logger.main.info('[StytchAuthService] Reinitialized with projectId:', config.projectId);
+  // TODO(phase1.5): Add an auth-worker environment switch route if the product still needs this.
+  throw new Error('Not implemented in smarty-sync auth Worker; use email magic link instead.');
 }
-

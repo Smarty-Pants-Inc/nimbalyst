@@ -44,13 +44,13 @@ export type AssetMigrationResult =
   | { ref: string; status: 'skipped'; reason: string }
   | { ref: string; status: 'failed'; error: string };
 
-// WebSocket proxy: browser WebSocket to sync.nimbalyst.com fails due to
+// WebSocket proxy: browser WebSocket to the sync server fails due to
 // Cloudflare proxy configuration. We create WebSockets in the main process
 // (Node.js) and forward messages to the renderer via IPC.
 const proxiedWebSockets = new Map<string, WebSocket>();
 let wsIdCounter = 0;
 
-const PRODUCTION_SYNC_URL = 'wss://sync.nimbalyst.com';
+const PRODUCTION_SYNC_URL = 'wss://smarty-sync-dev.frosty-wildflower-6a9b.workers.dev';
 const DEVELOPMENT_SYNC_URL = 'ws://localhost:8790';
 
 function getCollabPendingKey(orgId: string, documentId: string): string {
