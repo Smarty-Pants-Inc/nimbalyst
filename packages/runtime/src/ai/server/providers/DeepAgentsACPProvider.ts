@@ -7,7 +7,7 @@
  *   - attribute edits to the producing session deterministically
  *   - emit exact unified diffs in the live transcript
  *
- * See wrapper plan: docs/deepagents-acp-integration-plan.md
+ * See wrapper orientation: docs/deepagents-acp.md
  */
 
 import path from 'path';
