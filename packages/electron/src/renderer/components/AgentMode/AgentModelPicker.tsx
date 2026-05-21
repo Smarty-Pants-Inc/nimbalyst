@@ -20,6 +20,7 @@ const providerLabels: Record<string, string> = {
   'claude-code': 'Claude Agent',
   'openai-codex': 'OpenAI Codex',
   'openai-codex-acp': 'OpenAI Codex (ACP)',
+  'deepagents-acp': 'DeepAgents',
 };
 
 function getModelLabel(model: AgentModelOption): string {

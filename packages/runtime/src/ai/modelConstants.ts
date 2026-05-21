@@ -227,6 +227,7 @@ export const DEFAULT_MODELS = {
   'claude-code': 'claude-code:opus-1m',
   'openai-codex': 'openai-codex:gpt-5.4',
   'openai-codex-acp': 'openai-codex-acp:gpt-5.4',
+  'deepagents-acp': 'deepagents-acp:openai/gpt-5.4',
   lmstudio: 'lmstudio:local-model',
   opencode: 'opencode:anthropic/claude-sonnet-4-5',
   'copilot-cli': 'copilot-cli:default',

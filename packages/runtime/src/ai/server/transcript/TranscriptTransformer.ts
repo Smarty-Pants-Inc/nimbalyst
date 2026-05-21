@@ -414,7 +414,7 @@ export class TranscriptTransformer {
       // route to the new parser. No CURRENT_VERSION bump required.
       return new CodexRawParserDispatcher();
     }
-    if (provider === 'openai-codex-acp') {
+    if (provider === 'openai-codex-acp' || provider === 'deepagents-acp') {
       return new CodexACPRawParser();
     }
     if (provider === 'opencode') {

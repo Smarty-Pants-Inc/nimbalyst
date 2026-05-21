@@ -17,6 +17,7 @@ import {
   isSlashCommandCatalogProvider,
   ClaudeCodeProvider,
   OpenAICodexProvider,
+  DeepAgentsACPProvider,
 } from '@nimbalyst/runtime/ai/server';
 import { getSessionStateManager } from '@nimbalyst/runtime/ai/server/SessionStateManager';
 import { parseContextUsageMessage } from '@nimbalyst/runtime/ai/server/utils/contextUsage';
@@ -418,6 +419,26 @@ export class AIService {
                 testStatus: "idle",
                 installStatus: "not-installed",
               },
+              'openai-codex-acp': {
+                enabled: false,
+                testStatus: "idle",
+                installStatus: "not-installed",
+              },
+              'deepagents-acp': {
+                enabled: false,
+                testStatus: "idle",
+                baseUrl: "http://127.0.0.1:8317/v1",
+              },
+              opencode: {
+                enabled: false,
+                testStatus: "idle",
+                installStatus: "not-installed",
+              },
+              'copilot-cli': {
+                enabled: false,
+                testStatus: "idle",
+                installStatus: "not-installed",
+              },
               lmstudio: {
                 enabled: false,
                 testStatus: "idle",
@@ -483,6 +504,8 @@ export class AIService {
         return globalApiKeys['openai'];
       case 'openai-codex':
         return globalApiKeys['openai-codex'];
+      case 'deepagents-acp':
+        return globalApiKeys['deepagents-acp'];
       case 'lmstudio':
         return 'not-required';
       default:
@@ -1571,6 +1594,9 @@ export class AIService {
         case 'openai-codex':
           // Codex SDK uses its own auth (codex auth login), API key is optional
           break;
+        case 'deepagents-acp':
+          // DeepAgents ACP uses explicit CLIProxyAPI settings; token is optional for local dev proxies.
+          break;
         case 'opencode':
           // OpenCode uses its own config, API key is optional
           break;
@@ -1717,6 +1743,11 @@ export class AIService {
         const lmstudioSettings = this.getSettingsStore().get('providerSettings.lmstudio', {}) as any;
         const storedApiKeys = this.getSettingsStore().get('apiKeys', {}) as Record<string, string>;
         initConfig.baseUrl = lmstudioSettings.baseUrl || storedApiKeys['lmstudio_url'] || 'http://127.0.0.1:8234';
+      }
+
+      if (provider === 'deepagents-acp') {
+        const providerSettings = this.getSettingsStore().get('providerSettings', {}) as any;
+        initConfig.baseUrl = providerSettings['deepagents-acp']?.baseUrl || 'http://127.0.0.1:8317/v1';
       }
 
       // Pass through allowedTools and effort level settings for Claude Code
@@ -2713,6 +2744,16 @@ export class AIService {
           }
         }
 
+        // Save DeepAgents CLIProxyAPI token
+        if (settings.apiKeys['deepagents-acp'] !== undefined) {
+          const key = settings.apiKeys['deepagents-acp'];
+          if (!key) {
+            delete currentKeys['deepagents-acp'];
+          } else if (key !== this.maskApiKey(currentKeys['deepagents-acp'] || '')) {
+            currentKeys['deepagents-acp'] = key as string;
+          }
+        }
+
         // Save LMStudio URL
         if (settings.apiKeys.lmstudio_url !== undefined) {
           currentKeys['lmstudio_url'] = settings.apiKeys.lmstudio_url as string;
@@ -2824,6 +2865,9 @@ export class AIService {
           break;
         case 'openai-codex':
           apiKey = apiKeys['openai-codex'];
+          break;
+        case 'deepagents-acp':
+          apiKey = apiKeys['deepagents-acp'];
           break;
         case 'opencode':
           // OpenCode: API key is optional, uses its own config
@@ -3016,11 +3060,13 @@ export class AIService {
       if (providerSettings['claude-code']?.enabled !== false) enabledSet.add('claude-code');
       if (providerSettings['openai']?.enabled === true && !!apiKeys['openai']) enabledSet.add('openai');
       if (providerSettings['openai-codex']?.enabled === true) enabledSet.add('openai-codex');
+      if (providerSettings['deepagents-acp']?.enabled === true) enabledSet.add('deepagents-acp');
       if (providerSettings['opencode']?.enabled === true) enabledSet.add('opencode');
       if (providerSettings['lmstudio']?.enabled === true) enabledSet.add('lmstudio');
 
       const modelsConfig = {
         ...apiKeys,
+        deepagents_cli_proxy_base_url: providerSettings['deepagents-acp']?.baseUrl || 'http://127.0.0.1:8317/v1',
         lmstudio_url: providerSettings['lmstudio']?.baseUrl || 'http://127.0.0.1:8234'
       };
       const allModels = await ModelRegistry.getAllModels(modelsConfig, enabledSet);
@@ -3140,6 +3186,9 @@ export class AIService {
           // Codex ACP uses the codex-acp binary directly; API key is optional
           enabled: providerSettings['openai-codex-acp']?.enabled === true,
         },
+        'deepagents-acp': {
+          enabled: providerSettings['deepagents-acp']?.enabled === true,
+        },
         'opencode': {
           // OpenCode uses its own config, API key is optional
           enabled: providerSettings['opencode']?.enabled === true,
@@ -3162,6 +3211,7 @@ export class AIService {
       );
       const modelsConfig = {
         ...apiKeys,
+        deepagents_cli_proxy_base_url: providerSettings['deepagents-acp']?.baseUrl || 'http://127.0.0.1:8317/v1',
         lmstudio_url: providerSettings['lmstudio']?.baseUrl || 'http://127.0.0.1:8234'
       };
       const allModels = await ModelRegistry.getAllModels(modelsConfig, enabledProviderSet);

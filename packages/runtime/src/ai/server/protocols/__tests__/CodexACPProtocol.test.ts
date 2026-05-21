@@ -12,6 +12,7 @@ function fixturePath(): string {
 describe('CodexACPProtocol', () => {
   it('streams ACP updates, permission previews, and completion data', async () => {
     const workspacePath = fs.mkdtempSync(path.join(os.tmpdir(), 'codex-acp-protocol-'));
+    const callbackEvents: Array<{ type: string; path: string; sessionId: string | undefined }> = [];
     const protocol = new CodexACPProtocol('test-key', {
       command: process.execPath,
       args: [fixturePath()],
@@ -19,9 +20,18 @@ describe('CodexACPProtocol', () => {
         decision: 'allow',
         scope: 'session',
       }),
+      onBeforeFileWrite: async (filePath, sessionId) => {
+        callbackEvents.push({ type: 'before', path: filePath, sessionId });
+      },
+      onTurnFilesEdited: async (filePaths, sessionId) => {
+        for (const filePath of filePaths) {
+          callbackEvents.push({ type: 'turn', path: filePath, sessionId });
+        }
+      },
     });
 
     try {
+      const nimbalystSessionId = 'nimbalyst-session-1';
       const session = await protocol.createSession({
         workspacePath,
         permissionMode: 'ask',
@@ -30,6 +40,7 @@ describe('CodexACPProtocol', () => {
       const events: any[] = [];
       for await (const event of protocol.sendMessage(session, {
         content: 'Apply the ACP edit',
+        sessionId: nimbalystSessionId,
       })) {
         events.push(event);
       }
@@ -45,6 +56,18 @@ describe('CodexACPProtocol', () => {
       expect(completeEvent?.contextWindow).toBe(100);
 
       expect(fs.readFileSync(path.join(workspacePath, 'acp-target.txt'), 'utf-8')).toBe('after from acp\n');
+      expect(callbackEvents).toEqual([
+        {
+          type: 'before',
+          path: path.join(workspacePath, 'acp-target.txt'),
+          sessionId: nimbalystSessionId,
+        },
+        {
+          type: 'turn',
+          path: path.join(workspacePath, 'acp-target.txt'),
+          sessionId: nimbalystSessionId,
+        },
+      ]);
     } finally {
       protocol.destroy();
       fs.rmSync(workspacePath, { recursive: true, force: true });

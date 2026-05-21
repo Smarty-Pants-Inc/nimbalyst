@@ -11,6 +11,7 @@ import { ClaudePanel } from '../GlobalSettings/panels/ClaudePanel';
 import { ClaudeCodePanel } from '../GlobalSettings/panels/ClaudeCodePanel';
 import { OpenAIPanel } from '../GlobalSettings/panels/OpenAIPanel';
 import { OpenAICodexPanel } from '../GlobalSettings/panels/OpenAICodexPanel';
+import { DeepAgentsPanel } from '../GlobalSettings/panels/DeepAgentsPanel';
 import { OpenCodePanel } from '../GlobalSettings/panels/OpenCodePanel';
 import { CopilotCLIPanel } from '../GlobalSettings/panels/CopilotCLIPanel';
 import { LMStudioPanel } from '../GlobalSettings/panels/LMStudioPanel';
@@ -145,8 +146,8 @@ export function SettingsView({
   const [workspaceMcpServerCount, setWorkspaceMcpServerCount] = useState(0);
 
   // Valid categories for each scope
-  const projectCategories: SettingsCategory[] = ['agent-permissions', 'team', 'tracker-config', 'installed-extensions', 'claude-plugins', 'mcp-servers', 'claude-code', 'claude', 'openai', 'openai-codex', 'opencode', 'copilot-cli', 'lmstudio'];
-  const userCategories: SettingsCategory[] = ['claude-code', 'claude', 'openai', 'openai-codex', 'opencode', 'copilot-cli', 'lmstudio', 'sync', 'notifications', 'voice-mode', 'agent-features', 'advanced', 'marketplace', 'installed-extensions', 'claude-plugins', 'mcp-servers'];
+  const projectCategories: SettingsCategory[] = ['agent-permissions', 'team', 'tracker-config', 'installed-extensions', 'claude-plugins', 'mcp-servers', 'claude-code', 'claude', 'openai', 'openai-codex', 'deepagents-acp', 'opencode', 'copilot-cli', 'lmstudio'];
+  const userCategories: SettingsCategory[] = ['claude-code', 'claude', 'openai', 'openai-codex', 'deepagents-acp', 'opencode', 'copilot-cli', 'lmstudio', 'sync', 'notifications', 'voice-mode', 'agent-features', 'advanced', 'marketplace', 'installed-extensions', 'claude-plugins', 'mcp-servers'];
 
   // When initialCategory/initialScope props change, update state (for deep linking)
   useEffect(() => {
@@ -239,7 +240,7 @@ export function SettingsView({
   };
 
   const handleProviderToggle = async (provider: string, enabled: boolean) => {
-    if (enabled && (provider === 'claude-code' || provider === 'openai-codex' || provider === 'opencode' || provider === 'copilot-cli')) {
+    if (enabled && (provider === 'claude-code' || provider === 'openai-codex' || provider === 'deepagents-acp' || provider === 'opencode' || provider === 'copilot-cli')) {
       await fetchModels(provider);
     }
 
@@ -255,12 +256,12 @@ export function SettingsView({
 
       posthog?.capture('ai_provider_configured', {
         provider,
-        modelCount: (provider === 'openai-codex' || provider === 'opencode' || provider === 'copilot-cli') ? 0 : models.length,
+        modelCount: (provider === 'openai-codex' || provider === 'deepagents-acp' || provider === 'opencode' || provider === 'copilot-cli') ? 0 : models.length,
         action: enabled ? 'enabled' : 'disabled'
       });
 
-      // OpenAI Codex and OpenCode use dynamic model discovery, not user selection
-      if (provider === 'openai-codex' || provider === 'opencode' || provider === 'copilot-cli') {
+      // Agent CLI providers use dynamic model discovery, not user selection
+      if (provider === 'openai-codex' || provider === 'deepagents-acp' || provider === 'opencode' || provider === 'copilot-cli') {
         const currentProvider = prev[provider] || { enabled: false };
         return {
           ...prev,
@@ -282,7 +283,7 @@ export function SettingsView({
     });
     debouncedSave();
 
-    if (enabled && provider !== 'claude-code' && provider !== 'openai-codex' && provider !== 'opencode' && provider !== 'copilot-cli') {
+    if (enabled && provider !== 'claude-code' && provider !== 'openai-codex' && provider !== 'deepagents-acp' && provider !== 'opencode' && provider !== 'copilot-cli') {
       fetchModels(provider);
     }
   };
@@ -405,8 +406,8 @@ export function SettingsView({
       onToggle: (enabled: boolean) => handleProviderToggle(selectedCategory, enabled),
       onApiKeyChange: handleApiKeyChange,
       onModelToggle: (modelId: string, enabled: boolean) => {
-        // OpenAI Codex, OpenCode, and Copilot don't support user model selection - models are discovered dynamically
-        if (selectedCategory === 'openai-codex' || selectedCategory === 'opencode' || selectedCategory === 'copilot-cli') {
+        // Agent CLI providers don't support user model selection - models are discovered dynamically
+        if (selectedCategory === 'openai-codex' || selectedCategory === 'deepagents-acp' || selectedCategory === 'opencode' || selectedCategory === 'copilot-cli') {
           return;
         }
 
@@ -432,8 +433,8 @@ export function SettingsView({
         debouncedSave();
       },
       onSelectAllModels: (selectAll: boolean) => {
-        // OpenAI Codex, OpenCode, and Copilot don't support user model selection - models are discovered dynamically
-        if (selectedCategory === 'openai-codex' || selectedCategory === 'opencode' || selectedCategory === 'copilot-cli') {
+        // Agent CLI providers don't support user model selection - models are discovered dynamically
+        if (selectedCategory === 'openai-codex' || selectedCategory === 'deepagents-acp' || selectedCategory === 'opencode' || selectedCategory === 'copilot-cli') {
           return;
         }
 
@@ -538,6 +539,8 @@ export function SettingsView({
         return wrapWithOverride('openai', 'OpenAI', <OpenAIPanel {...commonProps} />);
       case 'openai-codex':
         return wrapWithOverride('openai-codex', 'OpenAI Codex', <OpenAICodexPanel {...commonProps} />);
+      case 'deepagents-acp':
+        return wrapWithOverride('deepagents-acp', 'DeepAgents', <DeepAgentsPanel {...commonProps} />);
       case 'opencode':
         return wrapWithOverride('opencode', 'OpenCode', <OpenCodePanel {...commonProps} />);
       case 'copilot-cli':

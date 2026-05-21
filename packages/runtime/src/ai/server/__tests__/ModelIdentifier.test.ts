@@ -47,6 +47,13 @@ describe('ModelIdentifier', () => {
       expect(id.combined).toBe('openai-codex:openai-codex-cli');
     });
 
+    it('parses valid deepagents-acp model identifiers', () => {
+      const id = ModelIdentifier.parse('deepagents-acp:openai/gpt-5.4-mini');
+      expect(id.provider).toBe('deepagents-acp');
+      expect(id.model).toBe('openai/gpt-5.4-mini');
+      expect(id.combined).toBe('deepagents-acp:openai/gpt-5.4-mini');
+    });
+
     it('throws on empty string', () => {
       expect(() => ModelIdentifier.parse('')).toThrow('Invalid model identifier');
     });
@@ -116,6 +123,12 @@ describe('ModelIdentifier', () => {
       expect(id.provider).toBe('openai-codex');
       expect(id.model).toBe('default');
     });
+
+    it('preserves provider-profile model IDs for deepagents-acp', () => {
+      const id = ModelIdentifier.create('deepagents-acp', 'openai/gpt-5.4-mini');
+      expect(id.provider).toBe('deepagents-acp');
+      expect(id.model).toBe('openai/gpt-5.4-mini');
+    });
   });
 
   describe('baseVariant', () => {
@@ -166,6 +179,8 @@ describe('ModelIdentifier', () => {
     it('returns true for agent providers', () => {
       expect(ModelIdentifier.parse('claude-code:opus').isAgentProvider()).toBe(true);
       expect(ModelIdentifier.parse('openai-codex:cli').isAgentProvider()).toBe(true);
+      expect(ModelIdentifier.parse('openai-codex-acp:cli').isAgentProvider()).toBe(true);
+      expect(ModelIdentifier.parse('deepagents-acp:openai/gpt-5.4-mini').isAgentProvider()).toBe(true);
     });
 
     it('returns false for chat providers', () => {

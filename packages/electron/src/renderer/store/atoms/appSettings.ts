@@ -1096,6 +1096,7 @@ const defaultProviders: Record<string, ProviderConfig> = {
   openai: { enabled: false, testStatus: 'idle' },
   'openai-codex': { enabled: false, testStatus: 'idle', installStatus: 'not-installed' },
   'openai-codex-acp': { enabled: false, testStatus: 'idle', installStatus: 'not-installed' },
+  'deepagents-acp': { enabled: false, baseUrl: 'http://127.0.0.1:8317/v1', testStatus: 'idle' },
   opencode: { enabled: false, testStatus: 'idle', installStatus: 'not-installed' },
   'copilot-cli': { enabled: false, testStatus: 'idle', installStatus: 'not-installed' },
   lmstudio: { enabled: false, baseUrl: 'http://127.0.0.1:8234', testStatus: 'idle' },
@@ -1109,6 +1110,7 @@ const defaultApiKeys: Record<string, string> = {
   'claude-code': '',
   openai: '',
   'openai-codex': '',
+  'deepagents-acp': '',
   lmstudio_url: 'http://127.0.0.1:8234',
 };
 

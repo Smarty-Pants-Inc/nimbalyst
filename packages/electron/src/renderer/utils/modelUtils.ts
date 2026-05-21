@@ -149,6 +149,7 @@ export function getProviderDisplayName(provider: string): string {
     case 'claude-code': return 'Claude Agent';
     case 'openai': return 'OpenAI';
     case 'lmstudio': return 'LMStudio';
+    case 'deepagents-acp': return 'DeepAgents';
     case 'copilot-cli': return 'GitHub Copilot';
     default: return provider;
   }
@@ -163,6 +164,7 @@ export function getProviderLabel(provider: string): string {
     case 'claude-code': return 'CODE';
     case 'openai': return 'GPT';
     case 'lmstudio': return 'LOCAL';
+    case 'deepagents-acp': return 'DEEP';
     default: return provider.toUpperCase();
   }
 }
@@ -236,7 +238,7 @@ export function supportsEffortLevel(modelId?: string): boolean {
   if (variant === 'opus' || variant === 'opus-4-6' || variant === 'sonnet') return true;
   // OpenAI Codex models support reasoning effort (both SDK and ACP transports)
   const parsed = ModelIdentifier.tryParse(modelId);
-  if (parsed?.provider === 'openai-codex' || parsed?.provider === 'openai-codex-acp') return true;
-  if (modelId.startsWith('openai-codex:') || modelId.startsWith('openai-codex-acp:')) return true;
+  if (parsed?.provider === 'openai-codex' || parsed?.provider === 'openai-codex-acp' || parsed?.provider === 'deepagents-acp') return true;
+  if (modelId.startsWith('openai-codex:') || modelId.startsWith('openai-codex-acp:') || modelId.startsWith('deepagents-acp:')) return true;
   return false;
 }

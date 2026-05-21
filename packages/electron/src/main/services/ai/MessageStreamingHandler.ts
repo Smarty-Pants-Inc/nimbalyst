@@ -443,6 +443,10 @@ export class MessageStreamingHandler {
           // Codex ACP uses the codex-acp binary's own auth, API key is optional
           requiresApiKey = false;
           break;
+        case 'deepagents-acp':
+          // DeepAgents ACP uses explicit CLIProxyAPI settings; token is optional for local dev proxies.
+          requiresApiKey = false;
+          break;
         case 'opencode':
           // OpenCode uses its own config, API key is optional
           requiresApiKey = false;
@@ -485,6 +489,11 @@ export class MessageStreamingHandler {
       if (session.provider === 'lmstudio') {
         const providerSettings = this.svc.getSettingsStore().get('providerSettings', {}) as any;
         reinitConfig.baseUrl = providerSettings['lmstudio']?.baseUrl || 'http://127.0.0.1:8234';
+      }
+
+      if (session.provider === 'deepagents-acp') {
+        const providerSettings = this.svc.getSettingsStore().get('providerSettings', {}) as any;
+        reinitConfig.baseUrl = providerSettings['deepagents-acp']?.baseUrl || 'http://127.0.0.1:8317/v1';
       }
 
       // Pass model to provider config for all providers including claude-code
@@ -1060,14 +1069,26 @@ export class MessageStreamingHandler {
       } else {
         // Refresh credentials every turn for all providers so key changes in settings apply immediately.
         const freshApiKey = this.svc.getApiKeyForProvider(session.provider, effectiveWorkspacePath);
-        await provider.initialize({
+        const refreshedConfig: any = {
           apiKey: freshApiKey,
           maxTokens: (session.providerConfig as any)?.maxTokens,
           temperature: (session.providerConfig as any)?.temperature,
           ...((session.metadata as any)?.effortLevel && {
             effortLevel: parseEffortLevel((session.metadata as any).effortLevel),
           }),
-        });
+        };
+
+        if (session.provider === 'lmstudio') {
+          const providerSettings = this.svc.getSettingsStore().get('providerSettings', {}) as any;
+          refreshedConfig.baseUrl = providerSettings['lmstudio']?.baseUrl || 'http://127.0.0.1:8234';
+        }
+
+        if (session.provider === 'deepagents-acp') {
+          const providerSettings = this.svc.getSettingsStore().get('providerSettings', {}) as any;
+          refreshedConfig.baseUrl = providerSettings['deepagents-acp']?.baseUrl || 'http://127.0.0.1:8317/v1';
+        }
+
+        await provider.initialize(refreshedConfig);
       }
 
       // Attach @ mentioned files for non-agent providers
@@ -1485,7 +1506,7 @@ export class MessageStreamingHandler {
                   const OPENCODE_EDIT_TOOLS = ['edit', 'write', 'create'];
                   const CODEX_ACP_EDIT_TOOLS = ['Edit', 'Write', 'ApplyPatch', 'edit', 'write', 'apply_patch'];
                   const isOpenCodeEdit = OPENCODE_EDIT_TOOLS.includes(trackToolName) && session.provider === 'opencode';
-                  const isCodexAcpEdit = CODEX_ACP_EDIT_TOOLS.includes(trackToolName) && session.provider === 'openai-codex-acp';
+                  const isCodexAcpEdit = CODEX_ACP_EDIT_TOOLS.includes(trackToolName) && (session.provider === 'openai-codex-acp' || session.provider === 'deepagents-acp');
                   if (isOpenCodeEdit || isCodexAcpEdit) {
                     const editFilePath = extractFilePath(trackArgs);
                     const watcherEntry = this.svc.hooklessWatcher.getEntry(session.id);

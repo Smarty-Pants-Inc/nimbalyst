@@ -159,6 +159,10 @@ export interface CreateWindowOptions {
     showInactive?: boolean;
 }
 
+function shouldShowInactive(options?: CreateWindowOptions): boolean {
+    return options?.showInactive === true || process.env.NIMBALYST_NO_FOCUS === '1';
+}
+
 export function createWindow(
     isOpeningFile: boolean = false,
     isWorkspaceMode: boolean = false,
@@ -567,7 +571,7 @@ export function createWindow(
         // Show window when ready
         window.once('ready-to-show', () => {
             // console.log('[MAIN] Window ready to show at', new Date().toISOString(), 'elapsed:', Date.now() - startTime, 'ms');
-            if (options?.showInactive) {
+            if (shouldShowInactive(options)) {
                 window.showInactive();
             } else {
                 window.show();

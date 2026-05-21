@@ -24,7 +24,7 @@ export function omitModelsField<T extends { models?: any }>(
 /**
  * Providers that use dynamic model discovery and should not persist a `models` field.
  */
-const DYNAMIC_MODEL_PROVIDERS = ['openai-codex', 'copilot-cli'] as const;
+const DYNAMIC_MODEL_PROVIDERS = ['openai-codex', 'deepagents-acp', 'copilot-cli'] as const;
 
 /**
  * Normalizes provider configurations by removing the `models` field from

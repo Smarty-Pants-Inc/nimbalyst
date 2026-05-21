@@ -8,6 +8,7 @@ interface IconProps {
 
 const PROVIDER_ICON_MAP: Record<string, string> = {
   'copilot-cli': 'terminal',
+  'deepagents-acp': 'hub',
   // ACP transport reuses the OpenAI Codex icon (same underlying agent).
   'openai-codex-acp': 'openai-codex',
 };

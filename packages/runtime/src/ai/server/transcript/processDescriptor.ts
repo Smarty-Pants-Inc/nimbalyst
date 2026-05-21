@@ -223,7 +223,7 @@ export function selectRawParser(
   if (provider === 'openai-codex') {
     return 'codex';
   }
-  if (provider === 'openai-codex-acp') {
+  if (provider === 'openai-codex-acp' || provider === 'deepagents-acp') {
     return 'codex-acp';
   }
   if (provider === 'opencode') {

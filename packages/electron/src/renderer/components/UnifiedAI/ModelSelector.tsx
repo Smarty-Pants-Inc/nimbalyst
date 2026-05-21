@@ -10,7 +10,7 @@ import { navigateToSettingsAtom } from '../../store/atoms/settingsNavigation';
 import type { SettingsCategory } from '../Settings/SettingsSidebar';
 import { AlphaBadge } from '../common/AlphaBadge';
 
-const ALPHA_PROVIDERS = new Set(['opencode', 'copilot-cli']);
+const ALPHA_PROVIDERS = new Set(['deepagents-acp', 'opencode', 'copilot-cli']);
 
 interface Model {
   id: string;
@@ -127,6 +127,7 @@ export function ModelSelector({
       case 'claude-code':
       case 'openai':
       case 'openai-codex':
+      case 'deepagents-acp':
       case 'opencode':
       case 'copilot-cli':
       case 'lmstudio':
@@ -172,6 +173,7 @@ export function ModelSelector({
       case 'openai': return 'OpenAI';
       case 'openai-codex': return 'OpenAI Codex';
       case 'openai-codex-acp': return 'OpenAI Codex (ACP)';
+      case 'deepagents-acp': return 'DeepAgents';
       case 'opencode': return 'OpenCode';
       case 'copilot-cli': return 'GitHub Copilot';
       case 'lmstudio': return 'LMStudio';

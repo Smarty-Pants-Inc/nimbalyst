@@ -8,6 +8,7 @@ import { ClaudeCodeProvider } from './providers/ClaudeCodeProvider';
 import { OpenAIProvider } from './providers/OpenAIProvider';
 import { OpenAICodexProvider } from './providers/OpenAICodexProvider';
 import { OpenAICodexACPProvider } from './providers/OpenAICodexACPProvider';
+import { DeepAgentsACPProvider } from './providers/DeepAgentsACPProvider';
 import { LMStudioProvider } from './providers/LMStudioProvider';
 import { OpenCodeProvider } from './providers/OpenCodeProvider';
 import { CopilotCLIProvider } from './providers/CopilotCLIProvider';
@@ -65,6 +66,9 @@ export class ProviderFactory {
         break;
       case 'openai-codex-acp':
         provider = new OpenAICodexACPProvider();
+        break;
+      case 'deepagents-acp':
+        provider = new DeepAgentsACPProvider();
         break;
       case 'opencode':
         provider = new OpenCodeProvider();

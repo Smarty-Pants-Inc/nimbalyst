@@ -86,6 +86,7 @@ const isDev = process.env.NODE_ENV !== 'production';
 const isOfficialBuild = process.env.OFFICIAL_BUILD === 'true';
 // IS_DEV_MODE is true only when running `npm run dev`, not for any packaged builds
 const isDevMode = isDev;
+const toPosix = (p: string) => p.replace(/\\/g, '/');
 
 // Read Claude Agent SDK version at build time for display in settings.
 //
@@ -112,6 +113,21 @@ const claudeAgentSdkVersion = (() => {
 })();
 const runtimeSrcDir = resolve(__dirname, '../runtime/src');
 const runtimeDistDir = resolve(__dirname, '../runtime/dist');
+
+const copyDeepAgentsLauncher = () => {
+  return {
+    name: 'copy-deepagents-launcher',
+    closeBundle() {
+      const src = resolve(runtimeSrcDir, 'ai/server/protocols/deepagents_acp_launcher.py');
+      const dest = resolve(__dirname, 'out/main/deepagents_acp_launcher.py');
+      if (!fs.existsSync(src)) {
+        return;
+      }
+      fs.mkdirSync(resolve(__dirname, 'out/main'), { recursive: true });
+      fs.copyFileSync(src, dest);
+    },
+  };
+};
 
 // Plugin to resolve workspace package subpaths correctly in production
 const resolveWorkspaceSubpaths = () => {
@@ -141,7 +157,10 @@ export default defineConfig({
       // The main process reads it from the actual runtime environment via process.env.
       // This allows crystal-run.sh to set it at runtime without affecting normal dev mode.
     },
-    plugins: [resolveWorkspaceSubpaths()],
+    plugins: [
+      resolveWorkspaceSubpaths(),
+      copyDeepAgentsLauncher(),
+    ],
     resolve: {
       alias: {
         // Always use src for bundling - simpler than dealing with ESM/CJS issues
@@ -225,7 +244,6 @@ export default defineConfig({
       // and cause "No file was found to copy" errors in CI. Normalize to POSIX.
       // Ref: https://github.com/sapphi-red/vite-plugin-static-copy (fast-glob)
       (() => {
-        const toPosix = (p: string) => p.replace(/\\/g, '/');
         const targets: Array<{ src: string; dest: string; overwrite?: boolean }> = [];
         const icon = resolve(__dirname, 'icon.png');
         const logo = resolve(__dirname, 'nimbalyst-logo.png');

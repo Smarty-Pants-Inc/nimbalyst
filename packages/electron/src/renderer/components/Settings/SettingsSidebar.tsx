@@ -10,6 +10,7 @@ export type SettingsCategory =
   | 'claude'
   | 'openai'
   | 'openai-codex'
+  | 'deepagents-acp'
   | 'opencode'
   | 'copilot-cli'
   | 'lmstudio'
@@ -141,6 +142,13 @@ Best for complex coding tasks.`,
           name: 'OpenAI Codex',
           icon: getProviderIcon('openai', { size: 16 }),
           statusDot: getStatusDot('openai-codex'),
+        },
+        {
+          id: 'deepagents-acp',
+          name: 'DeepAgents',
+          icon: getProviderIcon('deepagents-acp', { size: 16 }),
+          statusDot: getStatusDot('deepagents-acp'),
+          isAlpha: true,
         },
         {
           id: 'opencode',

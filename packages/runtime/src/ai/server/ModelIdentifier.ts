@@ -140,8 +140,8 @@ export class ModelIdentifier {
       return new ModelIdentifier(provider, baseVariant + suffix);
     }
 
-    if (provider === 'openai-codex') {
-      // Codex accepts raw model IDs (e.g., gpt-5) and provider-prefixed IDs.
+    if (provider === 'openai-codex' || provider === 'openai-codex-acp' || provider === 'deepagents-acp') {
+      // Agent providers accept raw model IDs and provider/profile-prefixed IDs.
       return new ModelIdentifier(provider, model || 'default');
     }
 
@@ -164,7 +164,7 @@ export class ModelIdentifier {
    * (providers that support MCP and file system tools).
    */
   isAgentProvider(): boolean {
-    return this.provider === 'claude-code' || this.provider === 'openai-codex';
+    return this.provider === 'claude-code' || this.provider === 'openai-codex' || this.provider === 'openai-codex-acp' || this.provider === 'deepagents-acp';
   }
 
   /**
