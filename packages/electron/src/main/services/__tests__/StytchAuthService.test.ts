@@ -4,6 +4,7 @@ import * as os from 'os';
 import * as path from 'path';
 
 const AUTH_WORKER_BASE_URL = 'https://smarty-sync-auth-dev.frosty-wildflower-6a9b.workers.dev';
+const LOCAL_AUTH_WORKER_BASE_URL = 'http://localhost:8790';
 
 const electronMock = vi.hoisted(() => {
   const state = {
@@ -108,6 +109,30 @@ describe('StytchAuthService auth worker integration', () => {
     );
   });
 
+  it('signInWithEmail(email, serverUrl) uses the provided auth worker URL', async () => {
+    fetchMock.mockResolvedValueOnce(new Response(JSON.stringify({ ok: true, devToken: 'dev-token-123' }), { status: 200 }));
+
+    const result = await Auth.signInWithEmail('paul@example.com', `${LOCAL_AUTH_WORKER_BASE_URL}/`);
+
+    expect(result).toEqual({ success: true, devToken: 'dev-token-123' });
+    expect(fetchMock).toHaveBeenCalledWith(
+      `${LOCAL_AUTH_WORKER_BASE_URL}/auth/email/start`,
+      expect.objectContaining({
+        method: 'POST',
+        body: JSON.stringify({ email: 'paul@example.com' }),
+      }),
+    );
+  });
+
+  it('signInWithGoogle(serverUrl) opens the provided auth worker URL', async () => {
+    const result = await Auth.signInWithGoogle(LOCAL_AUTH_WORKER_BASE_URL);
+
+    expect(result).toEqual({ success: true });
+    expect(electronMock.openExternal).toHaveBeenCalledWith(
+      `${LOCAL_AUTH_WORKER_BASE_URL}/auth/google/start?return_to=${encodeURIComponent('nimbalyst://auth/callback')}`,
+    );
+  });
+
   it('verifyEmailToken(email, token) calls POST /auth/email/verify and returns the deep-link callback URL', async () => {
     const sessionJwt = makeJwt('user-123');
     fetchMock.mockResolvedValueOnce(new Response(JSON.stringify({
@@ -154,11 +179,11 @@ describe('StytchAuthService auth worker integration', () => {
       refreshToken: 'refresh-token-2',
     }), { status: 200 }));
 
-    const refreshed = await Auth.refreshPersonalSession('ignored-server-url');
+    const refreshed = await Auth.refreshPersonalSession(LOCAL_AUTH_WORKER_BASE_URL);
 
     expect(refreshed).toBe(true);
     expect(fetchMock).toHaveBeenCalledWith(
-      `${AUTH_WORKER_BASE_URL}/auth/refresh`,
+      `${LOCAL_AUTH_WORKER_BASE_URL}/auth/refresh`,
       expect.objectContaining({
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

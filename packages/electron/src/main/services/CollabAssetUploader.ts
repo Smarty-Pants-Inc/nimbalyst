@@ -19,7 +19,7 @@ export interface EncryptAndUploadParams {
   fileBytes: ArrayBuffer;
   mimeType: string;
   fileName: string;
-  /** Base URL of the collab worker (https://sync.nimbalyst.com / http://localhost:8790). */
+  /** Base URL of the collab worker (smarty-sync staging or local server). */
   syncHttpUrl: string;
 }
 

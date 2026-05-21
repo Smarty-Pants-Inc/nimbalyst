@@ -60,8 +60,8 @@ import { rowToTrackerItem } from '../mcp/tools/trackerToolHandlers';
 // Sync server URL
 // ============================================================================
 
-const PRODUCTION_SYNC_URL = 'wss://sync.nimbalyst.com';
-const DEVELOPMENT_SYNC_URL = 'ws://localhost:8790';
+const PRODUCTION_SYNC_URL = 'wss://smarty-sync-dev.frosty-wildflower-6a9b.workers.dev';
+const DEVELOPMENT_SYNC_URL = 'ws://localhost:8787';
 
 function getSyncWsUrl(): string {
   const config = getSessionSyncConfig();

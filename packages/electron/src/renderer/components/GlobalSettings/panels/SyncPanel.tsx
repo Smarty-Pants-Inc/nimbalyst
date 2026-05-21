@@ -132,8 +132,8 @@ export function SyncPanel() {
   // Compute effective server URL early so it can be used throughout
   // Only honor config.environment in dev builds - production always uses production sync
   // Default to production even in dev builds (user must explicitly switch to development)
-  const PRODUCTION_SYNC_URL = 'wss://sync.nimbalyst.com';
-  const DEVELOPMENT_SYNC_URL = 'ws://localhost:8790';
+  const PRODUCTION_SYNC_URL = 'wss://smarty-sync-dev.frosty-wildflower-6a9b.workers.dev';
+  const DEVELOPMENT_SYNC_URL = 'ws://localhost:8787';
   const effectiveEnvironment = isDevelopment ? config.environment : undefined;
   const currentEnvironment = effectiveEnvironment || 'production';
   const effectiveServerUrl = currentEnvironment === 'development' ? DEVELOPMENT_SYNC_URL : PRODUCTION_SYNC_URL;
@@ -541,8 +541,7 @@ export function SyncPanel() {
       </div>
 
       {/* Environment Toggle - Dev Only */}
-      {/*{isDevelopment && (*/}
-      {false && (
+      {isDevelopment && (
         <div className="provider-panel-section py-4 mb-4 border-b border-[var(--nim-border)] last:border-b-0 last:mb-0 last:pb-0">
           <h4 className="provider-panel-section-title text-base font-semibold mb-3 text-[var(--nim-text)]">Environment (Dev Only)</h4>
           <div className="flex gap-2">
@@ -569,8 +568,8 @@ export function SyncPanel() {
           </div>
           <p className="text-[11px] text-nim-faint mt-1.5 mb-0">
             {currentEnvironment === 'development'
-              ? 'Using test Stytch + localhost:8790'
-              : 'Using live Stytch + sync.nimbalyst.com'}
+              ? 'Using local smarty-sync + localhost:8790 auth'
+              : 'Using smarty-sync staging workers.dev'}
           </p>
         </div>
       )}

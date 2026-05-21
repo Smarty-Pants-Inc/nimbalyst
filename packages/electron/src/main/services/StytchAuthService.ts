@@ -27,6 +27,7 @@ import { getSessionSyncConfig, setSessionSyncConfig } from '../utils/store';
 import { AnalyticsService } from './analytics/AnalyticsService';
 
 const AUTH_WORKER_BASE_URL = 'https://smarty-sync-auth-dev.frosty-wildflower-6a9b.workers.dev';
+const AUTH_WORKER_DEVELOPMENT_BASE_URL = 'http://localhost:8790';
 const AUTH_CALLBACK_BASE_URL = 'nimbalyst://auth/callback';
 
 // Compatibility types retained for existing callers.
@@ -397,8 +398,24 @@ function decodeJwtSub(jwt: string | null): string | null {
   }
 }
 
-async function postAuthWorker<T>(pathName: string, body: unknown): Promise<T> {
-  const response = await fetch(`${AUTH_WORKER_BASE_URL}${pathName}`, {
+function normalizeAuthWorkerBaseUrl(serverUrl?: string): string {
+  const explicitUrl = serverUrl?.trim();
+  if (explicitUrl) {
+    return explicitUrl
+      .replace(/^wss:/, 'https:')
+      .replace(/^ws:/, 'http:')
+      .replace(/\/+$/, '');
+  }
+
+  const config = getSessionSyncConfig();
+  const isDev = process.env.NODE_ENV !== 'production';
+  return isDev && config?.environment === 'development'
+    ? AUTH_WORKER_DEVELOPMENT_BASE_URL
+    : AUTH_WORKER_BASE_URL;
+}
+
+async function postAuthWorker<T>(pathName: string, body: unknown, serverUrl?: string): Promise<T> {
+  const response = await fetch(`${normalizeAuthWorkerBaseUrl(serverUrl)}${pathName}`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -429,7 +446,7 @@ async function postAuthWorker<T>(pathName: string, body: unknown): Promise<T> {
 export function initializeStytchAuth(config: StytchConfig): void {
   authWorkerConfig = config;
 
-  logger.main.info('[StytchAuthService] Initialized auth worker:', AUTH_WORKER_BASE_URL, config.projectId);
+  logger.main.info('[StytchAuthService] Initialized auth worker:', normalizeAuthWorkerBaseUrl(), config.projectId);
 
   // Try to load multi-account data (v2), migrating from v1 if needed
   loadAllAccounts();
@@ -860,10 +877,8 @@ export function getPersonalSessionJwt(): string | null {
  * Called by SyncManager to keep the personal JWT fresh for session sync.
  */
 export async function refreshPersonalSession(serverUrl: string): Promise<boolean> {
-  void serverUrl;
-
   try {
-    const refreshed = await refreshSession();
+    const refreshed = await refreshSession(serverUrl);
     if (refreshed && authState.sessionJwt) {
       authState = { ...authState, personalSessionJwt: authState.sessionJwt };
     }
@@ -911,14 +926,12 @@ export function updateSessionToken(newSessionToken: string): void {
  * The server handles the callback and redirects to nimbalyst://auth/callback
  */
 export async function signInWithGoogle(serverUrl?: string): Promise<{ success: boolean; error?: string }> {
-  void serverUrl;
-
   if (!authWorkerConfig) {
     return { success: false, error: 'Auth not initialized' };
   }
 
   try {
-    const oauthUrl = `${AUTH_WORKER_BASE_URL}/auth/google/start?return_to=${encodeURIComponent(AUTH_CALLBACK_BASE_URL)}`;
+    const oauthUrl = `${normalizeAuthWorkerBaseUrl(serverUrl)}/auth/google/start?return_to=${encodeURIComponent(AUTH_CALLBACK_BASE_URL)}`;
 
     // Open in default browser
     await shell.openExternal(oauthUrl);
@@ -938,14 +951,15 @@ export async function signInWithGoogle(serverUrl?: string): Promise<{ success: b
  * Start email magic-link authentication.
  */
 export async function signInWithEmail(
-  email: string
+  email: string,
+  serverUrl?: string
 ): Promise<{ success: boolean; error?: string; devToken?: string }> {
   if (!authWorkerConfig) {
     return { success: false, error: 'Auth not initialized' };
   }
 
   try {
-    const data = await postAuthWorker<AuthWorkerEmailStartResponse>('/auth/email/start', { email });
+    const data = await postAuthWorker<AuthWorkerEmailStartResponse>('/auth/email/start', { email }, serverUrl);
     if (data.ok === false) {
       return { success: false, error: data.error || 'Email sign-in failed' };
     }
@@ -963,14 +977,15 @@ export async function signInWithEmail(
  */
 export async function verifyEmailToken(
   email: string,
-  token: string
+  token: string,
+  serverUrl?: string
 ): Promise<{ success: boolean; error?: string; callbackUrl?: string }> {
   if (!authWorkerConfig) {
     return { success: false, error: 'Auth not initialized' };
   }
 
   try {
-    const data = await postAuthWorker<AuthWorkerSessionResponse>('/auth/email/verify', { email, token });
+    const data = await postAuthWorker<AuthWorkerSessionResponse>('/auth/email/verify', { email, token }, serverUrl);
     if (!data.sessionJwt || !data.userId || !data.orgId || !data.email) {
       return { success: false, error: 'Auth worker verify response missing required session fields' };
     }
@@ -1005,8 +1020,7 @@ export async function sendMagicLink(
   email: string,
   serverUrl?: string
 ): Promise<{ success: boolean; error?: string }> {
-  void serverUrl;
-  return signInWithEmail(email);
+  return signInWithEmail(email, serverUrl);
 }
 
 /**
@@ -1165,7 +1179,7 @@ let inflightRefreshSession: Promise<boolean> | null = null;
  *
  * Concurrent callers share a single in-flight /auth/refresh request.
  *
- * @param serverUrl - Preserved for existing callers; auth refresh always uses the auth Worker.
+ * @param serverUrl - Optional auth Worker URL override used by local/dev settings.
  * @returns true if refresh succeeded, false if session expired or failed
  */
 export function refreshSession(serverUrl?: string): Promise<boolean> {
@@ -1179,8 +1193,6 @@ export function refreshSession(serverUrl?: string): Promise<boolean> {
 }
 
 async function doRefreshSession(serverUrl?: string): Promise<boolean> {
-  void serverUrl;
-
   const creds = loadStytchCredentials();
   const refreshToken = creds?.refreshToken;
   if (!refreshToken) {
@@ -1193,7 +1205,7 @@ async function doRefreshSession(serverUrl?: string): Promise<boolean> {
 
     let data: AuthWorkerSessionResponse;
     try {
-      data = await postAuthWorker<AuthWorkerSessionResponse>('/auth/refresh', { refreshToken });
+      data = await postAuthWorker<AuthWorkerSessionResponse>('/auth/refresh', { refreshToken }, serverUrl);
     } catch (fetchError) {
       if ((fetchError as any)?.status) {
         logger.main.warn('[StytchAuthService] Session refresh failed:', (fetchError as Error).message);
@@ -1339,7 +1351,7 @@ async function doRefreshSessionForAccount(personalOrgId: string): Promise<string
 function getSyncServerUrl(): string {
   const config = getSessionSyncConfig();
   if (config?.serverUrl) return config.serverUrl;
-  return AUTH_WORKER_BASE_URL;
+  return normalizeAuthWorkerBaseUrl();
 }
 
 /**
@@ -1391,6 +1403,6 @@ export function shutdownStytchAuth(): void {
  * Switch auth environment.
  */
 export async function switchStytchEnvironment(_environment: 'development' | 'production'): Promise<void> {
-  // TODO(phase1.5): Add an auth-worker environment switch route if the product still needs this.
-  throw new Error('Not implemented in smarty-sync auth Worker; use email magic link instead.');
+  await signOut();
+  logger.main.info('[StytchAuthService] Auth environment switched; local session cleared.');
 }

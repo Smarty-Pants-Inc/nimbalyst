@@ -29,8 +29,8 @@ import { safeHandle } from '../utils/ipcRegistry';
 // Server URL Helper
 // ============================================================================
 
-const PRODUCTION_COLLAB_URL = 'https://sync.nimbalyst.com';
-const DEVELOPMENT_COLLAB_URL = 'http://localhost:8790';
+const PRODUCTION_COLLAB_URL = 'https://smarty-sync-dev.frosty-wildflower-6a9b.workers.dev';
+const DEVELOPMENT_COLLAB_URL = 'http://localhost:8787';
 
 /**
  * Derive the collab server HTTP URL from environment.

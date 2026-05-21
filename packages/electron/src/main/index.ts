@@ -926,8 +926,8 @@ app.whenReady().then(async () => {
             const isDev = process.env.NODE_ENV !== 'production';
             const env = isDev ? config?.environment : undefined;
             return env === 'development'
-                ? 'http://localhost:8790'
-                : 'https://sync.nimbalyst.com';
+                ? 'http://localhost:8787'
+                : 'https://smarty-sync-dev.frosty-wildflower-6a9b.workers.dev';
         },
     });
 

@@ -5,7 +5,7 @@
  * loads `<img src="collab-asset://doc/{documentId}/asset/{assetId}">` and
  * Chromium routes the request to this handler in main, where we:
  *   1. Translate `documentId` → `orgId` via the per-window registry.
- *   2. Fetch the encrypted asset from `sync.nimbalyst.com` with the org-scoped JWT.
+ *   2. Fetch the encrypted asset from the configured smarty-sync server with the org-scoped JWT.
  *   3. Decrypt the body + metadata using the cached org key.
  *   4. Hand the plaintext bytes back to the renderer with the right Content-Type.
  *
@@ -284,7 +284,7 @@ interface AssetHandlerDeps {
   getOrgKey: (orgId: string) => Promise<CryptoKey | null>;
   /** Mints (or returns cached) org-scoped JWT for the given org. */
   getOrgScopedJwt: (orgId: string) => Promise<string>;
-  /** Resolves the collab server HTTP base URL (e.g. https://sync.nimbalyst.com). */
+  /** Resolves the collab server HTTP base URL. */
   getCollabHttpUrl: () => string;
 }
 

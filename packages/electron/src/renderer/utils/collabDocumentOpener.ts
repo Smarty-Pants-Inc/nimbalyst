@@ -86,7 +86,7 @@ export function removeCollabConfig(uri: string): void {
  *   documentId: 'doc-abc',
  *   title: 'Architecture Plan',
  *   documentKey: aesKey,
- *   serverUrl: 'wss://sync.nimbalyst.com',
+ *   serverUrl: 'wss://smarty-sync-dev.frosty-wildflower-6a9b.workers.dev',
  *   getJwt: () => stytchClient.getToken(),
  *   userId: 'user-xyz',
  *   addTab: tabsActions.addTab,
@@ -421,7 +421,7 @@ export async function openCollabDocumentViaIPC(options: {
   logger.ui.info('[collabDocumentOpener] Opening collaborative document:', realUri);
 
   // Use IPC-proxied WebSocket when the proxy API is available
-  // (Cloudflare blocks browser WebSocket upgrades to sync.nimbalyst.com)
+  // (Cloudflare blocks browser WebSocket upgrades to the sync Worker)
   const hasWsProxy = !!window.electronAPI?.documentSync?.wsConnect;
 
   const tabId = openCollabDocument({
