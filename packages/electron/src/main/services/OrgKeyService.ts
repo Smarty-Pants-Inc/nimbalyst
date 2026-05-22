@@ -29,7 +29,7 @@ import { safeHandle } from '../utils/ipcRegistry';
 // Server URL Helper
 // ============================================================================
 
-const PRODUCTION_COLLAB_URL = 'https://smarty-sync-dev.frosty-wildflower-6a9b.workers.dev';
+const PRODUCTION_COLLAB_URL = 'https://sync-dev.smartypants.ai';
 const DEVELOPMENT_COLLAB_URL = 'http://localhost:8787';
 
 /**

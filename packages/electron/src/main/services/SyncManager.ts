@@ -315,7 +315,7 @@ export async function initializeSync(baseStore: SessionStore): Promise<SessionSt
   setSleepPreventionMode(resolvePreventSleepMode(config));
 
   // Determine server URL based on environment setting
-  const PRODUCTION_SYNC_URL = 'wss://smarty-sync-dev.frosty-wildflower-6a9b.workers.dev';
+  const PRODUCTION_SYNC_URL = 'wss://sync-dev.smartypants.ai';
   const DEVELOPMENT_SYNC_URL = 'ws://localhost:8787';
 
   // Only honor the environment config in dev builds - production builds always use production sync
@@ -856,7 +856,7 @@ export function getPersonalDocSyncConfig(): {
 
   const isDev = process.env.NODE_ENV !== 'production';
   const env = isDev ? state.config.environment : undefined;
-  const serverUrl = env === 'development' ? 'ws://localhost:8787' : 'wss://smarty-sync-dev.frosty-wildflower-6a9b.workers.dev';
+  const serverUrl = env === 'development' ? 'ws://localhost:8787' : 'wss://sync-dev.smartypants.ai';
 
   return {
     serverUrl,

@@ -132,7 +132,7 @@ interface AppStoreSchema {
   // Session Sync (optional device sync)
   sessionSync?: {
     enabled: boolean;
-    serverUrl: string; // e.g., 'ws://localhost:8787' or 'wss://smarty-sync-dev.frosty-wildflower-6a9b.workers.dev'
+    serverUrl: string; // e.g., 'ws://localhost:8787' or 'wss://sync-dev.smartypants.ai'
     enabledProjects?: string[]; // List of workspace paths enabled for sync
     // Dev-only: override environment (defaults to 'production' even in dev builds)
     environment?: 'development' | 'production';

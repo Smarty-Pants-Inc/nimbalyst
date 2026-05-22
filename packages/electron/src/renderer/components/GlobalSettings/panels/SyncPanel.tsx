@@ -132,7 +132,7 @@ export function SyncPanel() {
   // Compute effective server URL early so it can be used throughout
   // Only honor config.environment in dev builds - production always uses production sync
   // Default to production even in dev builds (user must explicitly switch to development)
-  const PRODUCTION_SYNC_URL = 'wss://smarty-sync-dev.frosty-wildflower-6a9b.workers.dev';
+  const PRODUCTION_SYNC_URL = 'wss://sync-dev.smartypants.ai';
   const DEVELOPMENT_SYNC_URL = 'ws://localhost:8787';
   const effectiveEnvironment = isDevelopment ? config.environment : undefined;
   const currentEnvironment = effectiveEnvironment || 'production';
@@ -569,7 +569,7 @@ export function SyncPanel() {
           <p className="text-[11px] text-nim-faint mt-1.5 mb-0">
             {currentEnvironment === 'development'
               ? 'Using local smarty-sync + localhost:8790 auth'
-              : 'Using smarty-sync staging workers.dev'}
+              : 'Using Smarty Pants staging'}
           </p>
         </div>
       )}

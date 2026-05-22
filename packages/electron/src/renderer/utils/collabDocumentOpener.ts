@@ -86,7 +86,7 @@ export function removeCollabConfig(uri: string): void {
  *   documentId: 'doc-abc',
  *   title: 'Architecture Plan',
  *   documentKey: aesKey,
- *   serverUrl: 'wss://smarty-sync-dev.frosty-wildflower-6a9b.workers.dev',
+ *   serverUrl: 'wss://sync-dev.smartypants.ai',
  *   getJwt: () => stytchClient.getToken(),
  *   userId: 'user-xyz',
  *   addTab: tabsActions.addTab,

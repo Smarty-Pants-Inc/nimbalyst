@@ -927,7 +927,7 @@ app.whenReady().then(async () => {
             const env = isDev ? config?.environment : undefined;
             return env === 'development'
                 ? 'http://localhost:8787'
-                : 'https://smarty-sync-dev.frosty-wildflower-6a9b.workers.dev';
+                : 'https://sync-dev.smartypants.ai';
         },
     });
 

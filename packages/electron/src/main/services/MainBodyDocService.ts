@@ -33,7 +33,7 @@ import { logger } from '../utils/logger';
 import { findTeamForWorkspace, getOrgScopedJwt } from './TeamService';
 import { getOrgKey, getOrgKeyFingerprint, fetchAndUnwrapOrgKey } from './OrgKeyService';
 
-const PRODUCTION_SYNC_URL = 'wss://smarty-sync-dev.frosty-wildflower-6a9b.workers.dev';
+const PRODUCTION_SYNC_URL = 'wss://sync-dev.smartypants.ai';
 const DEVELOPMENT_SYNC_URL = 'ws://localhost:8787';
 
 function getSyncWsUrl(): string {

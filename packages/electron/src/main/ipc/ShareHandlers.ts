@@ -13,7 +13,7 @@ import { exportFileToHtml } from '../services/FileHtmlExporter';
 import { getSessionJwt, refreshSession } from '../services/StytchAuthService';
 import { store } from '../utils/store';
 
-const SHARE_SERVER_URL = 'https://smarty-sync-dev.frosty-wildflower-6a9b.workers.dev';
+const SHARE_SERVER_URL = 'https://sync-dev.smartypants.ai';
 const DEFAULT_SHARE_EXPIRATION_DAYS = 7;
 const SHARE_METADATA_FILE = 'share-metadata.enc';
 

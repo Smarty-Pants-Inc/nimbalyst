@@ -26,7 +26,7 @@ import { logger } from '../utils/logger';
 import { getSessionSyncConfig, setSessionSyncConfig } from '../utils/store';
 import { AnalyticsService } from './analytics/AnalyticsService';
 
-const AUTH_WORKER_BASE_URL = 'https://smarty-sync-auth-dev.frosty-wildflower-6a9b.workers.dev';
+const AUTH_WORKER_BASE_URL = 'https://auth-dev.smartypants.ai';
 const AUTH_WORKER_DEVELOPMENT_BASE_URL = 'http://localhost:8790';
 const AUTH_CALLBACK_BASE_URL = 'nimbalyst://auth/callback';
 
