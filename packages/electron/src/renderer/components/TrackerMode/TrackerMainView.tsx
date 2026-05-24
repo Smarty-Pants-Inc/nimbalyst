@@ -6,6 +6,7 @@ import type { TrackerRecord } from '@nimbalyst/runtime/core/TrackerRecord';
 import { getRecordTitle, getRecordPriority, getRecordStatus, getRecordFieldStr, getFieldByRole, isMyRecord } from '@nimbalyst/runtime/plugins/TrackerPlugin/trackerRecordAccessors';
 import {
   TrackerTable,
+  TrackerTableGrid,
   SortColumn as TrackerSortColumn,
   SortDirection as TrackerSortDirection,
   type TrackerItemType,
@@ -24,6 +25,8 @@ import {
   type TrackerFilterChip,
   type TypeColumnConfig,
 } from '../../store/atoms/trackers';
+import { activeTeamOrgIdAtom, buildTrackerDeepLink } from '../../store/atoms/collabDocuments';
+import { errorNotificationService } from '../../services/ErrorNotificationService';
 import { useTrackerBodyPrewarm } from '../../hooks/useTrackerBodyPrewarm';
 import { getDefaultColumnConfig } from '@nimbalyst/runtime/plugins/TrackerPlugin';
 import { setSelectedWorkstreamAtom, sessionRegistryAtom, refreshSessionListAtom, initSessionList } from '../../store/atoms/sessions';
@@ -35,7 +38,7 @@ import { ModelIdentifier } from '@nimbalyst/runtime/ai/server/types';
 import { DEFAULT_MODELS } from '@nimbalyst/runtime/ai/modelConstants';
 import { store } from '../../store';
 
-export type ViewMode = 'table' | 'kanban';
+export type ViewMode = 'list' | 'table' | 'kanban';
 
 const SMARTY_SERVER_DEFAULT_MODEL = DEFAULT_MODELS['smarty-server'];
 
@@ -95,6 +98,17 @@ export const TrackerMainView: React.FC<TrackerMainViewProps> = ({
     // If persisted config is missing or has too few columns (stale), use fresh defaults
     if (!persisted || persisted.visibleColumns.length < 3) {
       return getDefaultColumnConfig(columnConfigKey === 'all' ? '' : columnConfigKey);
+    }
+    // Silent migration: inject the structural 'key' column (issue key)
+    // right after 'type' for users who saved configs before this column
+    // existed. Without this, the issueKey would be invisible since the
+    // title cell no longer renders it inline.
+    if (!persisted.visibleColumns.includes('key')) {
+      const typeIdx = persisted.visibleColumns.indexOf('type');
+      const insertAt = typeIdx >= 0 ? typeIdx + 1 : 0;
+      const visibleColumns = [...persisted.visibleColumns];
+      visibleColumns.splice(insertAt, 0, 'key');
+      return { ...persisted, visibleColumns };
     }
     return persisted;
   }, [modeLayout.typeColumnConfigs, columnConfigKey]);
@@ -364,6 +378,26 @@ export const TrackerMainView: React.FC<TrackerMainViewProps> = ({
     }
   }, [selectedItemId, setModeLayout]);
 
+  const teamOrgId = useAtomValue(activeTeamOrgIdAtom);
+  const handleCopyDeepLink = useCallback(async (itemId: string) => {
+    if (!teamOrgId) return;
+    const url = buildTrackerDeepLink(itemId, teamOrgId);
+    try {
+      await navigator.clipboard.writeText(url);
+      errorNotificationService.showInfo(
+        'Link copied',
+        'Paste it anywhere to open this tracker in Nimbalyst.',
+        { duration: 3000 }
+      );
+    } catch (err) {
+      console.error('[TrackerMainView] Failed to copy link:', err);
+      errorNotificationService.showError(
+        'Copy failed',
+        'Could not write the link to the clipboard.'
+      );
+    }
+  }, [teamOrgId]);
+
   /** Bulk archive for multi-select context menu */
   const handleArchiveItems = useCallback(async (itemIds: string[], archive: boolean) => {
     for (const itemId of itemIds) {
@@ -583,7 +617,7 @@ export const TrackerMainView: React.FC<TrackerMainViewProps> = ({
       <div className="flex-1 flex flex-row overflow-hidden min-h-0">
         {/* Table/Kanban (flex-1, shrinks when detail is open) */}
         <div className="flex-1 overflow-hidden min-h-0 min-w-0 relative">
-          {viewMode === 'table' ? (
+          {viewMode === 'list' ? (
             <TrackerTable
               filterType={filterType}
               sortBy={sortBy}
@@ -600,6 +634,29 @@ export const TrackerMainView: React.FC<TrackerMainViewProps> = ({
               overrideItems={filteredItems}
               onArchiveItems={handleArchiveItems}
               onDeleteItems={handleDeleteItems}
+              onCopyDeepLink={teamOrgId ? handleCopyDeepLink : undefined}
+              searchQuery={searchQuery}
+              columnConfig={columnConfig}
+              onColumnConfigChange={handleColumnConfigChange}
+            />
+          ) : viewMode === 'table' ? (
+            <TrackerTableGrid
+              filterType={filterType}
+              sortBy={sortBy}
+              sortDirection={sortDirection}
+              hideTypeTabs={true}
+              onSortChange={(column, direction) => {
+                setSortBy(column);
+                setSortDirection(direction);
+              }}
+              onSwitchToFilesMode={onSwitchToFilesMode}
+              onNewItem={handleNewItem}
+              onItemSelect={handleItemSelect}
+              selectedItemId={selectedItemId}
+              overrideItems={filteredItems}
+              onArchiveItems={handleArchiveItems}
+              onDeleteItems={handleDeleteItems}
+              onCopyDeepLink={teamOrgId ? handleCopyDeepLink : undefined}
               searchQuery={searchQuery}
               columnConfig={columnConfig}
               onColumnConfigChange={handleColumnConfigChange}
@@ -614,6 +671,7 @@ export const TrackerMainView: React.FC<TrackerMainViewProps> = ({
               overrideItems={filteredItems}
               onArchiveItems={handleArchiveItems}
               onDeleteItems={handleDeleteItems}
+              onCopyDeepLink={teamOrgId ? handleCopyDeepLink : undefined}
             />
           )}
 
