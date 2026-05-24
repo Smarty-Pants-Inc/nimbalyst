@@ -117,17 +117,17 @@ async function fetchSystemStats(): Promise<SystemStats | null> {
 // ---------------------------------------------------------------------------
 
 const CHART_COLORS = {
-  rss: '#60a5fa',         // blue-400
-  heap: '#34d399',        // emerald-400
-  rendererHeap: '#818cf8', // indigo-400
-  handles: '#f97316',     // orange-500
-  ipcHandlers: '#e879f9', // fuchsia-400
-  workspaces: '#a78bfa',  // violet-400
-  subscribers: '#f472b6', // pink-400
-  families: '#38bdf8',    // sky-400
-  instances: '#fbbf24',   // amber-400
-  dbReads: '#2dd4bf',     // teal-400
-  dbWrites: '#fb923c',    // orange-400
+  rss: 'var(--nim-info)',
+  heap: 'var(--nim-success)',
+  rendererHeap: 'var(--nim-primary)',
+  handles: 'var(--nim-warning)',
+  ipcHandlers: 'var(--nim-link)',
+  workspaces: 'var(--nim-primary-hover)',
+  subscribers: 'var(--nim-error)',
+  families: 'var(--nim-info)',
+  instances: 'var(--nim-warning)',
+  dbReads: 'var(--nim-success)',
+  dbWrites: 'var(--nim-warning)',
 };
 
 // ---------------------------------------------------------------------------
@@ -145,7 +145,7 @@ function OverviewPanel({
 }) {
   if (!systemStats) {
     return (
-      <div className="flex items-center justify-center h-full text-[var(--nim-text-muted)]">
+      <div className="agent-elements-developer-dashboard-loading flex h-full items-center justify-center text-[var(--nim-text-muted)]">
         Loading...
       </div>
     );
@@ -166,7 +166,11 @@ function OverviewPanel({
   const totalDbWrites = dbEntries.reduce((sum, [, s]) => sum + s.writes.count, 0);
 
   return (
-    <div className="flex flex-col gap-4 p-4 overflow-auto h-full">
+    <div
+      className="developer-dashboard-overview agent-elements-developer-dashboard-section flex h-full flex-col gap-4 overflow-auto p-4"
+      data-testid="agent-elements-developer-dashboard-section"
+      data-agent-elements-shell="developer-dashboard-section"
+    >
       {/* Stats cards */}
       <div className="grid grid-cols-4 gap-3">
         <StatCard label="Main Memory (RSS)" value={`${proc.memoryRssMB} MB`} />
@@ -194,9 +198,9 @@ function OverviewPanel({
                 <YAxis stroke="var(--nim-text-muted)" tick={{ fontSize: 11 }} unit=" MB" />
                 <Tooltip
                   contentStyle={{
-                    backgroundColor: 'var(--nim-surface)',
+                    backgroundColor: 'var(--nim-bg-secondary)',
                     border: '1px solid var(--nim-border)',
-                    borderRadius: 6,
+                    borderRadius: 8,
                     color: 'var(--nim-text)',
                     fontSize: 12,
                   }}
@@ -217,9 +221,9 @@ function OverviewPanel({
                 <YAxis stroke="var(--nim-text-muted)" tick={{ fontSize: 11 }} />
                 <Tooltip
                   contentStyle={{
-                    backgroundColor: 'var(--nim-surface)',
+                    backgroundColor: 'var(--nim-bg-secondary)',
                     border: '1px solid var(--nim-border)',
-                    borderRadius: 6,
+                    borderRadius: 8,
                     color: 'var(--nim-text)',
                     fontSize: 12,
                   }}
@@ -241,9 +245,9 @@ function OverviewPanel({
                 <YAxis stroke="var(--nim-text-muted)" tick={{ fontSize: 11 }} />
                 <Tooltip
                   contentStyle={{
-                    backgroundColor: 'var(--nim-surface)',
+                    backgroundColor: 'var(--nim-bg-secondary)',
                     border: '1px solid var(--nim-border)',
-                    borderRadius: 6,
+                    borderRadius: 8,
                     color: 'var(--nim-text)',
                     fontSize: 12,
                   }}
@@ -263,9 +267,9 @@ function OverviewPanel({
                 <YAxis stroke="var(--nim-text-muted)" tick={{ fontSize: 11 }} />
                 <Tooltip
                   contentStyle={{
-                    backgroundColor: 'var(--nim-surface)',
+                    backgroundColor: 'var(--nim-bg-secondary)',
                     border: '1px solid var(--nim-border)',
-                    borderRadius: 6,
+                    borderRadius: 8,
                     color: 'var(--nim-text)',
                     fontSize: 12,
                   }}
@@ -302,7 +306,11 @@ function OverviewPanel({
                   const rows: React.ReactElement[] = [];
                   if (stats.reads.count > 0) {
                     rows.push(
-                      <tr key={`${table}-r`} className="border-b border-[var(--nim-border)] hover:bg-[var(--nim-surface-hover)]">
+                      <tr
+                        key={`${table}-r`}
+                        className="agent-elements-developer-dashboard-table-row border-b border-[var(--nim-border)] transition-colors hover:bg-[var(--nim-bg-hover)]"
+                        data-agent-elements-shell="developer-dashboard-table-row"
+                      >
                         <td className="px-2 py-1 text-[var(--nim-text)]">{table}</td>
                         <td className="px-2 py-1 text-right text-[var(--nim-text-muted)]">R</td>
                         <td className="px-2 py-1 text-right">{stats.reads.count}</td>
@@ -320,7 +328,11 @@ function OverviewPanel({
                   }
                   if (stats.writes.count > 0) {
                     rows.push(
-                      <tr key={`${table}-w`} className="border-b border-[var(--nim-border)] hover:bg-[var(--nim-surface-hover)]">
+                      <tr
+                        key={`${table}-w`}
+                        className="agent-elements-developer-dashboard-table-row border-b border-[var(--nim-border)] transition-colors hover:bg-[var(--nim-bg-hover)]"
+                        data-agent-elements-shell="developer-dashboard-table-row"
+                      >
                         <td className="px-2 py-1 text-[var(--nim-text)]">{table}</td>
                         <td className="px-2 py-1 text-right text-[var(--nim-text-muted)]">W</td>
                         <td className="px-2 py-1 text-right">{stats.writes.count}</td>
@@ -352,7 +364,7 @@ function OverviewPanel({
             {fileWatchers.workspaces.map(ws => (
               <div
                 key={ws.workspacePath}
-                className="text-xs font-mono px-3 py-2 rounded bg-[var(--nim-surface-hover)]"
+                className="agent-elements-developer-dashboard-detail rounded-[8px] border border-[var(--nim-border)] bg-[var(--nim-bg-hover)] px-3 py-2 text-xs font-mono"
               >
                 <div className="text-[var(--nim-text)]">{ws.workspacePath}</div>
                 <div className="text-[var(--nim-text-muted)] mt-0.5">
@@ -372,7 +384,7 @@ function OverviewPanel({
             {systemStats.windows.map(win => (
               <div
                 key={win.id}
-                className="text-xs font-mono px-3 py-2 rounded bg-[var(--nim-surface-hover)] flex items-center gap-3"
+                className="agent-elements-developer-dashboard-detail flex items-center gap-3 rounded-[8px] border border-[var(--nim-border)] bg-[var(--nim-bg-hover)] px-3 py-2 text-xs font-mono"
               >
                 <span className="text-[var(--nim-text-muted)]">#{win.id}</span>
                 <span className="text-[var(--nim-text)]">{win.mode}</span>
@@ -398,8 +410,12 @@ function OverviewPanel({
 
 function StatCard({ label, value }: { label: string; value: string }) {
   return (
-    <div className="px-3 py-2 rounded bg-[var(--nim-surface-hover)] border border-[var(--nim-border)]">
-      <div className="text-[10px] uppercase tracking-wider text-[var(--nim-text-muted)] mb-0.5">{label}</div>
+    <div
+      className="agent-elements-developer-dashboard-stat-card rounded-[10px] border border-[var(--nim-border)] bg-[var(--nim-bg-secondary)] px-3 py-2"
+      data-testid="agent-elements-developer-dashboard-stat-card"
+      data-agent-elements-shell="developer-dashboard-stat-card"
+    >
+      <div className="mb-0.5 text-[11px] font-medium leading-4 text-[var(--nim-text-muted)]">{label}</div>
       <div className="text-sm font-mono text-[var(--nim-text)]">{value}</div>
     </div>
   );
@@ -407,7 +423,10 @@ function StatCard({ label, value }: { label: string; value: string }) {
 
 function ChartSection({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div>
+    <div
+      className="agent-elements-developer-dashboard-chart rounded-[10px] border border-[var(--nim-border)] bg-[var(--nim-bg-secondary)] p-3"
+      data-agent-elements-shell="developer-dashboard-chart"
+    >
       <h3 className="text-sm font-medium text-[var(--nim-text)] mb-2">{title}</h3>
       {children}
     </div>
@@ -427,7 +446,10 @@ function AtomFamilyPanel({ stats, loading, refresh }: { stats: AtomFamilyStat[];
   const nonEmptyCount = stats.filter(s => s.count > 0).length;
 
   return (
-    <div className="flex flex-col h-full">
+    <div
+      className="agent-elements-developer-dashboard-atom-panel flex h-full flex-col"
+      data-agent-elements-shell="developer-dashboard-atom-panel"
+    >
       {/* Summary bar */}
       <div className="flex items-center gap-4 px-4 py-3 border-b border-[var(--nim-border)] text-sm">
         <span className="text-[var(--nim-text-muted)]">
@@ -443,14 +465,14 @@ function AtomFamilyPanel({ stats, loading, refresh }: { stats: AtomFamilyStat[];
             type="checkbox"
             checked={filterEmpty}
             onChange={e => setFilterEmpty(e.target.checked)}
-            className="accent-[var(--nim-accent)]"
+            className="accent-[var(--nim-primary)]"
           />
           Hide empty
         </label>
         <button
           onClick={refresh}
           disabled={loading}
-          className="px-3 py-1 rounded text-xs bg-[var(--nim-surface-hover)] text-[var(--nim-text)] hover:bg-[var(--nim-surface-active)] transition-colors disabled:opacity-50"
+          className="rounded-[8px] border border-[var(--nim-border)] bg-[var(--nim-bg-hover)] px-3 py-1 text-xs text-[var(--nim-text)] transition-colors hover:bg-[var(--nim-bg-active)] disabled:opacity-50"
         >
           {loading ? 'Loading...' : 'Refresh'}
         </button>
@@ -459,7 +481,7 @@ function AtomFamilyPanel({ stats, loading, refresh }: { stats: AtomFamilyStat[];
       {/* Table */}
       <div className="flex-1 overflow-auto">
         <table className="w-full text-sm border-collapse">
-          <thead className="sticky top-0 bg-[var(--nim-surface)] z-10">
+          <thead className="sticky top-0 z-10 bg-[var(--nim-bg-secondary)]">
             <tr className="text-left text-[var(--nim-text-muted)] border-b border-[var(--nim-border)]">
               <th className="px-4 py-2 font-medium">Name</th>
               <th className="px-4 py-2 font-medium w-20">File</th>
@@ -473,7 +495,8 @@ function AtomFamilyPanel({ stats, loading, refresh }: { stats: AtomFamilyStat[];
               return (
                 <React.Fragment key={key}>
                   <tr
-                    className="border-b border-[var(--nim-border)] hover:bg-[var(--nim-surface-hover)] cursor-pointer transition-colors"
+                    className="agent-elements-developer-dashboard-table-row cursor-pointer border-b border-[var(--nim-border)] transition-colors hover:bg-[var(--nim-bg-hover)]"
+                    data-agent-elements-shell="developer-dashboard-table-row"
                     onClick={() => setExpandedRow(isExpanded ? null : key)}
                   >
                     <td className="px-4 py-2 font-mono text-[var(--nim-text)]">
@@ -488,7 +511,7 @@ function AtomFamilyPanel({ stats, loading, refresh }: { stats: AtomFamilyStat[];
                     </td>
                   </tr>
                   {isExpanded && s.params.length > 0 && (
-                    <tr className="bg-[var(--nim-surface)]">
+                    <tr className="bg-[var(--nim-bg-secondary)]">
                       <td colSpan={3} className="px-8 py-2">
                         <div className="text-xs text-[var(--nim-text-muted)] mb-1">
                           Live params ({s.params.length}):
@@ -497,7 +520,7 @@ function AtomFamilyPanel({ stats, loading, refresh }: { stats: AtomFamilyStat[];
                           {s.params.map((p, i) => (
                             <span
                               key={i}
-                              className="px-2 py-0.5 rounded text-xs font-mono bg-[var(--nim-surface-hover)] text-[var(--nim-text)]"
+                              className="rounded-[6px] bg-[var(--nim-bg-hover)] px-2 py-0.5 text-xs font-mono text-[var(--nim-text)]"
                               title={p}
                             >
                               {p.length > 40 ? p.slice(0, 37) + '...' : p}
@@ -608,21 +631,31 @@ export function DeveloperDashboard() {
   }, [refresh]);
 
   return (
-    <div className="flex flex-col h-screen bg-[var(--nim-surface)] text-[var(--nim-text)] select-text">
+    <div
+      className="developer-dashboard agent-elements-developer-dashboard flex h-screen flex-col bg-[var(--nim-bg-secondary)] text-[var(--nim-text)] select-text"
+      data-testid="agent-elements-developer-dashboard"
+      data-agent-elements-shell="developer-dashboard"
+    >
       {/* Title bar drag region (macOS) */}
       <div className="h-8 flex-shrink-0" style={{ WebkitAppRegion: 'drag' } as React.CSSProperties} />
 
       {/* Tab bar */}
-      <div className="flex items-center gap-1 px-4 border-b border-[var(--nim-border)]">
+      <div
+        className="developer-dashboard-tabs agent-elements-developer-dashboard-tabs flex items-center gap-1 border-b border-[var(--nim-border)] px-4"
+        data-testid="agent-elements-developer-dashboard-tabs"
+        data-agent-elements-shell="developer-dashboard-tabs"
+      >
         {TABS.map(tab => (
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
-            className={`px-3 py-2 text-sm transition-colors border-b-2 ${
+            className={`agent-elements-developer-dashboard-tab border-b-2 px-3 py-2 text-sm transition-colors focus-visible:outline-2 focus-visible:outline-[var(--nim-primary)] focus-visible:outline-offset-2 ${
               activeTab === tab.id
-                ? 'border-[var(--nim-accent)] text-[var(--nim-text)]'
+                ? 'border-[var(--nim-primary)] text-[var(--nim-text)]'
                 : 'border-transparent text-[var(--nim-text-muted)] hover:text-[var(--nim-text)]'
             }`}
+            data-testid="agent-elements-developer-dashboard-tab"
+            data-agent-elements-shell="developer-dashboard-tab"
           >
             {tab.label}
           </button>

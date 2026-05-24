@@ -17,6 +17,7 @@ import {
   clearAskUserQuestionDraft,
   EMPTY_ASK_USER_QUESTION_DRAFT,
 } from '../../../../store/atoms/askUserQuestionDraft';
+import { AgentStatusPill, type AgentStatusTone } from '../../../AgentElements/AgentElementsPrimitives';
 
 // ============================================================
 // Types
@@ -172,6 +173,69 @@ function parseCancelledResult(result: unknown): boolean {
   }
 
   return false;
+}
+
+type QuestionVisualState = 'pending' | 'answered' | 'cancelled';
+
+function getQuestionVisualState(
+  displayResult: { answers: Record<string, string>; cancelled?: boolean } | null,
+  hasResponded: boolean,
+): QuestionVisualState {
+  if (displayResult?.cancelled) return 'cancelled';
+  if (displayResult || hasResponded) return 'answered';
+  return 'pending';
+}
+
+function getQuestionTone(state: QuestionVisualState): AgentStatusTone {
+  if (state === 'answered') return 'success';
+  if (state === 'cancelled') return 'error';
+  return 'running';
+}
+
+function getQuestionStatusLabel(state: QuestionVisualState): string {
+  if (state === 'answered') return 'answered';
+  if (state === 'cancelled') return 'cancelled';
+  return 'awaiting answer';
+}
+
+function QuestionStatusIcon({ state }: { state: QuestionVisualState }) {
+  const iconClassName = `agent-elements-tool-icon ${
+    state === 'answered'
+      ? 'text-nim-success'
+      : state === 'cancelled'
+        ? 'text-nim-error'
+        : 'text-nim-primary'
+  }`;
+
+  if (state === 'answered') {
+    return (
+      <span className={iconClassName}>
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full">
+          <path d="M13.5 4.5L6 12l-3.5-3.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+        </svg>
+      </span>
+    );
+  }
+
+  if (state === 'cancelled') {
+    return (
+      <span className={iconClassName}>
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full">
+          <path d="M12 4L4 12M4 4l8 8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+        </svg>
+      </span>
+    );
+  }
+
+  return (
+    <span className={iconClassName}>
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full">
+        <path d="M8 14A6 6 0 1 0 8 2a6 6 0 0 0 0 12z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+        <path d="M6.06 6a2 2 0 0 1 3.88.67c0 1.33-2 2-2 2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+        <path d="M8 11h.01" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+      </svg>
+    </span>
+  );
 }
 
 // ============================================================
@@ -385,6 +449,17 @@ export const AskUserQuestionWidget: React.FC<CustomToolWidgetProps> = ({
   const displayResult = localResult || (isCompleted ? { answers: parsedAnswers, cancelled: isCancelled } : null);
   const displayAnswers = displayResult?.answers || {};
   const displayCancelled = displayResult?.cancelled || false;
+  const questionState = getQuestionVisualState(displayResult, hasResponded);
+  const questionCountLabel = `${questions.length} question${questions.length === 1 ? '' : 's'}`;
+  const shellClassName = `ask-user-question-widget agent-elements-tool-card agent-elements-question-card agent-elements-ask-user-question-card ${
+    questionState === 'pending' ? '' : 'opacity-85'
+  }`;
+  const shellProps = {
+    'data-component': 'RichTranscriptAgentElementsAskUserQuestion',
+    'data-agent-elements-shell': 'question-card',
+    'data-question-state': questionState,
+    'data-testid': 'ask-user-question-widget',
+  };
 
   // Check if all questions have selections (for enabling submit button)
   const allAnswered = questions.every(q => {
@@ -399,25 +474,28 @@ export const AskUserQuestionWidget: React.FC<CustomToolWidgetProps> = ({
 
     return (
       <div
-        data-testid="ask-user-question-widget"
+        {...shellProps}
         data-state={displayCancelled ? 'cancelled' : 'completed'}
-        className={`ask-user-question-widget rounded-lg bg-nim-secondary border border-nim overflow-hidden opacity-85`}
+        className={shellClassName}
       >
-        <div className="flex items-center gap-2 py-3 px-4 border-b border-nim bg-nim-tertiary">
-          <div className="w-5 h-5 text-nim-primary shrink-0">
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full">
-              <path d="M8 14A6 6 0 1 0 8 2a6 6 0 0 0 0 12z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-              <path d="M6.06 6a2 2 0 0 1 3.88.67c0 1.33-2 2-2 2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-              <path d="M8 11h.01" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-            </svg>
+        <div className="agent-elements-tool-header">
+          <QuestionStatusIcon state={questionState} />
+          <div className="agent-elements-tool-title-group">
+            <span className="agent-elements-tool-title">{statusText}</span>
+            <span className="agent-elements-tool-subtitle">{questionCountLabel}</span>
           </div>
-          <span className="text-sm font-semibold text-nim flex-1">
-            {statusText}
+          <span className="agent-elements-tool-trailing">
+            <AgentStatusPill tone={getQuestionTone(questionState)}>
+              <span data-testid="ask-user-question-status">{getQuestionStatusLabel(questionState)}</span>
+            </AgentStatusPill>
           </span>
+        </div>
+
+        <div className="agent-elements-tool-footer">
           {!displayCancelled && (
             <span
               data-testid="ask-user-question-completed"
-              className="flex items-center gap-1 text-xs font-medium text-nim-success py-1 px-2 bg-[color-mix(in_srgb,var(--nim-success)_12%,transparent)] rounded-full"
+              className="agent-elements-status-pill text-nim-success"
             >
               <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <path d="M10 3L4.5 8.5L2 6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
@@ -428,7 +506,7 @@ export const AskUserQuestionWidget: React.FC<CustomToolWidgetProps> = ({
           {displayCancelled && (
             <span
               data-testid="ask-user-question-cancelled"
-              className="flex items-center gap-1 text-xs font-medium text-nim-muted py-1 px-2 bg-nim-tertiary rounded-full"
+              className="agent-elements-status-pill text-nim-muted"
             >
               <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <path d="M9 3L3 9M3 3l6 6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
@@ -438,22 +516,24 @@ export const AskUserQuestionWidget: React.FC<CustomToolWidgetProps> = ({
           )}
         </div>
 
-        <div className="p-3 flex flex-col gap-3">
+        <div className="agent-elements-tool-primary flex flex-col gap-3">
           {questions.map((question, qIndex) => {
             const answer = displayAnswers[question.question];
 
             return (
-              <div key={qIndex} className="bg-nim border border-nim rounded-md p-3">
+              <div key={qIndex} className="agent-elements-question-shell">
+                <div className="agent-elements-question-copy">
                 <div className="flex items-center gap-2 mb-2">
                   <span className="text-[0.6875rem] font-semibold uppercase tracking-wide text-nim-primary bg-[color-mix(in_srgb,var(--nim-primary)_12%,transparent)] py-0.5 px-2 rounded-full">{question.header}</span>
                   {question.multiSelect && (
                     <span className="text-[0.6875rem] text-nim-faint italic">Multiple selection</span>
                   )}
                 </div>
-                <div className="text-sm text-nim leading-normal mb-3">
+                <div className="agent-elements-question-title">
                   {question.question}
                 </div>
-                <div className="flex flex-col gap-1.5">
+                </div>
+                <div className="agent-elements-question-options agent-elements-question-options-display" data-interactive="false">
                   {question.options.map((option, oIndex) => {
                     const isSelected = question.multiSelect
                       ? (answer?.split(', ') || []).includes(option.label)
@@ -462,7 +542,7 @@ export const AskUserQuestionWidget: React.FC<CustomToolWidgetProps> = ({
                     return (
                       <div
                         key={oIndex}
-                        className={`flex items-start gap-2 py-2 px-2.5 rounded border cursor-default ${
+                        className={`agent-elements-question-option agent-elements-question-option-static ${
                           isSelected
                             ? 'border-nim-primary bg-[color-mix(in_srgb,var(--nim-primary)_8%,var(--nim-bg-secondary))]'
                             : 'border-nim bg-nim-secondary'
@@ -480,7 +560,7 @@ export const AskUserQuestionWidget: React.FC<CustomToolWidgetProps> = ({
                           )}
                         </div>
                         <div className="flex flex-col gap-0.5 flex-1 min-w-0">
-                          <span className="text-[0.8125rem] font-medium text-nim leading-snug">{option.label}</span>
+                          <span className="text-[0.8125rem] font-medium text-nim leading-snug agent-elements-question-option-copy">{option.label}</span>
                           {option.description && (
                             <span className="text-xs text-nim-muted leading-snug">{option.description}</span>
                           )}
@@ -506,22 +586,24 @@ export const AskUserQuestionWidget: React.FC<CustomToolWidgetProps> = ({
   if (!host) {
     return (
       <div
-        data-testid="ask-user-question-widget"
+        {...shellProps}
         data-state="pending"
-        className="ask-user-question-widget rounded-lg bg-nim-secondary border border-nim-primary overflow-hidden"
+        className={shellClassName}
       >
-        <div className="flex items-center gap-2 py-3 px-4 bg-nim-tertiary">
-          <div className="w-5 h-5 text-nim-primary shrink-0">
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full">
-              <path d="M8 14A6 6 0 1 0 8 2a6 6 0 0 0 0 12z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-              <path d="M6.06 6a2 2 0 0 1 3.88.67c0 1.33-2 2-2 2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-              <path d="M8 11h.01" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-            </svg>
+        <div className="agent-elements-tool-header">
+          <QuestionStatusIcon state={questionState} />
+          <div className="agent-elements-tool-title-group">
+            <span className="agent-elements-tool-title">Questions from Claude</span>
+            <span className="agent-elements-tool-subtitle">{questionCountLabel}</span>
           </div>
-          <span className="text-sm font-semibold text-nim flex-1">
-            Questions from Claude
+          <span className="agent-elements-tool-trailing">
+            <AgentStatusPill tone={getQuestionTone(questionState)}>
+              <span data-testid="ask-user-question-status">{getQuestionStatusLabel(questionState)}</span>
+            </AgentStatusPill>
           </span>
-          <span data-testid="ask-user-question-pending" className="text-xs text-nim-muted">Waiting...</span>
+        </div>
+        <div className="agent-elements-tool-footer">
+          <span data-testid="ask-user-question-pending" className="agent-elements-status-pill text-nim-muted">Waiting...</span>
         </div>
       </div>
     );
@@ -530,39 +612,41 @@ export const AskUserQuestionWidget: React.FC<CustomToolWidgetProps> = ({
   // Show interactive UI for pending request
   return (
     <div
-      data-testid="ask-user-question-widget"
+      {...shellProps}
       data-state="pending"
-      className="ask-user-question-widget rounded-lg bg-nim-secondary border border-nim-primary overflow-hidden"
+      className={shellClassName}
     >
-      <div className="flex items-center gap-2 py-3 px-4 border-b border-nim bg-nim-tertiary">
-        <div className="w-5 h-5 text-nim-primary shrink-0">
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full">
-            <path d="M8 14A6 6 0 1 0 8 2a6 6 0 0 0 0 12z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-            <path d="M6.06 6a2 2 0 0 1 3.88.67c0 1.33-2 2-2 2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-            <path d="M8 11h.01" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-          </svg>
+      <div className="agent-elements-tool-header">
+        <QuestionStatusIcon state={questionState} />
+        <div className="agent-elements-tool-title-group">
+          <span className="agent-elements-tool-title">Questions from Claude</span>
+          <span className="agent-elements-tool-subtitle">{questionCountLabel}</span>
         </div>
-        <span className="text-sm font-semibold text-nim flex-1">
-          Questions from Claude
+        <span className="agent-elements-tool-trailing">
+          <AgentStatusPill tone={getQuestionTone(questionState)}>
+            <span data-testid="ask-user-question-status">{getQuestionStatusLabel(questionState)}</span>
+          </AgentStatusPill>
         </span>
       </div>
 
-      <div className="p-3 flex flex-col gap-3">
+      <div className="agent-elements-tool-primary flex flex-col gap-3">
         {questions.map((question, qIndex) => {
           const selectedOptions = selections[question.question] || [];
 
           return (
-            <div key={qIndex} className="bg-nim border border-nim rounded-md p-3">
+            <div key={qIndex} className="agent-elements-question-shell">
+              <div className="agent-elements-question-copy">
               <div className="flex items-center gap-2 mb-2">
                 <span className="text-[0.6875rem] font-semibold uppercase tracking-wide text-nim-primary bg-[color-mix(in_srgb,var(--nim-primary)_12%,transparent)] py-0.5 px-2 rounded-full">{question.header}</span>
                 {question.multiSelect && (
                   <span className="text-[0.6875rem] text-nim-faint italic">Select multiple</span>
                 )}
               </div>
-              <div className="text-sm text-nim leading-normal mb-3">
+              <div className="agent-elements-question-title">
                 {question.question}
               </div>
-              <div className="flex flex-col gap-1.5">
+              </div>
+              <div className="agent-elements-question-options" data-interactive="true">
                 {question.options.map((option, oIndex) => {
                   const isSelected = selectedOptions.includes(option.label);
 
@@ -573,9 +657,10 @@ export const AskUserQuestionWidget: React.FC<CustomToolWidgetProps> = ({
                       data-testid="ask-user-question-option"
                       data-option-label={option.label}
                       data-selected={isSelected}
+                      aria-pressed={isSelected}
                       onClick={() => handleOptionToggle(question, option.label)}
                       disabled={isSubmitting}
-                      className={`flex items-start gap-2 py-2 px-2.5 rounded border transition-all duration-150 cursor-pointer text-left bg-transparent disabled:opacity-50 disabled:cursor-not-allowed ${
+                      className={`agent-elements-question-option disabled:opacity-50 disabled:cursor-not-allowed ${
                         isSelected
                           ? 'border-nim-primary bg-[color-mix(in_srgb,var(--nim-primary)_8%,var(--nim-bg-secondary))]'
                           : 'border-nim bg-nim-secondary hover:bg-nim-hover'
@@ -605,7 +690,7 @@ export const AskUserQuestionWidget: React.FC<CustomToolWidgetProps> = ({
                 <div
                   data-testid="ask-user-question-other"
                   data-selected={otherSelected[question.question] || false}
-                  className={`rounded border transition-all duration-150 ${
+                  className={`agent-elements-question-other-shell rounded border transition-colors duration-150 ${
                     otherSelected[question.question]
                       ? 'border-nim-primary bg-[color-mix(in_srgb,var(--nim-primary)_8%,var(--nim-bg-secondary))]'
                       : 'border-nim bg-nim-secondary hover:bg-nim-hover'
@@ -646,7 +731,7 @@ export const AskUserQuestionWidget: React.FC<CustomToolWidgetProps> = ({
                         placeholder="Type your answer..."
                         disabled={isSubmitting}
                         rows={2}
-                        className="w-full px-2.5 py-2 rounded border border-nim bg-nim text-sm text-nim placeholder-nim-faint resize-y focus:outline-none focus:border-nim-primary disabled:opacity-50"
+                        className="agent-elements-question-textarea disabled:opacity-50"
                       />
                     </div>
                   )}
@@ -657,7 +742,7 @@ export const AskUserQuestionWidget: React.FC<CustomToolWidgetProps> = ({
         })}
 
         {/* Action buttons */}
-        <div className="flex gap-2 justify-end pt-2 border-t border-nim">
+        <div className="agent-elements-question-actions pt-2 border-t border-nim">
           <button
             type="button"
             data-testid="ask-user-question-cancel"

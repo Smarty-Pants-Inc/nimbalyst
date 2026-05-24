@@ -1,4 +1,5 @@
 import React from 'react';
+import { MaterialSymbol } from '@nimbalyst/runtime';
 
 interface UpdateAvailableToastProps {
   version: string;
@@ -15,53 +16,71 @@ export function UpdateAvailableToast({
   onRemindLater,
   onDismiss,
 }: UpdateAvailableToastProps): React.ReactElement {
+  const buttonBase =
+    'update-toast-btn inline-flex items-center justify-center gap-2 rounded-[var(--an-input-border-radius)] border px-3 py-2 text-sm font-medium transition-[background-color,border-color,color] duration-150 ease-out focus:outline-none focus:ring-2 focus:ring-[var(--an-input-focus-outline)]';
+
   return (
     <div
-      className="update-toast relative w-[380px] rounded-xl p-4 px-5 border border-[var(--nim-border)] bg-[var(--nim-bg-secondary)] shadow-[0_10px_25px_-5px_rgba(0,0,0,0.3),0_4px_10px_-2px_rgba(0,0,0,0.2)]"
+      className="update-toast agent-elements-update-toast agent-elements-tool-card relative w-[380px] max-w-[calc(100vw-32px)] overflow-hidden rounded-[var(--an-tool-border-radius)] border border-[var(--an-border-color)] bg-[var(--an-background)] p-[var(--an-spacing-xl)] text-[var(--an-foreground)] shadow-[0_14px_42px_color-mix(in_srgb,var(--nim-text)_16%,transparent)]"
       data-testid="update-available-toast"
+      data-component="UpdateAvailableToast"
+      data-agent-elements-shell="update-available-toast"
     >
-      {/* Dismiss button */}
       <button
-        className="update-toast-dismiss absolute top-3 right-3 w-6 h-6 border-none bg-transparent cursor-pointer rounded flex items-center justify-center p-0 text-[var(--nim-text-faint)] transition-colors duration-200 hover:bg-[var(--nim-bg-hover)] hover:text-[var(--nim-text-muted)] [&>svg]:w-3.5 [&>svg]:h-3.5"
+        className="update-toast-dismiss agent-elements-update-toast-dismiss absolute right-3 top-3 inline-flex h-8 w-8 cursor-pointer items-center justify-center rounded-[var(--an-input-border-radius)] border border-transparent bg-transparent p-0 text-[var(--an-foreground-muted)] transition-[background-color,border-color,color] duration-150 ease-out hover:border-[var(--an-border-color)] hover:bg-[var(--an-background-tertiary)] hover:text-[var(--an-foreground)] focus:outline-none focus:ring-2 focus:ring-[var(--an-input-focus-outline)]"
         onClick={onDismiss}
         title="Dismiss"
         aria-label="Dismiss"
         data-testid="update-toast-dismiss"
+        data-agent-elements-shell="update-toast-dismiss"
       >
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-          <path d="M18 6L6 18M6 6l12 12" />
-        </svg>
+        <MaterialSymbol icon="close" size={18} />
       </button>
 
-      {/* Header */}
-      <div
-        className="update-toast-title text-sm font-semibold text-[var(--nim-text)] mb-1 pr-7"
-        data-testid="update-toast-version"
-      >
-        New Version: Nimbalyst {version}
-      </div>
-      <div className="update-toast-subtitle text-xs text-[var(--nim-text-muted)] leading-normal mb-4">
-        There's a new app update available to download
+      <div className="update-toast-header agent-elements-update-toast-header flex items-start gap-3 pr-8" data-agent-elements-shell="update-toast-header">
+        <span
+          className="update-toast-icon agent-elements-update-toast-icon inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-[var(--an-tool-border-radius)] border border-[var(--an-border-color)] bg-[var(--an-background-secondary)] text-[var(--an-primary-color)]"
+          data-testid="agent-elements-update-toast-icon"
+          data-agent-elements-shell="update-toast-icon"
+          aria-hidden="true"
+        >
+          <MaterialSymbol icon="system_update_alt" size={19} />
+        </span>
+        <div className="min-w-0">
+          <div
+            className="update-toast-title m-0 text-sm font-medium leading-snug text-[var(--an-foreground)]"
+            data-testid="update-toast-version"
+          >
+            Nimbalyst {version} is available
+          </div>
+          <div className="update-toast-subtitle mt-1 text-xs leading-relaxed text-[var(--an-foreground-muted)]">
+            Download the latest app update when you are ready.
+          </div>
+        </div>
       </div>
 
-      {/* Action buttons */}
-      <div className="update-toast-actions flex gap-2 flex-wrap">
+      <div
+        className="update-toast-actions agent-elements-update-toast-actions mt-[var(--an-spacing-xl)] flex flex-wrap gap-2"
+        data-testid="agent-elements-update-toast-actions"
+        data-agent-elements-shell="update-toast-actions"
+      >
         <button
-          className="update-toast-btn update-toast-btn-primary flex-1 py-2 px-3.5 border-none rounded-md text-[13px] font-medium cursor-pointer transition-all duration-200 font-[inherit] whitespace-nowrap bg-[var(--nim-primary)] text-white hover:brightness-110"
+          className={`${buttonBase} update-toast-btn-primary flex-1 border-[var(--an-primary-color)] bg-[var(--an-primary-color)] text-[var(--an-background)] hover:border-[var(--nim-primary-hover)] hover:bg-[var(--nim-primary-hover)]`}
           onClick={onUpdateNow}
           data-testid="update-now-btn"
         >
+          <MaterialSymbol icon="download" size={16} />
           Update Now
         </button>
         <button
-          className="update-toast-btn update-toast-btn-secondary py-2 px-3.5 border border-[var(--nim-border)] rounded-md text-[13px] font-medium cursor-pointer transition-all duration-200 font-[inherit] whitespace-nowrap bg-[var(--nim-bg-tertiary)] text-[var(--nim-text)] hover:bg-[var(--nim-bg-hover)]"
+          className={`${buttonBase} update-toast-btn-secondary border-[var(--an-border-color)] bg-[var(--an-background)] text-[var(--an-foreground-muted)] hover:bg-[var(--an-background-tertiary)] hover:text-[var(--an-foreground)]`}
           onClick={onViewReleaseNotes}
           data-testid="release-notes-btn"
         >
           Release Notes
         </button>
         <button
-          className="update-toast-btn update-toast-btn-text py-2 px-3 border-none rounded-md text-[13px] font-medium cursor-pointer transition-all duration-200 font-[inherit] whitespace-nowrap bg-transparent text-[var(--nim-text-muted)] hover:text-[var(--nim-text)] hover:bg-[var(--nim-bg-hover)]"
+          className={`${buttonBase} update-toast-btn-text border-transparent bg-transparent text-[var(--an-foreground-muted)] hover:border-[var(--an-border-color)] hover:bg-[var(--an-background-tertiary)] hover:text-[var(--an-foreground)]`}
           onClick={onRemindLater}
           data-testid="remind-later-btn"
         >

@@ -459,44 +459,65 @@ export function VoiceModeButton({ workspacePath }: VoiceModeButtonProps) {
   const ringStrokeDashoffset = RING_CIRCUMFERENCE * (1 - contextPercentage / 100);
 
   const getRingStrokeColor = () => {
-    if (contextPercentage > 80) return '#ef4444'; // red
-    if (contextPercentage > 60) return '#eab308'; // yellow
-    return '#22c55e'; // green
+    if (contextPercentage > 80) return 'var(--an-diff-removed-text)';
+    if (contextPercentage > 60) return 'var(--an-primary-color)';
+    return 'var(--an-diff-added-text)';
   };
 
   const contextExtraContent = (isVoiceActive && tokenUsage) ? (
-    <div className="flex items-center gap-2 text-xs">
+    <div className="agent-elements-voice-mode-context flex items-center gap-[var(--an-spacing-sm)] text-xs">
       <div
-        className="w-2 h-2 rounded-full shrink-0"
+        className="h-2 w-2 shrink-0 rounded-full"
         style={{ backgroundColor: getRingStrokeColor() }}
       />
-      <span className="text-[var(--nim-text-muted)]">
+      <span className="text-[var(--an-foreground-muted)]">
         Context: {Math.round(contextPercentage)}%
       </span>
-      <span className="text-[var(--nim-text-faint)] ml-auto">
+      <span className="ml-auto text-[var(--an-foreground-subtle)]">
         {tokenUsage.total.toLocaleString()} / {CONTEXT_WINDOW_TOKENS.toLocaleString()}
       </span>
     </div>
   ) : undefined;
 
+  const voiceState = isConnecting
+    ? 'connecting'
+    : error
+      ? 'error'
+      : isVoiceActive && isSleeping
+        ? 'sleeping'
+        : isVoiceActive
+          ? 'active'
+          : isDisabled
+            ? 'disabled'
+            : 'idle';
+
+  const buttonStateClass = isVoiceActive && isSleeping
+    ? 'border-[var(--an-primary-color)] bg-[var(--an-background-tertiary)] text-[var(--an-primary-color)] hover:bg-[var(--an-background-secondary)]'
+    : isVoiceActive
+      ? 'active border-[var(--an-primary-color)] bg-[var(--an-primary-color)] text-[var(--an-send-button-color)] hover:bg-[var(--an-primary-color)]'
+      : error
+        ? 'border-[var(--an-diff-removed-text)] bg-[var(--an-diff-removed-bg)] text-[var(--an-diff-removed-text)]'
+        : isDisabled
+          ? 'cursor-not-allowed border-transparent bg-transparent text-[var(--an-foreground-subtle)] opacity-50'
+          : 'border-transparent bg-transparent text-[var(--an-foreground-muted)] hover:border-[var(--an-border-color)] hover:bg-[var(--an-background-tertiary)] hover:text-[var(--an-foreground)]';
+
   return (
     <HelpTooltip testId="voice-mode-toggle" placement="right" extraContent={contextExtraContent}>
-      <div className="voice-mode-button relative">
+      <div
+        className="voice-mode-button agent-elements-voice-mode-button relative"
+        data-agent-elements-shell="voice-mode-button"
+        data-component="UnifiedAIVoiceModeButton"
+        data-listen-state={listenState}
+        data-testid="agent-elements-voice-mode-button"
+        data-voice-state={voiceState}
+      >
         <button
           onClick={handleToggleVoice}
           disabled={isDisabled}
           data-testid="voice-mode-toggle"
-          className={`nav-button relative w-9 h-9 flex items-center justify-center border-none rounded-md cursor-pointer transition-all duration-150 p-0 active:scale-95 focus-visible:outline-2 focus-visible:outline-[var(--nim-primary)] focus-visible:outline-offset-2 ${
-            isVoiceActive && isSleeping
-              ? 'bg-[#92400e] text-[#fbbf24] hover:bg-[#78350f]'
-              : isVoiceActive
-                ? 'active bg-nim-primary text-white hover:bg-nim-primary-hover'
-                : error
-                  ? 'bg-nim-error text-white'
-                  : isDisabled
-                    ? 'bg-transparent text-nim-disabled cursor-not-allowed'
-                    : 'bg-transparent text-nim-muted hover:bg-nim-tertiary hover:text-nim'
-          }`}
+          className={`nav-button agent-elements-voice-mode-toggle relative flex h-9 w-9 cursor-pointer items-center justify-center rounded-[calc(var(--an-input-border-radius)_-_8px)] border p-0 outline-none transition-[background-color,border-color,color,opacity] duration-150 focus-visible:ring-2 focus-visible:ring-[var(--an-focus-ring)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--an-background)] ${buttonStateClass}`}
+          data-agent-elements-shell="voice-mode-toggle"
+          data-voice-state={voiceState}
           aria-label={getButtonTitle()}
         >
           <MaterialSymbol
@@ -519,7 +540,7 @@ export function VoiceModeButton({ workspacePath }: VoiceModeButtonProps) {
                 cy="18"
                 r={RING_RADIUS}
                 fill="none"
-                stroke="var(--nim-bg-tertiary)"
+                stroke="var(--an-background-tertiary)"
                 strokeWidth="2.5"
                 opacity="0.5"
               />
@@ -534,26 +555,29 @@ export function VoiceModeButton({ workspacePath }: VoiceModeButtonProps) {
                 strokeLinecap="round"
                 strokeDasharray={RING_CIRCUMFERENCE}
                 strokeDashoffset={ringStrokeDashoffset}
-                style={{ transition: 'stroke-dashoffset 0.3s ease, stroke 0.3s ease' }}
+                style={{ transition: 'stroke-dashoffset 180ms cubic-bezier(0.22, 1, 0.36, 1), stroke 180ms cubic-bezier(0.22, 1, 0.36, 1)' }}
               />
             </svg>
           )}
         </button>
         {error && (
           <div
-            className="voice-mode-error-popover absolute left-[calc(100%+8px)] top-1/2 -translate-y-1/2 bg-nim border border-nim-error rounded-lg p-3 min-w-[200px] max-w-[300px] shadow-[0_4px_12px_rgba(0,0,0,0.15)] z-[1000]"
+            className="voice-mode-error-popover agent-elements-voice-mode-error absolute left-[calc(100%+var(--an-spacing-sm))] top-1/2 z-[1000] min-w-[200px] max-w-[300px] -translate-y-1/2 rounded-[var(--an-tool-border-radius)] border border-[var(--an-diff-removed-text)] bg-[var(--an-background)] p-[var(--an-spacing-lg)] text-[var(--an-foreground)]"
+            data-agent-elements-shell="voice-mode-error"
+            data-testid="agent-elements-voice-mode-error"
+            data-tone="error"
           >
-            <div className="flex items-start gap-2 text-nim">
-              <MaterialSymbol icon="error" size={18} className="text-nim-error shrink-0" />
-              <div className="text-[13px] leading-[1.4]">
-                <div className="font-semibold mb-1">Voice Mode Error</div>
-                <div className="text-nim-muted">{getErrorMessage(error)}</div>
+            <div className="flex items-start gap-[var(--an-spacing-sm)]">
+              <MaterialSymbol icon="error" size={18} className="shrink-0 text-[var(--an-diff-removed-text)]" />
+              <div className="min-w-0 text-[13px] leading-[1.4]">
+                <div className="mb-[var(--an-spacing-xs)] font-semibold text-[var(--an-foreground)]">Voice Mode Error</div>
+                <div className="select-text text-[var(--an-foreground-muted)]">{getErrorMessage(error)}</div>
                 {shouldShowVoiceModeSettingsLink(error) && (
                   <button
                     type="button"
                     onClick={handleOpenVoiceModeSettings}
                     data-testid="voice-mode-error-open-settings"
-                    className="voice-mode-error-settings-link mt-2 bg-transparent border-none cursor-pointer p-0 text-left text-[var(--nim-link)] hover:text-[var(--nim-link-hover)]"
+                    className="voice-mode-error-settings-link agent-elements-voice-mode-error-settings mt-[var(--an-spacing-sm)] cursor-pointer border-none bg-transparent p-0 text-left text-[var(--an-primary-color)] transition-[color] duration-150 hover:text-[var(--an-foreground)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--an-focus-ring)]"
                   >
                     Open Voice Mode Settings
                   </button>
@@ -562,7 +586,8 @@ export function VoiceModeButton({ workspacePath }: VoiceModeButtonProps) {
               <button
                 type="button"
                 onClick={(e) => { e.stopPropagation(); setError(null); }}
-                className="bg-transparent border-none cursor-pointer p-0 ml-auto text-nim-faint"
+                aria-label="Dismiss voice mode error"
+                className="ml-auto cursor-pointer rounded-[calc(var(--an-tool-border-radius)_-_4px)] border-none bg-transparent p-[var(--an-spacing-xxs)] text-[var(--an-foreground-subtle)] transition-[background-color,color] duration-150 hover:bg-[var(--an-background-secondary)] hover:text-[var(--an-foreground)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--an-focus-ring)]"
               >
                 <MaterialSymbol icon="close" size={16} />
               </button>

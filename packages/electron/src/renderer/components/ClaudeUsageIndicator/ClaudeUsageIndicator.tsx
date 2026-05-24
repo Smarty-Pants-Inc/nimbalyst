@@ -1,11 +1,11 @@
 /**
- * ClaudeUsageIndicator - Circular progress indicator for Claude Code usage
+ * ClaudeUsageIndicator - circular usage indicator for Claude Code.
  *
- * Displays the 5-hour session utilization as a circular progress ring
- * in the navigation gutter. Clicking opens a popover with full details.
+ * Displays the 5-hour session utilization in the navigation gutter. Clicking
+ * opens a popover with full details.
  */
 
-import React, { useState, useRef, useCallback } from 'react';
+import React, { useCallback, useRef, useState } from 'react';
 import { useAtomValue } from 'jotai';
 import {
   claudeUsageAtom,
@@ -17,11 +17,39 @@ import {
 import { ClaudeUsagePopover } from './ClaudeUsagePopover';
 import { refreshClaudeUsage } from '../../store/listeners/claudeUsageListeners';
 
-const RING_RADIUS = 12;
-const RING_CIRCUMFERENCE = 2 * Math.PI * RING_RADIUS;
+type UsageVisualState = 'healthy' | 'warning' | 'danger' | 'muted';
 
 interface ClaudeUsageIndicatorProps {
   className?: string;
+}
+
+function getUsageVisualState(color: string, forceMuted = false): UsageVisualState {
+  if (forceMuted) return 'muted';
+  if (color === 'green') return 'healthy';
+  if (color === 'yellow') return 'warning';
+  if (color === 'red') return 'danger';
+  return 'muted';
+}
+
+function getUsageRingColor(state: UsageVisualState): string {
+  switch (state) {
+    case 'healthy':
+      return 'var(--nim-success)';
+    case 'warning':
+      return 'var(--nim-warning)';
+    case 'danger':
+      return 'var(--nim-error)';
+    default:
+      return 'var(--an-foreground-subtle)';
+  }
+}
+
+function getUsageRingStyle(utilization: number, state: UsageVisualState): React.CSSProperties {
+  const clampedUtilization = Math.max(0, Math.min(utilization, 100));
+  return {
+    '--usage-ring-color': getUsageRingColor(state),
+    background: `conic-gradient(var(--usage-ring-color) ${clampedUtilization}%, var(--an-background-tertiary) 0)`,
+  } as React.CSSProperties;
 }
 
 export const ClaudeUsageIndicator: React.FC<ClaudeUsageIndicatorProps> = ({ className }) => {
@@ -47,18 +75,7 @@ export const ClaudeUsageIndicator: React.FC<ClaudeUsageIndicatorProps> = ({ clas
 
   const hasLoadError = Boolean(usage?.error);
   const utilization = hasLoadError ? 0 : usage?.fiveHour?.utilization ?? 0;
-  const strokeDashoffset = RING_CIRCUMFERENCE * (1 - utilization / 100);
-
-  // Color mapping
-  const colorClasses: Record<string, string> = {
-    green: 'stroke-green-500',
-    yellow: 'stroke-yellow-500',
-    red: 'stroke-red-500',
-    muted: 'stroke-nim-muted',
-  };
-
-  const effectiveSessionColor = hasLoadError ? 'muted' : sessionColor;
-  const strokeColor = colorClasses[effectiveSessionColor] || colorClasses.muted;
+  const usageState = getUsageVisualState(sessionColor, hasLoadError);
 
   const tooltipContent = usage?.error
     ? `Claude usage unavailable: ${usage.error}`
@@ -67,51 +84,39 @@ export const ClaudeUsageIndicator: React.FC<ClaudeUsageIndicatorProps> = ({ clas
       : 'Claude usage unavailable';
 
   return (
-    <div className={`relative ${className || ''}`}>
+    <div
+      className={`agent-elements-usage-indicator relative ${className || ''}`}
+      data-component="ClaudeUsageIndicator"
+      data-agent-elements-shell="usage-indicator-root"
+      data-usage-provider="claude"
+    >
       <button
         ref={buttonRef}
         onClick={handleClick}
         title={tooltipContent}
-        className="relative w-9 h-9 flex items-center justify-center bg-transparent border-none rounded-md cursor-pointer transition-all duration-150 p-0 hover:bg-nim-tertiary active:scale-95 focus-visible:outline-2 focus-visible:outline-[var(--nim-primary)] focus-visible:outline-offset-2"
+        className="nav-button agent-elements-usage-indicator-button relative flex h-9 w-9 cursor-pointer items-center justify-center rounded-[var(--an-tool-border-radius)] border border-transparent bg-transparent p-0 text-[var(--an-foreground-muted)] transition-[background-color,border-color,color,box-shadow] duration-150 ease-out hover:border-[var(--an-border-color)] hover:bg-[var(--an-background-tertiary)] hover:text-[var(--an-foreground)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--an-input-focus-outline)]"
         aria-label="Claude Usage"
+        aria-expanded={isPopoverOpen}
+        aria-haspopup="menu"
+        data-agent-elements-shell="claude-usage-indicator"
+        data-usage-provider="claude"
+        data-usage-state={usageState}
         data-testid="claude-usage-indicator"
       >
-        <svg
-          width="32"
-          height="32"
-          viewBox="0 0 32 32"
-          className="transform -rotate-90"
+        <span
+          className="agent-elements-usage-ring relative flex h-8 w-8 items-center justify-center rounded-[999px] border border-[color-mix(in_srgb,var(--usage-ring-color)_28%,var(--an-border-color))] transition-[background,border-color] duration-300 ease-out"
+          data-agent-elements-shell="usage-ring"
+          data-usage-state={usageState}
+          data-testid="agent-elements-claude-usage-ring"
+          style={getUsageRingStyle(utilization, usageState)}
         >
-          {/* Background ring */}
-          <circle
-            cx="16"
-            cy="16"
-            r={RING_RADIUS}
-            fill="none"
-            className="stroke-nim-tertiary"
-            strokeWidth="3"
-          />
-          {/* Progress ring */}
-          <circle
-            cx="16"
-            cy="16"
-            r={RING_RADIUS}
-            fill="none"
-            className={strokeColor}
-            strokeWidth="3"
-            strokeLinecap="round"
-            strokeDasharray={RING_CIRCUMFERENCE}
-            strokeDashoffset={strokeDashoffset}
-            style={{ transition: 'stroke-dashoffset 0.3s ease' }}
-          />
-        </svg>
-        {/* Percentage text */}
-        <span className="absolute inset-0 flex items-center justify-center text-[9px] font-semibold text-nim">
+          <span className="absolute inset-[4px] rounded-[999px] bg-[var(--an-background)]" />
+        </span>
+        <span className="agent-elements-usage-percent absolute inset-0 flex items-center justify-center text-[9px] font-semibold leading-none text-[var(--an-foreground)]">
           {hasLoadError ? '--' : `${Math.round(utilization)}%`}
         </span>
       </button>
 
-      {/* Popover */}
       {isPopoverOpen && (
         <ClaudeUsagePopover
           anchorRef={buttonRef}

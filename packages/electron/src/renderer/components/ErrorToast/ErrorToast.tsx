@@ -1,11 +1,20 @@
 import React, { useEffect, useState, useCallback, useRef } from 'react';
-import { copyToClipboard } from '@nimbalyst/runtime';
+import { copyToClipboard, MaterialSymbol } from '@nimbalyst/runtime';
 import { errorNotificationService, type ErrorNotification } from '../../services/ErrorNotificationService';
 
-const severityStyles = {
-  error: 'border-l-[#dc3545] bg-[#fff5f5] dark:bg-[#3d1f1f]',
-  warning: 'border-l-[#ffc107] bg-[#fffbf0] dark:bg-[#3d3419]',
-  info: 'border-l-[#17a2b8] bg-[#f0f9ff] dark:bg-[#1a2d35]',
+const severityStyles: Record<ErrorNotification['severity'], string> = {
+  error:
+    'border-[color-mix(in_srgb,var(--nim-error)_34%,var(--an-border-color))] bg-[color-mix(in_srgb,var(--nim-error)_7%,var(--an-background))] text-[var(--nim-error)]',
+  warning:
+    'border-[color-mix(in_srgb,var(--nim-warning)_34%,var(--an-border-color))] bg-[color-mix(in_srgb,var(--nim-warning)_7%,var(--an-background))] text-[var(--nim-warning)]',
+  info:
+    'border-[color-mix(in_srgb,var(--nim-info)_34%,var(--an-border-color))] bg-[color-mix(in_srgb,var(--nim-info)_7%,var(--an-background))] text-[var(--nim-info)]',
+};
+
+const severityIcons: Record<ErrorNotification['severity'], string> = {
+  error: 'error',
+  warning: 'warning',
+  info: 'info',
 };
 
 export function ErrorToastContainer() {
@@ -108,44 +117,69 @@ ${JSON.stringify(notification.context, null, 2)}
   if (notifications.length === 0) return null;
 
   return (
-    <div className="error-toast-container fixed top-10 right-5 z-[10000] flex flex-col gap-3 max-w-[500px] pointer-events-none">
+    <div
+      className="error-toast-container agent-elements-error-toast-container fixed right-5 top-10 z-[10000] flex max-w-[min(500px,calc(100vw-32px))] flex-col gap-[var(--an-spacing-lg)] pointer-events-none [container-type:inline-size]"
+      data-component="ErrorToastContainer"
+      data-agent-elements-shell="error-toast-container"
+      data-testid="agent-elements-error-toast-container"
+    >
       {notifications.map(notification => (
         <div
           key={notification.id}
-          className={`error-toast error-toast--${notification.severity} rounded-lg shadow-[0_4px_12px_rgba(0,0,0,0.15)] p-4 pointer-events-auto animate-[slideIn_0.3s_ease-out] border-l-4 ${severityStyles[notification.severity]}`}
+          className={`error-toast error-toast--${notification.severity} agent-elements-error-toast agent-elements-tool-card pointer-events-auto flex flex-col gap-[var(--an-spacing-md)] rounded-[var(--an-tool-border-radius)] border p-[var(--an-spacing-xl)] text-[var(--an-foreground)] shadow-[0_16px_48px_color-mix(in_srgb,var(--nim-text)_16%,transparent)] transition-[opacity,transform] duration-200 ease-out ${severityStyles[notification.severity]}`}
           role="alert"
+          data-agent-elements-shell="error-toast"
+          data-severity={notification.severity}
           onMouseEnter={() => pauseDismissTimer(notification.id)}
           onMouseLeave={() => resumeDismissTimer(notification)}
         >
-          <div className="error-toast-header flex items-center gap-2 mb-2">
-            <div className="error-toast-icon text-xl leading-none">
-              {notification.severity === 'error' && '🚨'}
-              {notification.severity === 'warning' && '⚠️'}
-              {notification.severity === 'info' && 'ℹ️'}
+          <div
+            className="error-toast-header agent-elements-error-toast-header flex items-start gap-[var(--an-spacing-md)]"
+            data-agent-elements-shell="error-toast-header"
+          >
+            <div
+              className="error-toast-icon agent-elements-error-toast-icon agent-elements-status-pill flex h-8 w-8 shrink-0 items-center justify-center rounded-[var(--an-tool-border-radius)] border border-current bg-[color-mix(in_srgb,currentColor_10%,transparent)]"
+              data-agent-elements-shell="error-toast-icon"
+              data-testid="agent-elements-error-toast-icon"
+            >
+              <MaterialSymbol icon={severityIcons[notification.severity]} size={17} />
             </div>
-            <div className="error-toast-title flex-1 font-semibold text-sm text-[var(--nim-text)]">{notification.title}</div>
+            <div className="min-w-0 flex-1">
+              <div className="error-toast-title agent-elements-error-toast-title text-sm font-semibold leading-5 text-[var(--an-foreground)]">
+                {notification.title}
+              </div>
+              <div
+                className="error-toast-message agent-elements-error-toast-message mt-[var(--an-spacing-xs)] select-text text-[13px] leading-5 text-[var(--an-foreground-muted)]"
+                data-agent-elements-shell="error-toast-message"
+                data-testid="agent-elements-error-toast-message"
+              >
+                {notification.message}
+              </div>
+            </div>
             {notification.dismissible && (
               <button
-                className="error-toast-close bg-transparent border-none text-2xl leading-none cursor-pointer p-0 w-6 h-6 flex items-center justify-center text-[var(--nim-text-muted)] rounded transition-colors duration-200 hover:bg-black/5"
+                className="error-toast-close agent-elements-error-toast-close flex h-7 w-7 shrink-0 cursor-pointer items-center justify-center rounded-[var(--an-input-border-radius)] border-none bg-transparent p-0 text-[var(--an-foreground-muted)] transition-colors duration-150 ease-out hover:bg-[var(--an-background-tertiary)] hover:text-[var(--an-foreground)] focus:outline-none focus:ring-2 focus:ring-[var(--an-input-focus-outline)]"
                 onClick={(e) => {
                   e.stopPropagation();
                   handleDismiss(notification.id);
                 }}
-                aria-label="Dismiss"
+                aria-label="Dismiss notification"
                 type="button"
               >
-                x
+                <MaterialSymbol icon="close" size={15} />
               </button>
             )}
           </div>
 
-          <div className="error-toast-message text-[13px] text-[var(--nim-text)] leading-normal mb-2">{notification.message}</div>
-
           {(notification.action || notification.details || notification.stack || notification.context) && (
-            <div className="error-toast-actions flex gap-2 mt-3">
+            <div
+              className="error-toast-actions agent-elements-error-toast-actions flex flex-wrap gap-[var(--an-spacing-sm)]"
+              data-agent-elements-shell="error-toast-actions"
+              data-testid="agent-elements-error-toast-actions"
+            >
               {notification.action && (
                 <button
-                  className="error-toast-action-btn bg-[var(--nim-bg-secondary)] text-[var(--nim-text)] border border-[var(--nim-border)] px-3 py-1.5 rounded text-xs font-medium cursor-pointer transition-colors duration-200 hover:bg-[var(--nim-bg-hover)] hover:border-[var(--nim-border-focus)]"
+                  className="error-toast-action-btn agent-elements-error-toast-action cursor-pointer rounded-[var(--an-input-border-radius)] border border-[var(--an-border-color)] bg-[var(--an-background)] px-[var(--an-spacing-lg)] py-[var(--an-spacing-sm)] text-xs font-medium text-[var(--an-foreground)] transition-[background-color,border-color,color] duration-150 ease-out hover:bg-[var(--an-background-tertiary)] hover:border-[var(--an-primary-color)] focus:outline-none focus:ring-2 focus:ring-[var(--an-input-focus-outline)]"
                   onClick={() => handleActionClick(notification)}
                 >
                   {notification.action.label}
@@ -153,7 +187,7 @@ ${JSON.stringify(notification.context, null, 2)}
               )}
               {(notification.details || notification.stack || notification.context) && (
                 <button
-                  className="error-toast-copy-btn bg-[var(--nim-primary)] text-white border-none px-3 py-1.5 rounded text-xs cursor-pointer transition-colors duration-200 hover:bg-[var(--nim-primary-hover)]"
+                  className="error-toast-copy-btn agent-elements-error-toast-copy cursor-pointer rounded-[var(--an-input-border-radius)] border border-[var(--an-send-button-bg)] bg-[var(--an-send-button-bg)] px-[var(--an-spacing-lg)] py-[var(--an-spacing-sm)] text-xs font-medium text-[var(--an-send-button-color)] transition-colors duration-150 ease-out hover:bg-[var(--nim-primary-hover)] focus:outline-none focus:ring-2 focus:ring-[var(--an-input-focus-outline)]"
                   onClick={() => handleCopyDetails(notification)}
                 >
                   Copy Details

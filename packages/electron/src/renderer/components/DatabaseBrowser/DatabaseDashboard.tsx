@@ -47,6 +47,27 @@ interface Props {
   onTableSelect: (tableName: string) => void;
 }
 
+const dashboardShellClass =
+  'agent-elements-database-dashboard flex-1 overflow-auto p-6 bg-nim text-nim';
+const dashboardInnerClass =
+  'mx-auto flex max-w-4xl flex-col gap-5';
+const dashboardPanelClass =
+  'rounded-[10px] border border-[var(--nim-border)] bg-nim-secondary';
+const dashboardStatCardClass =
+  'agent-elements-database-stat-card rounded-[10px] border border-[var(--nim-border)] bg-nim-secondary p-4';
+const dashboardSectionHeaderClass =
+  'border-b border-[var(--nim-border)] px-4 py-3';
+const dashboardMetricLabelClass =
+  'mb-1 text-sm text-[var(--nim-text-muted)]';
+const dashboardProgressTrackClass =
+  'h-1.5 overflow-hidden rounded-full bg-[var(--nim-bg-tertiary)]';
+const dashboardProgressFillClass =
+  'h-full rounded-full transition-[width] duration-200 ease-out';
+const dashboardButtonClass =
+  'rounded-[6px] border border-[var(--nim-border)] bg-[var(--nim-bg-tertiary)] px-3 py-1 text-sm text-[var(--nim-text)] transition-colors duration-150 hover:bg-[var(--nim-bg-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--nim-primary)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--nim-bg)]';
+const dashboardRowClass =
+  'flex items-center justify-between gap-3 text-sm';
+
 function formatBytes(bytes: number): string {
   if (bytes === 0) return '0 B';
   const k = 1024;
@@ -122,7 +143,11 @@ export function DatabaseDashboard({ onTableSelect }: Props) {
 
   if (loading) {
     return (
-      <div className="flex-1 flex items-center justify-center text-[var(--nim-text-muted)]">
+      <div
+        className={`${dashboardShellClass} flex items-center justify-center text-[var(--nim-text-muted)]`}
+        data-agent-elements-shell="database-dashboard"
+        data-testid="agent-elements-database-dashboard"
+      >
         Loading dashboard...
       </div>
     );
@@ -130,11 +155,15 @@ export function DatabaseDashboard({ onTableSelect }: Props) {
 
   if (error) {
     return (
-      <div className="flex-1 flex flex-col items-center justify-center gap-4">
-        <div className="text-[var(--nim-error)] text-sm">{error}</div>
+      <div
+        className={`${dashboardShellClass} flex flex-col items-center justify-center gap-4`}
+        data-agent-elements-shell="database-dashboard"
+        data-testid="agent-elements-database-dashboard"
+      >
+        <div className="agent-elements-database-error text-sm text-[var(--nim-error)]">{error}</div>
         <button
           onClick={loadStats}
-          className="py-1.5 px-4 rounded text-sm border border-[var(--nim-border)] bg-[var(--nim-bg-tertiary)] text-[var(--nim-text)] hover:bg-[var(--nim-bg-hover)]"
+          className={dashboardButtonClass}
         >
           Retry
         </button>
@@ -150,52 +179,57 @@ export function DatabaseDashboard({ onTableSelect }: Props) {
   const backupCount = [stats.backupStatus?.currentBackup, stats.backupStatus?.previousBackup, stats.backupStatus?.oldestBackup].filter(Boolean).length;
 
   return (
-    <div className="flex-1 overflow-auto p-6">
-      <div className="max-w-4xl mx-auto space-y-6">
-        {/* Header */}
+    <div
+      className={dashboardShellClass}
+      data-agent-elements-shell="database-dashboard"
+      data-testid="agent-elements-database-dashboard"
+    >
+      <div className={dashboardInnerClass}>
         <div className="flex items-center justify-between">
           <h2 className="text-xl font-semibold">Database Overview</h2>
           <button
             onClick={loadStats}
-            className="py-1 px-3 rounded text-sm border border-[var(--nim-border)] bg-[var(--nim-bg-tertiary)] text-[var(--nim-text)] hover:bg-[var(--nim-bg-hover)]"
+            className={dashboardButtonClass}
           >
             Refresh
           </button>
         </div>
 
-        {/* Summary Cards */}
         <div className="grid grid-cols-3 gap-4">
-          <div className="p-4 rounded-lg border border-[var(--nim-border)] bg-nim-secondary">
-            <div className="text-sm text-[var(--nim-text-muted)] mb-1">Total Size</div>
+          <div className={dashboardStatCardClass} data-testid="agent-elements-database-stat-card">
+            <div className={dashboardMetricLabelClass}>Total Size</div>
             <div className="text-2xl font-semibold">{stats.totalSize}</div>
           </div>
-          <div className="p-4 rounded-lg border border-[var(--nim-border)] bg-nim-secondary">
-            <div className="text-sm text-[var(--nim-text-muted)] mb-1">Tables</div>
+          <div className={dashboardStatCardClass} data-testid="agent-elements-database-stat-card">
+            <div className={dashboardMetricLabelClass}>Tables</div>
             <div className="text-2xl font-semibold">{stats.tableStats.length}</div>
           </div>
-          <div className="p-4 rounded-lg border border-[var(--nim-border)] bg-nim-secondary">
-            <div className="text-sm text-[var(--nim-text-muted)] mb-1">Total Rows</div>
+          <div className={dashboardStatCardClass} data-testid="agent-elements-database-stat-card">
+            <div className={dashboardMetricLabelClass}>Total Rows</div>
             <div className="text-2xl font-semibold">{totalRows.toLocaleString()}</div>
           </div>
         </div>
 
-        {/* Backup Status */}
         {stats.backupStatus && (
-          <div className="p-4 rounded-lg border border-[var(--nim-border)] bg-nim-secondary">
+          <div
+            className={`agent-elements-database-backup-status ${dashboardPanelClass} p-4`}
+            data-agent-elements-shell="database-backup-status"
+            data-testid="agent-elements-database-backup-status"
+          >
             <h3 className="text-sm font-semibold mb-3">Backup Status</h3>
             <div className="space-y-2">
-              <div className="flex items-center justify-between text-sm">
+              <div className={dashboardRowClass}>
                 <span className="text-[var(--nim-text-muted)]">Available Backups</span>
                 <span>{backupCount} of 3</span>
               </div>
               {stats.backupStatus.lastSuccessfulBackup && (
-                <div className="flex items-center justify-between text-sm">
+                <div className={dashboardRowClass}>
                   <span className="text-[var(--nim-text-muted)]">Last Successful Backup</span>
                   <span>{formatRelativeTime(stats.backupStatus.lastSuccessfulBackup)}</span>
                 </div>
               )}
               {stats.backupStatus.currentBackup && (
-                <div className="flex items-center justify-between text-sm">
+                <div className={dashboardRowClass}>
                   <span className="text-[var(--nim-text-muted)]">Current Backup Size</span>
                   <span>{formatBytes(stats.backupStatus.currentBackup.size)}</span>
                 </div>
@@ -209,7 +243,6 @@ export function DatabaseDashboard({ onTableSelect }: Props) {
           </div>
         )}
 
-        {/* WAL (Write-Ahead Log) */}
         {stats.walStats && (() => {
           const minBytes = parsePostgresSize(stats.walStats.minWalSize);
           const maxBytes = parsePostgresSize(stats.walStats.maxWalSize);
@@ -220,18 +253,22 @@ export function DatabaseDashboard({ onTableSelect }: Props) {
           const pct = Math.min(100, Math.max(0, ((cur - minBytes) / range) * 100));
           const overFloor = cur > minBytes * 1.05;
           return (
-            <div className="database-dashboard-wal p-4 rounded-lg border border-[var(--nim-border)] bg-nim-secondary">
+            <div
+              className={`database-dashboard-wal agent-elements-database-wal-status ${dashboardPanelClass} p-4`}
+              data-agent-elements-shell="database-wal-status"
+              data-testid="agent-elements-database-wal-status"
+            >
               <h3 className="text-sm font-semibold mb-3">Write-Ahead Log</h3>
               <div className="space-y-2 text-sm">
-                <div className="flex items-center justify-between">
+                <div className={dashboardRowClass}>
                   <span className="text-[var(--nim-text-muted)]">Current size</span>
                   <span data-testid="wal-current-size">
                     {stats.walStats.totalSize} ({stats.walStats.fileCount} {stats.walStats.fileCount === 1 ? 'segment' : 'segments'})
                   </span>
                 </div>
-                <div className="h-1.5 bg-[var(--nim-bg-tertiary)] rounded-full overflow-hidden">
+                <div className={dashboardProgressTrackClass}>
                   <div
-                    className={`h-full rounded-full transition-all ${overFloor ? 'bg-[var(--nim-warning)]' : 'bg-[var(--nim-primary)]'}`}
+                    className={`${dashboardProgressFillClass} ${overFloor ? 'bg-[var(--nim-warning)]' : 'bg-[var(--nim-primary)]'}`}
                     style={{ width: `${Math.max(pct, 1)}%` }}
                   />
                 </div>
@@ -239,7 +276,7 @@ export function DatabaseDashboard({ onTableSelect }: Props) {
                   <span>min {stats.walStats.minWalSize}</span>
                   <span>max {stats.walStats.maxWalSize}</span>
                 </div>
-                <div className="flex items-center justify-between pt-2">
+                <div className={`${dashboardRowClass} pt-2`}>
                   <span className="text-[var(--nim-text-muted)]">Checkpoint timeout</span>
                   <span>{stats.walStats.checkpointTimeout}</span>
                 </div>
@@ -251,9 +288,12 @@ export function DatabaseDashboard({ onTableSelect }: Props) {
           );
         })()}
 
-        {/* Table Statistics */}
-        <div className="rounded-lg border border-[var(--nim-border)] bg-nim-secondary overflow-hidden">
-          <div className="p-4 border-b border-[var(--nim-border)]">
+        <div
+          className={`agent-elements-database-table-list ${dashboardPanelClass} overflow-hidden`}
+          data-agent-elements-shell="database-table-list"
+          data-testid="agent-elements-database-table-list"
+        >
+          <div className={dashboardSectionHeaderClass}>
             <h3 className="text-sm font-semibold">Tables by Size</h3>
           </div>
           <div className="divide-y divide-[var(--nim-border)]">
@@ -268,8 +308,18 @@ export function DatabaseDashboard({ onTableSelect }: Props) {
                 return (
                   <div
                     key={table.name}
-                    className="p-3 hover:bg-[var(--nim-bg-hover)] cursor-pointer"
+                    className="agent-elements-database-table-row cursor-pointer p-3 transition-colors duration-150 hover:bg-[var(--nim-bg-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--nim-primary)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--nim-bg)]"
+                    data-agent-elements-shell="database-table-row"
+                    data-testid="agent-elements-database-table-row"
                     onClick={() => onTableSelect(table.name)}
+                    role="button"
+                    tabIndex={0}
+                    onKeyDown={(event) => {
+                      if (event.key === 'Enter' || event.key === ' ') {
+                        event.preventDefault();
+                        onTableSelect(table.name);
+                      }
+                    }}
                   >
                     <div className="flex items-center justify-between mb-2">
                       <span className="font-medium text-sm">{table.name}</span>
@@ -278,9 +328,9 @@ export function DatabaseDashboard({ onTableSelect }: Props) {
                         <span className="w-20 text-right">{table.size}</span>
                       </div>
                     </div>
-                    <div className="h-1.5 bg-[var(--nim-bg-tertiary)] rounded-full overflow-hidden">
+                    <div className={dashboardProgressTrackClass}>
                       <div
-                        className="h-full bg-[var(--nim-primary)] rounded-full transition-all"
+                        className={`${dashboardProgressFillClass} bg-[var(--nim-primary)]`}
                         style={{ width: `${Math.max(percentage, 1)}%` }}
                       />
                     </div>
@@ -291,16 +341,15 @@ export function DatabaseDashboard({ onTableSelect }: Props) {
           </div>
         </div>
 
-        {/* Quick Stats */}
         <div className="grid grid-cols-2 gap-4">
-          <div className="p-4 rounded-lg border border-[var(--nim-border)] bg-nim-secondary">
-            <div className="text-sm text-[var(--nim-text-muted)] mb-1">AI Sessions</div>
+          <div className={dashboardStatCardClass} data-testid="agent-elements-database-stat-card">
+            <div className={dashboardMetricLabelClass}>AI Sessions</div>
             <div className="text-xl font-semibold">
               {parseInt(stats.basicStats?.ai_sessions_count || '0').toLocaleString()}
             </div>
           </div>
-          <div className="p-4 rounded-lg border border-[var(--nim-border)] bg-nim-secondary">
-            <div className="text-sm text-[var(--nim-text-muted)] mb-1">Document History Entries</div>
+          <div className={dashboardStatCardClass} data-testid="agent-elements-database-stat-card">
+            <div className={dashboardMetricLabelClass}>Document History Entries</div>
             <div className="text-xl font-semibold">
               {parseInt(stats.basicStats?.history_count || '0').toLocaleString()}
             </div>

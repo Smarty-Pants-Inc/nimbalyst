@@ -107,11 +107,12 @@ export class TranscriptProjector {
       }
     }
 
-    // Build view messages for non-progress, non-turn-ended events
+    // Build view messages for non-progress events. Parented tool progress is
+    // grouped under its tool_call, while turn_ended is a renderable usage row.
     const allMessages: TranscriptViewMessage[] = [];
     for (const event of events) {
-      if (event.eventType === 'tool_progress' || event.eventType === 'turn_ended') {
-        continue; // progress grouped under parent tool_call; turn_ended is metadata-only
+      if (event.eventType === 'tool_progress') {
+        continue; // progress grouped under parent tool_call
       }
       allMessages.push(projectEvent(event, progressByParent));
     }

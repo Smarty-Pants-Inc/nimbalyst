@@ -100,7 +100,13 @@ export const TrackerMode: React.FC<TrackerModeProps> = ({
   );
 
   return (
-    <div className="tracker-mode flex-1 flex flex-row overflow-hidden min-h-0">
+    <div
+      className="tracker-mode agent-elements-tracker-mode flex min-h-0 flex-1 flex-row overflow-hidden bg-[var(--an-background)] text-[var(--an-foreground)] [container-type:inline-size]"
+      data-component="TrackerMode"
+      data-agent-elements-shell="tracker-mode"
+      data-active={isActive ? 'true' : 'false'}
+      data-testid="agent-elements-tracker-mode"
+    >
       <ResizablePanel
         leftPanel={sidebarContent}
         rightPanel={mainContent}

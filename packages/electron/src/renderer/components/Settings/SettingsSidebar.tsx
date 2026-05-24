@@ -55,6 +55,8 @@ interface SettingsSidebarProps {
   scope?: SettingsScope;
 }
 
+const toShellId = (value: string) => value.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+
 export const SettingsSidebar: React.FC<SettingsSidebarProps> = ({
   selectedCategory,
   onSelectCategory,
@@ -276,62 +278,99 @@ Best for quick edits and tasks that do not require multi-file operations.`,
   };
 
   return (
-    <div className="settings-sidebar w-[240px] shrink-0 border-r border-[var(--nim-border)] bg-[var(--nim-bg)] overflow-y-auto">
-      <div className="settings-sidebar-content p-3">
-        {filteredGroups.map((group) => (
-          <div key={group.title} className="settings-sidebar-group mb-4">
-            <div className="settings-sidebar-group-title flex items-center gap-1.5 px-2 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-[var(--nim-text-muted)]">
-              {group.title}
-              {group.infoTooltip && (
-                <span
-                  className="settings-sidebar-group-info cursor-help text-[var(--nim-text-faint)] hover:text-[var(--nim-text-muted)] transition-colors"
-                  onMouseEnter={(event) => handleTooltipEnter(event, group.infoTooltip!)}
-                  onMouseLeave={handleTooltipLeave}
-                >
-                  <MaterialSymbol icon="info" size={14} />
-                </span>
-              )}
-            </div>
-            {group.items
-              .filter((item) => !item.hidden)
-              .map((item) => (
-                <div
-                  key={item.id}
-                  className={`settings-sidebar-item flex items-center gap-2 px-2 py-1.5 rounded cursor-pointer text-sm transition-colors ${
-                    selectedCategory === item.id
-                      ? 'bg-[var(--nim-bg-selected)] text-[var(--nim-text)]'
-                      : 'text-[var(--nim-text-muted)] hover:bg-[var(--nim-bg-hover)] hover:text-[var(--nim-text)]'
-                  }`}
-                  onClick={() => onSelectCategory(item.id)}
-                >
-                  <span className="settings-sidebar-item-icon flex items-center justify-center w-5 h-5 shrink-0 text-[var(--nim-text-muted)]">{item.icon}</span>
-                  <span className="settings-sidebar-item-name flex-1 truncate">{item.name}</span>
-                  {item.isAlpha && <AlphaBadge size="xs" tooltip={SETTINGS_ALPHA_TOOLTIP} />}
-                  {item.badge && (
-                    <span className="settings-sidebar-item-badge text-[10px] font-medium px-1.5 py-0.5 rounded bg-[var(--nim-bg-tertiary)] text-[var(--nim-text-muted)]">
-                      {item.badge}
-                    </span>
-                  )}
-                  {item.statusDot && (
+    <div
+      className="settings-sidebar agent-elements-settings-sidebar agent-elements-panel-sidebar w-[240px] shrink-0 border-r border-[var(--nim-border)] bg-[var(--nim-bg)] overflow-y-auto"
+      data-agent-elements-shell="settings-sidebar"
+      data-component="SettingsSidebar"
+      data-testid="agent-elements-settings-sidebar"
+    >
+      <div
+        className="settings-sidebar-content agent-elements-settings-sidebar-content p-3"
+        data-agent-elements-shell="settings-sidebar-content"
+        data-testid="agent-elements-settings-sidebar-content"
+      >
+        {filteredGroups.map((group) => {
+          const groupId = toShellId(group.title);
+          return (
+            <div
+              key={group.title}
+              className="settings-sidebar-group agent-elements-settings-group mb-4"
+              data-agent-elements-shell="settings-group"
+              data-settings-group={group.title}
+              data-testid={`agent-elements-settings-group-${groupId}`}
+            >
+              <div
+                className="settings-sidebar-group-title agent-elements-settings-group-title flex items-center gap-1.5 px-2 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-[var(--nim-text-muted)]"
+                data-agent-elements-shell="settings-group-title"
+              >
+                {group.title}
+                {group.infoTooltip && (
+                  <span
+                    className="settings-sidebar-group-info agent-elements-settings-group-info cursor-help text-[var(--nim-text-faint)] hover:text-[var(--nim-text-muted)] transition-colors"
+                    data-agent-elements-shell="settings-group-info"
+                    onMouseEnter={(event) => handleTooltipEnter(event, group.infoTooltip!)}
+                    onMouseLeave={handleTooltipLeave}
+                  >
+                    <MaterialSymbol icon="info" size={14} />
+                  </span>
+                )}
+              </div>
+              {group.items
+                .filter((item) => !item.hidden)
+                .map((item) => (
+                  <div
+                    key={item.id}
+                    className={`settings-sidebar-item agent-elements-settings-nav-item flex items-center gap-2 px-2 py-1.5 rounded cursor-pointer text-sm transition-colors ${
+                      selectedCategory === item.id
+                        ? 'bg-[var(--nim-bg-selected)] text-[var(--nim-text)]'
+                        : 'text-[var(--nim-text-muted)] hover:bg-[var(--nim-bg-hover)] hover:text-[var(--nim-text)]'
+                    }`}
+                    data-agent-elements-shell="settings-nav-item"
+                    data-settings-category={item.id}
+                    data-selected={selectedCategory === item.id ? 'true' : 'false'}
+                    data-testid={`agent-elements-settings-item-${item.id}`}
+                    onClick={() => onSelectCategory(item.id)}
+                  >
                     <span
-                      className={`settings-sidebar-item-status w-2 h-2 rounded-full shrink-0 ${
-                        item.statusDot === 'success'
-                          ? 'bg-[var(--nim-success)]'
-                          : item.statusDot === 'error'
-                          ? 'bg-[var(--nim-error)]'
-                          : 'bg-[var(--nim-warning)]'
-                      }`}
-                    />
-                  )}
-                </div>
-              ))}
-          </div>
-        ))}
+                      className="settings-sidebar-item-icon agent-elements-settings-nav-icon flex items-center justify-center w-5 h-5 shrink-0 text-[var(--nim-text-muted)]"
+                      data-agent-elements-shell="settings-nav-icon"
+                    >
+                      {item.icon}
+                    </span>
+                    <span className="settings-sidebar-item-name agent-elements-settings-nav-label flex-1 truncate">{item.name}</span>
+                    {item.isAlpha && <AlphaBadge size="xs" tooltip={SETTINGS_ALPHA_TOOLTIP} />}
+                    {item.badge && (
+                      <span
+                        className="settings-sidebar-item-badge agent-elements-status-pill text-[10px] font-medium px-1.5 py-0.5 rounded bg-[var(--nim-bg-tertiary)] text-[var(--nim-text-muted)]"
+                        data-agent-elements-shell="settings-nav-badge"
+                      >
+                        {item.badge}
+                      </span>
+                    )}
+                    {item.statusDot && (
+                      <span
+                        className={`settings-sidebar-item-status agent-elements-status-dot w-2 h-2 rounded-full shrink-0 ${
+                          item.statusDot === 'success'
+                            ? 'bg-[var(--nim-success)]'
+                            : item.statusDot === 'error'
+                            ? 'bg-[var(--nim-error)]'
+                            : 'bg-[var(--nim-warning)]'
+                        }`}
+                        data-agent-elements-shell="settings-nav-status"
+                        data-tone={item.statusDot}
+                      />
+                    )}
+                  </div>
+                ))}
+            </div>
+          );
+        })}
       </div>
       {tooltip &&
         createPortal(
           <div
-            className="settings-sidebar-tooltip fixed z-[10000] max-w-[280px] px-3 py-2 bg-[var(--nim-bg-tertiary)] border border-[var(--nim-border)] rounded-lg shadow-lg text-sm text-[var(--nim-text)] whitespace-pre-wrap pointer-events-none transform -translate-y-1/2"
+            className="settings-sidebar-tooltip agent-elements-settings-tooltip fixed z-[10000] max-w-[280px] px-3 py-2 bg-[var(--nim-bg-tertiary)] border border-[var(--nim-border)] rounded-lg shadow-lg text-sm text-[var(--nim-text)] whitespace-pre-wrap pointer-events-none transform -translate-y-1/2"
+            data-agent-elements-shell="settings-tooltip"
             style={{ top: `${tooltip.top}px`, left: `${tooltip.left}px` }}
           >
             {tooltip.text}

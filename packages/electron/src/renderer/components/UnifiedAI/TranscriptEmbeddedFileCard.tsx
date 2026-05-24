@@ -54,7 +54,10 @@ class TranscriptEmbeddedFileErrorBoundary extends Component<
   render() {
     if (this.state.hasError) {
       return (
-        <div className="transcript-embedded-file__error flex items-center gap-2 p-3 text-sm text-[var(--nim-error)]">
+        <div
+          className="transcript-embedded-file__error agent-elements-transcript-embedded-file-error flex items-center gap-[var(--an-spacing-sm)] border-t border-[var(--an-tool-border-color)] bg-[var(--an-background)] p-[var(--an-spacing-md)] text-sm text-[var(--an-diff-removed-text)]"
+          data-agent-elements-shell="transcript-embedded-file-error"
+        >
           <MaterialSymbol icon="error" size={16} />
           <span>{this.state.error?.message ?? 'Failed to render preview'}</span>
         </div>
@@ -190,41 +193,49 @@ export const TranscriptEmbeddedFileCard: React.FC<TranscriptEmbeddedFileCardProp
   return (
     <div
       ref={cardRef}
-      className={`transcript-embedded-file mt-2 rounded-md border bg-[var(--nim-bg)] ${
+      className={`transcript-embedded-file agent-elements-transcript-embedded-file agent-elements-tool-card mt-[var(--an-spacing-sm)] !gap-0 !p-0 rounded-[var(--an-tool-border-radius)] border bg-[var(--an-tool-background)] text-[var(--an-tool-color)] [container-type:inline-size] ${
         isActive
-          ? 'border-[color-mix(in_srgb,var(--nim-primary)_45%,var(--nim-border))]'
-          : 'border-[var(--nim-border)]'
+          ? 'border-[var(--an-primary-color)]'
+          : 'border-[var(--an-tool-border-color)]'
       }`}
-      data-component="transcript-embedded-file"
-      data-testid="transcript-embedded-file"
+      data-agent-elements-shell="transcript-embedded-file"
+      data-component="UnifiedAITranscriptEmbeddedFileCard"
+      data-testid="agent-elements-transcript-embedded-file"
       data-file-path={filePath}
       data-active={isActive ? 'true' : 'false'}
     >
-      <div className="transcript-embedded-file__header flex items-center gap-2 px-3 py-2">
+      <div
+        className="transcript-embedded-file__header agent-elements-transcript-embedded-file-header flex min-h-[34px] items-center gap-[var(--an-spacing-sm)] px-[var(--an-spacing-md)] py-[var(--an-spacing-xs)]"
+        data-agent-elements-shell="transcript-embedded-file-header"
+        data-testid="agent-elements-transcript-embedded-file-header"
+      >
         <button
           type="button"
           onClick={() => setIsExpanded((prev) => !prev)}
-          className="flex min-w-0 flex-1 items-center gap-2 border-none bg-transparent p-0 text-left text-sm text-[var(--nim-text)] cursor-pointer"
+          className="agent-elements-transcript-embedded-file-toggle flex min-w-0 flex-1 cursor-pointer items-center gap-[var(--an-spacing-sm)] rounded-[calc(var(--an-tool-border-radius)_-_4px)] border-none bg-transparent p-0 text-left text-sm text-[var(--an-tool-color)] outline-none transition-[background-color,color] duration-150 ease-out hover:text-[var(--an-foreground)] focus-visible:ring-2 focus-visible:ring-[var(--an-input-focus-outline)]"
           aria-expanded={isExpanded}
         >
           <MaterialSymbol
             icon={isExpanded ? 'expand_more' : 'chevron_right'}
             size={16}
-            className="shrink-0 text-[var(--nim-text-faint)]"
+            className="shrink-0 text-[var(--an-foreground-subtle)]"
           />
-          <MaterialSymbol icon="preview" size={16} className="shrink-0 text-[var(--nim-primary)]" />
-          <span className="font-medium">{editorLabel}</span>
-          <span className="min-w-0 truncate text-xs text-[var(--nim-text-muted)]">
+          <MaterialSymbol icon="preview" size={16} className="shrink-0 text-[var(--an-primary-color)]" />
+          <span className="agent-elements-transcript-embedded-file-title min-w-0 truncate font-medium">
+            {editorLabel}
+          </span>
+          <span className="agent-elements-transcript-embedded-file-filename min-w-0 truncate text-xs text-[var(--an-tool-color-muted)]">
             {basename(filePath)}
           </span>
         </button>
         {onOpenFile && (
           <button
             type="button"
-            className="flex h-6 w-6 items-center justify-center rounded border-none bg-transparent p-0 text-[var(--nim-text-faint)] cursor-pointer transition-colors duration-150 hover:bg-[var(--nim-bg-tertiary)] hover:text-[var(--nim-text)]"
+            className="agent-elements-transcript-embedded-file-open flex h-7 w-7 cursor-pointer items-center justify-center rounded-[calc(var(--an-tool-border-radius)_-_4px)] border border-transparent bg-transparent p-0 text-[var(--an-foreground-subtle)] transition-[background-color,border-color,color] duration-150 ease-out hover:border-[var(--an-border-color)] hover:bg-[var(--an-background-tertiary)] hover:text-[var(--an-foreground)] focus:outline-none focus:ring-2 focus:ring-[var(--an-input-focus-outline)]"
             onClick={handleOpenFile}
             title="Open file"
             aria-label="Open file"
+            data-agent-elements-shell="transcript-embedded-file-open"
           >
             <MaterialSymbol icon="open_in_new" size={14} />
           </button>
@@ -233,11 +244,16 @@ export const TranscriptEmbeddedFileCard: React.FC<TranscriptEmbeddedFileCardProp
 
       {isExpanded && (
         <div
-          className="transcript-embedded-file__body relative isolate border-t border-[var(--nim-border)] bg-[var(--nim-bg-secondary)]"
+          className="transcript-embedded-file__body agent-elements-transcript-embedded-file-body relative isolate border-t border-[var(--an-tool-border-color)] bg-[var(--an-background)]"
           style={{ height: `${previewHeight}px` }}
+          data-agent-elements-shell="transcript-embedded-file-body"
+          data-testid="agent-elements-transcript-embedded-file-body"
         >
           {!canRenderPreview || !ExtensionComponent || !host ? (
-            <div className="transcript-embedded-file__placeholder flex h-full items-center justify-center px-4 text-center text-sm text-[var(--nim-text-muted)]">
+            <div
+              className="transcript-embedded-file__placeholder agent-elements-transcript-embedded-file-placeholder flex h-full items-center justify-center px-[var(--an-spacing-xl)] text-center text-sm text-[var(--an-tool-color-muted)]"
+              data-agent-elements-shell="transcript-embedded-file-placeholder"
+            >
               No editor is available to render this file inline.
             </div>
           ) : (
@@ -248,12 +264,16 @@ export const TranscriptEmbeddedFileCard: React.FC<TranscriptEmbeddedFileCardProp
                 * shield on top still provides the click-to-activate
                 * affordance. */}
               <div
-                className="transcript-embedded-file__canvas h-full overflow-hidden"
+                className="transcript-embedded-file__canvas agent-elements-transcript-embedded-file-canvas h-full overflow-hidden"
+                data-agent-elements-shell="transcript-embedded-file-canvas"
                 {...(isActive ? {} : { inert: '' as unknown as boolean })}
               >
                 <React.Suspense
                   fallback={
-                    <div className="transcript-embedded-file__loading flex h-full items-center justify-center text-sm text-[var(--nim-text-muted)]">
+                    <div
+                      className="transcript-embedded-file__loading agent-elements-transcript-embedded-file-loading flex h-full items-center justify-center text-sm text-[var(--an-tool-color-muted)]"
+                      data-agent-elements-shell="transcript-embedded-file-loading"
+                    >
                       Loading preview...
                     </div>
                   }
@@ -263,7 +283,8 @@ export const TranscriptEmbeddedFileCard: React.FC<TranscriptEmbeddedFileCardProp
               </div>
               {!isActive && (
                 <div
-                  className="transcript-embedded-file__shield absolute inset-0 z-[2] cursor-pointer bg-transparent"
+                  className="transcript-embedded-file__shield agent-elements-transcript-embedded-file-shield absolute inset-0 z-[2] cursor-pointer bg-transparent"
+                  data-agent-elements-shell="transcript-embedded-file-shield"
                   data-testid="transcript-embedded-file-shield"
                   onClick={handleShieldClick}
                   onDoubleClick={handleShieldDoubleClick}

@@ -91,27 +91,45 @@ export function ProviderOverrideWrapper({
 
   if (loading) {
     return (
-      <div className="provider-override-wrapper flex flex-col h-full items-center justify-center text-[var(--nim-text-muted)]">
+      <div
+        className="provider-override-wrapper agent-elements-settings-panel flex flex-col h-full items-center justify-center text-[var(--nim-text-muted)]"
+        data-agent-elements-shell="provider-override-wrapper"
+        data-component="ProviderOverrideWrapper"
+        data-provider-id={providerId}
+        data-override-active="loading"
+        data-testid="agent-elements-provider-override-wrapper"
+      >
         Loading...
       </div>
     );
   }
 
   return (
-    <div className="provider-override-wrapper flex flex-col h-full">
+    <div
+      className="provider-override-wrapper agent-elements-settings-panel flex flex-col h-full"
+      data-agent-elements-shell="provider-override-wrapper"
+      data-component="ProviderOverrideWrapper"
+      data-provider-id={providerId}
+      data-override-active={isOverriding ? 'true' : 'false'}
+      data-testid="agent-elements-provider-override-wrapper"
+    >
       {/* Override Banner */}
       <div
-        className={`override-banner flex items-center justify-between px-4 py-3 gap-4 border-b ${
+        className={`override-banner agent-elements-tool-card flex !flex-row !items-center !justify-between !gap-4 !px-4 !py-3 border-b ${
           isOverriding
             ? 'bg-[var(--nim-accent-subtle)] border-[var(--nim-accent-subtle)]'
             : 'bg-[var(--nim-bg-secondary)] border-[var(--nim-border)]'
         }`}
+        data-agent-elements-shell="provider-override-banner"
+        data-state={isOverriding ? 'overriding' : 'global'}
+        data-testid="agent-elements-provider-override-banner"
       >
         <div className="override-info flex-1 min-w-0">
           <div
             className={`override-status flex items-center gap-2 text-[13px] ${
               isOverriding ? 'text-[var(--nim-primary)]' : 'text-[var(--nim-text-muted)]'
             }`}
+            data-testid="agent-elements-provider-override-status"
           >
             {isOverriding ? (
               <>
@@ -131,12 +149,18 @@ export function ProviderOverrideWrapper({
             )}
           </div>
         </div>
-        <label className="override-toggle flex items-center gap-2 cursor-pointer shrink-0">
+        <label
+          className="override-toggle agent-elements-provider-override-toggle flex items-center gap-2 cursor-pointer shrink-0"
+          data-agent-elements-shell="provider-override-toggle"
+          data-provider-id={providerId}
+          data-state={isOverriding ? 'overriding' : 'global'}
+        >
           <input
             type="checkbox"
             checked={isOverriding}
             onChange={(e) => handleOverrideToggle(e.target.checked)}
             className="hidden peer"
+            aria-label={`Project override for ${providerName}`}
           />
           <span
             className={`toggle-slider relative w-9 h-5 rounded-[10px] transition-colors duration-200 ${
@@ -156,12 +180,20 @@ export function ProviderOverrideWrapper({
       </div>
 
       {/* Provider Panel Content */}
-      <div className="override-content flex-1 overflow-y-auto">
+      <div
+        className="override-content flex-1 overflow-y-auto"
+        data-agent-elements-shell="provider-override-content"
+        data-testid="agent-elements-provider-override-content"
+      >
         {children}
       </div>
 
       {!isOverriding && (
-        <div className="override-hint px-4 py-3 text-xs text-center text-[var(--nim-text-faint)] bg-[var(--nim-bg-secondary)] border-t border-[var(--nim-border)]">
+        <div
+          className="override-hint px-4 py-3 text-xs text-center text-[var(--nim-text-faint)] bg-[var(--nim-bg-secondary)] border-t border-[var(--nim-border)]"
+          data-agent-elements-shell="provider-override-hint"
+          data-testid="agent-elements-provider-override-hint"
+        >
           Enable override to customize {providerName} settings for this project only.
           Changes will not affect your global settings.
         </div>

@@ -2,6 +2,8 @@ import React, { useMemo, useState, useEffect, useCallback } from 'react';
 import type { FileEditSummary } from '../types';
 import { MaterialSymbol } from '../../icons/MaterialSymbol';
 import { useDiffPeek } from '../../git/useDiffPeek';
+import '../../AgentElements/AgentElementsPrimitives.css';
+import '../../AgentElements/AgentElementsToolRenderers.css';
 
 interface FileEditsSidebarProps {
   fileEdits: FileEditSummary[];
@@ -498,6 +500,13 @@ export const FileEditsSidebar: React.FC<FileEditsSidebarProps> = ({
     return parts[parts.length - 1];
   };
 
+  const formatOperationLabel = (operation?: string) => {
+    if (operation === 'create') return 'Created';
+    if (operation === 'delete') return 'Deleted';
+    if (operation === 'rename') return 'Renamed';
+    return 'Edited';
+  };
+
   // Context menu handlers
   const handleContextMenu = (e: React.MouseEvent, filePath: string) => {
     e.preventDefault();
@@ -628,15 +637,19 @@ export const FileEditsSidebar: React.FC<FileEditsSidebarProps> = ({
     };
 
     return (
-      <div
-        key={filePath}
-        ref={(el) => registerRowEl(filePath, el)}
-        data-testid="files-edited-file-row"
-        data-file-path={relativePath}
-        draggable
+        <div
+          key={filePath}
+          ref={(el) => registerRowEl(filePath, el)}
+          data-agent-elements-shell="file-row"
+          data-file-operation={operation || 'edit'}
+          data-file-deleted={isDeleted ? 'true' : 'false'}
+          data-pending-review={hasPendingReview ? 'true' : 'false'}
+          data-testid="files-edited-file-row"
+          data-file-path={relativePath}
+          draggable
         onDragStart={handleDragStart}
         onContextMenu={(e) => handleContextMenu(e, filePath)}
-        className={`file-edits-sidebar__file group w-full flex items-center gap-1 px-2 py-0.5 rounded border border-transparent transition-all bg-transparent hover:bg-[var(--nim-bg-hover)] hover:border-[var(--nim-border)] ${
+        className={`file-edits-sidebar__file agent-elements-files-edited-row agent-elements-search-result group w-full flex items-center gap-1 px-2 py-1 rounded border border-transparent transition-all bg-transparent hover:bg-[var(--nim-bg-hover)] hover:border-[var(--nim-border)] ${
           isPinned ? 'bg-[var(--nim-bg-hover)] border-[var(--nim-primary)]' : ''
         } ${hasPendingReview ? 'bg-[rgba(251,191,36,0.08)] border-[rgba(251,191,36,0.2)] hover:bg-[rgba(251,191,36,0.12)] hover:border-[rgba(251,191,36,0.3)]' : ''}`}
         title={tooltip}
@@ -662,10 +675,12 @@ export const FileEditsSidebar: React.FC<FileEditsSidebarProps> = ({
               <div className="file-edits-sidebar__checkbox-placeholder w-4 h-4 shrink-0" />
             ) : (
               // Checkbox for selectable files
-              <div
-                onClick={handleCheckboxClick}
-                data-testid="files-edited-file-checkbox"
-                className={`file-edits-sidebar__checkbox w-4 h-4 shrink-0 rounded-[3px] border-[1.5px] cursor-pointer flex items-center justify-center transition-all ${
+                <div
+                  onClick={handleCheckboxClick}
+                  data-testid="files-edited-file-checkbox"
+                  role="checkbox"
+                  aria-checked={isSelected}
+                  className={`file-edits-sidebar__checkbox w-4 h-4 shrink-0 rounded-[3px] border-[1.5px] cursor-pointer flex items-center justify-center transition-all ${
                   isSelected
                     ? 'bg-[var(--nim-file-edited)] border-[var(--nim-file-edited)]'
                     : 'border-[var(--nim-text-faint)] bg-transparent hover:border-[var(--nim-text-muted)]'
@@ -685,16 +700,14 @@ export const FileEditsSidebar: React.FC<FileEditsSidebarProps> = ({
             >
               {formatFileName(filePath)}
             </div>
-            {isDeleted && (
-              <span className="text-[0.6875rem] text-[var(--nim-text-muted)] shrink-0">(deleted)</span>
-            )}
-            {/* Yellow dot indicator for files pending review */}
-            {hasPendingReview && (
-              <span
-                className="file-edits-sidebar__pending-dot w-1 h-1 rounded-full bg-[#fbbf24] shrink-0 ml-1"
-                title="Pending review - changes not yet committed"
-              />
-            )}
+            <span
+              className="file-edits-sidebar__file-status agent-elements-status-pill shrink-0"
+              data-testid="files-edited-file-status"
+              data-tone={isDeleted ? 'error' : hasPendingReview ? 'warning' : 'neutral'}
+            >
+              {formatOperationLabel(operation)}
+              {hasPendingReview ? ' · Pending review' : ''}
+            </span>
           </div>
         </button>
         {peekSupported && !isDeleted && (
@@ -787,6 +800,9 @@ export const FileEditsSidebar: React.FC<FileEditsSidebarProps> = ({
               hasUncommittedFiles ? (
                 <div
                   onClick={(e) => handleDirectoryCheckboxClick(e, node)}
+                  data-testid="files-edited-directory-checkbox"
+                  role="checkbox"
+                  aria-checked={selectionState === 'all' ? 'true' : selectionState === 'some' ? 'mixed' : 'false'}
                   className={`file-edits-sidebar__checkbox w-4 h-4 shrink-0 rounded-[3px] border-[1.5px] cursor-pointer flex items-center justify-center transition-all ${
                     selectionState === 'all'
                       ? 'bg-[var(--nim-file-edited)] border-[var(--nim-file-edited)]'
@@ -837,7 +853,12 @@ export const FileEditsSidebar: React.FC<FileEditsSidebarProps> = ({
   };
 
   return (
-    <div className="file-edits-sidebar flex flex-col h-full bg-[var(--nim-bg-secondary)]">
+    <div
+      className="file-edits-sidebar agent-elements-files-edited-sidebar agent-elements-edit-panel flex flex-col h-full bg-[var(--nim-bg-secondary)]"
+      data-agent-elements-shell="files-edited"
+      data-component="FileEditsSidebar"
+      data-testid="agent-elements-files-edited-sidebar"
+    >
       {!hideControls && editedFiles.length > 0 && (
         <div className="file-edits-sidebar__controls flex items-center gap-1 p-2 border-b border-[var(--nim-border)] bg-[var(--nim-bg-secondary)]">
           <button

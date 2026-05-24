@@ -31,6 +31,14 @@ function getStatusDisplay(status: FileGitStatus | undefined): { code: string; cl
   }
 }
 
+const agentElementsRowClassName =
+  'agent-elements-file-tree-row group mx-1 border border-transparent bg-transparent text-[13px] ' +
+  'transition-[background-color,border-color,color,outline-color] duration-150 ease-out ' +
+  'hover:border-[var(--an-border-color)] hover:bg-[var(--an-background-secondary)]';
+
+const agentElementsIconClassName =
+  'agent-elements-file-tree-icon text-[var(--an-foreground-muted)] transition-colors duration-150';
+
 /**
  * Git status indicator for a file.
  * Each instance subscribes only to its own file's git status atom.
@@ -43,7 +51,10 @@ const FileGitStatusIndicator = memo<{ filePath: string }>(({ filePath }) => {
 
   return (
     <span
-      className={`file-tree-git-status file-tree-git-status--${display.className}`}
+      className={`file-tree-git-status agent-elements-file-tree-git-status file-tree-git-status--${display.className}`}
+      data-agent-elements-shell="file-tree-git-status"
+      data-status={display.className}
+      data-testid="agent-elements-file-tree-status"
       title={display.title}
     >
       {display.code}
@@ -63,7 +74,10 @@ const DirectoryGitStatusIndicator = memo<{ dirPath: string }>(({ dirPath }) => {
 
   return (
     <span
-      className={`file-tree-git-status file-tree-git-status--${display.className} file-tree-git-status--inherited`}
+      className={`file-tree-git-status agent-elements-file-tree-git-status file-tree-git-status--${display.className} file-tree-git-status--inherited`}
+      data-agent-elements-shell="file-tree-git-status"
+      data-status={display.className}
+      data-testid="agent-elements-file-tree-status"
       title={
         display.className === 'modified' ? 'Contains modified files' :
         display.className === 'staged' ? 'Contains staged files' :
@@ -136,7 +150,8 @@ const InlineRenameInput = memo<{
   return (
     <input
       ref={inputRef}
-      className="file-tree-rename-input"
+      className="file-tree-rename-input agent-elements-file-tree-rename-input"
+      data-agent-elements-shell="file-tree-rename-input"
       value={value}
       onChange={(e) => setValue(e.target.value)}
       onKeyDown={(e) => {
@@ -188,7 +203,13 @@ export const FileTreeRow = memo<FileTreeRowProps>(({
         aria-expanded={node.isExpanded}
         aria-selected={node.isMultiSelected || node.isSelected}
         aria-level={node.depth + 1}
-        className={`file-tree-directory${node.isDragOver ? ' drag-over' : ''}${node.isSelected ? ' selected' : ''}${node.isMultiSelected ? ' multi-selected' : ''}${node.isSpecialDirectory ? ' special-directory' : ''}${isFocused ? ' focused' : ''}`}
+        className={`file-tree-directory agent-elements-file-tree-directory ${agentElementsRowClassName}${node.isDragOver ? ' drag-over' : ''}${node.isSelected ? ' selected' : ''}${node.isMultiSelected ? ' multi-selected' : ''}${node.isSpecialDirectory ? ' special-directory' : ''}${isFocused ? ' focused' : ''}`}
+        data-component="FileTreeRow"
+        data-agent-elements-shell="file-tree-row"
+        data-file-tree-kind="directory"
+        data-selected={node.isMultiSelected || node.isSelected ? 'true' : 'false'}
+        data-active="false"
+        data-focused={isFocused ? 'true' : 'false'}
         style={{ paddingLeft: indent, opacity: isDragSource ? 0.5 : 1 }}
         onClick={onClick}
         onContextMenu={onContextMenu}
@@ -199,14 +220,14 @@ export const FileTreeRow = memo<FileTreeRowProps>(({
         onDragLeave={onDragLeave}
         onDrop={onDrop}
       >
-        <span className="file-tree-chevron">
+        <span className="file-tree-chevron agent-elements-file-tree-chevron" data-agent-elements-shell="file-tree-chevron">
           <MaterialSymbol
             icon={node.isExpanded ? "keyboard_arrow_down" : "keyboard_arrow_right"}
             size={16}
           />
         </span>
         {showIcons && (
-          <span className="file-tree-icon">
+          <span className={`file-tree-icon ${agentElementsIconClassName}`} data-agent-elements-shell="file-tree-icon">
             <MaterialSymbol
               icon={node.isExpanded ? "folder_open" : "folder"}
               size={18}
@@ -223,7 +244,11 @@ export const FileTreeRow = memo<FileTreeRowProps>(({
           />
         ) : (
           <>
-            <span className="file-tree-name">
+            <span
+              className="file-tree-name agent-elements-file-tree-name min-w-0"
+              data-agent-elements-shell="file-tree-name"
+              data-testid="agent-elements-file-tree-name"
+            >
               {node.name}
               {node.isDragOver && isCopyDrag && <span style={{ marginLeft: '4px', fontSize: '10px', opacity: 0.7 }}>(copy)</span>}
             </span>
@@ -239,7 +264,13 @@ export const FileTreeRow = memo<FileTreeRowProps>(({
       role="treeitem"
       aria-selected={node.isMultiSelected || node.isActive}
       aria-level={node.depth + 1}
-      className={`file-tree-file${node.isActive ? ' active' : ''}${node.isMultiSelected ? ' multi-selected' : ''}${isFocused ? ' focused' : ''}`}
+      className={`file-tree-file agent-elements-file-tree-file ${agentElementsRowClassName}${node.isActive ? ' active' : ''}${node.isMultiSelected ? ' multi-selected' : ''}${isFocused ? ' focused' : ''}`}
+      data-component="FileTreeRow"
+      data-agent-elements-shell="file-tree-row"
+      data-file-tree-kind="file"
+      data-selected={node.isMultiSelected || node.isActive ? 'true' : 'false'}
+      data-active={node.isActive ? 'true' : 'false'}
+      data-focused={isFocused ? 'true' : 'false'}
       style={{ paddingLeft: indent, opacity: isDragSource ? 0.5 : 1 }}
       onClick={onClick}
       onContextMenu={onContextMenu}
@@ -247,9 +278,9 @@ export const FileTreeRow = memo<FileTreeRowProps>(({
       onDragStart={onDragStart}
       onDragEnd={onDragEnd}
     >
-      <span className="file-tree-spacer"></span>
+      <span className="file-tree-spacer agent-elements-file-tree-spacer" data-agent-elements-shell="file-tree-spacer"></span>
       {showIcons && (
-        <span className="file-tree-icon">
+        <span className={`file-tree-icon ${agentElementsIconClassName}`} data-agent-elements-shell="file-tree-icon">
           {getFileIcon(node.name)}
         </span>
       )}
@@ -263,7 +294,11 @@ export const FileTreeRow = memo<FileTreeRowProps>(({
         />
       ) : (
         <>
-          <span className="file-tree-name">
+          <span
+            className="file-tree-name agent-elements-file-tree-name min-w-0"
+            data-agent-elements-shell="file-tree-name"
+            data-testid="agent-elements-file-tree-name"
+          >
             {node.name}
           </span>
           <FileGitStatusIndicator filePath={node.path} />

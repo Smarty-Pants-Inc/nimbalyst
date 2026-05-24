@@ -50,7 +50,10 @@ export const OverviewDashboard: React.FC<OverviewDashboardProps> = ({ workspaceI
 
   if (loading) {
     return (
-      <div className="overview-loading flex items-center justify-center min-h-[300px] text-[var(--nim-text-muted)] text-base">
+      <div
+        className="overview-loading agent-elements-ai-usage-loading flex min-h-[300px] items-center justify-center text-base text-[var(--nim-text-muted)]"
+        data-agent-elements-shell="ai-usage-loading"
+      >
         Loading...
       </div>
     );
@@ -58,7 +61,10 @@ export const OverviewDashboard: React.FC<OverviewDashboardProps> = ({ workspaceI
 
   if (!overallStats) {
     return (
-      <div className="overview-empty flex items-center justify-center min-h-[300px] text-[var(--nim-text-muted)] text-base">
+      <div
+        className="overview-empty agent-elements-ai-usage-empty flex min-h-[300px] items-center justify-center text-base text-[var(--nim-text-muted)]"
+        data-agent-elements-shell="ai-usage-empty"
+      >
         No usage data available
       </div>
     );
@@ -68,13 +74,16 @@ export const OverviewDashboard: React.FC<OverviewDashboardProps> = ({ workspaceI
   const mostUsedProvider = providerStats.length > 0 ? providerStats[0] : null;
 
   return (
-    <div className="overview-dashboard flex flex-col gap-4">
+    <div
+      className="overview-dashboard agent-elements-ai-usage-overview flex flex-col gap-4"
+      data-agent-elements-shell="ai-usage-overview"
+    >
       <div className="stats-grid grid grid-cols-[repeat(auto-fit,minmax(250px,1fr))] gap-4">
-        <div className="stat-card bg-[var(--nim-bg-secondary)] border border-[var(--nim-border)] rounded-md px-4 py-3">
-          <div className="stat-label text-[11px] text-[var(--nim-text-faint)] uppercase tracking-[0.5px] mb-1 font-medium">
+        <div className="stat-card agent-elements-ai-usage-stat-card rounded-[10px] border border-[var(--nim-border)] bg-[var(--nim-bg-secondary)] px-4 py-3">
+          <div className="stat-label mb-1 text-[11px] font-medium leading-4 text-[var(--nim-text-faint)]">
             Total Sessions
           </div>
-          <div className="stat-value text-2xl font-semibold text-[var(--nim-text)] mb-0.5">
+          <div className="stat-value mb-0.5 text-2xl font-semibold leading-8 text-[var(--nim-text)]">
             {allSessionCount.toLocaleString()}
           </div>
           {overallStats.sessionCount < allSessionCount && (
@@ -84,11 +93,11 @@ export const OverviewDashboard: React.FC<OverviewDashboardProps> = ({ workspaceI
           )}
         </div>
 
-        <div className="stat-card bg-[var(--nim-bg-secondary)] border border-[var(--nim-border)] rounded-md px-4 py-3">
-          <div className="stat-label text-[11px] text-[var(--nim-text-faint)] uppercase tracking-[0.5px] mb-1 font-medium">
+        <div className="stat-card agent-elements-ai-usage-stat-card rounded-[10px] border border-[var(--nim-border)] bg-[var(--nim-bg-secondary)] px-4 py-3">
+          <div className="stat-label mb-1 text-[11px] font-medium leading-4 text-[var(--nim-text-faint)]">
             Total Tokens
           </div>
-          <div className="stat-value text-2xl font-semibold text-[var(--nim-text)] mb-0.5">
+          <div className="stat-value mb-0.5 text-2xl font-semibold leading-8 text-[var(--nim-text)]">
             {overallStats.totalTokens.toLocaleString()}
           </div>
           <div className="stat-detail text-[11px] text-[var(--nim-text-muted)]">
@@ -97,11 +106,11 @@ export const OverviewDashboard: React.FC<OverviewDashboardProps> = ({ workspaceI
         </div>
 
         {mostUsedProvider && (
-          <div className="stat-card bg-[var(--nim-bg-secondary)] border border-[var(--nim-border)] rounded-md px-4 py-3">
-            <div className="stat-label text-[11px] text-[var(--nim-text-faint)] uppercase tracking-[0.5px] mb-1 font-medium">
+          <div className="stat-card agent-elements-ai-usage-stat-card rounded-[10px] border border-[var(--nim-border)] bg-[var(--nim-bg-secondary)] px-4 py-3">
+            <div className="stat-label mb-1 text-[11px] font-medium leading-4 text-[var(--nim-text-faint)]">
               Most Used
             </div>
-            <div className="stat-value text-2xl font-semibold text-[var(--nim-text)] mb-0.5">
+            <div className="stat-value mb-0.5 text-2xl font-semibold leading-8 text-[var(--nim-text)]">
               {mostUsedProvider.provider}
             </div>
             <div className="stat-detail text-[11px] text-[var(--nim-text-muted)]">
@@ -112,7 +121,7 @@ export const OverviewDashboard: React.FC<OverviewDashboardProps> = ({ workspaceI
       </div>
 
       {providerStats.length > 0 && (
-        <div className="provider-breakdown mt-2">
+        <div className="provider-breakdown agent-elements-ai-usage-provider-breakdown mt-2">
           <h3 className="m-0 mb-3 text-sm font-semibold text-[var(--nim-text)]">
             Usage by Provider
           </h3>
@@ -133,9 +142,9 @@ export const OverviewDashboard: React.FC<OverviewDashboardProps> = ({ workspaceI
                       {provider.totalTokens.toLocaleString()}
                     </span>
                   </div>
-                  <div className="provider-bar-track h-1.5 bg-[var(--nim-bg-tertiary)] rounded-sm overflow-hidden">
+                  <div className="provider-bar-track h-1.5 overflow-hidden rounded-[6px] bg-[var(--nim-bg-tertiary)]">
                     <div
-                      className="provider-bar-fill h-full bg-[var(--nim-primary)] rounded-sm transition-[width] duration-300 ease-out"
+                      className="provider-bar-fill h-full rounded-[6px] bg-[var(--nim-info)] transition-[width] duration-200 ease-out"
                       style={{ width: `${percentage}%` }}
                     />
                   </div>

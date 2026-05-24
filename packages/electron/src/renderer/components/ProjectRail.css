@@ -1,14 +1,16 @@
 .project-rail {
-  width: 56px;
+  container-type: inline-size;
+  container-name: project-rail;
+  width: 60px;
   height: 100%;
   flex-shrink: 0;
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 12px 0 8px;
+  padding: var(--an-spacing-lg, 12px) var(--an-spacing-sm, 8px) var(--an-spacing-sm, 8px);
   gap: 8px;
-  background-color: var(--nim-bg-secondary, #1a1a1a);
-  border-right: 1px solid var(--nim-border, rgba(255, 255, 255, 0.06));
+  background-color: var(--an-background-secondary, var(--nim-bg-secondary, #1a1a1a));
+  border-right: 1px solid var(--an-border-color, var(--nim-border, rgba(255, 255, 255, 0.06)));
   overflow-y: auto;
   overflow-x: hidden;
   -webkit-app-region: no-drag;
@@ -28,50 +30,52 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  border-radius: var(--an-tool-border-radius, 10px);
 }
 
 .project-rail-item-main {
   position: relative;
-  width: 100%;
-  height: 100%;
-  border-radius: 50%;
+  width: 38px;
+  height: 38px;
+  border-radius: 12px;
   display: flex;
   align-items: center;
   justify-content: center;
-  background-color: var(--nim-bg-tertiary, #2a2a2a);
+  background-color: var(--an-tool-background, var(--nim-bg-tertiary, #2a2a2a));
   color: var(--rail-item-accent, var(--nim-primary, #3b82f6));
   font-size: 14px;
   font-weight: 600;
   cursor: pointer;
   user-select: none;
-  border: 1.5px solid transparent;
+  border: 1px solid var(--an-tool-border-color, var(--nim-border, rgba(255, 255, 255, 0.12)));
   padding: 0;
-  transition: border-radius 150ms ease, background-color 150ms ease,
-    border-color 150ms ease, color 150ms ease, transform 150ms ease;
+  transition: background-color 180ms cubic-bezier(0.16, 1, 0.3, 1),
+    border-color 180ms cubic-bezier(0.16, 1, 0.3, 1),
+    color 180ms cubic-bezier(0.16, 1, 0.3, 1),
+    box-shadow 180ms cubic-bezier(0.16, 1, 0.3, 1),
+    transform 180ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .project-rail-item-main:hover {
-  border-radius: 14px;
-  background-color: var(--rail-item-accent, var(--nim-primary, #3b82f6));
-  color: #ffffff;
+  background-color: var(--an-background-tertiary, var(--nim-bg-tertiary, #2a2a2a));
+  border-color: var(--rail-item-accent, var(--nim-primary, #3b82f6));
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--rail-item-accent, var(--nim-primary, #3b82f6)) 16%, transparent);
+  transform: translateY(-1px);
+}
+
+.project-rail-item-main:focus-visible,
+.project-rail-add:focus-visible,
+.project-rail-item-close:focus-visible,
+.project-rail-context-menu-item:focus-visible {
+  outline: 2px solid var(--an-input-focus-outline, var(--nim-border-focus));
+  outline-offset: 2px;
 }
 
 .project-rail-item.is-active .project-rail-item-main {
-  border-radius: 14px;
-  background-color: var(--rail-item-accent, var(--nim-primary, #3b82f6));
-  color: #ffffff;
-  border-color: transparent;
-}
-
-.project-rail-item.is-active::before {
-  content: '';
-  position: absolute;
-  left: -10px;
-  top: 8px;
-  bottom: 8px;
-  width: 4px;
-  border-radius: 0 4px 4px 0;
-  background-color: var(--rail-item-accent, var(--nim-text, #111827));
+  background-color: var(--an-background-tertiary, var(--nim-bg-tertiary, #2a2a2a));
+  color: var(--rail-item-accent, var(--nim-primary, #3b82f6));
+  border-color: var(--rail-item-accent, var(--nim-primary, #3b82f6));
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--rail-item-accent, var(--nim-primary, #3b82f6)) 22%, transparent);
 }
 
 .project-rail-item-badge {
@@ -83,12 +87,12 @@
   box-sizing: border-box;
   padding: 0;
   border-radius: 50%;
-  background-color: var(--nim-primary, #3b82f6);
-  border: 2px solid var(--nim-bg-secondary, #1a1a1a);
+  background-color: var(--an-primary-color, var(--nim-primary, #3b82f6));
+  border: 2px solid var(--an-background-secondary, var(--nim-bg-secondary, #1a1a1a));
   font-size: 9px;
   font-weight: 700;
   line-height: 1;
-  color: #ffffff;
+  color: var(--nim-bg, #f8fafc);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -102,9 +106,9 @@
   width: 18px;
   height: 18px;
   border-radius: 50%;
-  background-color: var(--nim-bg-secondary, #1a1a1a);
-  color: var(--nim-text, #111827);
-  border: 1px solid var(--nim-border, rgba(255, 255, 255, 0.12));
+  background-color: var(--an-background-secondary, var(--nim-bg-secondary, #1a1a1a));
+  color: var(--an-foreground, var(--nim-text, #111827));
+  border: 1px solid var(--an-tool-border-color, var(--nim-border, rgba(255, 255, 255, 0.12)));
   display: none;
   align-items: center;
   justify-content: center;
@@ -120,38 +124,39 @@
 
 .project-rail-item-close:hover {
   background-color: var(--nim-error, #ef4444);
-  color: #ffffff;
+  color: var(--nim-bg, #f8fafc);
 }
 
 .project-rail-divider {
-  width: 32px;
+  width: 36px;
   height: 1px;
-  background-color: var(--nim-border, rgba(255, 255, 255, 0.06));
+  background-color: var(--an-tool-border-color, var(--nim-border, rgba(255, 255, 255, 0.06)));
   margin: 4px 0;
 }
 
 .project-rail-add {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
+  width: 38px;
+  height: 38px;
+  border-radius: 12px;
   display: flex;
   align-items: center;
   justify-content: center;
   background-color: transparent;
-  color: var(--nim-text-muted, #6b7280);
+  color: var(--an-foreground-muted, var(--nim-text-muted, #6b7280));
   font-size: 22px;
   line-height: 1;
   cursor: pointer;
-  border: 1px dashed var(--nim-border, rgba(255, 255, 255, 0.18));
+  border: 1px dashed var(--an-tool-border-color, var(--nim-border, rgba(255, 255, 255, 0.18)));
   padding: 0;
-  transition: border-radius 150ms ease, background-color 150ms ease, color 150ms ease;
+  transition: background-color 180ms cubic-bezier(0.16, 1, 0.3, 1),
+    border-color 180ms cubic-bezier(0.16, 1, 0.3, 1),
+    color 180ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .project-rail-add:hover:not(:disabled) {
-  border-radius: 14px;
   border-style: solid;
-  background-color: var(--nim-bg-tertiary, #2a2a2a);
-  color: var(--nim-text, #111827);
+  background-color: var(--an-background-tertiary, var(--nim-bg-tertiary, #2a2a2a));
+  color: var(--an-foreground, var(--nim-text, #111827));
 }
 
 .project-rail-add:disabled {
@@ -162,36 +167,37 @@
 .project-rail-context-menu {
   position: fixed;
   min-width: 180px;
-  background-color: var(--nim-bg-secondary, #1a1a1a);
-  border: 1px solid var(--nim-border, rgba(255, 255, 255, 0.12));
-  border-radius: 6px;
-  padding: 4px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.32);
+  background-color: var(--an-tool-background, var(--nim-bg-secondary, #1a1a1a));
+  border: 1px solid var(--an-tool-border-color, var(--nim-border, rgba(255, 255, 255, 0.12)));
+  border-radius: var(--an-tool-border-radius, 10px);
+  padding: var(--an-spacing-xs, 4px);
+  box-shadow: 0 8px 24px color-mix(in srgb, var(--nim-text, #111827) 18%, transparent);
   z-index: 2000;
   display: flex;
   flex-direction: column;
+  gap: 2px;
 }
 
 .project-rail-context-menu-item {
   background: none;
   border: none;
-  padding: 6px 12px;
+  padding: 7px 10px;
   text-align: left;
   font-size: 13px;
-  color: var(--nim-text, #111827);
-  border-radius: 4px;
+  color: var(--an-tool-color, var(--nim-text, #111827));
+  border-radius: 7px;
   cursor: pointer;
   white-space: nowrap;
 }
 
 .project-rail-context-menu-item:hover {
-  background-color: var(--nim-primary, #3b82f6);
-  color: #ffffff;
+  background-color: var(--an-background-tertiary, var(--nim-bg-tertiary, #2a2a2a));
+  color: var(--an-tool-color, var(--nim-text, #111827));
 }
 
 .project-rail-context-menu-divider {
   height: 1px;
-  background-color: var(--nim-border, rgba(255, 255, 255, 0.08));
+  background-color: var(--an-tool-border-color, var(--nim-border, rgba(255, 255, 255, 0.08)));
   margin: 4px 6px;
 }
 
@@ -200,8 +206,8 @@
   font-size: 11px;
   font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 0.04em;
-  color: var(--nim-text-muted, #6b7280);
+  letter-spacing: 0;
+  color: var(--an-foreground-muted, var(--nim-text-muted, #6b7280));
 }
 
 .project-rail-add-menu {
@@ -223,7 +229,7 @@
 
 .project-rail-context-menu-item-path {
   font-size: 11px;
-  color: var(--nim-text-muted, #6b7280);
+  color: var(--an-foreground-muted, var(--nim-text-muted, #6b7280));
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -231,7 +237,7 @@
 }
 
 .project-rail-context-menu-item-recent:hover .project-rail-context-menu-item-path {
-  color: rgba(255, 255, 255, 0.85);
+  color: var(--an-foreground-muted, var(--nim-text-muted, #6b7280));
 }
 
 /*
@@ -241,33 +247,43 @@
  * appearance only.
  */
 .project-rail-tooltip {
-  padding: 6px 10px;
-  background-color: var(--nim-bg-tertiary, #2a2a2a);
-  color: var(--nim-text, #111827);
+  padding: 7px 10px;
+  background-color: var(--an-tool-background, var(--nim-bg-tertiary, #2a2a2a));
+  color: var(--an-tool-color, var(--nim-text, #111827));
   font-size: 12px;
   font-weight: 500;
   white-space: nowrap;
-  border-radius: 4px;
-  border: 1px solid var(--nim-border, rgba(255, 255, 255, 0.12));
+  border-radius: var(--an-tool-border-radius, 10px);
+  border: 1px solid var(--an-tool-border-color, var(--nim-border, rgba(255, 255, 255, 0.12)));
   pointer-events: none;
   z-index: 1000;
   display: flex;
   flex-direction: column;
   gap: 2px;
   max-width: 320px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 8px 24px color-mix(in srgb, var(--nim-text, #111827) 14%, transparent);
 }
 
 .project-rail-tooltip-name {
   font-weight: 600;
-  color: var(--nim-text, #111827);
+  color: var(--an-tool-color, var(--nim-text, #111827));
 }
 
 .project-rail-tooltip-path {
   font-size: 11px;
   font-weight: 400;
-  color: var(--nim-text-muted, #6b7280);
+  color: var(--an-foreground-muted, var(--nim-text-muted, #6b7280));
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
+@media (prefers-reduced-motion: reduce) {
+  .project-rail-item-main,
+  .project-rail-add {
+    transition: none;
+  }
+
+  .project-rail-item-main:hover {
+    transform: none;
+  }
+}

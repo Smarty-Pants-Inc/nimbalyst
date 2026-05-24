@@ -9,7 +9,7 @@
  * - Actions menu (View History, Toggle Source Mode, Set Document Type, etc.)
  */
 
-import React, { useState, useCallback, useRef, useEffect, useMemo } from 'react';
+import React, { useState, useCallback, useEffect, useMemo } from 'react';
 import { useSetAtom } from 'jotai';
 import { $isHeadingNode } from '@lexical/rich-text';
 import { $getRoot } from 'lexical';
@@ -26,7 +26,7 @@ import {
   type TrackerTypeInfo,
 } from '@nimbalyst/runtime';
 import { $generateHtmlFromNodes } from '@lexical/html';
-import { copyToClipboard, ProviderIcon } from '@nimbalyst/runtime';
+import { copyToClipboard, MaterialSymbol, ProviderIcon } from '@nimbalyst/runtime';
 import { historyDialogFileAtom } from '../../store';
 import { useFloatingMenu, FloatingPortal } from '../../hooks/useFloatingMenu';
 import { getDocumentService } from '../../services/RendererDocumentService';
@@ -63,6 +63,21 @@ interface AISession {
   isCurrentWorkspace?: boolean;
 }
 
+const headerButtonClasses =
+  'unified-header-button agent-elements-editor-header-button nim-btn-icon flex h-7 w-7 items-center justify-center rounded-[6px] border border-transparent bg-transparent p-0 text-nim-muted cursor-pointer transition-[background-color,color,border-color] duration-150 hover:bg-nim-hover hover:text-nim focus-visible:outline-2 focus-visible:outline-[var(--nim-primary)] focus-visible:outline-offset-1';
+const activeHeaderButtonClasses =
+  'active border-[var(--nim-border)] bg-nim-secondary text-nim';
+const menuShellClasses =
+  'agent-elements-tool-card rounded-[10px] border border-nim bg-nim-secondary p-1 text-[13px] shadow-[0_12px_32px_color-mix(in_srgb,var(--nim-text)_10%,transparent)] z-[10000]';
+const menuItemClasses =
+  'dropdown-item agent-elements-editor-header-menu-item flex w-full items-center gap-2.5 rounded-[8px] border-0 bg-transparent px-3 py-2 text-left text-[13px] leading-5 text-nim transition-[background-color,color] duration-150 cursor-pointer select-none hover:bg-nim-hover focus-visible:outline-2 focus-visible:outline-[var(--nim-primary)] focus-visible:outline-offset-2';
+const menuIconClasses =
+  'agent-elements-editor-header-menu-icon flex h-5 w-5 shrink-0 items-center justify-center text-nim-muted';
+const menuSeparatorClasses =
+  'dropdown-divider agent-elements-editor-header-menu-separator mx-2 my-1 h-px bg-[var(--nim-border)]';
+const menuSectionLabelClasses =
+  'dropdown-section-label px-3 pb-1 pt-1.5 text-[11px] font-semibold uppercase tracking-wide text-nim-faint';
+
 const SessionItem: React.FC<{
   session: AISession;
   isLast?: boolean;
@@ -71,21 +86,28 @@ const SessionItem: React.FC<{
   formatTime: (ts: number) => string;
 }> = ({ session, isLast, onClick, onOpenChat, formatTime }) => (
   <div
-    className={`ai-session-item py-2 px-3 flex items-center gap-2 ${isLast ? 'last:border-b-0' : ''} hover:bg-[var(--nim-bg-hover)] cursor-pointer`}
-    onClick={() => onClick?.(session.id)}
+    className={`ai-session-item agent-elements-editor-header-session-item flex items-center rounded-[8px] transition-[background-color,color] duration-150 ${isLast ? 'last:border-b-0' : ''} hover:bg-nim-hover`}
+    role="none"
   >
-    <span className="shrink-0 text-[var(--nim-text-muted)]"><ProviderIcon provider={session.provider} size={14} /></span>
-    <div className="ai-session-title text-sm font-medium whitespace-nowrap overflow-hidden text-ellipsis text-[var(--nim-text)] flex-1 min-w-0">{session.title}</div>
-    <div className="ai-session-time text-xs text-[var(--nim-text-faint)] shrink-0">{formatTime(session.updatedAt)}</div>
+    <button
+      type="button"
+      role="menuitem"
+      className="agent-elements-editor-header-session-main flex min-w-0 flex-1 items-center gap-2.5 rounded-[8px] border-0 bg-transparent px-3 py-2 text-left cursor-pointer focus-visible:outline-2 focus-visible:outline-[var(--nim-primary)] focus-visible:outline-offset-2"
+      onClick={() => onClick?.(session.id)}
+    >
+      <span className="agent-elements-editor-header-menu-icon flex h-5 w-5 shrink-0 items-center justify-center text-nim-muted"><ProviderIcon provider={session.provider} size={14} /></span>
+      <span className="ai-session-title min-w-0 flex-1 overflow-hidden text-ellipsis whitespace-nowrap text-[13px] font-medium leading-5 text-nim">{session.title}</span>
+      <span className="ai-session-time shrink-0 text-xs text-nim-faint">{formatTime(session.updatedAt)}</span>
+    </button>
     {onOpenChat && (
       <button
-        className="shrink-0 w-6 h-6 flex items-center justify-center rounded text-[var(--nim-text-faint)] hover:text-[var(--nim-text)] hover:bg-[var(--nim-bg-tertiary)] transition-colors duration-150 bg-transparent border-none cursor-pointer"
+        type="button"
+        role="menuitem"
+        className="agent-elements-editor-header-session-chat flex h-6 w-6 shrink-0 items-center justify-center rounded-[6px] border-0 bg-transparent p-0 text-nim-faint cursor-pointer transition-[background-color,color] duration-150 hover:bg-nim-hover hover:text-nim focus-visible:outline-2 focus-visible:outline-[var(--nim-primary)] focus-visible:outline-offset-1"
         title="Open in Chat panel"
-        onClick={(e) => { e.stopPropagation(); onOpenChat(session.id); }}
+        onClick={() => onOpenChat(session.id)}
       >
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
-        </svg>
+        <MaterialSymbol icon="forum" size={14} />
       </button>
     )}
   </div>
@@ -180,11 +202,15 @@ export const UnifiedEditorHeaderBar: React.FC<UnifiedEditorHeaderBarProps> = ({
   const openHistoryDialog = useSetAtom(historyDialogFileAtom);
 
   // Dropdown states
-  const [showAISessions, setShowAISessions] = useState(false);
-  const [showTOC, setShowTOC] = useState(false);
   const [showDocTypeSubmenu, setShowDocTypeSubmenu] = useState(false);
 
-  // Actions menu - uses floating-ui for portal rendering + viewport overflow protection
+  // Menus use floating-ui for portal rendering + viewport overflow protection
+  const aiSessionsMenu = useFloatingMenu({ placement: 'bottom-end' });
+  const showAISessions = aiSessionsMenu.isOpen;
+  const setShowAISessions = aiSessionsMenu.setIsOpen;
+  const tocMenu = useFloatingMenu({ placement: 'bottom-end' });
+  const showTOC = tocMenu.isOpen;
+  const setShowTOC = tocMenu.setIsOpen;
   const actionsMenu = useFloatingMenu({ placement: 'bottom-end' });
   const showActionsMenu = actionsMenu.isOpen;
   const setShowActionsMenu = actionsMenu.setIsOpen;
@@ -203,10 +229,6 @@ export const UnifiedEditorHeaderBar: React.FC<UnifiedEditorHeaderBarProps> = ({
 
   // Document type state (for markdown files)
   const [currentDocumentType, setCurrentDocumentType] = useState<string | null>(null);
-
-  // Refs for click-outside handling
-  const aiSessionsButtonRef = useRef<HTMLButtonElement>(null);
-  const tocButtonRef = useRef<HTMLButtonElement>(null);
 
   // Load AI sessions
   const loadAISessions = useCallback(async () => {
@@ -460,33 +482,6 @@ export const UnifiedEditorHeaderBar: React.FC<UnifiedEditorHeaderBarProps> = ({
     setShowActionsMenu(false);
   }, [lexicalEditor, onDirtyChange, filePath, onContentChanged]);
 
-  // Close dropdowns when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (
-        aiSessionsButtonRef.current &&
-        !aiSessionsButtonRef.current.contains(event.target as Node) &&
-        !(event.target as Element).closest('.unified-header-ai-dropdown')
-      ) {
-        setShowAISessions(false);
-      }
-
-      if (
-        tocButtonRef.current &&
-        !tocButtonRef.current.contains(event.target as Node) &&
-        !(event.target as Element).closest('.unified-header-toc-dropdown')
-      ) {
-        setShowTOC(false);
-      }
-
-    };
-
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, []);
-
   // Handle TOC item click
   const handleTOCItemClick = (key: string) => {
     if (!lexicalEditor) return;
@@ -554,7 +549,12 @@ export const UnifiedEditorHeaderBar: React.FC<UnifiedEditorHeaderBarProps> = ({
   const showTOCButton = isMarkdown && Boolean(lexicalEditor);
 
   return (
-      <div className="unified-editor-header-bar h-9 min-h-9 flex items-center justify-between px-3 shrink-0 bg-[var(--nim-bg)] border-b border-[var(--nim-border)]">
+    <div
+      className="unified-editor-header-bar agent-elements-editor-header-bar flex h-9 min-h-9 shrink-0 items-center justify-between border-b border-[var(--nim-border)] bg-[var(--nim-bg)] px-3"
+      data-component="UnifiedEditorHeaderBar"
+      data-testid="agent-elements-editor-header-bar"
+      data-agent-elements-shell="editor-header-bar"
+    >
       {/* Left: Breadcrumb Path */}
       {breadcrumbContent ?? <FilePathBreadcrumb filePath={filePath} workspacePath={workspaceId} />}
 
@@ -564,11 +564,13 @@ export const UnifiedEditorHeaderBar: React.FC<UnifiedEditorHeaderBarProps> = ({
         {shouldShowAIButton && (
           <div className="unified-header-dropdown-container relative">
             <button
-              ref={aiSessionsButtonRef}
+              ref={aiSessionsMenu.refs.setReference}
               data-testid="ai-sessions-button"
-              className={`unified-header-button nim-btn-icon w-7 h-7 rounded border-none bg-transparent cursor-pointer flex items-center justify-center transition-all duration-150 text-[var(--nim-text-muted)] hover:bg-[var(--nim-bg-hover)] hover:text-[var(--nim-text)] ${
-                showAISessions ? 'active bg-[var(--nim-bg-tertiary)] text-[var(--nim-text)]' : ''
+              data-agent-elements-shell="editor-header-ai-button"
+              className={`${headerButtonClasses} agent-elements-editor-header-ai-button ${
+                showAISessions ? activeHeaderButtonClasses : ''
               }`}
+              type="button"
               onClick={() => {
                 setShowAISessions(!showAISessions);
                 if (!showAISessions) {
@@ -576,37 +578,44 @@ export const UnifiedEditorHeaderBar: React.FC<UnifiedEditorHeaderBarProps> = ({
                 }
               }}
               title="AI Sessions"
+              {...aiSessionsMenu.getReferenceProps()}
             >
-              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M12 2L13.5 8.5L20 10L13.5 11.5L12 18L10.5 11.5L4 10L10.5 8.5L12 2Z" opacity="0.8"/>
-                <path d="M14 16L18 12L20 14L16 18M14 16L16 18L10 24H8V22L14 16Z" opacity="0.8"/>
-              </svg>
+              <MaterialSymbol icon="auto_awesome" size={18} />
             </button>
 
             {showAISessions && (
-              <div className="unified-header-ai-dropdown absolute top-[calc(100%+4px)] right-0 min-w-[300px] max-w-[400px] overflow-hidden rounded-md z-[1000] bg-[var(--nim-bg)] border border-[var(--nim-border)] shadow-[0_4px_12px_rgba(0,0,0,0.3)]">
+              <FloatingPortal>
+              <div
+                ref={aiSessionsMenu.refs.setFloating}
+                style={aiSessionsMenu.floatingStyles}
+                className={`unified-header-ai-dropdown agent-elements-editor-header-ai-menu ${menuShellClasses} min-w-[300px] max-w-[400px] overflow-hidden`}
+                data-component="UnifiedEditorHeaderBarAISessionsMenu"
+                data-testid="agent-elements-editor-header-ai-menu"
+                data-agent-elements-shell="editor-header-ai-menu"
+                {...aiSessionsMenu.getFloatingProps()}
+              >
                 {/* Dropdown header */}
-                <div className="ai-sessions-header px-4 py-2.5 border-b border-[var(--nim-border)]">
-                  <div className="ai-sessions-title text-[11px] font-semibold uppercase tracking-wide text-[var(--nim-text-muted)]">
+                <div className="ai-sessions-header border-b border-[var(--nim-border)] px-3 py-2">
+                  <div className="ai-sessions-title text-[11px] font-semibold uppercase tracking-wide text-nim-muted">
                     AI Sessions that edited this file
                   </div>
                 </div>
 
                 {loadingSessions ? (
-                  <div className="ai-sessions-loading p-4 text-center text-[13px] text-[var(--nim-text-muted)]">Loading sessions...</div>
+                  <div className="ai-sessions-loading p-4 text-center text-[13px] text-nim-muted">Loading sessions...</div>
                 ) : aiSessions.length > 0 ? (
-                  <div className="ai-sessions-list max-h-[300px] overflow-y-auto">
+                  <div className="ai-sessions-list max-h-[300px] overflow-y-auto p-1">
                     {hasGroupedSessions ? (
                       <>
                         {/* Current workspace sessions */}
-                        <div className="ai-sessions-group-header px-4 py-1.5 text-[10px] font-semibold uppercase tracking-wider text-[var(--nim-text-faint)] bg-[var(--nim-bg-secondary)]">
+                        <div className="ai-sessions-group-header px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wider text-nim-faint">
                           {isInWorktree ? 'This worktree' : 'This project'}
                         </div>
                         {currentWorkspaceSessions.map((session) => (
                           <SessionItem key={session.id} session={session} onClick={onSwitchToAgentMode ? handleLoadSessionInAgentMode : undefined} onOpenChat={onOpenSessionInChat ? handleLoadSessionInChat : undefined} formatTime={formatRelativeTime} />
                         ))}
                         {/* Other sessions */}
-                        <div className="ai-sessions-group-header px-4 py-1.5 text-[10px] font-semibold uppercase tracking-wider text-[var(--nim-text-faint)] bg-[var(--nim-bg-secondary)]">
+                        <div className="ai-sessions-group-header px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wider text-nim-faint">
                           Other sessions
                         </div>
                         {otherSessions.map((session) => (
@@ -620,25 +629,25 @@ export const UnifiedEditorHeaderBar: React.FC<UnifiedEditorHeaderBarProps> = ({
                     )}
                   </div>
                 ) : (
-                  <div className="ai-sessions-empty p-4 text-center text-[13px] text-[var(--nim-text-muted)]">No AI sessions have edited this file yet</div>
+                  <div className="ai-sessions-empty p-4 text-center text-[13px] text-nim-muted">No AI sessions have edited this file yet</div>
                 )}
 
                 {/* Start new session button - only shown when agent mode switch is available */}
                 {onSwitchToAgentMode && (
-                  <div className="ai-session-start-container px-3 py-2.5 border-t border-[var(--nim-border)]">
+                  <div className="ai-session-start-container border-t border-[var(--nim-border)] px-2 py-2">
                     <button
-                      className="ai-session-start-button w-full py-1.5 px-3 border border-[var(--nim-border)] rounded text-[13px] font-medium text-left cursor-pointer flex items-center gap-2 transition-all duration-150 text-[var(--nim-text-muted)] bg-transparent hover:bg-[var(--nim-bg-hover)] hover:text-[var(--nim-text)] hover:border-[var(--nim-primary)]"
+                      type="button"
+                      role="menuitem"
+                      className={`${menuItemClasses} ai-session-start-button font-medium text-nim-muted`}
                       onClick={handleStartAgentSession}
                     >
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <line x1="12" y1="5" x2="12" y2="19"/>
-                        <line x1="5" y1="12" x2="19" y2="12"/>
-                      </svg>
+                      <span className={menuIconClasses}><MaterialSymbol icon="add" size={18} /></span>
                       Start new agent session
                     </button>
                   </div>
                 )}
               </div>
+              </FloatingPortal>
             )}
           </div>
         )}
@@ -647,51 +656,65 @@ export const UnifiedEditorHeaderBar: React.FC<UnifiedEditorHeaderBarProps> = ({
         {showTOCButton && (
           <div className="unified-header-dropdown-container relative">
             <button
-              ref={tocButtonRef}
-              className={`unified-header-button nim-btn-icon w-7 h-7 rounded border-none bg-transparent cursor-pointer flex items-center justify-center transition-all duration-150 text-[var(--nim-text-muted)] hover:bg-[var(--nim-bg-hover)] hover:text-[var(--nim-text)] ${
-                showTOC ? 'active bg-[var(--nim-bg-tertiary)] text-[var(--nim-text)]' : ''
+              ref={tocMenu.refs.setReference}
+              className={`${headerButtonClasses} agent-elements-editor-header-toc-button ${
+                showTOC ? activeHeaderButtonClasses : ''
               }`}
+              data-testid="agent-elements-editor-header-toc-button"
+              data-agent-elements-shell="editor-header-toc-button"
+              type="button"
               onClick={() => setShowTOC(!showTOC)}
               title="Table of Contents"
+              {...tocMenu.getReferenceProps()}
             >
-              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <line x1="8" y1="6" x2="21" y2="6"/>
-                <line x1="8" y1="12" x2="21" y2="12"/>
-                <line x1="8" y1="18" x2="21" y2="18"/>
-                <line x1="3" y1="6" x2="3.01" y2="6"/>
-                <line x1="3" y1="12" x2="3.01" y2="12"/>
-                <line x1="3" y1="18" x2="3.01" y2="18"/>
-              </svg>
+              <MaterialSymbol icon="format_list_bulleted" size={18} />
             </button>
 
             {showTOC && (
-              <div className="unified-header-toc-dropdown absolute top-[calc(100%+4px)] right-0 min-w-[250px] max-w-[350px] max-h-[400px] overflow-y-auto overflow-hidden rounded-md z-[1000] bg-[var(--nim-bg)] border border-[var(--nim-border)] shadow-[0_4px_12px_rgba(0,0,0,0.3)]">
+              <FloatingPortal>
+              <div
+                ref={tocMenu.refs.setFloating}
+                style={tocMenu.floatingStyles}
+                className={`unified-header-toc-dropdown agent-elements-editor-header-toc-menu ${menuShellClasses} max-h-[400px] min-w-[250px] max-w-[350px] overflow-y-auto overflow-hidden`}
+                data-component="UnifiedEditorHeaderBarTOCMenu"
+                data-testid="agent-elements-editor-header-toc-menu"
+                data-agent-elements-shell="editor-header-toc-menu"
+                {...tocMenu.getFloatingProps()}
+              >
                 {tocItems.length > 0 ? (
-                  <ul className="toc-list list-none m-0 py-1 px-0">
+                  <ul className="toc-list m-0 list-none p-0">
                     {tocItems.map((item) => (
                       <li
                         key={item.key}
-                        className={`toc-item py-2 px-3 cursor-pointer text-sm leading-snug whitespace-nowrap overflow-hidden text-ellipsis transition-colors duration-150 text-[var(--nim-text)] hover:bg-[var(--nim-bg-hover)] ${
-                          item.level === 1
-                            ? 'toc-level-1 font-semibold pl-3'
-                            : item.level === 2
-                            ? 'toc-level-2 pl-6'
-                            : item.level === 3
-                            ? 'toc-level-3 pl-9 text-[13px]'
-                            : item.level === 4
-                            ? 'toc-level-4 pl-12 text-[13px]'
-                            : 'toc-level-5 pl-[60px] text-xs text-[var(--nim-text-muted)]'
-                        }`}
-                        onClick={() => handleTOCItemClick(item.key)}
+                        className="m-0 p-0"
                       >
-                        {item.text}
+                        <button
+                          type="button"
+                          role="menuitem"
+                          data-testid={`agent-elements-editor-header-toc-${item.key}`}
+                          className={`toc-item agent-elements-editor-header-toc-item flex w-full items-center rounded-[8px] border-0 bg-transparent py-2 pr-3 text-left leading-snug text-nim cursor-pointer transition-[background-color,color] duration-150 hover:bg-nim-hover focus-visible:outline-2 focus-visible:outline-[var(--nim-primary)] focus-visible:outline-offset-2 ${
+                            item.level === 1
+                              ? 'toc-level-1 pl-3 text-sm font-semibold'
+                              : item.level === 2
+                              ? 'toc-level-2 pl-6 text-sm'
+                              : item.level === 3
+                              ? 'toc-level-3 pl-9 text-[13px]'
+                              : item.level === 4
+                              ? 'toc-level-4 pl-12 text-[13px]'
+                              : 'toc-level-5 pl-[60px] text-xs text-nim-muted'
+                          }`}
+                          onClick={() => handleTOCItemClick(item.key)}
+                        >
+                          <span className="min-w-0 overflow-hidden text-ellipsis whitespace-nowrap">{item.text}</span>
+                        </button>
                       </li>
                     ))}
                   </ul>
                 ) : (
-                  <div className="toc-empty py-4 px-3 text-center text-[13px] text-[var(--nim-text-muted)]">No headings in document</div>
+                  <div className="toc-empty px-3 py-4 text-center text-[13px] text-nim-muted">No headings in document</div>
                 )}
               </div>
+              </FloatingPortal>
             )}
           </div>
         )}
@@ -699,17 +722,13 @@ export const UnifiedEditorHeaderBar: React.FC<UnifiedEditorHeaderBarProps> = ({
         {/* Share Link Button (markdown files only) */}
         {showShareLinkButton && (
           <button
-            className="unified-header-button nim-btn-icon w-7 h-7 rounded border-none bg-transparent cursor-pointer flex items-center justify-center transition-all duration-150 text-[var(--nim-text-muted)] hover:bg-[var(--nim-bg-hover)] hover:text-[var(--nim-text)]"
+            className={`${headerButtonClasses} agent-elements-editor-header-share-button`}
+            data-agent-elements-shell="editor-header-share-button"
+            type="button"
             onClick={handleShareLink}
             title="Share Link"
           >
-            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <circle cx="18" cy="5" r="3"/>
-              <circle cx="6" cy="12" r="3"/>
-              <circle cx="18" cy="19" r="3"/>
-              <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/>
-              <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
-            </svg>
+            <MaterialSymbol icon="share" size={18} />
           </button>
         )}
 
@@ -776,18 +795,17 @@ export const UnifiedEditorHeaderBar: React.FC<UnifiedEditorHeaderBarProps> = ({
         <div className="unified-header-dropdown-container relative">
           <button
             ref={actionsMenu.refs.setReference}
-            className={`unified-header-button nim-btn-icon w-7 h-7 rounded border-none bg-transparent cursor-pointer flex items-center justify-center transition-all duration-150 text-[var(--nim-text-muted)] hover:bg-[var(--nim-bg-hover)] hover:text-[var(--nim-text)] ${
-              showActionsMenu ? 'active bg-[var(--nim-bg-tertiary)] text-[var(--nim-text)]' : ''
+            className={`${headerButtonClasses} agent-elements-editor-header-actions-button ${
+              showActionsMenu ? activeHeaderButtonClasses : ''
             }`}
+            data-testid="agent-elements-editor-header-actions-button"
+            data-agent-elements-shell="editor-header-actions-button"
+            type="button"
             onClick={() => setShowActionsMenu(!showActionsMenu)}
             title="More actions"
             {...actionsMenu.getReferenceProps()}
           >
-            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
-              <circle cx="12" cy="12" r="2"/>
-              <circle cx="19" cy="12" r="2"/>
-              <circle cx="5" cy="12" r="2"/>
-            </svg>
+            <MaterialSymbol icon="more_horiz" size={18} />
           </button>
 
           {showActionsMenu && (
@@ -795,22 +813,24 @@ export const UnifiedEditorHeaderBar: React.FC<UnifiedEditorHeaderBarProps> = ({
             <div
               ref={actionsMenu.refs.setFloating}
               style={actionsMenu.floatingStyles}
-              className="unified-header-actions-dropdown min-w-[220px] overflow-visible rounded-md z-[1000] py-1 bg-[var(--nim-bg)] border border-[var(--nim-border)] shadow-[0_4px_12px_rgba(0,0,0,0.3)]"
+              className={`unified-header-actions-dropdown agent-elements-editor-header-actions-menu ${menuShellClasses} min-w-[220px] overflow-visible`}
+              data-component="UnifiedEditorHeaderBarActionsMenu"
+              data-testid="agent-elements-editor-header-actions-menu"
+              data-agent-elements-shell="editor-header-actions-menu"
               {...actionsMenu.getFloatingProps()}
             >
               {/* Toggle Source Mode */}
               {supportsSourceMode && onToggleSourceMode && (
                 <button
-                  className="dropdown-item w-full py-2 px-3 border-none bg-transparent text-[13px] text-left cursor-pointer flex items-center gap-2.5 transition-colors duration-150 text-[var(--nim-text)] hover:bg-[var(--nim-bg-hover)]"
+                  type="button"
+                  role="menuitem"
+                  className={menuItemClasses}
                   onClick={() => {
                     onToggleSourceMode();
                     setShowActionsMenu(false);
                   }}
                 >
-                  <svg className="w-4 h-4 opacity-70" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <polyline points="16 18 22 12 16 6"/>
-                    <polyline points="8 6 2 12 8 18"/>
-                  </svg>
+                  <span className={menuIconClasses}><MaterialSymbol icon="code" size={18} /></span>
                   {isSourceModeActive ? 'Exit Source Mode' : 'Toggle Source Mode'}
                 </button>
               )}
@@ -818,16 +838,18 @@ export const UnifiedEditorHeaderBar: React.FC<UnifiedEditorHeaderBarProps> = ({
               {/* View History */}
               {showHistoryAction && (
                 <button
-                  className="dropdown-item w-full py-2 px-3 border-none bg-transparent text-[13px] text-left cursor-pointer flex items-center gap-2.5 transition-colors duration-150 text-[var(--nim-text)] hover:bg-[var(--nim-bg-hover)]"
+                  type="button"
+                  role="menuitem"
+                  className={menuItemClasses}
+                  data-testid="agent-elements-editor-header-action-history"
+                  data-agent-elements-shell="editor-header-menu-item"
+                  data-editor-header-action="history"
                   onClick={() => {
                     openHistoryDialog(filePath);
                     setShowActionsMenu(false);
                   }}
                 >
-                  <svg className="w-4 h-4 opacity-70" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <circle cx="12" cy="12" r="10"/>
-                    <polyline points="12 6 12 12 16 14"/>
-                  </svg>
+                  <span className={menuIconClasses}><MaterialSymbol icon="history" size={18} /></span>
                   View History
                 </button>
               )}
@@ -838,16 +860,15 @@ export const UnifiedEditorHeaderBar: React.FC<UnifiedEditorHeaderBarProps> = ({
                   {/* Toggle Markdown Mode - switch to Monaco */}
                   {onToggleMarkdownMode && (
                     <button
-                      className="dropdown-item w-full py-2 px-3 border-none bg-transparent text-[13px] text-left cursor-pointer flex items-center gap-2.5 transition-colors duration-150 text-[var(--nim-text)] hover:bg-[var(--nim-bg-hover)]"
+                      type="button"
+                      role="menuitem"
+                      className={menuItemClasses}
                       onClick={() => {
                         onToggleMarkdownMode();
                         setShowActionsMenu(false);
                       }}
                     >
-                      <svg className="w-4 h-4 opacity-70" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <polyline points="16 18 22 12 16 6"/>
-                        <polyline points="8 6 2 12 8 18"/>
-                      </svg>
+                      <span className={menuIconClasses}><MaterialSymbol icon="markdown" size={18} /></span>
                       Toggle Markdown Mode
                     </button>
                   )}
@@ -855,13 +876,12 @@ export const UnifiedEditorHeaderBar: React.FC<UnifiedEditorHeaderBarProps> = ({
                   {/* Copy as Markdown */}
                   {lexicalEditor && (
                     <button
-                      className="dropdown-item w-full py-2 px-3 border-none bg-transparent text-[13px] text-left cursor-pointer flex items-center gap-2.5 transition-colors duration-150 text-[var(--nim-text)] hover:bg-[var(--nim-bg-hover)]"
+                      type="button"
+                      role="menuitem"
+                      className={menuItemClasses}
                       onClick={handleCopyAsMarkdown}
                     >
-                      <svg className="w-4 h-4 opacity-70" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
-                        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
-                      </svg>
+                      <span className={menuIconClasses}><MaterialSymbol icon="content_copy" size={18} /></span>
                       Copy as Markdown
                     </button>
                   )}
@@ -869,15 +889,12 @@ export const UnifiedEditorHeaderBar: React.FC<UnifiedEditorHeaderBarProps> = ({
                   {/* Export to PDF */}
                   {lexicalEditor && (
                     <button
-                      className="dropdown-item w-full py-2 px-3 border-none bg-transparent text-[13px] text-left cursor-pointer flex items-center gap-2.5 transition-colors duration-150 text-[var(--nim-text)] hover:bg-[var(--nim-bg-hover)]"
+                      type="button"
+                      role="menuitem"
+                      className={menuItemClasses}
                       onClick={handleExportToPdf}
                     >
-                      <svg className="w-4 h-4 opacity-70" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-                        <polyline points="14 2 14 8 20 8"/>
-                        <path d="M12 18v-6"/>
-                        <path d="M9 15l3 3 3-3"/>
-                      </svg>
+                      <span className={menuIconClasses}><MaterialSymbol icon="picture_as_pdf" size={18} /></span>
                       Export to PDF...
                     </button>
                   )}
@@ -885,25 +902,25 @@ export const UnifiedEditorHeaderBar: React.FC<UnifiedEditorHeaderBarProps> = ({
                   {/* Set Document Type with submenu */}
                   {lexicalEditor && (
                     <div
-                      className="dropdown-item dropdown-item-with-submenu relative w-full py-2 px-3 border-none bg-transparent text-[13px] text-left cursor-pointer flex items-center gap-2.5 transition-colors duration-150 text-[var(--nim-text)] hover:bg-[var(--nim-bg-hover)]"
+                      className={`${menuItemClasses} dropdown-item-with-submenu relative`}
                       onMouseEnter={() => setShowDocTypeSubmenu(true)}
                       onMouseLeave={() => setShowDocTypeSubmenu(false)}
+                      role="presentation"
                     >
-                      <svg className="w-4 h-4 opacity-70" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-                        <polyline points="14 2 14 8 20 8"/>
-                        <line x1="16" y1="13" x2="8" y2="13"/>
-                        <line x1="16" y1="17" x2="8" y2="17"/>
-                      </svg>
+                      <span className={menuIconClasses}><MaterialSymbol icon="article" size={18} /></span>
                       <span className="dropdown-item-label flex-1">Set Document Type</span>
-                      <span className="dropdown-item-chevron ml-auto text-sm text-[var(--nim-text-faint)]">&#8250;</span>
+                      <span className="dropdown-item-chevron ml-auto flex h-5 w-5 items-center justify-center text-sm text-nim-faint">
+                        <MaterialSymbol icon="chevron_right" size={16} />
+                      </span>
 
                       {showDocTypeSubmenu && (
-                        <div className="dropdown-submenu absolute right-full left-auto top-0 min-w-[180px] py-1 rounded-md z-[1001] bg-[var(--nim-bg)] border border-[var(--nim-border)] shadow-[0_4px_12px_rgba(0,0,0,0.3)]">
+                        <div className={`dropdown-submenu absolute right-full left-auto top-0 min-w-[180px] ${menuShellClasses}`}>
                           {TRACKER_TYPES.map((type) => (
                             <button
                               key={type.type}
-                              className="dropdown-item w-full py-2 px-3 border-none bg-transparent text-[13px] text-left cursor-pointer flex items-center gap-2.5 transition-colors duration-150 text-[var(--nim-text)] hover:bg-[var(--nim-bg-hover)]"
+                              type="button"
+                              role="menuitem"
+                              className={menuItemClasses}
                               onClick={(e) => {
                                 e.stopPropagation();
                                 handleSetDocumentType(type.type);
@@ -923,9 +940,11 @@ export const UnifiedEditorHeaderBar: React.FC<UnifiedEditorHeaderBarProps> = ({
                           ))}
                           {currentDocumentType && (
                             <>
-                              <div className="dropdown-divider h-px my-1 bg-[var(--nim-border)]" />
+                              <div className={menuSeparatorClasses} />
                               <button
-                                className="dropdown-item w-full py-2 px-3 border-none bg-transparent text-[13px] text-left cursor-pointer flex items-center gap-2.5 transition-colors duration-150 text-[var(--nim-text)] hover:bg-[var(--nim-bg-hover)]"
+                                type="button"
+                                role="menuitem"
+                                className={menuItemClasses}
                                 onClick={(e) => {
                                   e.stopPropagation();
                                   handleRemoveDocumentType();
@@ -948,17 +967,15 @@ export const UnifiedEditorHeaderBar: React.FC<UnifiedEditorHeaderBarProps> = ({
               {/* Debug Tree (dev mode only) */}
               {isDevMode && isMarkdown && onToggleDebugTree && (
                 <button
-                  className="dropdown-item w-full py-2 px-3 border-none bg-transparent text-[13px] text-left cursor-pointer flex items-center gap-2.5 transition-colors duration-150 text-[var(--nim-text)] hover:bg-[var(--nim-bg-hover)]"
+                  type="button"
+                  role="menuitem"
+                  className={menuItemClasses}
                   onClick={() => {
                     onToggleDebugTree();
                     setShowActionsMenu(false);
                   }}
                 >
-                  <svg className="w-4 h-4 opacity-70" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <circle cx="12" cy="12" r="10"/>
-                    <path d="M12 16v-4"/>
-                    <path d="M12 8h.01"/>
-                  </svg>
+                  <span className={menuIconClasses}><MaterialSymbol icon="account_tree" size={18} /></span>
                   Toggle Debug Tree
                 </button>
               )}
@@ -966,11 +983,13 @@ export const UnifiedEditorHeaderBar: React.FC<UnifiedEditorHeaderBarProps> = ({
               {/* Extra shell-specific actions */}
               {extraActionItems.length > 0 && (
                 <>
-                  <div className="dropdown-divider h-px my-1 bg-[var(--nim-border)]" />
+                  <div className={menuSeparatorClasses} />
                   {extraActionItems.map((item, index) => (
                     <button
                       key={`extra-action-${index}-${item.label}`}
-                      className="dropdown-item w-full py-2 px-3 border-none bg-transparent text-[13px] text-left cursor-pointer flex items-center gap-2.5 transition-colors duration-150 text-[var(--nim-text)] hover:bg-[var(--nim-bg-hover)] disabled:opacity-50 disabled:cursor-not-allowed"
+                      type="button"
+                      role="menuitem"
+                      className={`${menuItemClasses} disabled:cursor-not-allowed disabled:opacity-50`}
                       disabled={item.disabled}
                       onClick={() => {
                         item.onClick();
@@ -989,13 +1008,13 @@ export const UnifiedEditorHeaderBar: React.FC<UnifiedEditorHeaderBarProps> = ({
               {/* Common file actions (Open in Default App, External Editor, Finder, Copy Path, Share) */}
               {showCommonFileActions && (
                 <>
-                  <div className="dropdown-divider h-px my-1 bg-[var(--nim-border)]" />
+                  <div className={menuSeparatorClasses} />
                   <CommonFileActions
                     filePath={filePath}
                     fileName={fileName}
                     onClose={() => setShowActionsMenu(false)}
-                    menuItemClass="dropdown-item w-full py-2 px-3 border-none bg-transparent text-[13px] text-left cursor-pointer flex items-center gap-2.5 transition-colors duration-150 text-[var(--nim-text)] hover:bg-[var(--nim-bg-hover)]"
-                    separatorClass="dropdown-divider h-px my-1 bg-[var(--nim-border)]"
+                    menuItemClass={menuItemClasses}
+                    separatorClass={menuSeparatorClasses}
                     iconSize={16}
                     useButtons={true}
                   />
@@ -1005,14 +1024,16 @@ export const UnifiedEditorHeaderBar: React.FC<UnifiedEditorHeaderBarProps> = ({
               {/* Extension Menu Items */}
               {extensionMenuItems.length > 0 && (
                 <>
-                  <div className="dropdown-divider h-px my-1 bg-[var(--nim-border)]" />
-                  <div className="dropdown-section-label pt-1.5 pb-1 px-3 text-[11px] font-semibold uppercase tracking-wider text-[var(--nim-text-faint)]">
+                  <div className={menuSeparatorClasses} />
+                  <div className={menuSectionLabelClasses}>
                     {extensionId || 'Extension'}
                   </div>
                   {extensionMenuItems.map((item, index) => (
                     <button
                       key={index}
-                      className="dropdown-item w-full py-2 px-3 border-none bg-transparent text-[13px] text-left cursor-pointer flex items-center gap-2.5 transition-colors duration-150 text-[var(--nim-text)] hover:bg-[var(--nim-bg-hover)] disabled:opacity-50 disabled:cursor-not-allowed"
+                      type="button"
+                      role="menuitem"
+                      className={`${menuItemClasses} disabled:cursor-not-allowed disabled:opacity-50`}
                       disabled={item.disabled}
                       onClick={() => {
                         item.onClick();
@@ -1031,18 +1052,17 @@ export const UnifiedEditorHeaderBar: React.FC<UnifiedEditorHeaderBarProps> = ({
               {/* Extension Settings Link */}
               {onOpenExtensionSettings && (
                 <>
-                  <div className="dropdown-divider h-px my-1 bg-[var(--nim-border)]" />
+                  <div className={menuSeparatorClasses} />
                   <button
-                    className="dropdown-item settings-link w-full py-2 px-3 border-none bg-transparent text-[13px] text-left cursor-pointer flex items-center gap-2.5 transition-colors duration-150 text-[var(--nim-primary)] hover:bg-[var(--nim-bg-hover)]"
+                    type="button"
+                    role="menuitem"
+                    className={`${menuItemClasses} settings-link text-[var(--nim-primary)]`}
                     onClick={() => {
                       onOpenExtensionSettings();
                       setShowActionsMenu(false);
                     }}
                   >
-                    <svg className="w-4 h-4 opacity-70" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <circle cx="12" cy="12" r="3"/>
-                      <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
-                    </svg>
+                    <span className={menuIconClasses}><MaterialSymbol icon="settings" size={18} /></span>
                     Extension Settings
                   </button>
                 </>

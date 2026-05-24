@@ -77,8 +77,17 @@ function SharingCallout() {
   const [expanded, setExpanded] = useState(false);
 
   return (
-    <div className="provider-panel-section py-4 mb-4 border-b border-[var(--nim-border)]">
-      <div className="p-3.5 bg-nim-primary/8 border border-nim-primary/20 rounded-lg">
+    <div
+      className="provider-panel-section agent-elements-settings-section agent-elements-sync-sharing-section py-4 mb-4 border-b border-[var(--nim-border)]"
+      data-agent-elements-shell="sync-section"
+      data-section="sharing-discovery"
+      data-testid="agent-elements-sync-sharing-section"
+    >
+      <div
+        className="agent-elements-tool-card agent-elements-sync-sharing-card p-3.5 bg-nim-primary/8 border border-nim-primary/20 rounded-lg"
+        data-agent-elements-shell="sync-sharing-card"
+        data-testid="agent-elements-sync-sharing-card"
+      >
         <div className="flex items-start gap-2.5">
           <MaterialSymbol icon="share" size={18} className="text-[var(--nim-primary)] shrink-0 mt-0.5" />
           <div className="flex-1 min-w-0">
@@ -502,9 +511,18 @@ export function SyncPanel() {
   const availableProjects = projects.filter(p => !enabledProjects.includes(p.path));
 
   return (
-    <div className="provider-panel flex flex-col">
+    <div
+      className="provider-panel sync-panel agent-elements-settings-panel agent-elements-sync-panel flex flex-col"
+      data-agent-elements-shell="sync-panel"
+      data-component="SyncPanel"
+      data-testid="agent-elements-sync-panel"
+    >
       {/* Header */}
-      <div className="provider-panel-header mb-5 pb-4 border-b border-[var(--nim-border)]">
+      <div
+        className="provider-panel-header sync-panel-header agent-elements-settings-panel-header mb-6 pb-4 border-b border-[var(--nim-border)]"
+        data-agent-elements-shell="sync-header"
+        data-testid="agent-elements-sync-header"
+      >
         <h3 className="provider-panel-title text-xl font-semibold leading-tight mb-1.5 text-[var(--nim-text)]">Account & Sync</h3>
         <p className="provider-panel-description text-[13px] leading-relaxed text-[var(--nim-text-muted)]">
           Access and control Nimbalyst from the mobile app.
@@ -514,7 +532,12 @@ export function SyncPanel() {
       </div>
 
       {/* Team Collaboration (alpha) */}
-      <div className="provider-panel-section py-4 mb-4 border-b border-[var(--nim-border)]">
+      <div
+        className="provider-panel-section sync-panel-section agent-elements-settings-section py-4 mb-4 border-b border-[var(--nim-border)]"
+        data-agent-elements-shell="sync-section"
+        data-section="team-collaboration"
+        data-testid="agent-elements-sync-collaboration-section"
+      >
         <div className="flex items-center gap-2 mb-2">
           <h4 className="provider-panel-section-title text-base font-semibold text-[var(--nim-text)] m-0">Team Collaboration</h4>
           <AlphaBadge size="sm" tooltip={SETTINGS_ALPHA_TOOLTIP} />
@@ -542,7 +565,12 @@ export function SyncPanel() {
 
       {/* Environment Toggle - Dev Only */}
       {isDevelopment && (
-        <div className="provider-panel-section py-4 mb-4 border-b border-[var(--nim-border)] last:border-b-0 last:mb-0 last:pb-0">
+        <div
+          className="provider-panel-section sync-panel-section agent-elements-settings-section py-4 mb-4 border-b border-[var(--nim-border)] last:border-b-0 last:mb-0 last:pb-0"
+          data-agent-elements-shell="sync-section"
+          data-section="environment"
+          data-testid="agent-elements-sync-environment-section"
+        >
           <h4 className="provider-panel-section-title text-base font-semibold mb-3 text-[var(--nim-text)]">Environment (Dev Only)</h4>
           <div className="flex gap-2">
             <button
@@ -575,7 +603,12 @@ export function SyncPanel() {
       )}
 
       {/* Account Section */}
-      <div className="provider-panel-section py-4 mb-4 border-b border-[var(--nim-border)] last:border-b-0 last:mb-0 last:pb-0">
+      <div
+        className="provider-panel-section sync-panel-section agent-elements-settings-section py-4 mb-4 border-b border-[var(--nim-border)] last:border-b-0 last:mb-0 last:pb-0"
+        data-agent-elements-shell="sync-section"
+        data-section="account"
+        data-testid="agent-elements-sync-account-section"
+      >
         {stytchAuth.isAuthenticated && stytchAuth.user ? (
           <div className="flex flex-col gap-2">
             {/* Show all accounts if multiple, otherwise show primary */}
@@ -585,7 +618,13 @@ export function SyncPanel() {
                   ? acct.personalOrgId === config.personalOrgId
                   : acct.isPrimary;
                 return (
-                  <div key={acct.personalOrgId} className={`flex items-center gap-3 p-2.5 rounded-lg ${isSyncAccount ? 'bg-nim-primary/8 border border-nim-primary/20' : 'bg-nim-secondary'}`}>
+                  <div
+                    key={acct.personalOrgId}
+                    className={`agent-elements-tool-card agent-elements-sync-account-card flex items-center gap-3 p-2.5 rounded-lg ${isSyncAccount ? 'bg-nim-primary/8 border border-nim-primary/20' : 'bg-nim-secondary'}`}
+                    data-agent-elements-shell="sync-account-card"
+                    data-sync-account-active={String(isSyncAccount)}
+                    data-testid={`agent-elements-sync-account-${acct.personalOrgId}`}
+                  >
                     <div className={`w-9 h-9 rounded-full flex items-center justify-center text-white font-semibold text-sm shrink-0 ${isSyncAccount ? 'bg-nim-primary' : 'bg-nim-tertiary'}`}>
                       {(acct.email?.[0] || '?').toUpperCase()}
                     </div>
@@ -624,7 +663,11 @@ export function SyncPanel() {
                 );
               })
             ) : (
-              <div className="flex items-center gap-3 p-2.5 bg-nim-secondary rounded-lg">
+              <div
+                className="agent-elements-tool-card agent-elements-sync-account-card flex items-center gap-3 p-2.5 bg-nim-secondary rounded-lg"
+                data-agent-elements-shell="sync-account-card"
+                data-testid="agent-elements-sync-primary-account"
+              >
                 <div className="w-9 h-9 rounded-full bg-nim-primary flex items-center justify-center text-white font-semibold text-sm">
                   {(stytchAuth.user.name?.first_name?.[0] || stytchAuth.user.emails[0]?.email[0] || '?').toUpperCase()}
                 </div>
@@ -649,7 +692,9 @@ export function SyncPanel() {
             {/* Add Account button */}
             <button
               onClick={handleAddAccount}
-              className="flex items-center gap-2 px-3 py-2 text-xs text-nim-muted bg-transparent border border-dashed border-nim rounded-lg cursor-pointer hover:bg-nim-hover hover:text-nim transition-colors"
+              className="agent-elements-sync-add-account flex items-center gap-2 px-3 py-2 text-xs text-nim-muted bg-transparent border border-dashed border-nim rounded-lg cursor-pointer hover:bg-nim-hover hover:text-nim transition-colors"
+              data-agent-elements-shell="sync-add-account"
+              data-testid="agent-elements-sync-add-account"
             >
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <line x1="12" y1="5" x2="12" y2="19" />
@@ -659,7 +704,11 @@ export function SyncPanel() {
             </button>
           </div>
         ) : showAuthForm ? (
-          <div className="p-4 bg-nim-secondary rounded-lg">
+          <div
+            className="agent-elements-tool-card agent-elements-sync-auth-card p-4 bg-nim-secondary rounded-lg"
+            data-agent-elements-shell="sync-auth-card"
+            data-testid="agent-elements-sync-auth-card"
+          >
             {magicLinkSent ? (
               // Magic link sent confirmation
               <div className="text-center">
@@ -752,7 +801,11 @@ export function SyncPanel() {
             )}
           </div>
         ) : (
-          <div className="p-4 bg-nim-secondary rounded-lg text-center">
+          <div
+            className="agent-elements-tool-card agent-elements-sync-auth-card p-4 bg-nim-secondary rounded-lg text-center"
+            data-agent-elements-shell="sync-auth-card"
+            data-testid="agent-elements-sync-auth-card"
+          >
             <p className="text-[13px] text-nim-muted m-0 mb-3">
               Sign in to sync sessions across all your devices.
             </p>
@@ -782,9 +835,18 @@ export function SyncPanel() {
 
       {/* Mobile App - compact card combining app info + QR pairing */}
       {stytchAuth.isAuthenticated && (
-          <div className="provider-panel-section py-4 mb-4 border-b border-[var(--nim-border)] last:border-b-0 last:mb-0 last:pb-0">
+          <div
+            className="provider-panel-section sync-panel-section agent-elements-settings-section py-4 mb-4 border-b border-[var(--nim-border)] last:border-b-0 last:mb-0 last:pb-0"
+            data-agent-elements-shell="sync-section"
+            data-section="mobile-app"
+            data-testid="agent-elements-sync-mobile-section"
+          >
             <h4 className="provider-panel-section-title text-[15px] font-semibold mb-3 text-[var(--nim-text)]">Mobile App</h4>
-            <div className="flex gap-3.5 p-3.5 bg-nim-secondary rounded-lg">
+            <div
+              className="agent-elements-tool-card agent-elements-sync-mobile-card flex gap-3.5 p-3.5 bg-nim-secondary rounded-lg"
+              data-agent-elements-shell="sync-mobile-card"
+              data-testid="agent-elements-sync-mobile-card"
+            >
               <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center shrink-0">
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2">
                   <rect x="5" y="2" width="14" height="20" rx="2" ry="2"/>
@@ -846,7 +908,12 @@ export function SyncPanel() {
 
       {/* Prevent sleep mode selector */}
       {config.enabled && (
-        <div className="provider-panel-section py-4 mb-4 border-b border-[var(--nim-border)] last:border-b-0 last:mb-0 last:pb-0">
+        <div
+          className="provider-panel-section sync-panel-section agent-elements-settings-section py-4 mb-4 border-b border-[var(--nim-border)] last:border-b-0 last:mb-0 last:pb-0"
+          data-agent-elements-shell="sync-section"
+          data-section="prevent-sleep"
+          data-testid="agent-elements-sync-sleep-section"
+        >
           <div className="flex items-center justify-between">
             <div className="flex-1 mr-3">
               <h4 className="text-[13px] font-medium text-nim m-0">Prevent sleep while syncing</h4>
@@ -869,7 +936,11 @@ export function SyncPanel() {
             </select>
           </div>
           {(config.preventSleepMode ?? (config.preventSleepWhenSyncing ? 'always' : 'off')) === 'off' && enabledProjectCount > 0 && (
-            <div className="flex items-center gap-2 mt-2 p-2 bg-amber-500/10 border border-amber-500/20 rounded-lg text-[11px] text-amber-500">
+            <div
+              className="agent-elements-tool-card agent-elements-sync-sleep-warning flex items-center gap-2 mt-2 p-2 bg-amber-500/10 border border-amber-500/20 rounded-lg text-[11px] text-amber-500"
+              data-agent-elements-shell="sync-sleep-warning"
+              data-testid="agent-elements-sync-sleep-warning"
+            >
               <svg className="shrink-0" width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
                 <path d="M8 1a7 7 0 100 14A7 7 0 008 1zM7 5a1 1 0 112 0v3a1 1 0 11-2 0V5zm1 7a1 1 0 100-2 1 1 0 000 2z" />
               </svg>
@@ -880,7 +951,12 @@ export function SyncPanel() {
       )}
 
       {/* Synced Projects */}
-      <div className="provider-panel-section py-4 mb-4 border-b border-[var(--nim-border)] last:border-b-0 last:mb-0 last:pb-0">
+      <div
+        className="provider-panel-section sync-panel-section agent-elements-settings-section py-4 mb-4 border-b border-[var(--nim-border)] last:border-b-0 last:mb-0 last:pb-0"
+        data-agent-elements-shell="sync-section"
+        data-section="mobile-projects"
+        data-testid="agent-elements-sync-projects-section"
+      >
         <div className="flex items-center justify-between mb-2">
           <h4 className="provider-panel-section-title text-[15px] font-semibold text-[var(--nim-text)] m-0">Projects accessible on mobile</h4>
           {availableProjects.length > 0 && !showAddProject && (
@@ -898,21 +974,32 @@ export function SyncPanel() {
           <button
             onClick={() => setShowAddProject(true)}
             disabled={availableProjects.length === 0}
-            className={`flex items-center gap-2 px-3 py-2 text-[12px] bg-transparent border border-dashed border-nim rounded-lg w-full ${
+            className={`agent-elements-sync-add-project-empty flex items-center gap-2 px-3 py-2 text-[12px] bg-transparent border border-dashed border-nim rounded-lg w-full ${
               availableProjects.length === 0
                 ? 'text-nim-disabled cursor-not-allowed'
                 : 'text-nim-muted cursor-pointer hover:bg-nim-hover hover:text-nim'
             }`}
+            data-agent-elements-shell="sync-add-project-empty"
+            data-testid="agent-elements-sync-add-project-empty"
           >
             <MaterialSymbol icon="add" size={16} />
             Add a project to sync
           </button>
         ) : (
-          <div className="bg-nim-secondary rounded-lg overflow-hidden">
+          <div
+            className="agent-elements-tool-card agent-elements-sync-project-list bg-nim-secondary rounded-lg overflow-hidden"
+            data-agent-elements-shell="sync-project-list"
+            data-testid="agent-elements-sync-project-list"
+          >
             {syncedProjects.map((project) => {
               const docSyncEnabled = (config.docSyncEnabledProjects ?? []).includes(project.path);
               return (
-                <div key={project.path} className="flex items-center gap-2 px-2.5 py-1.5 border-b border-[var(--nim-border)] last:border-b-0 group">
+                <div
+                  key={project.path}
+                  className="agent-elements-sync-project-row flex items-center gap-2 px-2.5 py-1.5 border-b border-[var(--nim-border)] last:border-b-0 group"
+                  data-agent-elements-shell="sync-project-row"
+                  data-project-path={project.path}
+                >
                   <span className="text-[13px] text-nim truncate flex-1">{project.name}</span>
                   {isAlpha && (
                     <label className="flex items-center gap-1 cursor-pointer shrink-0" title="Sync .md files to mobile">
@@ -939,7 +1026,9 @@ export function SyncPanel() {
               <button
                 key={project.path}
                 onClick={() => handleAddProject(project.path)}
-                className="flex items-center gap-2 px-2.5 py-1.5 w-full bg-transparent border-none border-b border-[var(--nim-border)] last:border-b-0 cursor-pointer hover:bg-nim-hover text-left"
+                className="agent-elements-sync-project-add-row flex items-center gap-2 px-2.5 py-1.5 w-full bg-transparent border-none border-b border-[var(--nim-border)] last:border-b-0 cursor-pointer hover:bg-nim-hover text-left"
+                data-agent-elements-shell="sync-project-add-row"
+                data-project-path={project.path}
               >
                 <MaterialSymbol icon="add" size={14} className="text-[var(--nim-primary)] shrink-0" />
                 <span className="text-[13px] text-nim-muted truncate">{project.name}</span>
@@ -975,7 +1064,12 @@ export function SyncPanel() {
       </div>
 
       {/* Paired Devices */}
-      <div className="provider-panel-section py-4 mb-4 border-b border-[var(--nim-border)] last:border-b-0 last:mb-0 last:pb-0">
+      <div
+        className="provider-panel-section sync-panel-section agent-elements-settings-section py-4 mb-4 border-b border-[var(--nim-border)] last:border-b-0 last:mb-0 last:pb-0"
+        data-agent-elements-shell="sync-section"
+        data-section="paired-devices"
+        data-testid="agent-elements-sync-devices-section"
+      >
         <h4 className="provider-panel-section-title text-[15px] font-semibold mb-3 text-[var(--nim-text)]">
           Devices
           <button
@@ -997,7 +1091,9 @@ export function SyncPanel() {
           {connectedDevices.map((device) => (
             <div
               key={device.deviceId}
-              className="flex items-center gap-2.5 px-2.5 py-2 bg-nim-secondary rounded-md mb-1.5 last:mb-0"
+              className="agent-elements-tool-card agent-elements-sync-device-row flex items-center gap-2.5 px-2.5 py-2 bg-nim-secondary rounded-md mb-1.5 last:mb-0"
+              data-agent-elements-shell="sync-device-row"
+              data-device-id={device.deviceId}
             >
               <div className={`w-2 h-2 rounded-full ${device.isOnline ? 'bg-green-500' : 'bg-neutral-500'}`} />
               <div className="flex-1">
@@ -1019,8 +1115,17 @@ export function SyncPanel() {
       </div>
 
       {/* Encryption footer */}
-      <div className="provider-panel-section py-4">
-        <div className="p-3.5 bg-nim-secondary border border-nim rounded-lg">
+      <div
+        className="provider-panel-section sync-panel-section agent-elements-settings-section py-4"
+        data-agent-elements-shell="sync-section"
+        data-section="encryption"
+        data-testid="agent-elements-sync-encryption-section"
+      >
+        <div
+          className="agent-elements-tool-card agent-elements-sync-encryption-card p-3.5 bg-nim-secondary border border-nim rounded-lg"
+          data-agent-elements-shell="sync-encryption-card"
+          data-testid="agent-elements-sync-encryption-card"
+        >
           <div className="flex items-center gap-2 mb-2">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--nim-success, #22c55e)" strokeWidth="2" className="shrink-0">
               <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
@@ -1043,7 +1148,12 @@ export function SyncPanel() {
 
       {/* Delete Account */}
       {stytchAuth.isAuthenticated && (
-        <div className="provider-panel-section py-4 mb-4 border-b border-[var(--nim-border)] last:border-b-0 last:mb-0 last:pb-0">
+        <div
+          className="provider-panel-section sync-panel-section agent-elements-settings-section py-4 mb-4 border-b border-[var(--nim-border)] last:border-b-0 last:mb-0 last:pb-0"
+          data-agent-elements-shell="sync-section"
+          data-section="danger-zone"
+          data-testid="agent-elements-sync-danger-section"
+        >
           <h4 className="provider-panel-section-title text-[15px] font-semibold mb-2 text-[var(--nim-text)]">Danger Zone</h4>
           {!showDeleteConfirm ? (
             <button
@@ -1057,7 +1167,11 @@ export function SyncPanel() {
               Delete Account
             </button>
           ) : (
-            <div className="p-4 bg-nim-secondary rounded-lg border border-red-500/30">
+            <div
+              className="agent-elements-tool-card agent-elements-sync-delete-card p-4 bg-nim-secondary rounded-lg border border-red-500/30"
+              data-agent-elements-shell="sync-delete-card"
+              data-testid="agent-elements-sync-delete-card"
+            >
               <p className="text-[13px] text-nim-muted m-0 mb-3">
                 This will permanently delete your account and all synced data, including sessions, shared links, and device pairings. This cannot be undone.
               </p>

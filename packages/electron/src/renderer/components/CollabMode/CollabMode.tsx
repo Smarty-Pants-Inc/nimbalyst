@@ -454,9 +454,19 @@ const CollabModeInner = forwardRef<CollabModeRef, CollabModeProps>(function Coll
   const hasTabs = tabs.length > 0;
 
   return (
-    <div className="collab-mode flex-1 flex flex-row overflow-hidden min-h-0">
+    <div
+      className="collab-mode agent-elements-collab-mode flex min-h-0 flex-1 flex-row overflow-hidden bg-[var(--an-background)] text-[var(--an-foreground)] [container-type:inline-size]"
+      data-component="CollabMode"
+      data-agent-elements-shell="collab-mode"
+      data-active={isActive ? 'true' : 'false'}
+      data-testid="agent-elements-collab-mode"
+    >
       {/* Left: Document sidebar (resizable) */}
-      <div style={{ width: sidebarWidth, minWidth: COLLAB_SIDEBAR_MIN, maxWidth: COLLAB_SIDEBAR_MAX }} className="shrink-0">
+      <div
+        style={{ width: sidebarWidth, minWidth: COLLAB_SIDEBAR_MIN, maxWidth: COLLAB_SIDEBAR_MAX }}
+        className="collab-sidebar-frame agent-elements-collab-sidebar-frame shrink-0 border-r border-[var(--an-border-color)] bg-[var(--an-background-secondary)]"
+        data-agent-elements-shell="collab-sidebar-frame"
+      >
         <CollabSidebar
           workspacePath={workspacePath}
           onDocumentSelect={handleDocumentSelect}
@@ -467,13 +477,19 @@ const CollabModeInner = forwardRef<CollabModeRef, CollabModeProps>(function Coll
       {/* Left resize handle */}
       <div
         onMouseDown={handleSidebarMouseDown}
-        className="w-1 cursor-col-resize shrink-0 relative z-10 bg-nim-secondary"
+        className="collab-resize-handle agent-elements-collab-resize-handle group relative z-10 w-1 shrink-0 cursor-col-resize bg-[var(--an-background-secondary)] transition-colors duration-150 ease-out hover:bg-[var(--an-background-tertiary)]"
+        data-agent-elements-shell="collab-resize-handle"
+        data-testid="agent-elements-collab-resize-handle"
       >
-        <div className="w-0.5 h-full mx-auto bg-nim-border transition-colors duration-200 hover:bg-nim-accent" />
+        <div
+          className="collab-resize-grip agent-elements-collab-resize-grip mx-auto h-full w-0.5 bg-[var(--an-border-color)] transition-colors duration-150 ease-out group-hover:bg-[var(--an-primary-color)]"
+          data-agent-elements-shell="collab-resize-grip"
+          data-testid="agent-elements-collab-resize-grip"
+        />
       </div>
 
       {/* Center: Tabs + editor */}
-      <div className="flex-1 flex flex-col overflow-hidden min-h-0">
+      <div className="collab-main agent-elements-collab-main flex min-h-0 flex-1 flex-col overflow-hidden bg-[var(--an-background)]" data-agent-elements-shell="collab-main">
         {hasTabs ? (
           <TabManager
             onTabClose={handleTabClose}
@@ -487,11 +503,25 @@ const CollabModeInner = forwardRef<CollabModeRef, CollabModeProps>(function Coll
           </TabManager>
         ) : (
           /* Empty state when no tabs open */
-          <div className="flex-1 flex items-center justify-center text-nim-muted">
-            <div className="text-center">
-              <MaterialSymbol icon="cloud_sync" size={48} className="text-nim-faint mb-3" />
-              <p className="text-base m-0">Select a shared document</p>
-              <p className="text-sm text-nim-faint mt-1 m-0">
+          <div
+            className="collab-empty-state agent-elements-collab-empty-state flex flex-1 items-center justify-center px-8 py-10 text-[var(--an-foreground-muted)]"
+            data-agent-elements-shell="collab-empty-state"
+            data-testid="agent-elements-collab-empty-state"
+          >
+            <div
+              className="collab-empty-card agent-elements-collab-empty-card agent-elements-tool-card flex max-w-[420px] flex-col items-start gap-[var(--an-spacing-md)] rounded-[var(--an-tool-border-radius)] border border-[var(--an-border-color)] bg-[var(--an-background-secondary)] p-[var(--an-spacing-xl)] text-left"
+              data-agent-elements-shell="collab-empty-card"
+              data-testid="agent-elements-collab-empty-card"
+            >
+              <span
+                className="collab-empty-icon agent-elements-collab-empty-icon inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-[var(--an-tool-border-radius)] border border-[var(--an-border-color)] bg-[var(--an-background)] text-[var(--an-primary-color)]"
+                data-agent-elements-shell="collab-empty-icon"
+                aria-hidden="true"
+              >
+                <MaterialSymbol icon="cloud_sync" size={20} />
+              </span>
+              <p className="agent-elements-collab-empty-title m-0 text-sm font-medium leading-snug text-[var(--an-foreground)]">Select a shared document</p>
+              <p className="agent-elements-collab-empty-description m-0 text-sm leading-relaxed text-[var(--an-foreground-muted)]">
                 Choose a document from the sidebar to start collaborating
               </p>
             </div>

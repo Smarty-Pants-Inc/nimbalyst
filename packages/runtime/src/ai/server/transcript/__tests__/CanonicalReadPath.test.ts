@@ -377,7 +377,7 @@ describe('Canonical Read Path Integration', () => {
   });
 
   describe('turn ended data', () => {
-    it('turn_ended events are filtered from projected view model (metadata-only)', async () => {
+    it('turn_ended events are projected as renderable usage/context view messages', async () => {
       await writer.appendUserMessage(SESSION, 'Hello');
       await writer.appendAssistantMessage(SESSION, 'Hi there');
 
@@ -402,11 +402,14 @@ describe('Canonical Read Path Integration', () => {
 
       const { events, messages } = await projectSession(store, SESSION);
 
-      // turn_ended is stored in DB but filtered from the projected view model
-      // (it has no renderable content and would create empty bubbles)
+      // turn_ended is stored in DB and now projects as a real view row so the
+      // Agent Elements stream bridge can render a compact turn summary.
       expect(events.some(e => e.eventType === 'turn_ended')).toBe(true);
-      expect(messages.find(m => m.type === 'turn_ended')).toBeUndefined();
-      expect(messages).toHaveLength(2); // only user + assistant
+      expect(messages).toHaveLength(3);
+      expect(messages[2].type).toBe('turn_ended');
+      expect(messages[2].turnEnded?.contextFill.totalContextTokens).toBe(950);
+      expect(messages[2].turnEnded?.contextWindow).toBe(200000);
+      expect(messages[2].turnEnded?.cumulativeUsage.costUSD).toBe(0.02);
     });
   });
 

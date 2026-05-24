@@ -153,6 +153,84 @@ describe('CodexAppServerRawParser', () => {
     expect(descs[1]).toMatchObject({ type: 'tool_call_completed', exitCode: 0, result: 'a\nb\nc' });
   });
 
+  it('parses item/completed todoList into structured todo tool-call descriptors', async () => {
+    const parser = new CodexAppServerRawParser();
+    const msg = makeRawMessage({
+      content: envelope('item/completed', {
+        threadId: 't-1',
+        turnId: 'turn-1',
+        item: {
+          id: 'todo-app-1',
+          type: 'todoList',
+          status: 'completed',
+          items: [
+            { text: 'Read source', completed: true },
+            { text: 'Render todo card', completed: false },
+          ],
+        },
+      }),
+    });
+
+    const descs = await parser.parseMessage(msg, makeContext());
+
+    expect(descs).toHaveLength(2);
+    expect(descs[0]).toMatchObject({
+      type: 'tool_call_started',
+      toolName: 'todo_list',
+      toolDisplayName: 'Todo list',
+      arguments: {
+        items: [
+          { id: 'todo-0', content: 'Read source', status: 'completed' },
+          { id: 'todo-1', content: 'Render todo card', status: 'pending' },
+        ],
+      },
+    });
+    expect(descs[1]).toMatchObject({
+      type: 'tool_call_completed',
+      status: 'completed',
+      result: 'Todo list updated.',
+    });
+  });
+
+  it('parses item/completed todo_list into structured todo tool-call descriptors', async () => {
+    const parser = new CodexAppServerRawParser();
+    const msg = makeRawMessage({
+      content: envelope('item/completed', {
+        threadId: 't-1',
+        turnId: 'turn-1',
+        item: {
+          id: 'todo-app-2',
+          type: 'todo_list',
+          status: 'completed',
+          items: [
+            { text: 'Read snake_case source', completed: true },
+            { text: 'Render snake_case todo card', completed: false },
+          ],
+        },
+      }),
+    });
+
+    const descs = await parser.parseMessage(msg, makeContext());
+
+    expect(descs).toHaveLength(2);
+    expect(descs[0]).toMatchObject({
+      type: 'tool_call_started',
+      toolName: 'todo_list',
+      toolDisplayName: 'Todo list',
+      arguments: {
+        items: [
+          { id: 'todo-0', content: 'Read snake_case source', status: 'completed' },
+          { id: 'todo-1', content: 'Render snake_case todo card', status: 'pending' },
+        ],
+      },
+    });
+    expect(descs[1]).toMatchObject({
+      type: 'tool_call_completed',
+      status: 'completed',
+      result: 'Todo list updated.',
+    });
+  });
+
   it('emits a system_message for an error notification', async () => {
     const parser = new CodexAppServerRawParser();
     const msg = makeRawMessage({
@@ -335,12 +413,8 @@ describe('CodexAppServerRawParser', () => {
       }),
     });
     const completedDescs = await parser.parseMessage(completedMsg, makeContext());
-    expect(completedDescs).toHaveLength(2);
+    expect(completedDescs).toHaveLength(1);
     expect(completedDescs[0]).toMatchObject({
-      type: 'tool_call_started',
-      toolName: 'wait',
-    });
-    expect(completedDescs[1]).toMatchObject({
       type: 'tool_call_completed',
       providerToolCallId: startedProviderId,
       status: 'completed',
@@ -348,7 +422,7 @@ describe('CodexAppServerRawParser', () => {
     });
   });
 
-  it('parses todoList items into an assistant checklist message', async () => {
+  it('parses todoList items into structured todo tool-call descriptors instead of checklist text', async () => {
     const parser = new CodexAppServerRawParser();
     const msg = makeRawMessage({
       id: 40,
@@ -367,11 +441,24 @@ describe('CodexAppServerRawParser', () => {
       }),
     });
     const descs = await parser.parseMessage(msg, makeContext());
-    expect(descs).toEqual([{
-      type: 'assistant_message',
-      text: '- [x] Inspect transcript parser\n- [ ] Add collab-agent coverage',
+    expect(descs).toHaveLength(2);
+    expect(descs[0]).toMatchObject({
+      type: 'tool_call_started',
+      toolName: 'todo_list',
+      arguments: {
+        items: [
+          { id: 'todo-0', content: 'Inspect transcript parser', status: 'completed' },
+          { id: 'todo-1', content: 'Add collab-agent coverage', status: 'pending' },
+        ],
+      },
       createdAt: msg.createdAt,
-    }]);
+    });
+    expect(descs[1]).toMatchObject({
+      type: 'tool_call_completed',
+      status: 'completed',
+      result: 'Todo list updated.',
+    });
+    expect(descs).not.toContainEqual(expect.objectContaining({ type: 'assistant_message' }));
   });
 
   it('falls back to a generic tool call for unknown tool-like app-server items', async () => {

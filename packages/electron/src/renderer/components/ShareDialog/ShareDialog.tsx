@@ -30,6 +30,15 @@ const EXPIRATION_OPTIONS: ExpirationOption[] = [
 
 type ShareState = 'ready' | 'sharing' | 'success' | 'error';
 
+const shareDialogButtonBase =
+  'share-dialog-button inline-flex items-center justify-center gap-2 rounded-[var(--an-input-border-radius)] border px-3 py-2 text-sm font-medium transition-[background-color,border-color,color] duration-150 ease-out focus:outline-none focus:ring-2 focus:ring-[var(--an-input-focus-outline)] disabled:cursor-not-allowed disabled:opacity-50';
+
+const shareDialogSecondaryButton =
+  `${shareDialogButtonBase} border-[var(--an-border-color)] bg-[var(--an-background)] text-[var(--an-foreground-muted)] hover:bg-[var(--an-background-tertiary)] hover:text-[var(--an-foreground)]`;
+
+const shareDialogPrimaryButton =
+  `${shareDialogButtonBase} border-[var(--an-primary-color)] bg-[var(--an-primary-color)] text-[var(--an-background)] hover:bg-[var(--nim-primary-hover)] hover:border-[var(--nim-primary-hover)]`;
+
 export const ShareDialog: React.FC<ShareDialogProps> = ({
   isOpen,
   onClose,
@@ -233,66 +242,92 @@ export const ShareDialog: React.FC<ShareDialogProps> = ({
 
   return (
     <div
-      className="fixed inset-0 flex items-center justify-center z-[10000] bg-black/60 animate-[nim-fade-in_0.2s_ease-out]"
+      className="share-dialog-overlay nim-overlay agent-elements-share-dialog-backdrop bg-[color-mix(in_srgb,var(--nim-text)_36%,transparent)]"
+      data-testid="agent-elements-share-dialog-backdrop"
+      data-agent-elements-shell="share-dialog-backdrop"
       onClick={onClose}
     >
       <div
-        className="relative p-0 w-[420px] max-w-[90vw] rounded-2xl overflow-hidden border border-[var(--nim-border)] bg-[var(--nim-bg)] shadow-[0_8px_32px_rgba(0,0,0,0.4)] animate-[nim-slide-up_0.3s_ease-out]"
+        className="share-dialog agent-elements-share-dialog agent-elements-tool-card relative w-[440px] max-w-[90vw] overflow-hidden rounded-[var(--an-border-radius)] border border-[var(--an-border-color)] bg-[var(--an-background)] text-[var(--an-foreground)] shadow-[0_20px_60px_color-mix(in_srgb,var(--nim-text)_18%,transparent)]"
+        data-testid="agent-elements-share-dialog"
+        data-component="ShareDialog"
+        data-agent-elements-shell="share-dialog"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Close button */}
         <button
-          className="absolute top-4 right-4 w-8 h-8 p-0 flex items-center justify-center bg-transparent border-none text-[28px] leading-none cursor-pointer rounded-md z-[1] text-[var(--nim-text-muted)] transition-[color,transform] duration-200 hover:text-[var(--nim-text)] hover:bg-[var(--nim-bg-hover)] hover:scale-110"
+          className="share-dialog-close agent-elements-share-dialog-close absolute right-3 top-3 z-[1] inline-flex h-8 w-8 items-center justify-center rounded-[var(--an-tool-border-radius)] border border-transparent bg-transparent text-[var(--an-foreground-muted)] transition-[background-color,border-color,color] duration-150 ease-out hover:border-[var(--an-border-color)] hover:bg-[var(--an-background-tertiary)] hover:text-[var(--an-foreground)] focus:outline-none focus:ring-2 focus:ring-[var(--an-input-focus-outline)]"
+          data-testid="agent-elements-share-dialog-close"
+          data-agent-elements-shell="share-dialog-close"
           onClick={onClose}
           aria-label="Close"
         >
-          &times;
+          <MaterialSymbol icon="close" size={16} />
         </button>
 
-        <div className="px-8 pt-8 pb-6">
-          {/* Header */}
-          <div className="flex items-center gap-3 mb-6">
-            <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-[var(--nim-primary)]/15 text-[var(--nim-primary)]">
-              <MaterialSymbol icon="share" size={22} />
-            </div>
-            <h2 className="m-0 text-lg font-semibold text-[var(--nim-text)]">
+        <div
+          className="share-dialog-header agent-elements-share-dialog-header flex items-center gap-3 border-b border-[var(--an-border-color)] p-[var(--an-spacing-xl)]"
+          data-testid="agent-elements-share-dialog-header"
+          data-agent-elements-shell="share-dialog-header"
+        >
+          <span
+            className="share-dialog-icon agent-elements-share-dialog-icon inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-[var(--an-tool-border-radius)] border border-[color-mix(in_srgb,var(--an-primary-color)_24%,var(--an-border-color))] bg-[color-mix(in_srgb,var(--an-primary-color)_10%,var(--an-background))] text-[var(--an-primary-color)]"
+            data-agent-elements-shell="share-dialog-icon"
+            aria-hidden="true"
+          >
+            <MaterialSymbol icon="share" size={22} />
+          </span>
+          <div className="min-w-0 pr-8">
+            <h2 className="share-dialog-title m-0 text-sm font-medium text-[var(--an-foreground)]">
               Share {contentLabel}
             </h2>
+            <p className="share-dialog-subtitle m-0 mt-1 text-xs text-[var(--an-foreground-muted)]">
+              Create an encrypted link for this {contentLabel}
+            </p>
           </div>
+        </div>
 
-          {/* Sign-in required */}
+        <div
+          className="share-dialog-body agent-elements-share-dialog-body p-[var(--an-spacing-xl)]"
+          data-agent-elements-shell="share-dialog-body"
+        >
           {needsAuth ? (
-            <div>
-              <p className="m-0 mb-4 text-[0.8125rem] text-[var(--nim-text-muted)]">
+            <div
+              className="share-dialog-auth agent-elements-share-dialog-auth"
+              data-testid="agent-elements-share-dialog-auth"
+              data-agent-elements-shell="share-dialog-auth"
+            >
+              <p className="m-0 mb-4 text-sm leading-relaxed text-[var(--an-foreground-muted)]">
                 Sign in to share encrypted links.
               </p>
 
               {magicLinkSent ? (
-                <div className="text-center p-4 rounded-lg bg-[var(--nim-bg-hover)]">
-                  <MaterialSymbol icon="mail" size={32} className="text-[var(--nim-primary)] mb-2" />
-                  <p className="m-0 mb-1 text-[0.8125rem] font-medium text-[var(--nim-text)]">
+                <div
+                  className="share-dialog-magic-link-sent agent-elements-share-dialog-magic-link-sent rounded-[var(--an-tool-border-radius)] border border-[var(--an-border-color)] bg-[var(--an-background-secondary)] p-[var(--an-spacing-xl)] text-center"
+                  data-agent-elements-shell="share-dialog-magic-link-sent"
+                >
+                  <MaterialSymbol icon="mail" size={32} className="mb-2 text-[var(--an-primary-color)]" />
+                  <p className="m-0 mb-1 text-sm font-medium text-[var(--an-foreground)]">
                     Check your email
                   </p>
-                  <p className="m-0 mb-4 text-[0.75rem] text-[var(--nim-text-muted)]">
-                    We sent a sign-in link to <strong>{authEmail}</strong>
+                  <p className="m-0 mb-4 text-xs text-[var(--an-foreground-muted)]">
+                    We sent a sign-in link to <strong className="text-[var(--an-foreground)]">{authEmail}</strong>
                   </p>
                   <button
                     onClick={() => {
                       setMagicLinkSent(false);
                       setAuthEmail('');
                     }}
-                    className="px-4 py-2 rounded-lg border border-[var(--nim-border)] bg-transparent text-[0.8125rem] text-[var(--nim-text-muted)] cursor-pointer hover:bg-[var(--nim-bg-hover)]"
+                    className={shareDialogSecondaryButton}
                   >
                     Back
                   </button>
                 </div>
               ) : (
                 <>
-                  {/* Google Sign In */}
                   <button
                     onClick={handleGoogleSignIn}
                     disabled={authLoading || !isStytchAvailable}
-                    className="w-full px-4 py-2.5 flex items-center justify-center gap-2.5 bg-white border border-[var(--nim-border)] rounded-lg text-[#333] font-medium text-[0.8125rem] cursor-pointer disabled:opacity-70 disabled:cursor-wait"
+                    className={`${shareDialogSecondaryButton} agent-elements-share-dialog-google w-full`}
                   >
                     <svg width="18" height="18" viewBox="0 0 24 24">
                       <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
@@ -303,43 +338,48 @@ export const ShareDialog: React.FC<ShareDialogProps> = ({
                     Continue with Google
                   </button>
 
-                  <div className="flex items-center gap-3 my-4 text-[var(--nim-text-faint)] text-[0.75rem]">
-                    <div className="flex-1 h-px bg-[var(--nim-border)]" />
+                  <div className="share-dialog-separator agent-elements-share-dialog-separator my-4 flex items-center gap-3 text-xs text-[var(--an-foreground-subtle)]">
+                    <div className="h-px flex-1 bg-[var(--an-border-color)]" />
                     or
-                    <div className="flex-1 h-px bg-[var(--nim-border)]" />
+                    <div className="h-px flex-1 bg-[var(--an-border-color)]" />
                   </div>
 
-                  {/* Email Magic Link */}
-                  <form onSubmit={handleSendMagicLink}>
+                  <form
+                    className="share-dialog-auth-form agent-elements-share-dialog-auth-form"
+                    data-agent-elements-shell="share-dialog-auth-form"
+                    onSubmit={handleSendMagicLink}
+                  >
                     <input
                       type="email"
                       value={authEmail}
                       onChange={(e) => setAuthEmail(e.target.value)}
                       placeholder="Enter your email"
                       disabled={!isStytchAvailable || authLoading}
-                      className="w-full px-3 py-2 mb-3 text-[0.8125rem] rounded-lg border border-[var(--nim-border)] bg-[var(--nim-bg)] text-[var(--nim-text)] outline-none focus:border-[var(--nim-primary)]"
+                      className="share-dialog-email-input agent-elements-share-dialog-email-input mb-3 w-full rounded-[var(--an-input-border-radius)] border border-[var(--an-input-border-color)] bg-[var(--an-input-background)] px-3 py-2 text-sm text-[var(--an-input-color)] placeholder:text-[var(--an-foreground-subtle)] focus:outline-none focus:ring-2 focus:ring-[var(--an-input-focus-outline)] disabled:cursor-not-allowed disabled:opacity-60"
                     />
                     <button
                       type="submit"
                       disabled={authLoading || !isStytchAvailable || !authEmail}
-                      className="w-full px-4 py-2.5 rounded-lg border-none text-[0.8125rem] font-medium text-white bg-[var(--nim-primary)] cursor-pointer disabled:opacity-50 disabled:cursor-default"
+                      className={`${shareDialogPrimaryButton} w-full`}
                     >
                       {authLoading ? 'Sending...' : 'Send sign-in link'}
                     </button>
                   </form>
 
                   {authError && (
-                    <p className="m-0 mt-2 text-[0.75rem] text-red-400">
+                    <p
+                      className="share-dialog-auth-error agent-elements-share-dialog-auth-error m-0 mt-2 rounded-[var(--an-tool-border-radius)] border border-[color-mix(in_srgb,var(--nim-error)_24%,var(--an-border-color))] bg-[color-mix(in_srgb,var(--nim-error)_8%,var(--an-background))] p-2 text-xs text-[var(--nim-error)]"
+                      data-agent-elements-shell="share-dialog-auth-error"
+                    >
                       {authError}
                     </p>
                   )}
                 </>
               )}
 
-              {/* Footer cancel */}
-              <div className="flex justify-end mt-5">
+              <div className="share-dialog-auth-actions agent-elements-share-dialog-auth-actions mt-5 flex justify-end">
                 <button
-                  className="px-4 py-2.5 rounded-lg border-none text-[0.8125rem] cursor-pointer text-[var(--nim-text-muted)] bg-transparent transition-colors duration-150 hover:text-[var(--nim-text)] hover:bg-[var(--nim-bg-hover)]"
+                  className={shareDialogSecondaryButton}
                   onClick={onClose}
                 >
                   Cancel
@@ -348,14 +388,17 @@ export const ShareDialog: React.FC<ShareDialogProps> = ({
             </div>
           ) : (
             <>
-              {/* Privacy explanation */}
-              <div className="flex gap-3 p-3 mb-5 rounded-lg bg-[var(--nim-bg-hover)]">
-                <MaterialSymbol icon="lock" size={18} className="shrink-0 mt-0.5 text-[var(--nim-text-muted)]" />
+              <div
+                className="share-dialog-privacy agent-elements-share-dialog-privacy mb-5 flex gap-3 rounded-[var(--an-tool-border-radius)] border border-[var(--an-border-color)] bg-[var(--an-background-secondary)] p-[var(--an-spacing-lg)]"
+                data-testid="agent-elements-share-dialog-privacy"
+                data-agent-elements-shell="share-dialog-privacy"
+              >
+                <MaterialSymbol icon="lock" size={18} className="mt-0.5 shrink-0 text-[var(--an-foreground-muted)]" />
                 <div>
-                  <p className="m-0 text-[0.8125rem] text-[var(--nim-text)]">
+                  <p className="m-0 text-sm text-[var(--an-foreground)]">
                     Anyone with the link can view this {contentLabel}
                   </p>
-                  <p className="m-0 mt-1 text-[0.75rem] text-[var(--nim-text-faint)]">
+                  <p className="m-0 mt-1 text-xs leading-relaxed text-[var(--an-foreground-subtle)]">
                     Content is end-to-end encrypted.
                     <br />
                     No one without the link -- including Nimbalyst Servers -- can see it.
@@ -363,14 +406,19 @@ export const ShareDialog: React.FC<ShareDialogProps> = ({
                 </div>
               </div>
 
-              {/* Expiration dropdown */}
               {shareState !== 'success' && (
-                <div className="mb-5">
-                  <label className="block text-[0.75rem] font-medium text-[var(--nim-text-muted)] mb-1.5">
+                <div
+                  className="share-dialog-expiration agent-elements-share-dialog-expiration mb-5"
+                  data-testid="agent-elements-share-dialog-expiration"
+                  data-agent-elements-shell="share-dialog-expiration"
+                >
+                  <label className="mb-1.5 block text-xs font-medium text-[var(--an-foreground-muted)]">
                     Link expires after
                   </label>
                   <select
-                    className="w-full px-3 py-2 text-[0.8125rem] rounded-lg border border-[var(--nim-border)] bg-[var(--nim-bg)] text-[var(--nim-text)] cursor-pointer outline-none transition-colors duration-150 focus:border-[var(--nim-primary)] [&>option]:bg-[var(--nim-bg)] [&>option]:text-[var(--nim-text)]"
+                    className="share-dialog-expiration-select agent-elements-share-dialog-expiration-select w-full cursor-pointer rounded-[var(--an-input-border-radius)] border border-[var(--an-input-border-color)] bg-[var(--an-input-background)] px-3 py-2 text-sm text-[var(--an-input-color)] outline-none transition-[border-color,box-shadow] duration-150 ease-out focus:ring-2 focus:ring-[var(--an-input-focus-outline)] [&>option]:bg-[var(--nim-bg)] [&>option]:text-[var(--nim-text)]"
+                    data-testid="agent-elements-share-dialog-expiration-select"
+                    data-agent-elements-shell="share-dialog-expiration-select"
                     value={String(expirationDays)}
                     onChange={(e) => {
                       setExpirationDays(Number(e.target.value));
@@ -382,16 +430,18 @@ export const ShareDialog: React.FC<ShareDialogProps> = ({
                       </option>
                     ))}
                   </select>
-                  <p className="m-0 mt-1.5 text-[0.6875rem] text-[var(--nim-text-faint)]">
+                  <p className="m-0 mt-1.5 text-xs text-[var(--an-foreground-subtle)]">
                     Your choice will be remembered for next time
                   </p>
                 </div>
               )}
 
-              {/* Success state: show URL */}
               {shareState === 'success' && shareUrl && (
-                <div className="mb-5">
-                  <label className="block text-[0.75rem] font-medium text-[var(--nim-text-muted)] mb-1.5">
+                <div
+                  className="share-dialog-success agent-elements-share-dialog-success mb-5"
+                  data-agent-elements-shell="share-dialog-success"
+                >
+                  <label className="mb-1.5 block text-xs font-medium text-[var(--an-foreground-muted)]">
                     Share link
                   </label>
                   <div className="flex gap-2">
@@ -400,11 +450,13 @@ export const ShareDialog: React.FC<ShareDialogProps> = ({
                       type="text"
                       readOnly
                       value={shareUrl}
-                      className="flex-1 min-w-0 px-3 py-2 text-[0.8125rem] rounded-lg border border-[var(--nim-border)] bg-[var(--nim-bg-hover)] text-[var(--nim-text)] outline-none select-text"
+                      className="share-dialog-url agent-elements-share-dialog-url min-w-0 flex-1 rounded-[var(--an-input-border-radius)] border border-[var(--an-input-border-color)] bg-[var(--an-background-secondary)] px-3 py-2 text-sm text-[var(--an-input-color)] outline-none select-text"
+                      data-testid="agent-elements-share-dialog-url"
+                      data-agent-elements-shell="share-dialog-url"
                       onClick={() => urlInputRef.current?.select()}
                     />
                     <button
-                      className="shrink-0 flex items-center gap-1.5 px-3 py-2 text-[0.8125rem] rounded-lg border border-[var(--nim-border)] bg-transparent text-[var(--nim-text)] cursor-pointer transition-colors duration-150 hover:bg-[var(--nim-bg-hover)]"
+                      className={`${shareDialogSecondaryButton} shrink-0`}
                       onClick={handleCopyUrl}
                     >
                       <MaterialSymbol icon={urlCopied ? 'check' : 'content_copy'} size={14} />
@@ -414,18 +466,23 @@ export const ShareDialog: React.FC<ShareDialogProps> = ({
                 </div>
               )}
 
-              {/* Error state */}
               {shareState === 'error' && (
-                <div className="mb-5 p-3 rounded-lg bg-red-500/10 border border-red-500/20">
-                  <p className="m-0 text-[0.8125rem] text-red-400">{errorMessage}</p>
+                <div
+                  className="share-dialog-error agent-elements-share-dialog-error mb-5 rounded-[var(--an-tool-border-radius)] border border-[color-mix(in_srgb,var(--nim-error)_24%,var(--an-border-color))] bg-[color-mix(in_srgb,var(--nim-error)_8%,var(--an-background))] p-[var(--an-spacing-lg)]"
+                  data-agent-elements-shell="share-dialog-error"
+                >
+                  <p className="m-0 text-sm text-[var(--nim-error)]">{errorMessage}</p>
                 </div>
               )}
 
-              {/* Action button */}
-              <div className="flex justify-end gap-2">
+              <div
+                className="share-dialog-actions agent-elements-share-dialog-actions flex justify-end gap-2"
+                data-testid="agent-elements-share-dialog-actions"
+                data-agent-elements-shell="share-dialog-actions"
+              >
                 {shareState === 'success' ? (
                   <button
-                    className="px-5 py-2.5 rounded-lg border-none text-[0.8125rem] font-medium cursor-pointer text-[var(--nim-text)] bg-[var(--nim-bg-hover)] transition-colors duration-150 hover:bg-[var(--nim-border)]"
+                    className={shareDialogSecondaryButton}
                     onClick={onClose}
                   >
                     Done
@@ -433,13 +490,13 @@ export const ShareDialog: React.FC<ShareDialogProps> = ({
                 ) : (
                   <>
                     <button
-                      className="px-4 py-2.5 rounded-lg border-none text-[0.8125rem] cursor-pointer text-[var(--nim-text-muted)] bg-transparent transition-colors duration-150 hover:text-[var(--nim-text)] hover:bg-[var(--nim-bg-hover)]"
+                      className={shareDialogSecondaryButton}
                       onClick={onClose}
                     >
                       Cancel
                     </button>
                     <button
-                      className="flex items-center gap-2 px-5 py-2.5 rounded-lg border-none text-[0.8125rem] font-medium cursor-pointer text-white bg-[var(--nim-primary)] transition-all duration-150 hover:brightness-110 disabled:opacity-50 disabled:cursor-default"
+                      className={`${shareDialogPrimaryButton} share-dialog-primary-action agent-elements-share-dialog-primary-action`}
                       onClick={handleShare}
                       disabled={shareState === 'sharing'}
                     >

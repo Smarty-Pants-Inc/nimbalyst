@@ -22,8 +22,10 @@ const SessionStatusIndicator = memo<{ sessionId: string }>(({ sessionId }) => {
   if (isProcessing) {
     return (
       <div
-        className="session-quick-open-status processing flex items-center justify-center w-5 h-5 text-[var(--nim-primary)] opacity-80"
+        className="session-quick-open-status processing agent-elements-session-quick-open-status flex items-center justify-center w-5 h-5 text-[var(--an-primary-color)] opacity-80"
         title="Processing..."
+        data-agent-elements-shell="session-quick-open-status"
+        data-status="processing"
       >
         <MaterialSymbol icon="progress_activity" size={14} className="animate-spin" />
       </div>
@@ -33,8 +35,10 @@ const SessionStatusIndicator = memo<{ sessionId: string }>(({ sessionId }) => {
   if (hasPendingPrompt) {
     return (
       <div
-        className="session-quick-open-status pending-prompt flex items-center justify-center w-5 h-5 text-[var(--nim-warning)] animate-pulse"
+        className="session-quick-open-status pending-prompt agent-elements-session-quick-open-status flex items-center justify-center w-5 h-5 text-[var(--nim-warning)] animate-pulse"
         title="Waiting for your response"
+        data-agent-elements-shell="session-quick-open-status"
+        data-status="pending-prompt"
       >
         <MaterialSymbol icon="help" size={14} />
       </div>
@@ -44,8 +48,10 @@ const SessionStatusIndicator = memo<{ sessionId: string }>(({ sessionId }) => {
   if (hasUnread) {
     return (
       <div
-        className="session-quick-open-status unread flex items-center justify-center w-5 h-5 text-[var(--nim-primary)]"
+        className="session-quick-open-status unread agent-elements-session-quick-open-status flex items-center justify-center w-5 h-5 text-[var(--an-primary-color)]"
         title="Unread response"
+        data-agent-elements-shell="session-quick-open-status"
+        data-status="unread"
       >
         <MaterialSymbol icon="circle" size={8} fill />
       </div>
@@ -320,25 +326,42 @@ export const SessionQuickOpen: React.FC<SessionQuickOpenProps> = ({
   return (
     <>
       <div
-        className="session-quick-open-backdrop fixed inset-0 bg-black/50 z-[99998] nim-animate-fade-in"
+        className="session-quick-open-backdrop agent-elements-session-quick-open-backdrop fixed inset-0 z-[99998] nim-animate-fade-in bg-[color-mix(in_srgb,var(--nim-text)_36%,transparent)]"
         onClick={onClose}
+        data-testid="agent-elements-session-quick-open-backdrop"
+        data-agent-elements-shell="session-quick-open-backdrop"
       />
-      <div className="session-quick-open-modal fixed top-[20%] left-1/2 -translate-x-1/2 w-[90%] max-w-[600px] max-h-[60vh] flex flex-col overflow-hidden rounded-lg z-[99999] bg-[var(--nim-bg)] border border-[var(--nim-border)] shadow-[0_20px_60px_rgba(0,0,0,0.3)]">
-        <div className="session-quick-open-header p-3 border-b border-[var(--nim-border)]">
-          <div className="text-[11px] font-medium text-[var(--nim-text-faint)] uppercase tracking-wide mb-2">Sessions</div>
+      <div
+        className="session-quick-open-modal agent-elements-session-quick-open agent-elements-tool-card fixed top-[18%] left-1/2 -translate-x-1/2 w-[90vw] max-w-[700px] max-h-[62vh] !gap-0 !p-0 flex flex-col overflow-hidden rounded-[var(--an-border-radius)] z-[99999] bg-[var(--an-background)] border border-[var(--an-border-color)] shadow-[0_20px_60px_color-mix(in_srgb,var(--nim-text)_18%,transparent)]"
+        data-testid="agent-elements-session-quick-open"
+        data-component="SessionQuickOpen"
+        data-agent-elements-shell="session-quick-open"
+      >
+        <div
+          className="session-quick-open-header agent-elements-session-quick-open-header p-[var(--an-spacing-lg)] border-b border-[var(--an-border-color)]"
+          data-testid="agent-elements-session-quick-open-header"
+          data-agent-elements-shell="session-quick-open-header"
+        >
+          <div className="session-quick-open-title agent-elements-session-quick-open-title text-[12px] font-medium text-[var(--an-foreground-muted)] mb-2">Sessions</div>
           <div className="relative">
             {isFileSearchMode && selectedFilePath ? (
-              <div className="session-quick-open-search flex items-center gap-2 w-full py-2 px-3 text-base rounded-md box-border bg-[var(--nim-bg-secondary)] border border-[var(--nim-border)] focus-within:border-[#007aff] focus-within:shadow-[0_0_0_3px_rgba(0,122,255,0.1)]">
+              <div
+                className="session-quick-open-search agent-elements-session-quick-open-input flex items-center gap-2 w-full py-2 px-3 text-sm rounded-[var(--an-input-border-radius)] box-border bg-[var(--an-input-background)] border border-[var(--an-input-border-color)] focus-within:border-[var(--an-input-focus-outline)] focus-within:ring-2 focus-within:ring-[var(--an-input-focus-outline)]"
+                data-testid="agent-elements-session-quick-open-input"
+                data-agent-elements-shell="session-quick-open-input"
+              >
                 <span
-                  className="shrink-0 flex items-center gap-1.5 max-w-[80%] px-2 py-0.5 rounded bg-[rgba(0,122,255,0.1)] text-[var(--nim-primary)] text-sm cursor-default"
+                  className="session-quick-open-file-chip agent-elements-session-quick-open-file-chip agent-elements-status-pill shrink-0 flex items-center gap-1.5 max-w-[80%] px-2 py-0.5 rounded-[6px] text-[var(--an-primary-color)] text-sm cursor-default"
                   title={selectedFilePath}
+                  data-testid="agent-elements-session-quick-open-file-chip"
+                  data-agent-elements-shell="session-quick-open-file-chip"
                 >
                   <MaterialSymbol icon="description" size={14} className="shrink-0" />
                   <span className="overflow-hidden text-ellipsis whitespace-nowrap direction-rtl text-left">
                     {selectedFilePath}
                   </span>
                   <button
-                    className="shrink-0 flex items-center justify-center w-4 h-4 rounded-full border-none bg-transparent text-[var(--nim-text-faint)] hover:text-[var(--nim-text)] hover:bg-[var(--nim-bg-tertiary)] cursor-pointer p-0"
+                    className="session-quick-open-clear-file agent-elements-session-quick-open-clear-file shrink-0 flex items-center justify-center w-4 h-4 rounded-full border-none bg-transparent text-[var(--an-foreground-subtle)] hover:text-[var(--an-foreground)] hover:bg-[var(--an-background-tertiary)] cursor-pointer p-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--an-input-focus-outline)]"
                     onClick={() => {
                       setSearchQuery('');
                       setSelectedFilePath(null);
@@ -346,6 +369,7 @@ export const SessionQuickOpen: React.FC<SessionQuickOpenProps> = ({
                       setTimeout(() => searchInputRef.current?.focus(), 0);
                     }}
                     title="Clear file filter"
+                    data-agent-elements-shell="session-quick-open-clear-file"
                   >
                     <MaterialSymbol icon="close" size={12} />
                   </button>
@@ -353,10 +377,11 @@ export const SessionQuickOpen: React.FC<SessionQuickOpenProps> = ({
                 <input
                   ref={searchInputRef}
                   type="text"
-                  className="flex-1 min-w-0 bg-transparent border-none outline-none text-[var(--nim-text)] text-sm p-0"
+                  className="session-quick-open-file-filter-input agent-elements-session-quick-open-file-filter-input flex-1 min-w-0 bg-transparent border-none outline-none text-[var(--an-input-color)] text-sm p-0"
                   placeholder="Filter sessions..."
                   value=""
                   readOnly
+                  data-agent-elements-shell="session-quick-open-file-filter-input"
                 />
               </div>
             ) : (
@@ -364,7 +389,7 @@ export const SessionQuickOpen: React.FC<SessionQuickOpenProps> = ({
                 <input
                   ref={searchInputRef}
                   type="text"
-                  className="session-quick-open-search w-full py-2 px-3 text-base rounded-md outline-none box-border bg-[var(--nim-bg-secondary)] border border-[var(--nim-border)] text-[var(--nim-text)] focus:border-[#007aff] focus:shadow-[0_0_0_3px_rgba(0,122,255,0.1)]"
+                  className="session-quick-open-search agent-elements-session-quick-open-input w-full py-2 px-3 text-sm rounded-[var(--an-input-border-radius)] outline-none box-border bg-[var(--an-input-background)] border border-[var(--an-input-border-color)] text-[var(--an-input-color)] placeholder:text-[var(--an-input-placeholder-color)] focus:border-[var(--an-input-focus-outline)] focus:ring-2 focus:ring-[var(--an-input-focus-outline)]"
                   placeholder="Search sessions... (@ to search by file edited)"
                   value={searchQuery}
                   onChange={(e) => {
@@ -381,14 +406,17 @@ export const SessionQuickOpen: React.FC<SessionQuickOpenProps> = ({
                       setTypeaheadIndex(0);
                     }
                   }}
+                  data-testid="agent-elements-session-quick-open-input"
+                  data-agent-elements-shell="session-quick-open-input"
                 />
                 {searchQuery && onSwitchToPrompts && !isFileSearchMode && (
                   <button
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-xs flex items-center gap-1 px-2 py-1 rounded cursor-pointer border-none transition-colors duration-150 bg-transparent text-[var(--nim-text-faint)] hover:bg-[var(--nim-accent-subtle)] hover:text-[var(--nim-primary)]"
+                    className="session-quick-open-prompt-switch agent-elements-session-quick-open-prompt-switch absolute right-3 top-1/2 -translate-y-1/2 text-xs flex items-center gap-1 px-2 py-1 rounded-[6px] cursor-pointer border border-transparent transition-colors duration-150 bg-transparent text-[var(--an-foreground-muted)] hover:bg-[var(--an-background-tertiary)] hover:text-[var(--an-primary-color)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--an-input-focus-outline)]"
                     onClick={() => onSwitchToPrompts(searchQuery)}
                     title="Search in prompts"
+                    data-agent-elements-shell="session-quick-open-prompt-switch"
                   >
-                    <kbd className="px-1.5 py-0.5 rounded font-mono text-[10px] bg-[var(--nim-bg)] border border-[var(--nim-border)] text-[var(--nim-text)]">Tab</kbd>
+                    <kbd className="agent-elements-session-quick-open-kbd px-1.5 py-0.5 rounded-[5px] font-mono text-[10px] bg-[var(--an-background)] border border-[var(--an-border-color)] text-[var(--an-foreground)]">Tab</kbd>
                     Search prompts
                   </button>
                 )}
@@ -397,20 +425,34 @@ export const SessionQuickOpen: React.FC<SessionQuickOpenProps> = ({
           </div>
         </div>
 
-        <div className="session-quick-open-results flex-1 overflow-y-auto min-h-[200px]">
+        <div
+          className="session-quick-open-results agent-elements-session-quick-open-results flex-1 overflow-y-auto min-h-[200px] py-1"
+          data-testid="agent-elements-session-quick-open-results"
+          data-agent-elements-shell="session-quick-open-results"
+        >
           {/* File typeahead dropdown */}
           {showTypeahead && (
-            <ul className={`session-quick-open-typeahead list-none m-0 p-0 ${mouseHasMoved ? '' : 'pointer-events-none'}`}>
+            <ul
+              className={`session-quick-open-typeahead agent-elements-session-quick-open-typeahead list-none m-0 p-0 ${mouseHasMoved ? '' : 'pointer-events-none'}`}
+              data-testid="agent-elements-session-quick-open-typeahead"
+              data-agent-elements-shell="session-quick-open-typeahead"
+            >
               {fileOptions.length === 0 ? (
-                <li className="py-6 px-4 text-center text-[var(--nim-text-faint)] text-sm">
+                <li
+                  className="session-quick-open-typeahead-empty agent-elements-session-quick-open-typeahead-empty py-6 px-4 text-center text-[var(--an-foreground-subtle)] text-sm"
+                  data-testid="agent-elements-session-quick-open-typeahead-empty"
+                  data-agent-elements-shell="session-quick-open-typeahead-empty"
+                >
                   {fileSearchQuery ? 'No files found' : 'Type to search files...'}
                 </li>
               ) : (
                 fileOptions.slice(0, 20).map((option, index) => (
                   <li
                     key={option.id}
-                    className={`flex items-center gap-3 py-2 px-4 cursor-pointer transition-all duration-100 hover:bg-[var(--nim-bg-hover)] ${
-                      index === typeaheadIndex ? 'bg-[rgba(0,122,255,0.1)]' : ''
+                    className={`session-quick-open-typeahead-item agent-elements-session-quick-open-typeahead-item mx-2 my-1 flex items-center gap-3 py-2.5 px-3 cursor-pointer rounded-[var(--an-tool-border-radius)] border transition-[background-color,border-color,box-shadow] duration-150 ease-out ${
+                      index === typeaheadIndex
+                        ? 'selected bg-[var(--an-background-tertiary)] border-[var(--an-tool-border-color)] shadow-[inset_0_0_0_1px_color-mix(in_srgb,var(--an-primary-color)_16%,transparent)]'
+                        : 'border-transparent hover:bg-[var(--an-background-tertiary)] hover:border-[var(--an-tool-border-color)]'
                     }`}
                     onClick={() => handleFileTypeaheadSelect(option)}
                     onMouseEnter={() => {
@@ -418,8 +460,14 @@ export const SessionQuickOpen: React.FC<SessionQuickOpenProps> = ({
                         setTypeaheadIndex(index);
                       }
                     }}
+                    data-testid={`agent-elements-session-quick-open-typeahead-item-${index}`}
+                    data-agent-elements-shell="session-quick-open-typeahead-item"
+                    data-selected={index === typeaheadIndex ? 'true' : 'false'}
                   >
-                    <span className="shrink-0 flex items-center justify-center w-5 h-5 text-[var(--nim-text-muted)]">
+                    <span
+                      className="session-quick-open-typeahead-icon agent-elements-session-quick-open-typeahead-icon shrink-0 flex items-center justify-center w-7 h-7 rounded-[8px] border border-[var(--an-tool-border-color)] bg-[var(--an-background-secondary)] text-[var(--an-foreground-muted)]"
+                      data-agent-elements-shell="session-quick-open-typeahead-icon"
+                    >
                       {typeof option.icon === 'string' ? (
                         <MaterialSymbol icon={option.icon} size={16} />
                       ) : (
@@ -427,11 +475,17 @@ export const SessionQuickOpen: React.FC<SessionQuickOpenProps> = ({
                       )}
                     </span>
                     <span className="flex-1 min-w-0">
-                      <span className="text-sm text-[var(--nim-text)] block overflow-hidden text-ellipsis whitespace-nowrap">
+                      <span
+                        className="session-quick-open-typeahead-label agent-elements-session-quick-open-typeahead-label text-sm text-[var(--an-foreground)] block overflow-hidden text-ellipsis whitespace-nowrap"
+                        data-agent-elements-shell="session-quick-open-typeahead-label"
+                      >
                         {option.label}
                       </span>
                       {option.description && (
-                        <span className="text-xs text-[var(--nim-text-faint)] block overflow-hidden text-ellipsis whitespace-nowrap">
+                        <span
+                          className="session-quick-open-typeahead-description agent-elements-session-quick-open-typeahead-description text-xs text-[var(--an-foreground-subtle)] block overflow-hidden text-ellipsis whitespace-nowrap"
+                          data-agent-elements-shell="session-quick-open-typeahead-description"
+                        >
                           {option.description}
                         </span>
                       )}
@@ -444,7 +498,11 @@ export const SessionQuickOpen: React.FC<SessionQuickOpenProps> = ({
 
           {/* Session results (hidden when typeahead is showing) */}
           {!showTypeahead && displaySessions.length === 0 && (
-            <div className="session-quick-open-empty p-10 text-center text-[var(--nim-text-faint)]">
+            <div
+              className="session-quick-open-empty agent-elements-session-quick-open-empty p-10 text-center text-[var(--an-foreground-subtle)]"
+              data-testid="agent-elements-session-quick-open-empty"
+              data-agent-elements-shell="session-quick-open-empty"
+            >
               {isFileSearchMode && selectedFilePath
                 ? `No sessions edited ${selectedFilePath}`
                 : searchQuery ? 'No sessions found' : 'No recent sessions'}
@@ -452,14 +510,17 @@ export const SessionQuickOpen: React.FC<SessionQuickOpenProps> = ({
           )}
           {!showTypeahead && displaySessions.length > 0 && (
             <ul
-              className={`session-quick-open-list list-none m-0 p-0 ${mouseHasMoved ? '' : 'pointer-events-none'}`}
+              className={`session-quick-open-list agent-elements-session-quick-open-list list-none m-0 p-0 ${mouseHasMoved ? '' : 'pointer-events-none'}`}
               ref={resultsListRef}
+              data-agent-elements-shell="session-quick-open-list"
             >
               {displaySessions.map((session, index) => (
                 <li
                   key={session.id}
-                  className={`session-quick-open-item flex items-start gap-3 py-2.5 px-4 cursor-pointer border-l-[3px] border-transparent transition-all duration-100 hover:bg-[var(--nim-bg-hover)] ${
-                    index === selectedIndex ? 'selected bg-[rgba(0,122,255,0.1)] border-l-[#007aff]' : ''
+                  className={`session-quick-open-item agent-elements-session-quick-open-item flex items-start gap-3 mx-2 my-1 py-2.5 px-3 cursor-pointer rounded-[var(--an-tool-border-radius)] border transition-[background-color,border-color,box-shadow] duration-150 ease-out ${
+                    index === selectedIndex
+                      ? 'selected bg-[var(--an-background-tertiary)] border-[var(--an-tool-border-color)] shadow-[inset_0_0_0_1px_color-mix(in_srgb,var(--an-primary-color)_16%,transparent)]'
+                      : 'border-transparent hover:bg-[var(--an-background-tertiary)] hover:border-[var(--an-tool-border-color)]'
                   }`}
                   onClick={() => handleSessionSelect(session.id)}
                   onMouseEnter={() => {
@@ -467,38 +528,69 @@ export const SessionQuickOpen: React.FC<SessionQuickOpenProps> = ({
                       setSelectedIndex(index);
                     }
                   }}
+                  data-testid={`agent-elements-session-quick-open-item-${index}`}
+                  data-agent-elements-shell="session-quick-open-result"
+                  data-selected={index === selectedIndex ? 'true' : 'false'}
+                  data-provider={session.provider || 'claude'}
+                  data-workstream={session.parentSessionId ? 'true' : 'false'}
+                  data-worktree={session.worktreeId ? 'true' : 'false'}
                 >
-                  <div className="session-quick-open-item-icon shrink-0 flex items-center justify-center pt-0.5 text-[var(--nim-text-muted)]">
-                    <ProviderIcon provider={session.provider || 'claude'} size={16} />
+                  <div
+                    className="session-quick-open-item-icon agent-elements-session-quick-open-item-icon shrink-0 flex items-center justify-center w-7 h-7 rounded-[8px] border border-[var(--an-tool-border-color)] bg-[var(--an-background-secondary)] text-[var(--an-foreground-muted)]"
+                    data-agent-elements-shell="session-quick-open-provider-icon"
+                  >
+                    <ProviderIcon provider={session.provider || 'claude'} size={14} />
                   </div>
-                  <div className="session-quick-open-item-content flex-1 min-w-0">
-                    <div className="session-quick-open-item-name text-sm font-medium text-[var(--nim-text)] flex items-center gap-2 overflow-hidden text-ellipsis whitespace-nowrap">
+                  <div className="session-quick-open-item-content agent-elements-session-quick-open-item-content flex-1 min-w-0">
+                    <div
+                      className="session-quick-open-item-name agent-elements-session-quick-open-item-name text-sm font-medium text-[var(--an-foreground)] flex items-center gap-2 overflow-hidden text-ellipsis whitespace-nowrap"
+                      data-testid={`agent-elements-session-quick-open-item-name-${index}`}
+                      data-agent-elements-shell="session-quick-open-item-name"
+                    >
                       {session.title || 'New conversation'}
                       {session.parentSessionId && (
-                        <span className="session-quick-open-badge workstream-badge shrink-0 text-[10px] py-0.5 px-1.5 rounded-[3px] font-semibold bg-[var(--nim-primary)] text-white">
+                        <span
+                          className="session-quick-open-badge workstream-badge agent-elements-status-pill shrink-0 text-[10px]"
+                          data-agent-elements-shell="session-quick-open-workstream-badge"
+                        >
                           In Workstream
                         </span>
                       )}
                       {session.worktreeId && (
-                        <span className="session-quick-open-badge worktree-badge shrink-0 text-[10px] py-0.5 px-1.5 rounded-[3px] font-semibold bg-[var(--nim-success)] text-white">
+                        <span
+                          className="session-quick-open-badge worktree-badge agent-elements-status-pill shrink-0 text-[10px]"
+                          data-agent-elements-shell="session-quick-open-worktree-badge"
+                          data-tone="success"
+                        >
                           Worktree
                         </span>
                       )}
                       {session.messageCount > 0 && (
-                        <span className="session-quick-open-badge shrink-0 text-[10px] py-0.5 px-1.5 rounded-[3px] font-semibold bg-[var(--nim-text-faint)] text-white">
+                        <span
+                          className="session-quick-open-badge message-count-badge agent-elements-status-pill shrink-0 text-[10px]"
+                          data-agent-elements-shell="session-quick-open-message-count"
+                        >
                           {session.messageCount} msg{session.messageCount !== 1 ? 's' : ''}
                         </span>
                       )}
                     </div>
-                    <div className="session-quick-open-item-meta text-xs text-[var(--nim-text-faint)] mt-0.5">
+                    <div
+                      className="session-quick-open-item-meta agent-elements-session-quick-open-item-meta text-xs text-[var(--an-foreground-subtle)] mt-0.5"
+                      data-agent-elements-shell="session-quick-open-item-meta"
+                    >
                       {getRelativeTimeString(session.updatedAt)}
                     </div>
                   </div>
-                  <div className="session-quick-open-item-right shrink-0 flex items-center gap-1.5 ml-auto">
+                  <div
+                    className="session-quick-open-item-right agent-elements-session-quick-open-item-right shrink-0 flex items-center gap-1.5 ml-auto"
+                    data-agent-elements-shell="session-quick-open-item-right"
+                  >
                     {session.uncommittedCount !== undefined && session.uncommittedCount > 0 && (
                       <span
-                        className="session-quick-open-badge uncommitted shrink-0 text-[10px] py-0.5 px-1.5 rounded-[3px] font-semibold bg-[rgba(245,158,11,0.15)] text-[var(--nim-warning)]"
+                        className="session-quick-open-badge uncommitted agent-elements-status-pill shrink-0 text-[10px] text-[var(--nim-warning)]"
                         title={`${session.uncommittedCount} uncommitted change${session.uncommittedCount !== 1 ? 's' : ''}`}
+                        data-agent-elements-shell="session-quick-open-uncommitted-badge"
+                        data-tone="warning"
                       >
                         {session.uncommittedCount}
                       </span>
@@ -511,25 +603,33 @@ export const SessionQuickOpen: React.FC<SessionQuickOpenProps> = ({
           )}
         </div>
 
-        <div className="session-quick-open-footer flex justify-between py-2 px-4 border-t border-[var(--nim-border)] bg-[var(--nim-bg-secondary)]">
+        <div
+          className="session-quick-open-footer agent-elements-session-quick-open-footer flex justify-between py-2 px-4 border-t border-[var(--an-border-color)] bg-[var(--an-background-secondary)]"
+          data-testid="agent-elements-session-quick-open-footer"
+          data-agent-elements-shell="session-quick-open-footer"
+        >
           <div className="flex gap-4">
-            <span className="session-quick-open-hint text-[11px] text-[var(--nim-text-faint)] flex items-center gap-1">
-              <kbd className="py-0.5 px-1.5 rounded-[3px] font-mono text-[10px] bg-[var(--nim-bg)] border border-[var(--nim-border)] text-[var(--nim-text)]">Up/Down</kbd> Navigate
+            <span className="session-quick-open-hint agent-elements-session-quick-open-hint text-[11px] text-[var(--an-foreground-subtle)] flex items-center gap-1">
+              <kbd className="agent-elements-session-quick-open-kbd py-0.5 px-1.5 rounded-[5px] font-mono text-[10px] bg-[var(--an-background)] border border-[var(--an-border-color)] text-[var(--an-foreground)]">Up/Down</kbd> Navigate
             </span>
-            <span className="session-quick-open-hint text-[11px] text-[var(--nim-text-faint)] flex items-center gap-1">
-              <kbd className="py-0.5 px-1.5 rounded-[3px] font-mono text-[10px] bg-[var(--nim-bg)] border border-[var(--nim-border)] text-[var(--nim-text)]">Enter</kbd> {showTypeahead ? 'Select file' : 'Open'}
+            <span className="session-quick-open-hint agent-elements-session-quick-open-hint text-[11px] text-[var(--an-foreground-subtle)] flex items-center gap-1">
+              <kbd className="agent-elements-session-quick-open-kbd py-0.5 px-1.5 rounded-[5px] font-mono text-[10px] bg-[var(--an-background)] border border-[var(--an-border-color)] text-[var(--an-foreground)]">Enter</kbd> {showTypeahead ? 'Select file' : 'Open'}
             </span>
-            <span className="session-quick-open-hint text-[11px] text-[var(--nim-text-faint)] flex items-center gap-1">
-              <kbd className="py-0.5 px-1.5 rounded-[3px] font-mono text-[10px] bg-[var(--nim-bg)] border border-[var(--nim-border)] text-[var(--nim-text)]">Esc</kbd> {isFileSearchMode ? 'Clear filter' : 'Close'}
+            <span className="session-quick-open-hint agent-elements-session-quick-open-hint text-[11px] text-[var(--an-foreground-subtle)] flex items-center gap-1">
+              <kbd className="agent-elements-session-quick-open-kbd py-0.5 px-1.5 rounded-[5px] font-mono text-[10px] bg-[var(--an-background)] border border-[var(--an-border-color)] text-[var(--an-foreground)]">Esc</kbd> {isFileSearchMode ? 'Clear filter' : 'Close'}
             </span>
           </div>
           {isFileSearchMode && selectedFilePath && fileFilteredSessionIds !== null ? (
-            <span className="session-quick-open-hint text-[11px] text-[var(--nim-primary)] flex items-center gap-1">
+            <span
+              className="session-quick-open-hint agent-elements-session-quick-open-file-count text-[11px] text-[var(--an-primary-color)] flex items-center gap-1"
+              data-testid="agent-elements-session-quick-open-file-count"
+              data-agent-elements-shell="session-quick-open-file-count"
+            >
               {displaySessions.length} session{displaySessions.length !== 1 ? 's' : ''} edited this file
             </span>
           ) : (
-            <span className="session-quick-open-hint text-[11px] text-[var(--nim-text-faint)] flex items-center gap-1">
-              <kbd className="py-0.5 px-1.5 rounded-[3px] font-mono text-[10px] bg-[var(--nim-bg)] border border-[var(--nim-border)] text-[var(--nim-text)]">{getShortcutDisplay(KeyboardShortcuts.window.promptQuickOpen)}</kbd> Search prompts
+            <span className="session-quick-open-hint agent-elements-session-quick-open-hint text-[11px] text-[var(--an-foreground-subtle)] flex items-center gap-1">
+              <kbd className="agent-elements-session-quick-open-kbd py-0.5 px-1.5 rounded-[5px] font-mono text-[10px] bg-[var(--an-background)] border border-[var(--an-border-color)] text-[var(--an-foreground)]">{getShortcutDisplay(KeyboardShortcuts.window.promptQuickOpen)}</kbd> Search prompts
             </span>
           )}
         </div>

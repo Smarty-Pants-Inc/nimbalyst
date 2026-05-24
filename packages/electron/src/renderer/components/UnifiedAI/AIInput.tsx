@@ -3,7 +3,7 @@ import { useAtomValue, useSetAtom } from 'jotai';
 import { GenericTypeahead, TypeaheadOption } from '../Typeahead/GenericTypeahead';
 import { extractTriggerMatch, getSlashTypeaheadScope, insertAtTrigger, type SlashTypeaheadScope, TriggerMatch } from '../Typeahead/typeaheadUtils';
 import { buildSlashCommandOptions, fetchSlashCommandEntries, type SlashCommandEntry } from '../Typeahead/slashCommandAutocomplete';
-import { readClipboard, type ChatAttachment } from '@nimbalyst/runtime';
+import { MaterialSymbol, readClipboard, type ChatAttachment } from '@nimbalyst/runtime';
 import type { TokenUsageCategory } from '@nimbalyst/runtime/ai/server/types';
 import type { EffortLevel } from '../../utils/modelUtils';
 import { AttachmentPreviewList } from '../AgenticCoding/AttachmentPreviewList';
@@ -1211,11 +1211,86 @@ export const AIInput = forwardRef<AIInputRef, AIInputProps>(
       }
     }, []);
 
+    const inputState = isMemoryMode ? 'memory' : isLoading ? 'loading' : 'idle';
+    const isSendDisabled = disabled || !value.trim() || processingAttachments.length > 0;
+
+    const rootClassName = [
+      'ai-chat-input',
+      'agent-elements-ai-input',
+      'relative flex shrink-0 flex-col gap-[var(--an-spacing-sm)] border-t border-[var(--an-border-color)]',
+      'bg-[var(--an-background-secondary)] px-[var(--an-spacing-md)] pb-[var(--an-spacing-md)] pt-[var(--an-spacing-sm)]',
+      'text-[var(--an-foreground)] [container-type:inline-size]',
+      isMemoryMode ? 'memory-mode' : '',
+    ].join(' ');
+
+    const resizeHandleClassName = [
+      'ai-chat-input-resize-handle',
+      'agent-elements-ai-input-resize-handle',
+      'absolute -top-[3px] left-0 right-0 z-10 h-1.5 cursor-row-resize',
+      "before:absolute before:left-[var(--an-spacing-md)] before:right-[var(--an-spacing-md)] before:top-0.5 before:h-px before:content-['']",
+      'before:bg-transparent before:transition-colors before:duration-150',
+      isResizing ? 'before:bg-[var(--an-primary-color)]' : '',
+      'hover:before:bg-[var(--an-primary-color)]',
+    ].join(' ');
+
+    const fieldShellClassName = [
+      'ai-chat-input-field-shell',
+      'agent-elements-ai-input-field-shell',
+      'relative flex flex-1 cursor-text flex-row items-end gap-[var(--an-spacing-sm)]',
+      'rounded-[var(--an-input-border-radius)] bg-[var(--an-input-background)]',
+      'p-[var(--an-spacing-xs)] ring-1 ring-[var(--an-input-border-color)]',
+      'transition-[background-color,box-shadow,padding] duration-150 ease-out',
+      'focus-within:ring-[var(--an-primary-color)]',
+      dragActive
+        ? 'bg-[var(--an-background-tertiary)] p-[var(--an-spacing-sm)] ring-2 ring-[var(--an-primary-color)]'
+        : '',
+    ].join(' ');
+
+    const textareaClassName = [
+      'ai-chat-input-field',
+      'agent-elements-ai-input-field',
+      'nim-scrollbar-hidden min-h-9 flex-1 resize-none bg-transparent',
+      'px-[var(--an-spacing-sm)] py-[var(--an-spacing-xs)] text-[14px] leading-[1.6]',
+      'text-[var(--an-input-color)] outline-none placeholder:text-[var(--an-input-placeholder-color)]',
+      'disabled:cursor-not-allowed disabled:opacity-50 select-text',
+    ].join(' ');
+
+    const buttonBaseClassName = [
+      'flex h-8 w-8 shrink-0 items-center justify-center rounded-full border-none p-0 outline-none',
+      'transition-[background-color,color,opacity] duration-150 ease-out',
+      'focus-visible:ring-2 focus-visible:ring-[var(--an-input-focus-outline)]',
+    ].join(' ');
+
+    const sendButtonClassName = [
+      'ai-chat-send-button',
+      'agent-elements-ai-input-send',
+      buttonBaseClassName,
+      isSendDisabled
+        ? 'cursor-default bg-[var(--an-background-tertiary)] text-[var(--an-foreground-subtle)] opacity-70'
+        : 'cursor-pointer bg-[var(--an-send-button-bg)] text-[var(--an-send-button-color)] hover:bg-[var(--an-primary-color)]',
+    ].join(' ');
+
+    const stopButtonClassName = [
+      'ai-chat-cancel-button',
+      'agent-elements-ai-input-stop',
+      buttonBaseClassName,
+      'cursor-pointer bg-[var(--an-foreground)] text-[var(--an-background)] animate-pulse hover:animate-none',
+    ].join(' ');
+
     return (
-      <div className={`ai-chat-input flex flex-col gap-1.5 px-3 py-1.5 border-t border-[var(--nim-border)] bg-[var(--nim-bg-secondary)] shrink-0 relative ${isMemoryMode ? 'memory-mode' : ''}`}>
+      <div
+        className={rootClassName}
+        data-agent-elements-shell="ai-input"
+        data-component="UnifiedAIInput"
+        data-drag-active={dragActive}
+        data-input-state={inputState}
+        data-memory-mode={isMemoryMode}
+        data-testid="agent-elements-ai-input"
+      >
         {/* Vertical resize handle at top of input area */}
         <div
-          className={`ai-chat-input-resize-handle absolute -top-[3px] left-0 right-0 h-1.5 cursor-row-resize z-10 before:content-[''] before:absolute before:top-0.5 before:left-0 before:right-0 before:h-0.5 before:transition-colors before:duration-150 ${isResizing ? 'before:bg-[var(--nim-primary)]' : ''} hover:before:bg-[var(--nim-primary)]`}
+          className={resizeHandleClassName}
+          data-testid="agent-elements-ai-input-resize-handle"
           onMouseDown={handleResizeMouseDown}
           title="Drag to resize prompt box"
         />
@@ -1263,16 +1338,15 @@ export const AIInput = forwardRef<AIInputRef, AIInputProps>(
 
         {/* Inline controls row - hidden in memory mode */}
         {!isMemoryMode && (onModeChange || onModelChange || workspacePath || (tokenUsage && provider === 'claude-code')) && (
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
-          }}>
-{onModeChange && provider === 'claude-code' && mode && <ModeTag mode={mode} onModeChange={onModeChange} />}
+          <div
+            className="ai-chat-input-toolbar agent-elements-ai-input-toolbar flex items-center gap-[var(--an-spacing-sm)] px-[var(--an-spacing-xxs)]"
+            data-testid="agent-elements-ai-input-toolbar"
+          >
+            {onModeChange && provider === 'claude-code' && mode && <ModeTag mode={mode} onModeChange={onModeChange} />}
 
             {onModelChange && (
               <HelpTooltip testId="model-picker">
-                <span style={{ display: 'inline-flex' }}>
+                <span className="inline-flex">
                   <ModelSelector
                     currentModel={currentModel || ''}
                     onModelChange={onModelChange}
@@ -1290,7 +1364,7 @@ export const AIInput = forwardRef<AIInputRef, AIInputProps>(
             )}
             {workspacePath && (
               <HelpTooltip testId="action-prompts-dropdown">
-                <span style={{ display: 'inline-flex' }}>
+                <span className="inline-flex">
                   <ActionPromptsDropdown
                     workspacePath={workspacePath}
                     onInsert={handleActionPromptInsert}
@@ -1313,26 +1387,17 @@ export const AIInput = forwardRef<AIInputRef, AIInputProps>(
 
         {/* Input container with drag/drop support */}
         <div
+          className={fieldShellClassName}
+          data-drag-active={dragActive}
+          data-testid="agent-elements-ai-input-field-shell"
           onDragOver={handleDragOver}
           onDragLeave={handleDragLeave}
           onDrop={handleDrop}
-          style={{
-            flex: 1,
-            display: 'flex',
-            flexDirection: 'row',
-            gap: '8px',
-            position: 'relative',
-            border: dragActive ? '2px dashed var(--nim-primary)' : 'none',
-            borderRadius: dragActive ? '4px' : '0',
-            backgroundColor: dragActive ? 'var(--nim-bg-hover)' : 'transparent',
-            transition: 'all 0.2s ease',
-            padding: dragActive ? '4px' : '0'
-          }}
         >
           <textarea
             ref={textareaRef}
             data-testid={testId}
-            className="ai-chat-input-field nim-scrollbar-hidden flex-1 min-h-9 py-2 px-3 bg-[var(--nim-bg)] border border-[var(--nim-border)] rounded-md text-[var(--nim-text)] text-[13px] font-[inherit] resize-none outline-none transition-colors duration-200 focus:border-[var(--nim-primary)] disabled:opacity-50 disabled:cursor-not-allowed placeholder:text-[var(--nim-text-faint)]"
+            className={textareaClassName}
             value={value}
             onChange={(e) => {
               // textarea onChange only fires from real user input events
@@ -1362,6 +1427,7 @@ export const AIInput = forwardRef<AIInputRef, AIInputProps>(
             onPaste={handlePaste}
             onFocus={() => setIsFocused(true)}
             onBlur={() => setIsFocused(false)}
+            aria-label="Message composer"
             placeholder={placeholder}
             disabled={disabled}
             rows={1}
@@ -1380,7 +1446,7 @@ export const AIInput = forwardRef<AIInputRef, AIInputProps>(
           ) : isLoading ? (
             onCancel && (
               <button
-                className="ai-chat-cancel-button w-9 h-9 flex items-center justify-center bg-red-600 border-none rounded-md text-white cursor-pointer transition-all duration-200 animate-pulse hover:bg-red-700 hover:scale-105 hover:animate-none"
+                className={stopButtonClassName}
                 data-testid="ai-input-cancel-request"
                 onClick={() => {
                   console.log('[AIInput] Cancel button clicked, onCancel:', !!onCancel);
@@ -1388,23 +1454,21 @@ export const AIInput = forwardRef<AIInputRef, AIInputProps>(
                 }}
                 title="Cancel request (Esc)"
                 aria-label="Cancel request"
+                type="button"
               >
-                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M12 4L4 12M4 4L12 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                </svg>
+                <MaterialSymbol icon="stop" size={16} />
               </button>
             )
           ) : (
             <button
-              className="ai-chat-send-button w-9 h-9 flex items-center justify-center bg-[var(--nim-primary)] border-none rounded-md text-white cursor-pointer transition-all duration-200 shrink-0 hover:enabled:bg-[var(--nim-primary-hover)] hover:enabled:scale-105 disabled:opacity-40 disabled:cursor-not-allowed"
+              className={sendButtonClassName}
               onClick={handleSend}
-              disabled={disabled || !value.trim() || processingAttachments.length > 0}
+              disabled={isSendDisabled}
               title={processingAttachments.length > 0 ? "Processing attachments..." : "Send message (Enter)"}
               aria-label="Send message"
+              type="button"
             >
-              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M2 8L14 2L11 14L8 9L2 8Z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
+              <MaterialSymbol icon="arrow_upward" size={16} />
             </button>
           )}
         </div>

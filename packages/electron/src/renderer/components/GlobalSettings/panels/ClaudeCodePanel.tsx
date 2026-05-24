@@ -32,6 +32,8 @@ interface ClaudeCodePanelProps {
 
 type AuthMethod = 'login' | 'api-key';
 
+const getClaudeCodeDomId = (value: string) => value.replace(/[^a-zA-Z0-9_-]+/g, '-');
+
 export function ClaudeCodePanel({
   config,
   apiKeys,
@@ -315,8 +317,17 @@ export function ClaudeCodePanel({
   };
 
   return (
-    <div className="provider-panel flex flex-col">
-      <div className="provider-panel-header mb-6 pb-4 border-b border-[var(--nim-border)]">
+    <div
+      className="provider-panel claude-code-panel agent-elements-settings-panel agent-elements-claude-code-panel flex flex-col"
+      data-agent-elements-shell="claude-code-panel"
+      data-component="ClaudeCodePanel"
+      data-testid="agent-elements-claude-code-panel"
+    >
+      <div
+        className="provider-panel-header claude-code-panel-header agent-elements-settings-panel-header mb-6 pb-4 border-b border-[var(--nim-border)]"
+        data-agent-elements-shell="claude-code-header"
+        data-testid="agent-elements-claude-code-header"
+      >
         <h3 className="provider-panel-title text-xl font-semibold leading-tight mb-2 text-[var(--nim-text)]">Claude Agent</h3>
         <p className="provider-panel-description text-sm leading-relaxed text-[var(--nim-text-muted)]">
           Agent mode uses the Claude Code SDK with a few extensions for added functionality in Nimbalyst.
@@ -332,6 +343,7 @@ export function ClaudeCodePanel({
           // console.log('[ClaudeCodePanel] Toggle changed to:', checked);
           onToggle(checked);
         }}
+        testId="agent-elements-claude-code-enable-toggle"
       />
 
       {/* Usage Indicator Toggle */}
@@ -341,11 +353,16 @@ export function ClaudeCodePanel({
         description="Display API usage limits in the navigation gutter"
         checked={usageIndicatorEnabled}
         onChange={setUsageIndicatorEnabled}
-        testId="claude-agent-usage-indicator-toggle"
+        testId="agent-elements-claude-code-usage-toggle"
       />
 
       {/* Custom Claude Installation */}
-      <div className="provider-enable flex flex-col gap-2 py-4 mb-4 border-b border-[var(--nim-border)]">
+      <div
+        className="provider-enable claude-code-path-section agent-elements-settings-section flex flex-col gap-2 py-4 mb-4 border-b border-[var(--nim-border)]"
+        data-agent-elements-shell="claude-code-path-section"
+        data-section="custom-installation"
+        data-testid="agent-elements-claude-code-path-section"
+      >
         <div>
           <span className="provider-enable-label text-sm font-medium text-[var(--nim-text)]">Custom Claude Installation</span>
           <p className="text-xs text-[var(--nim-text-muted)] mt-1">
@@ -370,10 +387,12 @@ export function ClaudeCodePanel({
               ? `Inheriting: ${globalCustomClaudeCodePath}`
               : '/usr/local/bin/claude'}
             className="flex-1 py-1.5 px-2 rounded text-sm bg-[var(--nim-bg-secondary)] border border-[var(--nim-border)] text-[var(--nim-text)] font-mono focus:border-[var(--nim-primary)] outline-none"
+            data-testid="agent-elements-claude-code-path-input"
           />
           <button
             onClick={handleBrowseCustomClaudeCodePath}
             className="py-1.5 px-3 rounded text-xs font-medium bg-[var(--nim-bg-tertiary)] border border-[var(--nim-border)] text-[var(--nim-text)] hover:bg-[var(--nim-bg-hover)] transition-colors whitespace-nowrap"
+            data-testid="agent-elements-claude-code-path-browse"
           >
             Browse
           </button>
@@ -396,6 +415,7 @@ export function ClaudeCodePanel({
         description="Save plans to nimbalyst-local/plans/ with tracking frontmatter. When disabled, plans use Claude Code's default behavior."
         checked={planTrackingEnabled}
         onChange={handleSetPlanTrackingEnabled}
+        testId="agent-elements-claude-code-plan-tracking-toggle"
       />
 
       {/* Agent Teams Toggle (Experimental) */}
@@ -405,17 +425,27 @@ export function ClaudeCodePanel({
         description="Allow Claude to coordinate multiple agents working together as a team. Uses more tokens but enables parallel work."
         checked={agentTeamsEnabled}
         onChange={handleToggleAgentTeams}
+        testId="agent-elements-claude-code-agent-teams-toggle"
       />
 
       { isWindowsPlatform && isCheckingClaudeWindowsStatus && (
-        <div className="installation-status p-4 rounded-lg bg-[rgba(245,158,11,0.05)] border border-[rgba(245,158,11,0.2)]">
+        <div
+          className="installation-status agent-elements-tool-card p-4 rounded-lg bg-[rgba(245,158,11,0.05)] border border-[rgba(245,158,11,0.2)]"
+          data-agent-elements-shell="claude-code-windows-checking"
+          data-testid="agent-elements-claude-code-windows-checking"
+        >
           <div className="installation-status-row flex items-center gap-3 py-1">
             <span className="installation-status-label text-sm font-medium text-[var(--nim-text-muted)]">Checking Claude Code Installation...</span>
           </div>
         </div>
       )}
       { !isCheckingClaudeWindowsStatus && (
-        <div className="provider-panel-section py-4 mb-4 border-b border-[var(--nim-border)] last:border-b-0 last:mb-0 last:pb-0">
+        <div
+          className="provider-panel-section claude-code-sdk-section agent-elements-settings-section py-4 mb-4 border-b border-[var(--nim-border)] last:border-b-0 last:mb-0 last:pb-0"
+          data-agent-elements-shell={isWindowsPlatform ? 'claude-code-windows-section' : 'claude-code-sdk-section'}
+          data-section={isWindowsPlatform ? 'windows-installation' : 'agent-sdk'}
+          data-testid={isWindowsPlatform ? 'agent-elements-claude-code-windows-section' : 'agent-elements-claude-code-sdk-section'}
+        >
           { isWindowsPlatform ? (
             <>
               <h4 className="provider-panel-section-title text-base font-semibold mb-3 text-[var(--nim-text)]">Claude Code for Windows Installation</h4>
@@ -423,14 +453,22 @@ export function ClaudeCodePanel({
                 Nimbalyst requires Claude Code for Windows to be installed to use the Claude Code provider.
               </p>
               { Boolean(claudeCodeWindowsStatus?.claudeCodeVersion) ? (
-                <div className="installation-status mt-3 p-4 rounded-lg bg-[rgba(16,185,129,0.05)] border border-[rgba(16,185,129,0.2)]">
+                <div
+                  className="installation-status agent-elements-tool-card mt-3 p-4 rounded-lg bg-[rgba(16,185,129,0.05)] border border-[rgba(16,185,129,0.2)]"
+                  data-agent-elements-shell="claude-code-windows-ready"
+                  data-testid="agent-elements-claude-code-windows-ready"
+                >
                   <div className="installation-status-row flex items-center gap-3 py-1">
                     <span className="installation-status-label text-sm font-medium text-[var(--nim-text-muted)]">Claude Code Version:</span>
                     <span className="installation-status-value text-sm text-[var(--nim-text)]">{claudeCodeWindowsStatus?.claudeCodeVersion}</span>
                   </div>
                 </div>
               ): (
-                <div className="installation-status mt-3 p-4 rounded-lg bg-[rgba(239,68,68,0.05)] border border-[rgba(239,68,68,0.2)]">
+                <div
+                  className="installation-status agent-elements-tool-card mt-3 p-4 rounded-lg bg-[rgba(239,68,68,0.05)] border border-[rgba(239,68,68,0.2)]"
+                  data-agent-elements-shell="claude-code-windows-missing"
+                  data-testid="agent-elements-claude-code-windows-missing"
+                >
                   <div className="text-xs text-[var(--nim-text-muted)] mt-3 leading-relaxed">
                     <p className="mb-2">Install Claude Code for Windows by following the instructions below:</p>
                     <ol className="list-decimal list-inside space-y-1 mb-4">
@@ -446,7 +484,11 @@ export function ClaudeCodePanel({
           ): (
             <>
               <h4 className="provider-panel-section-title text-base font-semibold mb-3 text-[var(--nim-text)]">Claude Agent SDK</h4>
-              <div className="installation-status p-4 rounded-lg bg-[rgba(16,185,129,0.05)] border border-[rgba(16,185,129,0.2)]">
+              <div
+                className="installation-status agent-elements-tool-card p-4 rounded-lg bg-[rgba(16,185,129,0.05)] border border-[rgba(16,185,129,0.2)]"
+                data-agent-elements-shell="claude-code-sdk-card"
+                data-testid="agent-elements-claude-code-sdk-card"
+              >
                 <div className="installation-status-row flex items-center gap-3 py-1">
                   <span className="installation-status-label text-sm font-medium text-[var(--nim-text-muted)]">Version:</span>
                   <span className="installation-status-value text-sm text-[var(--nim-text)]">{BUNDLED_SDK_VERSION}</span>
@@ -466,13 +508,22 @@ export function ClaudeCodePanel({
 
       {config.enabled && isClaudeCodeWindowsReady() && (
         <>
-          <div className="provider-panel-section py-4 mb-4 border-b border-[var(--nim-border)] last:border-b-0 last:mb-0 last:pb-0">
+          <div
+            className="provider-panel-section claude-code-auth-section agent-elements-settings-section py-4 mb-4 border-b border-[var(--nim-border)] last:border-b-0 last:mb-0 last:pb-0"
+            data-agent-elements-shell="claude-code-auth-section"
+            data-section="authentication"
+            data-testid="agent-elements-claude-code-auth-section"
+          >
             <h4 className="provider-panel-section-title text-base font-semibold mb-3 text-[var(--nim-text)]">Authentication</h4>
             <div className="api-key-section mt-4">
               {/* Authentication Method Selector */}
               <div className="auth-method-selector mb-4">
                 <label className="auth-method-label block text-[13px] font-semibold mb-2 text-[var(--nim-text)]">Authentication Method</label>
-                <div className="auth-method-buttons flex gap-2">
+                <div
+                  className="auth-method-buttons claude-code-auth-methods flex gap-2"
+                  data-agent-elements-shell="claude-code-auth-methods"
+                  data-testid="agent-elements-claude-code-auth-methods"
+                >
                   <button
                     className={`auth-method-button flex-1 py-2.5 px-4 rounded-md text-[13px] font-medium cursor-pointer transition-all border ${
                       selectedAuthMethod === 'login'
@@ -483,6 +534,9 @@ export function ClaudeCodePanel({
                       setSelectedAuthMethod('login');
                       onConfigChange({ authMethod: 'login' });
                     }}
+                    data-auth-method="login"
+                    data-selected={selectedAuthMethod === 'login' ? 'true' : 'false'}
+                    data-testid="agent-elements-claude-code-auth-method-login"
                   >
                     Claude Plan (Recommended)
                   </button>
@@ -496,6 +550,9 @@ export function ClaudeCodePanel({
                       setSelectedAuthMethod('api-key');
                       onConfigChange({ authMethod: 'api-key' });
                     }}
+                    data-auth-method="api-key"
+                    data-selected={selectedAuthMethod === 'api-key' ? 'true' : 'false'}
+                    data-testid="agent-elements-claude-code-auth-method-api-key"
                   >
                     API Key
                   </button>
@@ -508,7 +565,11 @@ export function ClaudeCodePanel({
                   {loginStatus?.isLoggedIn ? (
                     <>
                       {/* Logged In State */}
-                      <div className="status-box-success mb-4 py-3.5 px-4 rounded-lg text-[13px] flex items-center gap-3 justify-between bg-[rgba(16,185,129,0.08)] border border-[rgba(16,185,129,0.2)]">
+                      <div
+                        className="status-box-success claude-code-signed-in-card agent-elements-tool-card mb-4 py-3.5 px-4 rounded-lg text-[13px] flex items-center gap-3 justify-between bg-[rgba(16,185,129,0.08)] border border-[rgba(16,185,129,0.2)]"
+                        data-agent-elements-shell="claude-code-signed-in-card"
+                        data-testid="agent-elements-claude-code-signed-in-card"
+                      >
                         <div className="flex items-center gap-3 flex-1">
                           <span className="status-box-icon text-xl leading-none shrink-0 text-[var(--nim-success)]">✓</span>
                           <div className="status-box-content flex flex-col gap-1 flex-1">
@@ -539,7 +600,11 @@ export function ClaudeCodePanel({
                   ) : (
                     <>
                       {/* Not Logged In State */}
-                      <div className="mb-4 p-4 bg-[var(--nim-bg-secondary)] border border-[var(--nim-border)] rounded-lg">
+                      <div
+                        className="claude-code-plan-card agent-elements-tool-card mb-4 p-4 bg-[var(--nim-bg-secondary)] border border-[var(--nim-border)] rounded-lg"
+                        data-agent-elements-shell="claude-code-plan-card"
+                        data-testid="agent-elements-claude-code-plan-card"
+                      >
                         <p className="text-xs leading-relaxed text-[var(--nim-text-muted)] mb-3">
                           Authenticate with your Claude Pro or Team subscription. No API credits needed.
                         </p>
@@ -570,14 +635,19 @@ export function ClaudeCodePanel({
                   <p className="text-xs leading-relaxed text-[var(--nim-text-muted)] mb-3">
                     Use an Anthropic API key. Pay-per-use with API credits from your Anthropic account.
                   </p>
-                  <div className="api-key-row flex gap-2 items-center">
+                  <div
+                    className="api-key-row claude-code-api-key-card agent-elements-tool-card flex gap-2 items-center rounded-lg border border-[var(--nim-border)] bg-[var(--nim-bg-secondary)] p-3"
+                    data-agent-elements-shell="claude-code-api-key-card"
+                    data-testid="agent-elements-claude-code-api-key-card"
+                  >
                     <input
                       type="password"
                       value={apiKeys['claude-code'] || ''}
                       onChange={(e) => onApiKeyChange('claude-code', e.target.value)}
                       onFocus={(e) => e.target.select()}
                       placeholder="sk-ant-..."
-                      className="api-key-input flex-1 py-2 px-3 rounded-md bg-[var(--nim-bg-secondary)] border border-[var(--nim-border)] text-[var(--nim-text)] outline-none font-mono focus:border-[var(--nim-primary)]"
+                      className="api-key-input flex-1 py-2 px-3 rounded-md bg-[var(--nim-bg)] border border-[var(--nim-border)] text-[var(--nim-text)] outline-none font-mono focus:border-[var(--nim-primary)]"
+                      data-testid="agent-elements-claude-code-api-key-input"
                     />
                     {apiKeys['claude-code'] ? (
                       <button
@@ -588,6 +658,8 @@ export function ClaudeCodePanel({
                         }`}
                         onClick={onTestConnection}
                         disabled={config.testStatus === 'testing'}
+                        data-test-status={config.testStatus || 'idle'}
+                        data-testid="agent-elements-claude-code-test-button"
                       >
                         {config.testStatus === 'testing' ? 'Testing...' :
                          config.testStatus === 'success' ? '✓ Connected' :
@@ -596,14 +668,25 @@ export function ClaudeCodePanel({
                     ) : null}
                   </div>
                   {config.testMessage && config.testStatus === 'error' && (
-                    <div className="test-error text-xs mt-2 text-[var(--nim-error)]">{config.testMessage}</div>
+                    <div
+                      className="test-error claude-code-test-error text-xs mt-2 text-[var(--nim-error)]"
+                      data-agent-elements-shell="claude-code-test-error"
+                      data-testid="agent-elements-claude-code-test-error"
+                    >
+                      {config.testMessage}
+                    </div>
                   )}
                 </>
               )}
             </div>
           </div>
 
-          <div className="provider-panel-section py-4 mb-4 border-b border-[var(--nim-border)] last:border-b-0 last:mb-0 last:pb-0">
+          <div
+            className="provider-panel-section claude-code-permissions-section agent-elements-settings-section py-4 mb-4 border-b border-[var(--nim-border)] last:border-b-0 last:mb-0 last:pb-0"
+            data-agent-elements-shell="claude-code-permissions-section"
+            data-section="tool-permissions"
+            data-testid="agent-elements-claude-code-permissions-section"
+          >
             <h4 className="provider-panel-section-title text-base font-semibold mb-3 text-[var(--nim-text)]">Tool Permissions</h4>
             <p className="text-xs leading-relaxed text-[var(--nim-text-muted)] mb-2">
               Tool permissions are now managed per-project. When Claude Agent attempts to use a tool,
@@ -620,7 +703,12 @@ export function ClaudeCodePanel({
               from believing they're setting a per-project value when they're really
               changing global state. See issue #185. */}
           {scope === 'user' && (
-          <div className="provider-panel-section py-4 mb-4 border-b border-[var(--nim-border)] last:border-b-0 last:mb-0 last:pb-0">
+          <div
+            className="provider-panel-section claude-code-env-section agent-elements-settings-section py-4 mb-4 border-b border-[var(--nim-border)] last:border-b-0 last:mb-0 last:pb-0"
+            data-agent-elements-shell="claude-code-env-section"
+            data-section="environment-variables"
+            data-testid="agent-elements-claude-code-env-section"
+          >
             <h4 className="provider-panel-section-title text-base font-semibold mb-3 text-[var(--nim-text)]">Environment Variables</h4>
             <p className="text-xs leading-relaxed text-[var(--nim-text-muted)] mb-3">
               Configure environment variables that will be set for all Claude Code sessions.
@@ -628,14 +716,26 @@ export function ClaudeCodePanel({
             </p>
 
             {isLoadingEnv ? (
-              <div className="text-sm text-[var(--nim-text-muted)]">Loading...</div>
+              <div
+                className="claude-code-env-loading text-sm text-[var(--nim-text-muted)]"
+                data-agent-elements-shell="claude-code-env-loading"
+                data-testid="agent-elements-claude-code-env-loading"
+              >
+                Loading...
+              </div>
             ) : (
               <>
                 {/* Existing env vars list */}
                 {Object.keys(envVars).length > 0 && (
                   <div className="env-vars-list space-y-2 mb-4">
                     {Object.entries(envVars).map(([key, value]) => (
-                      <div key={key} className="env-var-row flex items-center gap-2">
+                      <div
+                        key={key}
+                        className="env-var-row claude-code-env-row agent-elements-tool-card flex items-center gap-2 rounded-lg border border-[var(--nim-border)] bg-[var(--nim-bg-secondary)] p-2"
+                        data-agent-elements-shell="claude-code-env-row"
+                        data-env-key={key}
+                        data-testid={`agent-elements-claude-code-env-row-${getClaudeCodeDomId(key)}`}
+                      >
                         {editingKey === key ? (
                           <>
                             <input
@@ -660,6 +760,7 @@ export function ClaudeCodePanel({
                                 setEditingValue('');
                               }}
                               className="py-1.5 px-3 rounded text-xs font-medium bg-[var(--nim-primary)] text-white hover:bg-[var(--nim-primary-hover)] transition-colors"
+                              data-testid={`agent-elements-claude-code-env-save-${getClaudeCodeDomId(key)}`}
                             >
                               Save
                             </button>
@@ -669,6 +770,7 @@ export function ClaudeCodePanel({
                                 setEditingValue('');
                               }}
                               className="py-1.5 px-3 rounded text-xs font-medium bg-[var(--nim-bg-tertiary)] border border-[var(--nim-border)] text-[var(--nim-text)] hover:bg-[var(--nim-bg-hover)] transition-colors"
+                              data-testid={`agent-elements-claude-code-env-cancel-${getClaudeCodeDomId(key)}`}
                             >
                               Cancel
                             </button>
@@ -684,6 +786,7 @@ export function ClaudeCodePanel({
                                 setEditingValue(value);
                               }}
                               className="py-1.5 px-3 rounded text-xs font-medium bg-[var(--nim-bg-tertiary)] border border-[var(--nim-border)] text-[var(--nim-text)] hover:bg-[var(--nim-bg-hover)] transition-colors"
+                              data-testid={`agent-elements-claude-code-env-edit-${getClaudeCodeDomId(key)}`}
                             >
                               Edit
                             </button>
@@ -694,6 +797,7 @@ export function ClaudeCodePanel({
                                 saveEnvVars(newEnvVars);
                               }}
                               className="py-1.5 px-3 rounded text-xs font-medium bg-[var(--nim-bg-tertiary)] border border-[var(--nim-border)] text-[var(--nim-error)] hover:bg-[rgba(239,68,68,0.1)] transition-colors"
+                              data-testid={`agent-elements-claude-code-env-delete-${getClaudeCodeDomId(key)}`}
                             >
                               Delete
                             </button>
@@ -705,13 +809,18 @@ export function ClaudeCodePanel({
                 )}
 
                 {/* Add new env var form */}
-                <div className="add-env-var flex items-center gap-2">
+                <div
+                  className="add-env-var claude-code-add-env-row agent-elements-tool-card flex items-center gap-2 rounded-lg border border-[var(--nim-border)] bg-[var(--nim-bg-secondary)] p-2"
+                  data-agent-elements-shell="claude-code-add-env-row"
+                  data-testid="agent-elements-claude-code-add-env-row"
+                >
                   <input
                     type="text"
                     value={newEnvKey}
                     onChange={(e) => setNewEnvKey(e.target.value.toUpperCase().replace(/[^A-Z0-9_]/g, ''))}
                     placeholder="VARIABLE_NAME"
                     className="flex-1 py-1.5 px-2 rounded text-sm bg-[var(--nim-bg-secondary)] border border-[var(--nim-border)] text-[var(--nim-text)] font-mono focus:border-[var(--nim-primary)] outline-none"
+                    data-testid="agent-elements-claude-code-new-env-key"
                   />
                   <span className="text-[var(--nim-text-muted)]">=</span>
                   <input
@@ -720,6 +829,7 @@ export function ClaudeCodePanel({
                     onChange={(e) => setNewEnvValue(e.target.value)}
                     placeholder="value"
                     className="flex-[2] py-1.5 px-2 rounded text-sm bg-[var(--nim-bg-secondary)] border border-[var(--nim-border)] text-[var(--nim-text)] font-mono focus:border-[var(--nim-primary)] outline-none"
+                    data-testid="agent-elements-claude-code-new-env-value"
                   />
                   <button
                     onClick={() => {
@@ -732,6 +842,7 @@ export function ClaudeCodePanel({
                     }}
                     disabled={!newEnvKey.trim()}
                     className="py-1.5 px-3 rounded text-xs font-medium bg-[var(--nim-primary)] text-white hover:bg-[var(--nim-primary-hover)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    data-testid="agent-elements-claude-code-add-env-button"
                   >
                     Add
                   </button>

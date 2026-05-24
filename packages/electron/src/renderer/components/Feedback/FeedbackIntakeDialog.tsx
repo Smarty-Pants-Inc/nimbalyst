@@ -25,6 +25,29 @@ const ISSUES_URL = 'https://github.com/nimbalyst/nimbalyst/issues';
 const DISCUSSIONS_URL = 'https://github.com/nimbalyst/nimbalyst/discussions';
 const SUPPORT_EMAIL_URL = 'mailto:support@nimbalyst.com';
 
+const feedbackButtonBase =
+  'inline-flex items-center justify-center gap-2 rounded-[var(--an-input-border-radius)] border px-3 py-2 text-sm font-medium transition-[background-color,border-color,color,opacity] duration-150 ease-out focus:outline-none focus:ring-2 focus:ring-[var(--an-input-focus-outline)] disabled:cursor-not-allowed disabled:opacity-50';
+
+const feedbackPrimaryButton =
+  `${feedbackButtonBase} border-[var(--an-primary-color)] bg-[var(--an-primary-color)] text-[var(--an-background)] hover:border-[var(--nim-primary-hover)] hover:bg-[var(--nim-primary-hover)]`;
+
+const feedbackDisabledButton =
+  `${feedbackButtonBase} border-[var(--an-border-color)] bg-[var(--an-background)] text-[var(--an-foreground-subtle)]`;
+
+const feedbackExternalLinkButton =
+  'inline-flex cursor-pointer items-center gap-2 rounded-[var(--an-input-border-radius)] border border-transparent bg-transparent px-2 py-1.5 text-left text-sm text-[var(--an-foreground-muted)] transition-[background-color,border-color,color] duration-150 ease-out hover:border-[var(--an-border-color)] hover:bg-[var(--an-background-tertiary)] hover:text-[var(--an-foreground)] focus:outline-none focus:ring-2 focus:ring-[var(--an-input-focus-outline)]';
+
+function feedbackKindCardClass(isSelected: boolean): string {
+  const base =
+    'feedback-intake-kind-card agent-elements-feedback-intake-kind-card flex cursor-pointer flex-col gap-2 rounded-[var(--an-tool-border-radius)] border p-[var(--an-spacing-md)] text-left transition-[background-color,border-color,color] duration-150 ease-out focus:outline-none focus:ring-2 focus:ring-[var(--an-input-focus-outline)]';
+
+  if (isSelected) {
+    return `${base} border-[var(--an-primary-color)] bg-[var(--an-background-secondary)] text-[var(--an-foreground)]`;
+  }
+
+  return `${base} border-[var(--an-border-color)] bg-[var(--an-background)] text-[var(--an-foreground-muted)] hover:border-[var(--an-primary-color)] hover:bg-[var(--an-background-tertiary)] hover:text-[var(--an-foreground)]`;
+}
+
 export const FeedbackIntakeDialog: React.FC<FeedbackIntakeDialogProps> = ({
   isOpen,
   onClose,
@@ -74,155 +97,186 @@ export const FeedbackIntakeDialog: React.FC<FeedbackIntakeDialogProps> = ({
 
   return (
     <div
-      className="feedback-intake-overlay nim-overlay nim-animate-fade-in fixed inset-0 z-50 flex items-center justify-center bg-black/60"
+      className="feedback-intake-overlay nim-overlay agent-elements-feedback-intake-backdrop nim-animate-fade-in fixed inset-0 z-50 flex items-center justify-center bg-[color-mix(in_srgb,var(--nim-text)_36%,transparent)] p-4"
       onClick={onClose}
-      data-testid="feedback-intake-overlay"
+      data-testid="agent-elements-feedback-intake-backdrop"
+      data-agent-elements-shell="feedback-intake-backdrop"
     >
       <div
-        className="feedback-intake-dialog nim-animate-slide-up relative max-h-[90vh] w-[520px] max-w-[90vw] overflow-y-auto rounded-2xl border border-[var(--nim-border)] bg-[var(--nim-bg)] shadow-[0_8px_32px_rgba(0,0,0,0.4)]"
+        className="feedback-intake-dialog agent-elements-feedback-intake-dialog agent-elements-tool-card nim-animate-slide-up flex max-h-[86vh] w-[560px] max-w-[92vw] flex-col overflow-hidden rounded-[var(--an-border-radius)] border border-[var(--an-border-color)] bg-[var(--an-background)] text-[var(--an-foreground)] shadow-[0_20px_60px_color-mix(in_srgb,var(--nim-text)_18%,transparent)]"
         onClick={(e) => e.stopPropagation()}
         role="dialog"
+        aria-modal="true"
         aria-labelledby="feedback-intake-title"
-        data-testid="feedback-intake-dialog"
+        data-testid="agent-elements-feedback-intake-dialog"
+        data-component="FeedbackIntakeDialog"
+        data-agent-elements-shell="feedback-intake-dialog"
       >
-        <button
-          type="button"
-          className="absolute top-3.5 right-3.5 z-[1] flex h-8 w-8 items-center justify-center rounded-md border-none bg-transparent text-[var(--nim-text-muted)] transition-colors duration-150 hover:bg-[var(--nim-bg-tertiary)] hover:text-[var(--nim-text)]"
-          onClick={onClose}
-          aria-label="Close"
-          data-testid="feedback-intake-close"
+        <header
+          className="feedback-intake-header agent-elements-feedback-intake-header flex items-start justify-between gap-3 border-b border-[var(--an-border-color)] p-[var(--an-spacing-xl)]"
+          data-testid="agent-elements-feedback-intake-header"
+          data-agent-elements-shell="feedback-intake-header"
         >
-          <MaterialSymbol icon="close" size={20} />
-        </button>
-
-        <div className="px-6 pt-6 pb-6">
-          <div className="feedback-intake-hero mb-5 overflow-hidden rounded-[24px] border border-[var(--nim-border)] bg-[linear-gradient(135deg,rgba(56,189,248,0.10),rgba(251,191,36,0.08),rgba(255,255,255,0.02))] px-6 py-5">
-            <h2
-              id="feedback-intake-title"
-              className="m-0 text-[24px] font-semibold leading-[1.1] text-[var(--nim-text)]"
+          <div className="flex min-w-0 items-start gap-3">
+            <span
+              className="agent-elements-feedback-intake-icon inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-[var(--an-tool-border-radius)] border border-[var(--an-border-color)] bg-[var(--an-background-secondary)] text-[var(--an-foreground-muted)]"
+              data-agent-elements-shell="feedback-intake-icon"
             >
-              Send better feedback with your Agent
-            </h2>
-            <p className="mt-2 max-w-[42ch] text-[13px] leading-relaxed text-[var(--nim-text-muted)]">
-              Use your Agent to improve your bug reports and feature requests. Your agent will help draft it, and you
-              approve everything before GitHub opens.
-            </p>
+              <MaterialSymbol icon="feedback" size={18} />
+            </span>
+            <div className="min-w-0">
+              <h2
+                id="feedback-intake-title"
+                className="m-0 text-sm font-medium leading-snug text-[var(--an-foreground)]"
+              >
+                Send better feedback with your Agent
+              </h2>
+              <p className="mt-1 max-w-[56ch] text-xs leading-relaxed text-[var(--an-foreground-muted)]">
+                Use your Agent to improve your bug reports and feature requests. You approve everything
+                before GitHub opens.
+              </p>
+            </div>
           </div>
+          <button
+            type="button"
+            className="feedback-intake-close agent-elements-feedback-intake-close flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-[var(--an-input-border-radius)] border border-transparent bg-transparent p-0 text-[var(--an-foreground-muted)] transition-[background-color,border-color,color] duration-150 ease-out hover:border-[var(--an-border-color)] hover:bg-[var(--an-background-tertiary)] hover:text-[var(--an-foreground)] focus:outline-none focus:ring-2 focus:ring-[var(--an-input-focus-outline)]"
+            onClick={onClose}
+            aria-label="Close"
+            data-testid="agent-elements-feedback-intake-close"
+            data-agent-elements-shell="feedback-intake-close"
+          >
+            <MaterialSymbol icon="close" size={18} />
+          </button>
+        </header>
 
-          <div className="feedback-intake-options flex flex-col gap-4">
-            <div className="feedback-intake-kind-grid grid grid-cols-2 gap-3">
+        <div
+          className="feedback-intake-body agent-elements-feedback-intake-body flex flex-col gap-[var(--an-spacing-xl)] overflow-y-auto p-[var(--an-spacing-xl)]"
+          data-agent-elements-shell="feedback-intake-body"
+        >
+          <section
+            className="feedback-intake-options agent-elements-feedback-intake-options flex flex-col gap-[var(--an-spacing-md)]"
+            data-testid="agent-elements-feedback-intake-options"
+            data-agent-elements-shell="feedback-intake-options"
+          >
+            <h2
+              className="m-0 text-xs font-medium text-[var(--an-foreground-muted)]"
+              data-agent-elements-shell="feedback-intake-options-title"
+            >
+              Choose a feedback type
+            </h2>
+            <div className="feedback-intake-kind-grid agent-elements-feedback-intake-kind-grid grid grid-cols-[repeat(auto-fit,minmax(180px,1fr))] gap-2">
               <button
                 type="button"
-                className={`feedback-intake-kind-card rounded-[18px] border px-4 py-3 text-left transition-all duration-150 ${
-                  selectedKind === 'bug'
-                    ? 'border-[var(--nim-primary)] bg-[var(--nim-bg-secondary)] text-[var(--nim-text)]'
-                    : 'border-[var(--nim-border)] bg-[var(--nim-bg)] text-[var(--nim-text-muted)] hover:border-[var(--nim-primary)] hover:bg-[var(--nim-bg-secondary)] hover:text-[var(--nim-text)]'
-                }`}
+                className={feedbackKindCardClass(selectedKind === 'bug')}
                 onClick={() => handleSelectKind('bug')}
                 data-testid="feedback-intake-select-bug"
+                data-agent-elements-shell="feedback-intake-kind-card"
               >
-                <div className="mb-2 flex items-center gap-2">
-                  <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-[rgba(239,68,68,0.12)] text-[var(--nim-error)]">
-                    <MaterialSymbol icon="bug_report" size={20} />
+                <div className="flex items-center gap-2">
+                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[var(--an-tool-border-radius)] border border-[var(--an-border-color)] bg-[var(--an-background-secondary)] text-[var(--nim-error)]">
+                    <MaterialSymbol icon="bug_report" size={18} />
                   </span>
-                  <span className="text-[14px] font-semibold leading-none">Bug report</span>
+                  <span className="text-sm font-medium leading-snug text-[var(--an-foreground)]">Bug report</span>
                 </div>
-                <p className="m-0 text-[12px] leading-relaxed">
+                <p className="m-0 text-xs leading-relaxed text-[var(--an-foreground-muted)]">
                   Broken behavior, crashes, sync issues, or regressions.
                 </p>
               </button>
 
               <button
                 type="button"
-                className={`feedback-intake-kind-card rounded-[18px] border px-4 py-3 text-left transition-all duration-150 ${
-                  selectedKind === 'feature'
-                    ? 'border-[var(--nim-primary)] bg-[var(--nim-bg-secondary)] text-[var(--nim-text)]'
-                    : 'border-[var(--nim-border)] bg-[var(--nim-bg)] text-[var(--nim-text-muted)] hover:border-[var(--nim-primary)] hover:bg-[var(--nim-bg-secondary)] hover:text-[var(--nim-text)]'
-                }`}
+                className={feedbackKindCardClass(selectedKind === 'feature')}
                 onClick={() => handleSelectKind('feature')}
                 data-testid="feedback-intake-select-feature"
+                data-agent-elements-shell="feedback-intake-kind-card"
               >
-                <div className="mb-2 flex items-center gap-2">
-                  <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-[rgba(245,158,11,0.14)] text-[var(--nim-warning)]">
-                    <MaterialSymbol icon="lightbulb" size={20} />
+                <div className="flex items-center gap-2">
+                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[var(--an-tool-border-radius)] border border-[var(--an-border-color)] bg-[var(--an-background-secondary)] text-[var(--nim-warning)]">
+                    <MaterialSymbol icon="lightbulb" size={18} />
                   </span>
-                  <span className="text-[14px] font-semibold leading-none">Feature request</span>
+                  <span className="text-sm font-medium leading-snug text-[var(--an-foreground)]">Feature request</span>
                 </div>
-                <p className="m-0 text-[12px] leading-relaxed">
+                <p className="m-0 text-xs leading-relaxed text-[var(--an-foreground-muted)]">
                   Missing capabilities, workflow improvements, or UX changes.
                 </p>
               </button>
             </div>
+          </section>
 
-            {selectedKind ? (
-              <div className="feedback-intake-detail rounded-[20px] border border-[var(--nim-border)] bg-[var(--nim-bg-secondary)] px-4 py-4">
-                {selectedKind === 'bug' ? (
-                  <label
-                    htmlFor="feedback-may-gather-logs"
-                    className="block cursor-pointer rounded-2xl border border-[var(--nim-border)] bg-[var(--nim-bg)] px-4 py-3 transition-colors duration-150 hover:bg-[var(--nim-bg-tertiary)]"
-                  >
-                    <div className="flex items-start gap-3">
-                      <input
-                        id="feedback-may-gather-logs"
-                        type="checkbox"
-                        checked={mayGatherLogs}
-                        onChange={(e) => setMayGatherLogs(e.target.checked)}
-                        className="mt-0.5 h-[18px] w-[18px] shrink-0 cursor-pointer appearance-none rounded border-2 border-[var(--nim-border)] bg-[var(--nim-bg)] checked:border-[var(--nim-primary)] checked:bg-[var(--nim-primary)] checked:bg-[url('data:image/svg+xml,%3Csvg%20xmlns=%27http://www.w3.org/2000/svg%27%20viewBox=%270%200%2024%2024%27%20fill=%27white%27%3E%3Cpath%20d=%27M9%2016.17L4.83%2012l-1.42%201.41L9%2019%2021%207l-1.41-1.41L9%2016.17z%27/%3E%3C/svg%3E')] checked:bg-[length:14px] checked:bg-center checked:bg-no-repeat"
-                        data-testid="feedback-intake-consent"
-                      />
-                      <div className="min-w-0 flex-1">
-                        <p className="m-0 text-[13px] font-medium leading-snug text-[var(--nim-text)]">
-                          Include logs and environment details
-                        </p>
-                        <p className="mt-1.5 text-[12px] leading-relaxed text-[var(--nim-text-muted)]">
-                          Logs may include file paths, workspace names, and error details. The
-                          assistant anonymizes them first, and you review the final report before it
-                          is posted.
-                        </p>
-                      </div>
-                    </div>
-                  </label>
-                ) : null}
+          {selectedKind ? (
+            <section
+              className="feedback-intake-detail agent-elements-feedback-intake-detail nim-animate-slide-up rounded-[var(--an-tool-border-radius)] border border-[var(--an-border-color)] bg-[var(--an-background-secondary)] p-[var(--an-spacing-md)]"
+              data-testid="agent-elements-feedback-intake-detail"
+              data-agent-elements-shell="feedback-intake-detail"
+            >
+              {selectedKind === 'bug' ? (
+                <label
+                  htmlFor="feedback-may-gather-logs"
+                  className="feedback-intake-detail-option agent-elements-feedback-intake-detail-option flex cursor-pointer items-start gap-3 rounded-[var(--an-tool-border-radius)] border border-[var(--an-border-color)] bg-[var(--an-background)] p-[var(--an-spacing-md)] transition-[background-color,border-color] duration-150 ease-out hover:bg-[var(--an-background-tertiary)]"
+                  data-agent-elements-shell="feedback-intake-detail-option"
+                >
+                  <input
+                    id="feedback-may-gather-logs"
+                    type="checkbox"
+                    checked={mayGatherLogs}
+                    onChange={(e) => setMayGatherLogs(e.target.checked)}
+                    className="mt-0.5 h-4 w-4 shrink-0 cursor-pointer accent-[var(--an-primary-color)] focus:outline-none focus:ring-2 focus:ring-[var(--an-input-focus-outline)]"
+                    data-testid="feedback-intake-consent"
+                  />
+                  <span className="min-w-0 flex-1">
+                    <span className="block text-sm font-medium leading-snug text-[var(--an-foreground)]">
+                      Include logs and environment details
+                    </span>
+                    <span className="mt-1 block text-xs leading-relaxed text-[var(--an-foreground-muted)]">
+                      Logs may include file paths, workspace names, and error details. The assistant
+                      anonymizes them first, and you review the final report before it is posted.
+                    </span>
+                  </span>
+                </label>
+              ) : null}
 
-                {selectedKind === 'feature' ? (
-                  <label
-                    htmlFor="feedback-should-create-mockup"
-                    className="block cursor-pointer rounded-2xl border border-[var(--nim-border)] bg-[var(--nim-bg)] px-4 py-3 transition-colors duration-150 hover:bg-[var(--nim-bg-tertiary)]"
-                  >
-                    <div className="flex items-start gap-3">
-                      <input
-                        id="feedback-should-create-mockup"
-                        type="checkbox"
-                        checked={shouldCreateMockup}
-                        onChange={(e) => setShouldCreateMockup(e.target.checked)}
-                        className="mt-0.5 h-[18px] w-[18px] shrink-0 cursor-pointer appearance-none rounded border-2 border-[var(--nim-border)] bg-[var(--nim-bg)] checked:border-[var(--nim-primary)] checked:bg-[var(--nim-primary)] checked:bg-[url('data:image/svg+xml,%3Csvg%20xmlns=%27http://www.w3.org/2000/svg%27%20viewBox=%270%200%2024%2024%27%20fill=%27white%27%3E%3Cpath%20d=%27M9%2016.17L4.83%2012l-1.42%201.41L9%2019%2021%207l-1.41-1.41L9%2016.17z%27/%3E%3C/svg%3E')] checked:bg-[length:14px] checked:bg-center checked:bg-no-repeat"
-                        data-testid="feedback-intake-mockup"
-                      />
-                      <div className="min-w-0 flex-1">
-                        <p className="m-0 text-[13px] font-medium leading-snug text-[var(--nim-text)]">
-                          Explore the idea with a UX mockup first
-                        </p>
-                        <p className="mt-1.5 text-[12px] leading-relaxed text-[var(--nim-text-muted)]">
-                          Best for interface or workflow changes. The assistant can sketch a mockup,
-                          refine it with you, and include that visual direction in the request.
-                        </p>
-                      </div>
-                    </div>
-                  </label>
-                ) : null}
-              </div>
-            ) : null}
+              {selectedKind === 'feature' ? (
+                <label
+                  htmlFor="feedback-should-create-mockup"
+                  className="feedback-intake-detail-option agent-elements-feedback-intake-detail-option flex cursor-pointer items-start gap-3 rounded-[var(--an-tool-border-radius)] border border-[var(--an-border-color)] bg-[var(--an-background)] p-[var(--an-spacing-md)] transition-[background-color,border-color] duration-150 ease-out hover:bg-[var(--an-background-tertiary)]"
+                  data-agent-elements-shell="feedback-intake-detail-option"
+                >
+                  <input
+                    id="feedback-should-create-mockup"
+                    type="checkbox"
+                    checked={shouldCreateMockup}
+                    onChange={(e) => setShouldCreateMockup(e.target.checked)}
+                    className="mt-0.5 h-4 w-4 shrink-0 cursor-pointer accent-[var(--an-primary-color)] focus:outline-none focus:ring-2 focus:ring-[var(--an-input-focus-outline)]"
+                    data-testid="feedback-intake-mockup"
+                  />
+                  <span className="min-w-0 flex-1">
+                    <span className="block text-sm font-medium leading-snug text-[var(--an-foreground)]">
+                      Explore the idea with a UX mockup first
+                    </span>
+                    <span className="mt-1 block text-xs leading-relaxed text-[var(--an-foreground-muted)]">
+                      Best for interface or workflow changes. The assistant can sketch a mockup,
+                      refine it with you, and include that visual direction in the request.
+                    </span>
+                  </span>
+                </label>
+              ) : null}
+            </section>
+          ) : null}
 
+          <div
+            className="feedback-intake-actions agent-elements-feedback-intake-actions flex justify-end"
+            data-testid="agent-elements-feedback-intake-actions"
+            data-agent-elements-shell="feedback-intake-actions"
+          >
             <button
               type="button"
-              className={`feedback-intake-start-button flex w-full items-center justify-between rounded-[18px] px-4 py-3 text-left text-[13px] font-semibold transition-all duration-150 ${
-                selectedKind
-                  ? 'border border-[var(--nim-primary)] bg-[var(--nim-primary)] text-white hover:bg-[var(--nim-primary-hover)]'
-                  : 'border border-[var(--nim-border)] bg-[var(--nim-bg)] text-[var(--nim-text-disabled)]'
+              className={`feedback-intake-start-button agent-elements-feedback-intake-start w-full justify-between ${
+                selectedKind ? feedbackPrimaryButton : feedbackDisabledButton
               }`}
               onClick={handleLaunch}
               disabled={!selectedKind}
               data-testid="feedback-intake-start"
+              data-agent-elements-shell="feedback-intake-start"
             >
               <span>
                 {selectedKind === 'bug'
@@ -234,28 +288,33 @@ export const FeedbackIntakeDialog: React.FC<FeedbackIntakeDialogProps> = ({
               <MaterialSymbol
                 icon="arrow_forward"
                 size={18}
-                className={selectedKind ? 'text-white' : 'text-[var(--nim-text-faint)]'}
+                className={selectedKind ? 'text-[var(--an-background)]' : 'text-[var(--an-foreground-subtle)]'}
               />
             </button>
           </div>
         </div>
 
-        <div className="border-t border-[var(--nim-border)] bg-[var(--nim-bg-secondary)] px-8 pt-4 pb-4.5">
-          <p className="m-0 mb-2 text-[11px] font-semibold uppercase tracking-wider text-[var(--nim-text-faint)]">
+        <footer
+          className="feedback-intake-footer agent-elements-feedback-intake-footer border-t border-[var(--an-border-color)] bg-[var(--an-background-secondary)] px-[var(--an-spacing-xl)] py-[var(--an-spacing-md)]"
+          data-testid="agent-elements-feedback-intake-footer"
+          data-agent-elements-shell="feedback-intake-footer"
+        >
+          <p className="m-0 mb-1 text-xs font-medium text-[var(--an-foreground-muted)]">
             Other ways to reach us
           </p>
           <ul className="m-0 flex list-none flex-col gap-1 p-0">
             <li>
               <button
                 type="button"
-                className="group -ml-1.5 inline-flex cursor-pointer items-center gap-2 rounded-md bg-transparent px-1.5 py-1 text-[13px] text-[var(--nim-text-muted)] transition-colors duration-150 hover:bg-[var(--nim-bg-tertiary)] hover:text-[var(--nim-text)]"
+                className={feedbackExternalLinkButton}
                 onClick={() => handleOpenExternal(ISSUES_URL, 'issues')}
                 data-testid="feedback-intake-issues-link"
+                data-agent-elements-shell="feedback-intake-link"
               >
                 <MaterialSymbol
                   icon="search"
                   size={16}
-                  className="text-[var(--nim-text-faint)] group-hover:text-[var(--nim-primary)]"
+                  className="text-[var(--an-foreground-subtle)]"
                 />
                 Browse existing issues on GitHub
               </button>
@@ -263,14 +322,15 @@ export const FeedbackIntakeDialog: React.FC<FeedbackIntakeDialogProps> = ({
             <li>
               <button
                 type="button"
-                className="group -ml-1.5 inline-flex cursor-pointer items-center gap-2 rounded-md bg-transparent px-1.5 py-1 text-[13px] text-[var(--nim-text-muted)] transition-colors duration-150 hover:bg-[var(--nim-bg-tertiary)] hover:text-[var(--nim-text)]"
+                className={feedbackExternalLinkButton}
                 onClick={() => handleOpenExternal(DISCUSSIONS_URL, 'discussions')}
                 data-testid="feedback-intake-discussions-link"
+                data-agent-elements-shell="feedback-intake-link"
               >
                 <MaterialSymbol
                   icon="forum"
                   size={16}
-                  className="text-[var(--nim-text-faint)] group-hover:text-[var(--nim-primary)]"
+                  className="text-[var(--an-foreground-subtle)]"
                 />
                 Discuss an idea on GitHub Discussions
               </button>
@@ -278,20 +338,21 @@ export const FeedbackIntakeDialog: React.FC<FeedbackIntakeDialogProps> = ({
             <li>
               <button
                 type="button"
-                className="group -ml-1.5 inline-flex cursor-pointer items-center gap-2 rounded-md bg-transparent px-1.5 py-1 text-[13px] text-[var(--nim-text-muted)] transition-colors duration-150 hover:bg-[var(--nim-bg-tertiary)] hover:text-[var(--nim-text)]"
+                className={feedbackExternalLinkButton}
                 onClick={() => handleOpenExternal(SUPPORT_EMAIL_URL, 'email')}
                 data-testid="feedback-intake-email-link"
+                data-agent-elements-shell="feedback-intake-link"
               >
                 <MaterialSymbol
                   icon="mail"
                   size={16}
-                  className="text-[var(--nim-text-faint)] group-hover:text-[var(--nim-primary)]"
+                  className="text-[var(--an-foreground-subtle)]"
                 />
                 Email private feedback to support@nimbalyst.com
               </button>
             </li>
           </ul>
-        </div>
+        </footer>
       </div>
     </div>
   );

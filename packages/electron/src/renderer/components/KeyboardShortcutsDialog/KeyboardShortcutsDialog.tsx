@@ -5,7 +5,7 @@ import {
   subscribeToCommandRegistry,
   type RegisteredKeybinding,
 } from '../../extensions/commands/ExtensionCommandRegistry';
-import { getExtensionLoader } from '@nimbalyst/runtime';
+import { getExtensionLoader, MaterialSymbol } from '@nimbalyst/runtime';
 
 interface KeyboardShortcutsDialogProps {
   isOpen: boolean;
@@ -23,6 +23,12 @@ interface ShortcutGroup {
 type TabId = 'general' | 'editor' | 'extensions';
 
 const IS_MAC = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
+
+const keyboardShortcutTabs: Array<{ id: TabId; label: string; icon: string }> = [
+  { id: 'general', label: 'General', icon: 'keyboard' },
+  { id: 'editor', label: 'Editor Formatting', icon: 'format_bold' },
+  { id: 'extensions', label: 'Extensions', icon: 'extension' },
+];
 
 /**
  * Convert a manifest key string like "ctrl+shift+g" to the display format
@@ -242,64 +248,114 @@ export function KeyboardShortcutsDialog({ isOpen, onClose }: KeyboardShortcutsDi
 
   return (
     <div
-      className="keyboard-shortcuts-dialog-overlay nim-overlay"
+      className="keyboard-shortcuts-dialog-overlay nim-overlay agent-elements-keyboard-shortcuts-dialog-backdrop bg-[color-mix(in_srgb,var(--nim-text)_36%,transparent)]"
+      data-testid="agent-elements-keyboard-shortcuts-dialog-backdrop"
+      data-agent-elements-shell="keyboard-shortcuts-dialog-backdrop"
       onClick={onClose}
     >
       <div
-        className="keyboard-shortcuts-dialog flex flex-col w-[90vw] max-w-[900px] h-[85vh] rounded-lg border border-[var(--nim-border)] bg-[var(--nim-bg)] shadow-[0_8px_32px_rgba(0,0,0,0.3)]"
+        className="keyboard-shortcuts-dialog agent-elements-keyboard-shortcuts-dialog agent-elements-tool-card flex h-[85vh] w-[90vw] max-w-[900px] flex-col overflow-hidden rounded-[var(--an-border-radius)] border border-[var(--an-border-color)] bg-[var(--an-background)] text-[var(--an-foreground)] shadow-[0_20px_60px_color-mix(in_srgb,var(--nim-text)_18%,transparent)]"
+        data-testid="agent-elements-keyboard-shortcuts-dialog"
+        data-component="KeyboardShortcutsDialog"
+        data-agent-elements-shell="keyboard-shortcuts-dialog"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="keyboard-shortcuts-dialog-header flex items-center justify-between px-6 py-5 border-b border-[var(--nim-border)]">
-          <h2 className="m-0 text-xl font-semibold text-[var(--nim-text)]">
-            Keyboard Shortcuts
-          </h2>
+        <div
+          className="keyboard-shortcuts-dialog-header agent-elements-keyboard-shortcuts-dialog-header flex items-center justify-between gap-3 border-b border-[var(--an-border-color)] p-[var(--an-spacing-xl)]"
+          data-testid="agent-elements-keyboard-shortcuts-dialog-header"
+          data-agent-elements-shell="keyboard-shortcuts-dialog-header"
+        >
+          <div className="flex min-w-0 items-center gap-3">
+            <span
+              className="agent-elements-keyboard-shortcuts-dialog-icon inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-[var(--an-tool-border-radius)] border border-[var(--an-border-color)] bg-[var(--an-background-secondary)] text-[var(--an-foreground-muted)]"
+              data-agent-elements-shell="keyboard-shortcuts-dialog-icon"
+              aria-hidden="true"
+            >
+              <MaterialSymbol icon="keyboard" size={18} />
+            </span>
+            <h2 className="m-0 min-w-0 truncate text-sm font-medium text-[var(--an-foreground)]">
+              Keyboard Shortcuts
+            </h2>
+          </div>
           <button
-            className="keyboard-shortcuts-dialog-close flex items-center justify-center w-8 h-8 p-0 bg-transparent border-none text-[32px] leading-none text-[var(--nim-text-muted)] cursor-pointer rounded transition-all duration-200 hover:bg-[var(--nim-bg-hover)] hover:text-[var(--nim-text)]"
+            type="button"
+            className="keyboard-shortcuts-dialog-close agent-elements-keyboard-shortcuts-dialog-close flex h-8 w-8 cursor-pointer items-center justify-center rounded-[var(--an-input-border-radius)] border border-transparent bg-transparent p-0 text-[var(--an-foreground-muted)] transition-[background-color,border-color,color] duration-150 ease-out hover:border-[var(--an-border-color)] hover:bg-[var(--an-background-tertiary)] hover:text-[var(--an-foreground)] focus:outline-none focus:ring-2 focus:ring-[var(--an-input-focus-outline)]"
+            data-testid="agent-elements-keyboard-shortcuts-dialog-close"
+            data-agent-elements-shell="keyboard-shortcuts-dialog-close"
             onClick={onClose}
             aria-label="Close"
           >
-            ×
+            <MaterialSymbol icon="close" size={18} />
           </button>
         </div>
 
         {/* Tab navigation */}
-        <div className="flex gap-1 px-6 pt-4 border-b border-[var(--nim-border)]">
-          {(['general', 'editor', 'extensions'] as TabId[]).map(tab => (
+        <div
+          className="agent-elements-keyboard-shortcuts-dialog-tabs flex gap-1 border-b border-[var(--an-border-color)] px-[var(--an-spacing-xl)] py-[var(--an-spacing-md)]"
+          data-testid="agent-elements-keyboard-shortcuts-dialog-tabs"
+          data-agent-elements-shell="keyboard-shortcuts-dialog-tabs"
+        >
+          {keyboardShortcutTabs.map(tab => (
             <button
-              key={tab}
-              onClick={() => setActiveTab(tab)}
-              className={`px-4 py-2 text-sm font-medium rounded-t-md transition-colors ${
-                activeTab === tab
-                  ? 'bg-[var(--nim-bg-secondary)] text-[var(--nim-text)] border-b-2 border-[var(--nim-primary)]'
+              key={tab.id}
+              type="button"
+              onClick={() => setActiveTab(tab.id)}
+              className={`agent-elements-keyboard-shortcuts-tab inline-flex items-center gap-2 rounded-[var(--an-input-border-radius)] border px-3 py-2 text-sm font-medium transition-[background-color,border-color,color] duration-150 ease-out focus:outline-none focus:ring-2 focus:ring-[var(--an-input-focus-outline)] ${
+                activeTab === tab.id
+                  ? 'border-[var(--an-border-color)] bg-[var(--an-background-secondary)] text-[var(--an-foreground)]'
                   : 'text-[var(--nim-text-muted)] hover:text-[var(--nim-text)] hover:bg-[var(--nim-bg-hover)]'
               }`}
+              data-testid={`agent-elements-keyboard-shortcuts-tab-${tab.id}`}
+              data-agent-elements-shell="keyboard-shortcuts-dialog-tab"
+              aria-selected={activeTab === tab.id}
             >
-              {tab === 'general' ? 'General' : tab === 'editor' ? 'Editor Formatting' : 'Extensions'}
+              <MaterialSymbol icon={tab.icon} size={16} />
+              {tab.label}
             </button>
           ))}
         </div>
 
-        <div className="keyboard-shortcuts-dialog-content overflow-y-auto flex-1 p-6 grid grid-cols-[repeat(auto-fit,minmax(350px,1fr))] gap-8 max-[900px]:grid-cols-1 max-[600px]:p-5 max-[600px]:gap-6">
+        <div
+          className="keyboard-shortcuts-dialog-content agent-elements-keyboard-shortcuts-dialog-content grid flex-1 grid-cols-[repeat(auto-fit,minmax(300px,1fr))] gap-[var(--an-spacing-xl)] overflow-y-auto p-[var(--an-spacing-xl)] max-[900px]:grid-cols-1 max-[600px]:p-[var(--an-spacing-lg)]"
+          data-agent-elements-shell="keyboard-shortcuts-dialog-content"
+        >
           {shortcutGroups.length === 0 && activeTab === 'extensions' ? (
-            <div className="text-[var(--nim-text-muted)] text-sm">
+            <div
+              className="agent-elements-keyboard-shortcuts-empty rounded-[var(--an-tool-border-radius)] border border-[var(--an-border-color)] bg-[var(--an-background-secondary)] p-[var(--an-spacing-xl)] text-sm leading-relaxed text-[var(--an-foreground-muted)]"
+              data-agent-elements-shell="keyboard-shortcuts-dialog-empty"
+            >
               No extension keybindings registered. Extensions can contribute keybindings via their manifest.json.
             </div>
           ) : (
             shortcutGroups.map((group) => (
-              <div key={group.title} className="keyboard-shortcuts-group flex flex-col gap-3">
-                <h3 className="keyboard-shortcuts-group-title m-0 text-sm font-semibold text-[var(--nim-text-muted)] uppercase tracking-[0.5px]">
-                  {group.title}
-                </h3>
-                <div className="keyboard-shortcuts-list flex flex-col gap-1">
+              <div
+                key={group.title}
+                className="keyboard-shortcuts-group agent-elements-keyboard-shortcuts-group flex flex-col gap-3 rounded-[var(--an-tool-border-radius)] border border-[var(--an-border-color)] bg-[var(--an-background-secondary)] p-[var(--an-spacing-lg)]"
+                data-testid={`agent-elements-keyboard-shortcuts-group-${group.title}`}
+                data-agent-elements-shell="keyboard-shortcuts-dialog-group"
+              >
+                <div className="keyboard-shortcuts-group-title-row flex items-center justify-between gap-3">
+                  <h3 className="keyboard-shortcuts-group-title m-0 text-xs font-medium text-[var(--an-foreground-muted)]">
+                    {group.title}
+                  </h3>
+                  <span className="rounded-[var(--an-input-border-radius)] border border-[var(--an-border-color)] bg-[var(--an-background)] px-2 py-0.5 text-xs text-[var(--an-foreground-muted)]">
+                    {group.shortcuts.length}
+                  </span>
+                </div>
+                <div className="keyboard-shortcuts-list agent-elements-keyboard-shortcuts-list flex flex-col gap-1">
                   {group.shortcuts.map((item) => (
                     <div
                       key={item.label}
-                      className="keyboard-shortcut-item flex items-center justify-between py-1.5 gap-4"
+                      className="keyboard-shortcut-item agent-elements-keyboard-shortcut-item flex items-center justify-between gap-4 rounded-[var(--an-input-border-radius)] px-2 py-1.5 transition-[background-color] duration-150 ease-out hover:bg-[var(--an-background-tertiary)]"
+                      data-agent-elements-shell="keyboard-shortcuts-dialog-item"
                     >
-                      <span className="keyboard-shortcut-label text-[var(--nim-text)] text-sm flex-1">
+                      <span className="keyboard-shortcut-label flex-1 text-sm text-[var(--an-foreground)]">
                         {item.label}
                       </span>
-                      <kbd className="keyboard-shortcut-key bg-[var(--nim-bg-secondary)] border border-[var(--nim-border)] rounded px-2.5 py-1 font-sans text-[13px] font-medium text-[var(--nim-text)] whitespace-nowrap shadow-[0_1px_2px_rgba(0,0,0,0.1)] dark:shadow-[0_1px_2px_rgba(0,0,0,0.3)] min-w-[60px] text-center">
+                      <kbd
+                        className="keyboard-shortcut-key agent-elements-keyboard-shortcut-key min-w-[60px] whitespace-nowrap rounded-[var(--an-input-border-radius)] border border-[var(--an-border-color)] bg-[var(--an-background)] px-2.5 py-1 text-center font-sans text-[13px] font-medium text-[var(--an-foreground)]"
+                        data-testid="agent-elements-keyboard-shortcut-key"
+                      >
                         {getShortcutDisplay(item.shortcut)}
                       </kbd>
                     </div>
@@ -310,8 +366,12 @@ export function KeyboardShortcutsDialog({ isOpen, onClose }: KeyboardShortcutsDi
           )}
         </div>
 
-        <div className="px-6 py-3 border-t border-[var(--nim-border)] text-[var(--nim-text-muted)] text-xs">
-          Press <kbd className="bg-[var(--nim-bg-secondary)] border border-[var(--nim-border)] rounded px-1.5 py-0.5 mx-1">Esc</kbd> to close
+        <div
+          className="agent-elements-keyboard-shortcuts-dialog-footer border-t border-[var(--an-border-color)] px-[var(--an-spacing-xl)] py-[var(--an-spacing-md)] text-xs text-[var(--an-foreground-muted)]"
+          data-testid="agent-elements-keyboard-shortcuts-dialog-footer"
+          data-agent-elements-shell="keyboard-shortcuts-dialog-footer"
+        >
+          Press <kbd className="mx-1 rounded-[var(--an-input-border-radius)] border border-[var(--an-border-color)] bg-[var(--an-background-secondary)] px-1.5 py-0.5">Esc</kbd> to close
         </div>
       </div>
     </div>

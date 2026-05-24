@@ -45,21 +45,27 @@ export function PlanFilters({
   ];
 
   return (
-    <div className="plan-filters p-3 border-b border-[var(--nim-border)] bg-[var(--nim-bg)]">
-      <div className="plan-search-container relative mb-2.5">
-        <span className="plan-search-icon material-symbols-outlined absolute left-2.5 top-1/2 -translate-y-1/2 text-lg text-[var(--nim-text-faint)] pointer-events-none">
+    <div
+      className="plan-filters agent-elements-plan-filters border-b border-[var(--an-border-color)] bg-[var(--an-background)] p-[var(--an-spacing-lg)]"
+      data-component="PlanFilters"
+      data-agent-elements-shell="plan-filters"
+      data-testid="agent-elements-plan-filters"
+    >
+      <div className="plan-search-container agent-elements-plan-search relative mb-[var(--an-spacing-sm)]">
+        <span className="plan-search-icon material-symbols-outlined pointer-events-none absolute left-[var(--an-spacing-sm)] top-1/2 -translate-y-1/2 text-lg text-[var(--an-foreground-subtle)]">
           search
         </span>
         <input
           type="text"
-          className="plan-search-input w-full py-2 pr-8 pl-9 border border-[var(--nim-border)] rounded-md bg-[var(--nim-bg)] text-[var(--nim-text)] text-[13px] outline-none transition-colors duration-150 placeholder:text-[var(--nim-text-faint)] focus:border-[var(--nim-border-focus)]"
+          className="plan-search-input agent-elements-plan-search-input w-full rounded-[var(--an-input-border-radius)] border border-[var(--an-border-color)] bg-[var(--an-background)] py-[var(--an-spacing-sm)] pl-9 pr-8 text-[13px] text-[var(--an-foreground)] outline-none transition-[border-color,box-shadow] duration-150 ease-out placeholder:text-[var(--an-foreground-subtle)] focus:border-[var(--an-primary-color)] focus:ring-2 focus:ring-[var(--an-input-focus-outline)]"
           placeholder="Search plans..."
           value={searchTerm}
           onChange={(e) => onSearchChange(e.target.value)}
         />
         {searchTerm && (
           <button
-            className="plan-search-clear absolute right-1.5 top-1/2 -translate-y-1/2 bg-transparent border-none cursor-pointer p-1 flex items-center justify-center text-[var(--nim-text-faint)] rounded transition-colors duration-150 hover:bg-[var(--nim-bg-hover)] [&_.material-symbols-outlined]:text-base"
+            type="button"
+            className="plan-search-clear agent-elements-plan-search-clear absolute right-1.5 top-1/2 flex -translate-y-1/2 items-center justify-center rounded-[var(--an-input-border-radius)] border border-transparent bg-transparent p-1 text-[var(--an-foreground-subtle)] transition-[background-color,border-color,color] duration-150 ease-out hover:border-[var(--an-border-color)] hover:bg-[var(--an-background-tertiary)] hover:text-[var(--an-foreground)] focus:outline-none focus:ring-2 focus:ring-[var(--an-input-focus-outline)] [&_.material-symbols-outlined]:text-base"
             onClick={() => onSearchChange('')}
             aria-label="Clear search"
           >
@@ -68,9 +74,10 @@ export function PlanFilters({
         )}
       </div>
 
-      <div className="plan-filter-controls flex gap-2 mb-2.5">
+      <div className="plan-filter-controls agent-elements-plan-filter-controls mb-[var(--an-spacing-sm)] flex gap-[var(--an-spacing-sm)]">
         <select
-          className="plan-filter-select flex-1 py-1.5 px-2 border border-[var(--nim-border)] rounded bg-[var(--nim-bg)] text-[var(--nim-text)] text-xs outline-none cursor-pointer transition-colors duration-150 hover:border-[var(--nim-primary)] focus:border-[var(--nim-border-focus)]"
+          aria-label="Plan status"
+          className="plan-filter-select agent-elements-plan-filter-select flex-1 cursor-pointer rounded-[var(--an-input-border-radius)] border border-[var(--an-border-color)] bg-[var(--an-background)] px-[var(--an-spacing-sm)] py-1.5 text-xs text-[var(--an-foreground)] outline-none transition-[border-color,box-shadow] duration-150 ease-out hover:border-[var(--an-primary-color)] focus:border-[var(--an-primary-color)] focus:ring-2 focus:ring-[var(--an-input-focus-outline)]"
           value={statusFilter}
           onChange={(e) => onStatusChange(e.target.value)}
         >
@@ -82,7 +89,8 @@ export function PlanFilters({
         </select>
 
         <select
-          className="plan-filter-select flex-1 py-1.5 px-2 border border-[var(--nim-border)] rounded bg-[var(--nim-bg)] text-[var(--nim-text)] text-xs outline-none cursor-pointer transition-colors duration-150 hover:border-[var(--nim-primary)] focus:border-[var(--nim-border-focus)]"
+          aria-label="Plan priority"
+          className="plan-filter-select agent-elements-plan-filter-select flex-1 cursor-pointer rounded-[var(--an-input-border-radius)] border border-[var(--an-border-color)] bg-[var(--an-background)] px-[var(--an-spacing-sm)] py-1.5 text-xs text-[var(--an-foreground)] outline-none transition-[border-color,box-shadow] duration-150 ease-out hover:border-[var(--an-primary-color)] focus:border-[var(--an-primary-color)] focus:ring-2 focus:ring-[var(--an-input-focus-outline)]"
           value={priorityFilter}
           onChange={(e) => onPriorityChange(e.target.value)}
         >
@@ -94,8 +102,8 @@ export function PlanFilters({
         </select>
       </div>
 
-      <div className="plan-filter-options flex items-center">
-        <label className="plan-filter-checkbox flex items-center gap-1.5 text-xs text-[var(--nim-text-muted)] cursor-pointer select-none hover:text-[var(--nim-text)] [&_input]:cursor-pointer">
+      <div className="plan-filter-options agent-elements-plan-filter-options flex items-center">
+        <label className="plan-filter-checkbox agent-elements-plan-filter-checkbox flex cursor-pointer select-none items-center gap-[var(--an-spacing-xs)] text-xs text-[var(--an-foreground-muted)] transition-colors duration-150 ease-out hover:text-[var(--an-foreground)] [&_input]:cursor-pointer">
           <input
             type="checkbox"
             checked={hideCompleted}

@@ -57,15 +57,29 @@ export function NotificationsPanel() {
   };
 
   return (
-    <div className="provider-panel flex flex-col">
-      <div className="provider-panel-header mb-6 pb-4 border-b border-[var(--nim-border)]">
+    <div
+      className="provider-panel notifications-panel agent-elements-settings-panel agent-elements-notifications-panel flex flex-col"
+      data-agent-elements-shell="notifications-panel"
+      data-component="NotificationsPanel"
+      data-testid="agent-elements-notifications-panel"
+    >
+      <div
+        className="provider-panel-header notifications-panel-header agent-elements-settings-panel-header mb-6 pb-4 border-b border-[var(--nim-border)]"
+        data-agent-elements-shell="notifications-header"
+        data-testid="agent-elements-notifications-header"
+      >
         <h3 className="provider-panel-title text-xl font-semibold leading-tight mb-2 text-[var(--nim-text)]">Notifications</h3>
         <p className="provider-panel-description text-sm leading-relaxed text-[var(--nim-text-muted)]">
           Configure audio and visual notifications for AI interactions.
         </p>
       </div>
 
-      <div className="provider-panel-section py-4 mb-4 border-b border-[var(--nim-border)] last:border-b-0 last:mb-0 last:pb-0">
+      <div
+        className="provider-panel-section notifications-panel-section agent-elements-settings-section py-4 mb-4 border-b border-[var(--nim-border)] last:border-b-0 last:mb-0 last:pb-0"
+        data-agent-elements-shell="notifications-section"
+        data-section="completion-sounds"
+        data-testid="agent-elements-notifications-sounds-section"
+      >
         <h4 className="provider-panel-section-title text-base font-semibold mb-3 text-[var(--nim-text)]">Completion Sounds</h4>
         <p className="text-sm leading-relaxed text-[var(--nim-text-muted)] mb-4">
           Play a sound when the AI or agent completes a turn and is ready for more input.
@@ -79,7 +93,11 @@ export function NotificationsPanel() {
         />
 
         {completionSoundEnabled && (
-          <div className="setting-item py-3 mt-4">
+          <div
+            className="setting-item notifications-sound-options agent-elements-tool-card py-3 mt-4 rounded-lg border border-[var(--nim-border)] bg-[var(--nim-bg-secondary)] p-3"
+            data-agent-elements-shell="notifications-sound-options"
+            data-testid="agent-elements-notifications-sound-options"
+          >
             <div className="setting-text flex flex-col gap-0.5">
               <span className="setting-name text-sm font-medium text-[var(--nim-text)]">Sound Type</span>
               <span className="setting-description text-xs leading-relaxed text-[var(--nim-text-muted)]">
@@ -112,7 +130,12 @@ export function NotificationsPanel() {
         )}
       </div>
 
-      <div className="provider-panel-section py-4 mb-4 border-b border-[var(--nim-border)] last:border-b-0 last:mb-0 last:pb-0">
+      <div
+        className="provider-panel-section notifications-panel-section agent-elements-settings-section py-4 mb-4 border-b border-[var(--nim-border)] last:border-b-0 last:mb-0 last:pb-0"
+        data-agent-elements-shell="notifications-section"
+        data-section="os-notifications"
+        data-testid="agent-elements-notifications-os-section"
+      >
         <h4 className="provider-panel-section-title text-base font-semibold mb-3 text-[var(--nim-text)]">OS Notifications</h4>
         <p className="text-sm leading-relaxed text-[var(--nim-text-muted)] mb-4">
           Show system notifications when AI responses complete while the app is in the background.
@@ -147,7 +170,11 @@ export function NotificationsPanel() {
                   Electron does not expose a reliable cross-platform notification permission state here.
                   Use a test notification to trigger the OS prompt or verify delivery.
                 </span>
-                <div className="flex flex-wrap gap-2">
+                <div
+                  className="notifications-actions flex flex-wrap gap-2"
+                  data-agent-elements-shell="notifications-actions"
+                  data-testid="agent-elements-notifications-actions"
+                >
                   <button onClick={handleTestNotification} className="nim-btn-secondary text-sm">
                     Send Test Notification
                   </button>
@@ -156,7 +183,13 @@ export function NotificationsPanel() {
                   </button>
                 </div>
                 {notificationHelp && (
-                  <span className="text-xs leading-relaxed text-[var(--nim-text-muted)]">{notificationHelp}</span>
+                  <span
+                    className="notifications-help agent-elements-tool-card text-xs leading-relaxed text-[var(--nim-text-muted)] rounded-md border border-[var(--nim-border)] bg-[var(--nim-bg-secondary)] px-3 py-2"
+                    data-agent-elements-shell="notifications-help"
+                    data-testid="agent-elements-notifications-help"
+                  >
+                    {notificationHelp}
+                  </span>
                 )}
               </div>
             </div>
@@ -164,7 +197,12 @@ export function NotificationsPanel() {
         )}
       </div>
 
-      <div className="provider-panel-section py-4 mb-4 border-b border-[var(--nim-border)] last:border-b-0 last:mb-0 last:pb-0">
+      <div
+        className="provider-panel-section notifications-panel-section agent-elements-settings-section py-4 mb-4 border-b border-[var(--nim-border)] last:border-b-0 last:mb-0 last:pb-0"
+        data-agent-elements-shell="notifications-section"
+        data-section="session-blocked"
+        data-testid="agent-elements-notifications-session-section"
+      >
         <h4 className="provider-panel-section-title text-base font-semibold mb-3 text-[var(--nim-text)]">Session Blocked Notifications</h4>
         <p className="text-sm leading-relaxed text-[var(--nim-text-muted)] mb-4">
           Show system notifications when an AI session needs your input.

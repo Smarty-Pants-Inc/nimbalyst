@@ -122,44 +122,26 @@ export const MockupAnnotationIndicator: React.FC<MockupAnnotationIndicatorProps>
     return null;
   }
 
+  const tooltipText = 'Annotations drawn on your mockup will be included with your prompt';
+  const chipClass = [
+    'mockup-annotation-indicator',
+    'agent-elements-context-chip',
+    'agent-elements-mockup-annotation-indicator',
+    'mb-[var(--an-spacing-xs)] flex items-center gap-[var(--an-spacing-xs)]',
+    'rounded-[calc(var(--an-tool-border-radius)_-_4px)] border border-[var(--an-border-color)]',
+    'bg-[var(--an-background-secondary)] px-[var(--an-spacing-sm)] py-[var(--an-spacing-xs)]',
+    'text-xs text-[var(--an-foreground-muted)]',
+  ].join(' ');
+
   return (
-    <>
-      <style>
-        {`.mockup-annotation-indicator[data-tooltip] {
-          position: relative;
-        }
-        .mockup-annotation-indicator[data-tooltip]:hover::after {
-          content: attr(data-tooltip);
-          position: absolute;
-          bottom: 100%;
-          left: 0;
-          background: var(--nim-bg-tertiary);
-          color: var(--nim-text-muted);
-          padding: 4px 8px;
-          border-radius: 4px;
-          font-size: 11px;
-          white-space: normal;
-          max-width: 250px;
-          z-index: 1000;
-          pointer-events: none;
-          box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }`}
-      </style>
-      <div
-        className="mockup-annotation-indicator"
-        data-tooltip="Annotations drawn on your mockup will be included with your prompt"
-        style={{
-          padding: '4px 8px',
-          marginBottom: '4px',
-          fontSize: '12px',
-          color: 'var(--nim-text-muted)',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '4px'
-        }}
-      >
-        <span>+ mockup annotations</span>
-      </div>
-    </>
+    <div
+      className={chipClass}
+      data-tooltip={tooltipText}
+      data-agent-elements-shell="mockup-context-chip"
+      data-component="UnifiedAIMockupAnnotationIndicator"
+      title={tooltipText}
+    >
+      <span>+ mockup annotations</span>
+    </div>
   );
 };

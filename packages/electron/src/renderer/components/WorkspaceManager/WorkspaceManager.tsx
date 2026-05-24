@@ -1,4 +1,39 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useFloatingMenu, FloatingPortal, virtualElement } from '../../hooks/useFloatingMenu';
+
+const iconClass = "material-symbols-outlined inline-flex shrink-0 items-center justify-center leading-none";
+
+function WorkspaceIcon({
+  icon,
+  size = 18,
+  className = '',
+}: {
+  icon: string;
+  size?: number;
+  className?: string;
+}) {
+  return (
+    <span
+      className={`${iconClass} ${className}`}
+      style={{ fontVariationSettings: "'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 20", fontSize: size }}
+      aria-hidden="true"
+    >
+      {icon}
+    </span>
+  );
+}
+
+const workspaceButtonBase =
+  'inline-flex h-8 items-center justify-center gap-2 rounded-[var(--an-input-border-radius)] border px-3 text-sm font-medium transition-colors duration-150 disabled:cursor-not-allowed disabled:opacity-50';
+const workspacePrimaryButtonClass = `${workspaceButtonBase} border-[var(--an-primary-color)] bg-[var(--an-primary-color)] text-[var(--an-background)] hover:bg-[color-mix(in_srgb,var(--an-primary-color)_86%,var(--an-background))]`;
+const workspaceSecondaryButtonClass = `${workspaceButtonBase} border-[var(--an-border-color)] bg-[var(--an-background)] text-[var(--an-foreground-muted)] hover:bg-[var(--an-background-secondary)] hover:text-[var(--an-foreground)]`;
+const workspaceDangerButtonClass = `${workspaceButtonBase} border-[color-mix(in_srgb,var(--an-diff-removed-text)_26%,var(--an-border-color))] bg-[var(--an-background)] text-[var(--an-diff-removed-text)] hover:bg-[var(--an-diff-removed-bg)]`;
+const workspaceMenuItemClass =
+  'agent-elements-workspace-manager-menu-item flex w-full items-center gap-2 rounded-[var(--an-message-radius-inner)] border border-transparent bg-transparent px-3 py-2 text-left text-sm text-[var(--an-foreground)] transition-colors duration-150 hover:bg-[var(--an-background-tertiary)]';
+const workspaceDialogPanelClass =
+  'workspace-manager-dialog agent-elements-workspace-manager-dialog agent-elements-tool-card w-full rounded-[var(--an-tool-border-radius)] border border-[var(--an-border-color)] bg-[var(--an-background)] p-[var(--an-spacing-xxl)] text-[var(--an-foreground)]';
+const workspaceOverlayClass =
+  'workspace-manager-overlay fixed inset-0 z-[3000] flex items-center justify-center bg-[color-mix(in_srgb,var(--an-foreground)_18%,transparent)] px-5 py-6';
 
 // Helper function to apply theme
 const applyTheme = () => {
@@ -130,6 +165,12 @@ export const WorkspaceManager: React.FC = () => {
   const [operationError, setOperationError] = useState<string | null>(null);
 
   const renameInputRef = useRef<HTMLInputElement>(null);
+  const contextMenuFloating = useFloatingMenu({
+    placement: 'right-start',
+    offsetPx: 4,
+    open: contextMenu.visible,
+    onOpenChange: (open) => setContextMenu(prev => ({ ...prev, visible: open })),
+  });
 
   useEffect(() => {
     loadWorkspaces();
@@ -280,6 +321,7 @@ export const WorkspaceManager: React.FC = () => {
   const handleContextMenu = (e: React.MouseEvent, workspace: WorkspaceInfo) => {
     e.preventDefault();
     e.stopPropagation();
+    contextMenuFloating.refs.setPositionReference(virtualElement(e.clientX, e.clientY));
     setContextMenu({
       visible: true,
       x: e.clientX,
@@ -560,29 +602,53 @@ export const WorkspaceManager: React.FC = () => {
   };
 
   return (
-    <div className="workspace-manager flex w-full h-screen overflow-hidden bg-[var(--nim-bg)] pt-[38px] before:content-[''] before:fixed before:top-0 before:left-0 before:right-0 before:h-[38px] before:[-webkit-app-region:drag] before:z-[1000]">
-      <div className="sidebar w-[380px] bg-[var(--nim-bg-secondary)] border-r border-[var(--nim-border)] flex flex-col shrink-0">
-        <div className="sidebar-header p-3 bg-[var(--nim-bg)] border-b border-[var(--nim-border)] [-webkit-app-region:no-drag]">
-          <div className="app-branding flex items-center gap-2.5 mb-4">
-            <img src="./icon.png" alt="Nimbalyst" className="app-logo w-8 h-8 shrink-0 object-contain" />
-            <h2 className="m-0 text-lg font-bold text-[var(--nim-text)] tracking-tight">Nimbalyst</h2>
+    <div
+      className="workspace-manager agent-elements-workspace-manager flex h-screen w-full overflow-hidden bg-[var(--an-background)] pt-[38px] text-[var(--an-foreground)] [container-type:inline-size] before:fixed before:left-0 before:right-0 before:top-0 before:z-[1000] before:h-[38px] before:[-webkit-app-region:drag] before:content-['']"
+      data-testid="agent-elements-workspace-manager"
+      data-component="WorkspaceManager"
+      data-agent-elements-shell="workspace-manager"
+    >
+      <div
+        className="sidebar agent-elements-workspace-manager-sidebar flex w-[360px] shrink-0 flex-col border-r border-[var(--an-border-color)] bg-[var(--an-background-secondary)]"
+        data-testid="agent-elements-workspace-manager-sidebar"
+        data-agent-elements-shell="workspace-manager-sidebar"
+      >
+        <div
+          className="sidebar-header agent-elements-workspace-manager-header border-b border-[var(--an-border-color)] bg-[var(--an-background)] p-[var(--an-spacing-xl)] [-webkit-app-region:no-drag]"
+          data-testid="agent-elements-workspace-manager-header"
+          data-agent-elements-shell="workspace-manager-header"
+        >
+          <div className="app-branding flex items-center gap-3">
+            <img src="./icon.png" alt="Smarty Code" className="app-logo h-8 w-8 shrink-0 object-contain" />
+            <div className="min-w-0">
+              <h2 className="m-0 text-base font-medium leading-snug text-[var(--an-foreground)]">Smarty Code</h2>
+              <p className="m-0 text-xs leading-relaxed text-[var(--an-foreground-muted)]">Workspace picker</p>
+            </div>
           </div>
-          <div className="action-buttons flex gap-2">
-            <button className="btn nim-btn-primary" onClick={handleBrowse}>
+          <div className="action-buttons mt-[var(--an-spacing-lg)] flex gap-[var(--an-spacing-sm)]">
+            <button className={workspacePrimaryButtonClass} onClick={handleBrowse}>
+              <WorkspaceIcon icon="folder_open" size={16} />
               Open Folder
             </button>
-            <button className="btn nim-btn-secondary" onClick={handleCreateWorkspace}>
+            <button className={workspaceSecondaryButtonClass} onClick={handleCreateWorkspace}>
+              <WorkspaceIcon icon="create_new_folder" size={16} />
               New Folder
             </button>
           </div>
         </div>
 
-        <div className="workspaces-list nim-scrollbar flex-1 overflow-y-auto overflow-x-hidden p-2 [-webkit-app-region:no-drag] flex flex-col">
+        <div
+          className="workspaces-list agent-elements-workspace-manager-list nim-scrollbar flex flex-1 flex-col overflow-y-auto overflow-x-hidden p-[var(--an-spacing-sm)] [-webkit-app-region:no-drag]"
+          data-testid="agent-elements-workspace-manager-list"
+          data-agent-elements-shell="workspace-manager-list"
+        >
           {!loading && workspaces.length > 0 && (
-            <div className="search-container pb-2 shrink-0">
+            <div className="search-container shrink-0 pb-[var(--an-spacing-sm)]">
               <input
                 type="text"
-                className="workspace-search nim-input"
+                className="workspace-search agent-elements-workspace-manager-search h-9 w-full rounded-[var(--an-input-border-radius)] border border-[var(--an-input-border-color)] bg-[var(--an-input-background)] px-3 text-sm text-[var(--an-input-color)] outline-none transition-colors duration-150 placeholder:text-[var(--an-input-placeholder-color)] focus:border-[var(--an-input-focus-outline)]"
+                data-testid="agent-elements-workspace-manager-search"
+                data-agent-elements-shell="workspace-manager-search"
                 placeholder="Search projects..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
@@ -593,119 +659,176 @@ export const WorkspaceManager: React.FC = () => {
           )}
 
           {loading ? (
-            <div className="loading p-8 text-center">
-              <div className="spinner w-6 h-6 border-2 border-[var(--nim-border)] border-t-[var(--nim-primary)] rounded-full animate-spin mx-auto"></div>
+            <div
+              className="loading agent-elements-workspace-manager-loading flex flex-1 items-center justify-center p-8 text-center"
+              data-testid="agent-elements-workspace-manager-loading"
+              data-agent-elements-shell="workspace-manager-loading"
+            >
+              <div className="spinner h-5 w-5 rounded-[999px] border-2 border-[var(--an-border-color)] border-t-[var(--an-primary-color)] animate-spin" />
             </div>
           ) : workspaces.length === 0 ? (
-            <div className="sidebar-empty flex flex-col items-center justify-center h-full p-5 text-center">
-              <p className="text-[13px] text-[var(--nim-text-faint)] m-0">No recent projects</p>
+            <div
+              className="sidebar-empty agent-elements-workspace-manager-empty flex h-full flex-col items-center justify-center p-5 text-center"
+              data-testid="agent-elements-workspace-manager-empty"
+              data-agent-elements-shell="workspace-manager-empty"
+            >
+              <p className="m-0 text-sm text-[var(--an-foreground-subtle)]">No recent projects</p>
             </div>
           ) : filteredWorkspaces.length === 0 ? (
-            <div className="sidebar-empty flex flex-col items-center justify-center h-full p-5 text-center">
-              <p className="text-[13px] text-[var(--nim-text-faint)] m-0">No matching projects</p>
+            <div
+              className="sidebar-empty agent-elements-workspace-manager-empty flex h-full flex-col items-center justify-center p-5 text-center"
+              data-testid="agent-elements-workspace-manager-empty"
+              data-agent-elements-shell="workspace-manager-empty"
+            >
+              <p className="m-0 text-sm text-[var(--an-foreground-subtle)]">No matching projects</p>
             </div>
           ) : (
-            filteredWorkspaces.map((workspace, index) => (
-              <div
-                key={workspace.path}
-                className={`workspace-item flex gap-2 py-1.5 px-2 mb-0.5 rounded cursor-pointer transition-colors duration-100 border-none items-center hover:bg-[var(--nim-bg-hover)] ${selectedWorkspace?.path === workspace.path ? 'selected bg-[var(--nim-bg-selected)]' : ''} ${highlightedIndex === index ? 'highlighted bg-[var(--nim-bg-hover)]' : ''} ${highlightedIndex === index && selectedWorkspace?.path === workspace.path ? '!bg-[var(--nim-bg-selected-hover)]' : ''}`}
-                onClick={(e) => {
-                  // Command/Ctrl + click to deselect
-                  if (e.metaKey || e.ctrlKey) {
-                    if (selectedWorkspace?.path === workspace.path) {
-                      setSelectedWorkspace(null);
+            filteredWorkspaces.map((workspace, index) => {
+              const isSelected = selectedWorkspace?.path === workspace.path;
+              const isHighlighted = highlightedIndex === index;
+
+              return (
+                <div
+                  key={workspace.path}
+                  className={`workspace-item agent-elements-workspace-manager-item mb-1 flex cursor-pointer items-center gap-2 rounded-[var(--an-input-border-radius)] border px-2 py-2 transition-colors duration-150 ${
+                    isSelected
+                      ? 'selected border-[color-mix(in_srgb,var(--an-primary-color)_30%,var(--an-border-color))] bg-[color-mix(in_srgb,var(--an-primary-color)_11%,var(--an-background))]'
+                      : isHighlighted
+                        ? 'highlighted border-[var(--an-border-color)] bg-[var(--an-background-tertiary)]'
+                        : 'border-transparent bg-transparent hover:border-[var(--an-border-color)] hover:bg-[var(--an-background-tertiary)]'
+                  }`}
+                  data-testid={`agent-elements-workspace-manager-item-${index}`}
+                  data-agent-elements-shell="workspace-manager-item"
+                  data-selected={isSelected ? 'true' : 'false'}
+                  data-highlighted={isHighlighted ? 'true' : 'false'}
+                  onClick={(e) => {
+                    // Command/Ctrl + click to deselect
+                    if (e.metaKey || e.ctrlKey) {
+                      if (selectedWorkspace?.path === workspace.path) {
+                        setSelectedWorkspace(null);
+                      }
+                    } else {
+                      setSelectedWorkspace(workspace);
                     }
-                  } else {
-                    setSelectedWorkspace(workspace);
-                  }
-                  setHighlightedIndex(index);
-                }}
-                onDoubleClick={handleOpenWorkspace}
-                onContextMenu={(e) => handleContextMenu(e, workspace)}
-              >
-                <div className={`workspace-icon shrink-0 flex items-center justify-center text-[var(--nim-text-muted)] ${selectedWorkspace?.path === workspace.path ? '!text-[var(--nim-primary)]' : ''}`}>
-                  <span className="material-symbols-outlined text-[20px]" style={{ fontVariationSettings: "'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 20" }}>folder</span>
-                </div>
-                <div className="workspace-info flex-1 min-w-0">
-                  <div className={`workspace-name text-[13px] font-medium text-[var(--nim-text)] mb-0.5 overflow-hidden text-ellipsis whitespace-nowrap ${selectedWorkspace?.path === workspace.path ? '!text-[var(--nim-primary)]' : ''}`}>{workspace.name}</div>
-                  <div className="workspace-path text-[11px] text-[var(--nim-text-muted)] overflow-hidden text-ellipsis whitespace-nowrap mb-0.5">{workspace.path}</div>
-                  <div className="workspace-meta flex gap-3 text-[11px] text-[var(--nim-text-faint)]">
-                    {workspace.markdownCount !== undefined && (
-                      <span className="whitespace-nowrap">{workspace.markdownCount} markdown files</span>
-                    )}
-                    <span className="whitespace-nowrap">{formatDate(workspace.lastOpened)}</span>
+                    setHighlightedIndex(index);
+                  }}
+                  onDoubleClick={handleOpenWorkspace}
+                  onContextMenu={(e) => handleContextMenu(e, workspace)}
+                >
+                  <div
+                    className={`workspace-icon flex h-7 w-7 shrink-0 items-center justify-center rounded-[var(--an-message-radius-inner)] border ${
+                      isSelected
+                        ? 'border-[color-mix(in_srgb,var(--an-primary-color)_35%,var(--an-border-color))] bg-[color-mix(in_srgb,var(--an-primary-color)_12%,var(--an-background))] text-[var(--an-primary-color)]'
+                        : 'border-[var(--an-border-color)] bg-[var(--an-background)] text-[var(--an-foreground-muted)]'
+                    }`}
+                  >
+                    <WorkspaceIcon icon="folder" size={18} />
+                  </div>
+                  <div className="workspace-info min-w-0 flex-1">
+                    <div
+                      className={`workspace-name mb-0.5 overflow-hidden text-ellipsis whitespace-nowrap text-sm font-medium ${
+                        isSelected ? 'text-[var(--an-primary-color)]' : 'text-[var(--an-foreground)]'
+                      }`}
+                    >
+                      {workspace.name}
+                    </div>
+                    <div className="workspace-path mb-0.5 overflow-hidden text-ellipsis whitespace-nowrap text-xs text-[var(--an-foreground-muted)]">
+                      {workspace.path}
+                    </div>
+                    <div className="workspace-meta flex gap-3 text-xs text-[var(--an-foreground-subtle)]">
+                      {workspace.markdownCount !== undefined && (
+                        <span className="whitespace-nowrap">{workspace.markdownCount} markdown files</span>
+                      )}
+                      <span className="whitespace-nowrap">{formatDate(workspace.lastOpened)}</span>
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))
+              );
+            })
           )}
         </div>
       </div>
 
-      <div className="content flex-1 flex flex-col bg-[var(--nim-bg)] overflow-hidden">
+      <div
+        className="content agent-elements-workspace-manager-content flex flex-1 flex-col overflow-hidden bg-[var(--an-background)]"
+        data-agent-elements-shell="workspace-manager-content"
+      >
         {selectedWorkspace ? (
           <>
-            <div className="content-header py-5 px-6 border-b border-[var(--nim-border)] bg-[var(--nim-bg)] flex justify-between items-start gap-5">
+            <div
+              className="content-header agent-elements-workspace-manager-details-header flex items-start justify-between gap-5 border-b border-[var(--an-border-color)] bg-[var(--an-background)] px-6 py-5"
+              data-agent-elements-shell="workspace-manager-details-header"
+            >
               <div className="workspace-title">
-                <h1 className="text-xl font-semibold text-[var(--nim-text)] m-0 mb-1">{selectedWorkspace.name}</h1>
-                <div className="workspace-path text-[13px] text-[var(--nim-text-muted)]">{selectedWorkspace.path}</div>
+                <h1 className="m-0 mb-1 text-xl font-medium leading-snug text-[var(--an-foreground)]">{selectedWorkspace.name}</h1>
+                <div className="workspace-path select-text text-sm text-[var(--an-foreground-muted)]">{selectedWorkspace.path}</div>
               </div>
               <div className="content-actions flex flex-col items-end gap-2 shrink-0">
                 <div className="content-actions-primary flex flex-wrap justify-end gap-2">
-                  <button className="btn nim-btn-primary" onClick={handleOpenWorkspace}>
+                  <button className={workspacePrimaryButtonClass} onClick={handleOpenWorkspace}>
+                    <WorkspaceIcon icon="folder_open" size={16} />
                     Open Project
                   </button>
-                  <button className="btn nim-btn-secondary !text-[var(--nim-error)] !border-[var(--nim-error-subtle)] hover:!bg-[var(--nim-error-subtle)]" onClick={() => handleRemoveFromRecent()}>
+                  <button className={workspaceDangerButtonClass} onClick={() => handleRemoveFromRecent()}>
+                    <WorkspaceIcon icon="close" size={16} />
                     Remove from Recent
                   </button>
                 </div>
                 <div className="content-actions-secondary flex flex-wrap justify-end gap-2">
                   <button
-                    className="btn nim-btn-secondary !h-8 !px-2.5 !text-[12px]"
+                    className={workspaceSecondaryButtonClass}
                     onClick={() => openRenameDialog(selectedWorkspace)}
                   >
+                    <WorkspaceIcon icon="edit" size={16} />
                     Rename
                   </button>
                   <button
-                    className="btn nim-btn-secondary !h-8 !px-2.5 !text-[12px]"
+                    className={workspaceSecondaryButtonClass}
                     onClick={() => handleMoveProject(selectedWorkspace)}
                   >
+                    <WorkspaceIcon icon="drive_file_move" size={16} />
                     Move
                   </button>
                 </div>
               </div>
             </div>
 
-            <div className="workspace-details nim-scrollbar flex-1 overflow-y-auto p-6 bg-[var(--nim-bg-secondary)]">
+            <div
+              className="workspace-details agent-elements-workspace-manager-details nim-scrollbar flex-1 overflow-y-auto bg-[var(--an-background-secondary)] p-6"
+              data-testid="agent-elements-workspace-manager-details"
+              data-agent-elements-shell="workspace-manager-details"
+            >
               {workspaceStats ? (
                 <>
                   <div className="stats-grid grid grid-cols-[repeat(auto-fit,minmax(150px,1fr))] gap-4">
-                    <div className="stat-card bg-[var(--nim-bg)] border border-[var(--nim-border)] rounded-md p-4">
-                      <div className="stat-value text-2xl font-semibold text-[var(--nim-text)] mb-1">{workspaceStats.fileCount}</div>
-                      <div className="stat-label text-xs text-[var(--nim-text-muted)] uppercase tracking-wider">Total Files</div>
-                    </div>
-                    <div className="stat-card bg-[var(--nim-bg)] border border-[var(--nim-border)] rounded-md p-4">
-                      <div className="stat-value text-2xl font-semibold text-[var(--nim-text)] mb-1">{workspaceStats.markdownCount}</div>
-                      <div className="stat-label text-xs text-[var(--nim-text-muted)] uppercase tracking-wider">Markdown Files</div>
-                    </div>
-                    <div className="stat-card bg-[var(--nim-bg)] border border-[var(--nim-border)] rounded-md p-4">
-                      <div className="stat-value text-2xl font-semibold text-[var(--nim-text)] mb-1">{formatSize(workspaceStats.totalSize)}</div>
-                      <div className="stat-label text-xs text-[var(--nim-text-muted)] uppercase tracking-wider">Total Size</div>
-                    </div>
-                    <div className="stat-card bg-[var(--nim-bg)] border border-[var(--nim-border)] rounded-md p-4">
-                      <div className="stat-value text-2xl font-semibold text-[var(--nim-text)] mb-1">{formatDate(selectedWorkspace.lastOpened)}</div>
-                      <div className="stat-label text-xs text-[var(--nim-text-muted)] uppercase tracking-wider">Last Opened</div>
-                    </div>
+                    {[
+                      ['Total Files', workspaceStats.fileCount],
+                      ['Markdown Files', workspaceStats.markdownCount],
+                      ['Total Size', formatSize(workspaceStats.totalSize)],
+                      ['Last Opened', formatDate(selectedWorkspace.lastOpened)],
+                    ].map(([label, value]) => (
+                      <div
+                        key={label}
+                        className="stat-card agent-elements-workspace-manager-stat agent-elements-tool-card rounded-[var(--an-tool-border-radius)] border border-[var(--an-border-color)] bg-[var(--an-background)] p-[var(--an-spacing-xl)]"
+                        data-agent-elements-shell="workspace-manager-stat"
+                      >
+                        <div className="stat-value mb-1 text-2xl font-medium leading-tight text-[var(--an-foreground)]">{value}</div>
+                        <div className="stat-label text-xs font-medium text-[var(--an-foreground-muted)]">{label}</div>
+                      </div>
+                    ))}
                   </div>
 
                   {workspaceStats.recentFiles.length > 0 && (
-                    <div className="recent-files bg-[var(--nim-bg)] border border-[var(--nim-border)] rounded-md p-4 mt-4">
-                      <h3 className="text-sm font-semibold text-[var(--nim-text)] m-0 mb-3">Recent Files</h3>
+                    <div
+                      className="recent-files agent-elements-workspace-manager-recent-files agent-elements-tool-card mt-4 rounded-[var(--an-tool-border-radius)] border border-[var(--an-border-color)] bg-[var(--an-background)] p-[var(--an-spacing-xl)]"
+                      data-agent-elements-shell="workspace-manager-recent-files"
+                    >
+                      <h3 className="m-0 mb-3 text-sm font-medium text-[var(--an-foreground)]">Recent Files</h3>
                       <ul className="list-none m-0 p-0">
                         {workspaceStats.recentFiles.map(file => (
-                          <li key={file} className="flex items-center gap-2 py-1.5 text-[13px] text-[var(--nim-text-muted)] border-b border-[var(--nim-border-subtle)] last:border-b-0">
-                            <span className="material-symbols-outlined text-base text-[var(--nim-text-faint)]" style={{ fontVariationSettings: "'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 20" }}>description</span>
-                            {file}
+                          <li key={file} className="flex items-center gap-2 border-b border-[var(--an-border-color)] py-1.5 text-sm text-[var(--an-foreground-muted)] last:border-b-0">
+                            <WorkspaceIcon icon="description" size={16} className="text-[var(--an-foreground-subtle)]" />
+                            <span className="select-text">{file}</span>
                           </li>
                         ))}
                       </ul>
@@ -713,38 +836,44 @@ export const WorkspaceManager: React.FC = () => {
                   )}
                 </>
               ) : (
-                <div className="loading p-8 text-center">
-                  <div className="spinner w-6 h-6 border-2 border-[var(--nim-border)] border-t-[var(--nim-primary)] rounded-full animate-spin mx-auto"></div>
+                <div className="loading flex items-center justify-center p-8 text-center">
+                  <div className="spinner h-5 w-5 rounded-[999px] border-2 border-[var(--an-border-color)] border-t-[var(--an-primary-color)] animate-spin"></div>
                 </div>
               )}
             </div>
           </>
         ) : (
-          <div className="welcome-container flex items-center justify-center h-full p-10 bg-gradient-to-br from-[#667eea] to-[#764ba2] relative overflow-hidden before:content-[''] before:absolute before:top-[-50%] before:right-[-50%] before:w-[200%] before:h-[200%] before:bg-[radial-gradient(circle,rgba(255,255,255,0.1)_0%,transparent_70%)] before:animate-[float_20s_ease-in-out_infinite]">
-            <div className="welcome-content bg-white/[0.98] dark:bg-[var(--nim-bg)] rounded-2xl p-8 max-w-[500px] w-full shadow-[0_25px_50px_-12px_rgba(0,0,0,0.25)] backdrop-blur-[10px] relative z-[1]">
-              <div className="welcome-header flex items-center justify-center gap-5 mb-6">
-                <img src="./icon.png" alt="Nimbalyst" className="welcome-logo w-16 h-16 object-contain" />
-                <div className="welcome-text text-left">
-                  <h1 className="welcome-title text-[28px] font-extrabold text-[var(--nim-text)] m-0 mb-1 tracking-tight">Nimbalyst</h1>
-                  <p className="welcome-subtitle text-sm text-[var(--nim-text-muted)] m-0 font-normal">AI-native, interactive work platform</p>
+          <div
+            className="welcome-container workspace-manager-welcome agent-elements-workspace-manager-welcome flex h-full items-center justify-center bg-[var(--an-background)] p-10"
+            data-testid="agent-elements-workspace-manager-welcome"
+            data-agent-elements-shell="workspace-manager-welcome"
+          >
+            <div className="welcome-content flex w-full max-w-[560px] flex-col gap-[var(--an-spacing-xl)] text-left">
+              <div className="welcome-header flex items-start gap-4">
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-[var(--an-tool-border-radius)] border border-[var(--an-border-color)] bg-[var(--an-background-secondary)]">
+                  <img src="./icon.png" alt="Smarty Code" className="welcome-logo h-8 w-8 object-contain" />
+                </div>
+                <div className="welcome-text min-w-0">
+                  <h1 className="welcome-title m-0 text-2xl font-medium leading-tight text-[var(--an-foreground)]">Smarty Code</h1>
+                  <p className="welcome-subtitle m-0 mt-1 text-sm leading-relaxed text-[var(--an-foreground-muted)]">Agentic coding workspace</p>
                 </div>
               </div>
 
-              <div className="welcome-info-compact mb-6 text-center">
-                <p className="welcome-description text-sm text-[var(--nim-text-muted)] leading-relaxed m-0">
+              <div className="welcome-info-compact agent-elements-tool-card rounded-[var(--an-tool-border-radius)] border border-[var(--an-border-color)] bg-[var(--an-background-secondary)] p-[var(--an-spacing-xl)]">
+                <p className="welcome-description m-0 select-text text-sm leading-relaxed text-[var(--an-foreground-muted)]">
                   Projects are local folders on your computer. Open any folder to view and edit all markdown files within it.
                   If you are working on a coding project, it is recommended to open the root folder of your project as
                   agents are configured at the project level.
                 </p>
               </div>
 
-              <div className="welcome-actions flex justify-center gap-4">
-                <button className="btn btn-large btn-welcome-primary bg-[var(--nim-primary)] text-white border-none py-3 px-6 text-[15px] font-semibold rounded-lg cursor-pointer transition-all duration-200 flex items-center justify-center gap-2 shadow-[0_2px_8px_rgba(59,130,246,0.3)] hover:bg-[var(--nim-primary-hover)] hover:shadow-[0_4px_12px_rgba(59,130,246,0.4)] hover:-translate-y-px" onClick={handleBrowse}>
-                  <span className="material-symbols-outlined text-[20px]" style={{ fontVariationSettings: "'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 20" }}>folder_open</span>
+              <div className="welcome-actions flex flex-wrap gap-[var(--an-spacing-sm)]">
+                <button className={workspacePrimaryButtonClass} onClick={handleBrowse}>
+                  <WorkspaceIcon icon="folder_open" size={16} />
                   Open Folder
                 </button>
-                <button className="btn btn-large btn-welcome-secondary bg-[var(--nim-bg)] text-[var(--nim-text-muted)] border-2 border-[var(--nim-border)] py-3 px-6 text-[15px] font-semibold rounded-lg cursor-pointer transition-all duration-200 flex items-center justify-center gap-2 hover:bg-[var(--nim-bg-secondary)] hover:border-[var(--nim-border-hover)] hover:-translate-y-px" onClick={handleCreateWorkspace}>
-                  <span className="material-symbols-outlined text-[20px]" style={{ fontVariationSettings: "'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 20" }}>create_new_folder</span>
+                <button className={workspaceSecondaryButtonClass} onClick={handleCreateWorkspace}>
+                  <WorkspaceIcon icon="create_new_folder" size={16} />
                   New Folder
                 </button>
               </div>
@@ -754,59 +883,73 @@ export const WorkspaceManager: React.FC = () => {
       </div>
 
       {/* Context Menu */}
-      {contextMenu.visible && (
-        <div
-          className="fixed bg-[var(--nim-bg)] border border-[var(--nim-border)] rounded-md shadow-lg py-1 min-w-[160px] z-[2000]"
-          style={{ left: contextMenu.x, top: contextMenu.y }}
-          onClick={(e) => e.stopPropagation()}
-        >
-          <button
-            className="w-full px-3 py-1.5 text-left text-[13px] text-[var(--nim-text)] hover:bg-[var(--nim-bg-hover)] flex items-center gap-2"
-            onClick={() => handleContextMenuAction('open')}
+      {contextMenu.visible && contextMenu.workspace && (
+        <FloatingPortal>
+          <div
+            ref={contextMenuFloating.refs.setFloating}
+            className="workspace-manager-context-menu agent-elements-workspace-manager-context-menu agent-elements-tool-card z-[2000] min-w-[176px] rounded-[var(--an-tool-border-radius)] border border-[var(--an-border-color)] bg-[var(--an-background)] p-1 text-[var(--an-foreground)]"
+            data-testid="agent-elements-workspace-manager-context-menu"
+            data-agent-elements-shell="workspace-manager-context-menu"
+            style={contextMenuFloating.floatingStyles}
+            onClick={(e) => e.stopPropagation()}
+            {...contextMenuFloating.getFloatingProps()}
           >
-            <span className="material-symbols-outlined text-[16px]" style={{ fontVariationSettings: "'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 20" }}>folder_open</span>
-            Open Project
-          </button>
-          <div className="border-t border-[var(--nim-border)] my-1" />
-          <button
-            className="w-full px-3 py-1.5 text-left text-[13px] text-[var(--nim-text)] hover:bg-[var(--nim-bg-hover)] flex items-center gap-2"
-            onClick={() => handleContextMenuAction('rename')}
-          >
-            <span className="material-symbols-outlined text-[16px]" style={{ fontVariationSettings: "'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 20" }}>edit</span>
-            Rename...
-          </button>
-          <button
-            className="w-full px-3 py-1.5 text-left text-[13px] text-[var(--nim-text)] hover:bg-[var(--nim-bg-hover)] flex items-center gap-2"
-            onClick={() => handleContextMenuAction('move')}
-          >
-            <span className="material-symbols-outlined text-[16px]" style={{ fontVariationSettings: "'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 20" }}>drive_file_move</span>
-            Move to...
-          </button>
-          <div className="border-t border-[var(--nim-border)] my-1" />
-          <button
-            className="w-full px-3 py-1.5 text-left text-[13px] text-[var(--nim-error)] hover:bg-[var(--nim-bg-hover)] flex items-center gap-2"
-            onClick={() => handleContextMenuAction('remove')}
-          >
-            <span className="material-symbols-outlined text-[16px]" style={{ fontVariationSettings: "'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 20" }}>close</span>
-            Remove from Recent
-          </button>
-        </div>
+            <button
+              type="button"
+              role="menuitem"
+              className={workspaceMenuItemClass}
+              onClick={() => handleContextMenuAction('open')}
+            >
+              <WorkspaceIcon icon="folder_open" size={16} />
+              Open Project
+            </button>
+            <div className="my-1 border-t border-[var(--an-border-color)]" />
+            <button
+              type="button"
+              role="menuitem"
+              className={workspaceMenuItemClass}
+              onClick={() => handleContextMenuAction('rename')}
+            >
+              <WorkspaceIcon icon="edit" size={16} />
+              Rename...
+            </button>
+            <button
+              type="button"
+              role="menuitem"
+              className={workspaceMenuItemClass}
+              onClick={() => handleContextMenuAction('move')}
+            >
+              <WorkspaceIcon icon="drive_file_move" size={16} />
+              Move to...
+            </button>
+            <div className="my-1 border-t border-[var(--an-border-color)]" />
+            <button
+              type="button"
+              role="menuitem"
+              className={`${workspaceMenuItemClass} text-[var(--an-diff-removed-text)] hover:bg-[var(--an-diff-removed-bg)]`}
+              onClick={() => handleContextMenuAction('remove')}
+            >
+              <WorkspaceIcon icon="close" size={16} />
+              Remove from Recent
+            </button>
+          </div>
+        </FloatingPortal>
       )}
 
       {/* Rename Dialog */}
       {renameDialog.visible && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[3000]">
-          <div className="bg-[var(--nim-bg)] border border-[var(--nim-border)] rounded-lg shadow-xl p-5 w-[450px]">
-            <h2 className="text-lg font-semibold text-[var(--nim-text)] m-0 mb-3">Rename Project</h2>
+        <div className={workspaceOverlayClass}>
+          <div className={`${workspaceDialogPanelClass} max-w-[450px]`}>
+            <h2 className="m-0 mb-3 text-lg font-medium text-[var(--an-foreground)]">Rename Project</h2>
 
             {/* Warning banner */}
-            <div className="bg-[var(--nim-warning)]/10 border border-[var(--nim-warning)]/30 rounded-md p-3 mb-4 flex gap-2">
-              <span className="material-symbols-outlined text-[18px] text-[var(--nim-warning)] shrink-0 mt-0.5" style={{ fontVariationSettings: "'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 20" }}>warning</span>
-              <div className="text-[12px] text-[var(--nim-text-muted)]">
-                <p className="m-0 mb-1 font-medium text-[var(--nim-text)]">This will rename the project folder on disk</p>
+            <div className="mb-4 flex gap-2 rounded-[var(--an-input-border-radius)] border border-[color-mix(in_srgb,var(--nim-warning)_32%,var(--an-border-color))] bg-[color-mix(in_srgb,var(--nim-warning)_10%,var(--an-background))] p-3">
+              <WorkspaceIcon icon="warning" size={18} className="mt-0.5 text-[var(--nim-warning)]" />
+              <div className="text-xs text-[var(--an-foreground-muted)]">
+                <p className="m-0 mb-1 font-medium text-[var(--an-foreground)]">This will rename the project folder on disk</p>
                 <p className="m-0">All AI session history, file history, and settings will be migrated. This may take a while for large projects.</p>
                 {renameDialog.stats && (
-                  <p className="m-0 mt-1 text-[var(--nim-text-faint)]">
+                  <p className="m-0 mt-1 text-[var(--an-foreground-subtle)]">
                     Project size: {renameDialog.stats.fileCount.toLocaleString()} files, {formatSize(renameDialog.stats.totalSize)}
                   </p>
                 )}
@@ -814,11 +957,11 @@ export const WorkspaceManager: React.FC = () => {
             </div>
 
             <div className="mb-4">
-              <label className="block text-[13px] text-[var(--nim-text-muted)] mb-1">New name</label>
+              <label className="mb-1 block text-sm text-[var(--an-foreground-muted)]">New name</label>
               <input
                 ref={renameInputRef}
                 type="text"
-                className="nim-input w-full"
+                className="w-full rounded-[var(--an-input-border-radius)] border border-[var(--an-input-border-color)] bg-[var(--an-input-background)] px-3 py-2 text-sm text-[var(--an-input-color)] outline-none transition-colors duration-150 focus:border-[var(--an-input-focus-outline)] disabled:opacity-50"
                 value={renameDialog.newName}
                 onChange={(e) => setRenameDialog(prev => ({ ...prev, newName: e.target.value, error: null }))}
                 onKeyDown={(e) => {
@@ -831,19 +974,19 @@ export const WorkspaceManager: React.FC = () => {
                 disabled={operationInProgress}
               />
               {renameDialog.error && (
-                <p className="text-[12px] text-[var(--nim-error)] mt-1 m-0">{renameDialog.error}</p>
+                <p className="m-0 mt-1 text-xs text-[var(--an-diff-removed-text)]">{renameDialog.error}</p>
               )}
             </div>
             <div className="flex justify-end gap-2">
               <button
-                className="btn nim-btn-secondary"
+                className={workspaceSecondaryButtonClass}
                 onClick={() => setRenameDialog({ visible: false, workspace: null, newName: '', error: null })}
                 disabled={operationInProgress}
               >
                 Cancel
               </button>
               <button
-                className="btn nim-btn-primary"
+                className={workspacePrimaryButtonClass}
                 onClick={handleRenameSubmit}
                 disabled={operationInProgress || !renameDialog.newName.trim()}
               >
@@ -856,30 +999,30 @@ export const WorkspaceManager: React.FC = () => {
 
       {/* Move Confirmation Dialog */}
       {confirmDialog.visible && confirmDialog.type === 'move' && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[3000]">
-          <div className="bg-[var(--nim-bg)] border border-[var(--nim-border)] rounded-lg shadow-xl p-5 w-[500px]">
-            <h2 className="text-lg font-semibold text-[var(--nim-text)] m-0 mb-3">Move Project</h2>
+        <div className={workspaceOverlayClass}>
+          <div className={`${workspaceDialogPanelClass} max-w-[500px]`}>
+            <h2 className="m-0 mb-3 text-lg font-medium text-[var(--an-foreground)]">Move Project</h2>
 
             {/* Warning banner */}
-            <div className="bg-[var(--nim-warning)]/10 border border-[var(--nim-warning)]/30 rounded-md p-3 mb-4 flex gap-2">
-              <span className="material-symbols-outlined text-[18px] text-[var(--nim-warning)] shrink-0 mt-0.5" style={{ fontVariationSettings: "'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 20" }}>warning</span>
-              <div className="text-[12px] text-[var(--nim-text-muted)]">
-                <p className="m-0 mb-1 font-medium text-[var(--nim-text)]">This will move the entire project folder</p>
+            <div className="mb-4 flex gap-2 rounded-[var(--an-input-border-radius)] border border-[color-mix(in_srgb,var(--nim-warning)_32%,var(--an-border-color))] bg-[color-mix(in_srgb,var(--nim-warning)_10%,var(--an-background))] p-3">
+              <WorkspaceIcon icon="warning" size={18} className="mt-0.5 text-[var(--nim-warning)]" />
+              <div className="text-xs text-[var(--an-foreground-muted)]">
+                <p className="m-0 mb-1 font-medium text-[var(--an-foreground)]">This will move the entire project folder</p>
                 <p className="m-0">All project files will be copied to the new location, and all AI session history, file history, and settings will be migrated. This may take a while for large projects.</p>
               </div>
             </div>
 
             <div className="mb-4 space-y-2">
               <div>
-                <label className="block text-[12px] text-[var(--nim-text-muted)] mb-0.5">From</label>
-                <div className="text-[13px] text-[var(--nim-text)] bg-[var(--nim-bg-secondary)] px-3 py-2 rounded border border-[var(--nim-border)] font-mono overflow-hidden text-ellipsis">{confirmDialog.workspace?.path}</div>
+                <label className="mb-0.5 block text-xs text-[var(--an-foreground-muted)]">From</label>
+                <div className="overflow-hidden text-ellipsis rounded-[var(--an-message-radius-inner)] border border-[var(--an-border-color)] bg-[var(--an-background-secondary)] px-3 py-2 font-mono text-sm text-[var(--an-foreground)]">{confirmDialog.workspace?.path}</div>
               </div>
               <div>
-                <label className="block text-[12px] text-[var(--nim-text-muted)] mb-0.5">To</label>
-                <div className="text-[13px] text-[var(--nim-text)] bg-[var(--nim-bg-secondary)] px-3 py-2 rounded border border-[var(--nim-border)] font-mono overflow-hidden text-ellipsis">{confirmDialog.destinationPath}</div>
+                <label className="mb-0.5 block text-xs text-[var(--an-foreground-muted)]">To</label>
+                <div className="overflow-hidden text-ellipsis rounded-[var(--an-message-radius-inner)] border border-[var(--an-border-color)] bg-[var(--an-background-secondary)] px-3 py-2 font-mono text-sm text-[var(--an-foreground)]">{confirmDialog.destinationPath}</div>
               </div>
               {confirmDialog.stats && (
-                <div className="flex gap-4 pt-2 text-[12px] text-[var(--nim-text-muted)]">
+                <div className="flex gap-4 pt-2 text-xs text-[var(--an-foreground-muted)]">
                   <span>{confirmDialog.stats.fileCount.toLocaleString()} files</span>
                   <span>{formatSize(confirmDialog.stats.totalSize)}</span>
                 </div>
@@ -888,13 +1031,13 @@ export const WorkspaceManager: React.FC = () => {
 
             <div className="flex justify-end gap-2">
               <button
-                className="btn nim-btn-secondary"
+                className={workspaceSecondaryButtonClass}
                 onClick={() => setConfirmDialog(prev => ({ ...prev, visible: false }))}
               >
                 Cancel
               </button>
               <button
-                className="btn nim-btn-primary"
+                className={workspacePrimaryButtonClass}
                 onClick={executeMoveProject}
               >
                 Move Project
@@ -906,35 +1049,28 @@ export const WorkspaceManager: React.FC = () => {
 
       {/* Operation Error Toast */}
       {operationError && (
-        <div className="fixed bottom-4 right-4 bg-[var(--nim-error)] text-white px-4 py-3 rounded-lg shadow-lg z-[3000] flex items-center gap-3 max-w-[400px]">
-          <span className="material-symbols-outlined text-[20px]" style={{ fontVariationSettings: "'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 20" }}>error</span>
-          <span className="text-[13px] flex-1">{operationError}</span>
+        <div className="workspace-manager-error-toast agent-elements-tool-card fixed bottom-4 right-4 z-[3000] flex max-w-[400px] items-center gap-3 rounded-[var(--an-tool-border-radius)] border border-[var(--an-diff-removed-border)] bg-[var(--an-diff-removed-bg)] px-4 py-3 text-[var(--an-diff-removed-text)]">
+          <WorkspaceIcon icon="error" size={20} />
+          <span className="flex-1 select-text text-sm">{operationError}</span>
           <button
-            className="text-white/80 hover:text-white"
+            className="inline-flex h-7 w-7 items-center justify-center rounded-[var(--an-message-radius-inner)] border border-transparent bg-transparent text-[var(--an-diff-removed-text)] transition-colors duration-150 hover:border-[var(--an-diff-removed-border)]"
             onClick={() => setOperationError(null)}
+            aria-label="Dismiss error"
           >
-            <span className="material-symbols-outlined text-[18px]" style={{ fontVariationSettings: "'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 20" }}>close</span>
+            <WorkspaceIcon icon="close" size={18} />
           </button>
         </div>
       )}
 
       {/* Loading Overlay */}
       {operationInProgress && (
-        <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-[4000]">
-          <div className="bg-[var(--nim-bg)] border border-[var(--nim-border)] rounded-lg shadow-xl p-6 flex items-center gap-3">
-            <div className="spinner w-5 h-5 border-2 border-[var(--nim-border)] border-t-[var(--nim-primary)] rounded-full animate-spin"></div>
-            <span className="text-[14px] text-[var(--nim-text)]">{operationLabel}</span>
+        <div className="fixed inset-0 z-[4000] flex items-center justify-center bg-[color-mix(in_srgb,var(--an-foreground)_14%,transparent)]">
+          <div className="agent-elements-tool-card flex items-center gap-3 rounded-[var(--an-tool-border-radius)] border border-[var(--an-border-color)] bg-[var(--an-background)] p-6">
+            <div className="spinner h-5 w-5 rounded-[999px] border-2 border-[var(--an-border-color)] border-t-[var(--an-primary-color)] animate-spin"></div>
+            <span className="text-sm text-[var(--an-foreground)]">{operationLabel}</span>
           </div>
         </div>
       )}
-
-      <style>{`
-        @keyframes float {
-          0%, 100% { transform: translate(0, 0) rotate(0deg); }
-          33% { transform: translate(-30px, -30px) rotate(120deg); }
-          66% { transform: translate(30px, -20px) rotate(240deg); }
-        }
-      `}</style>
     </div>
   );
 };

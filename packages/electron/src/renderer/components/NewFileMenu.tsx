@@ -44,51 +44,82 @@ export function NewFileMenu({
     onClose();
   };
 
+  const renderMenuItem = ({
+    id,
+    itemKey,
+    fileType,
+    icon,
+    label,
+  }: {
+    id: string;
+    itemKey?: string;
+    fileType: NewFileType;
+    icon: string;
+    label: string;
+  }) => (
+    <button
+      key={itemKey ?? id}
+      type="button"
+      className="new-file-menu-item agent-elements-new-file-menu-item flex w-full items-center gap-2.5 rounded-[8px] border-0 bg-transparent px-3 py-2 text-left text-[13px] leading-5 text-nim transition-[background-color,color] duration-150 cursor-pointer select-none hover:bg-nim-hover focus-visible:outline-2 focus-visible:outline-[var(--nim-primary)] focus-visible:outline-offset-2"
+      onClick={() => handleSelect(fileType)}
+      role="menuitem"
+      data-testid={`agent-elements-new-file-menu-${id}`}
+      data-agent-elements-shell="new-file-menu-item"
+      data-file-type={fileType}
+    >
+      <span className="agent-elements-new-file-menu-icon flex h-5 w-5 shrink-0 items-center justify-center text-nim-muted">
+        <MaterialSymbol icon={icon} size={18} />
+      </span>
+      <span className="agent-elements-new-file-menu-label min-w-0 truncate">{label}</span>
+    </button>
+  );
+
   return (
     <FloatingPortal>
       <div
         ref={menu.refs.setFloating}
         style={menu.floatingStyles}
         {...menu.getFloatingProps()}
-        className="new-file-menu bg-nim-secondary border border-nim rounded-md shadow-lg p-1 min-w-[180px] z-[10000] text-[13px] backdrop-blur-[10px]"
+        className="new-file-menu agent-elements-new-file-menu agent-elements-tool-card min-w-[200px] rounded-[10px] border border-nim bg-nim-secondary p-1 text-[13px] shadow-[0_12px_32px_color-mix(in_srgb,var(--nim-text)_10%,transparent)] z-[10000]"
+        data-component="NewFileMenu"
+        data-testid="agent-elements-new-file-menu"
+        data-agent-elements-shell="new-file-menu"
       >
-        <div
-          className="new-file-menu-item flex items-center gap-2.5 py-2 px-3 rounded cursor-pointer transition-colors text-nim hover:bg-nim-hover"
-          onClick={() => handleSelect('markdown')}
-        >
-          <MaterialSymbol icon="description" size={18} />
-          <span>New Markdown File</span>
-        </div>
+        {renderMenuItem({
+          id: 'markdown',
+          fileType: 'markdown',
+          icon: 'description',
+          label: 'New Markdown File',
+        })}
 
-        <div
-          className="new-file-menu-item flex items-center gap-2.5 py-2 px-3 rounded cursor-pointer transition-colors text-nim hover:bg-nim-hover"
-          onClick={() => handleSelect('mockup')}
-        >
-          <MaterialSymbol icon="web" size={18} />
-          <span>New Mockup</span>
-        </div>
+        {renderMenuItem({
+          id: 'mockup',
+          fileType: 'mockup',
+          icon: 'web',
+          label: 'New Mockup',
+        })}
 
         {/* Extension-contributed file types */}
-        {extensionFileTypes.map((extType) => (
-          <div
-            key={extType.extension}
-            className="new-file-menu-item flex items-center gap-2.5 py-2 px-3 rounded cursor-pointer transition-colors text-nim hover:bg-nim-hover"
-            onClick={() => handleSelect(`ext:${extType.extension}`)}
-          >
-            <MaterialSymbol icon={extType.icon} size={18} />
-            <span>New {extType.displayName}</span>
-          </div>
-        ))}
-
-        <div className="new-file-menu-separator h-px bg-[var(--nim-border)] mx-2 my-1" />
+        {extensionFileTypes.map((extType) => renderMenuItem({
+          id: `ext-${extType.extension}`,
+          itemKey: extType.extension,
+          fileType: `ext:${extType.extension}`,
+          icon: extType.icon,
+          label: `New ${extType.displayName}`,
+        }))}
 
         <div
-          className="new-file-menu-item flex items-center gap-2.5 py-2 px-3 rounded cursor-pointer transition-colors text-nim hover:bg-nim-hover"
-          onClick={() => handleSelect('any')}
-        >
-          <MaterialSymbol icon="note_add" size={18} />
-          <span>New File...</span>
-        </div>
+          className="new-file-menu-separator agent-elements-new-file-menu-separator mx-2 my-1 h-px bg-[var(--nim-border)]"
+          data-testid="agent-elements-new-file-menu-separator"
+          data-agent-elements-shell="new-file-menu-separator"
+        />
+
+        {renderMenuItem({
+          id: 'any',
+          fileType: 'any',
+          icon: 'note_add',
+          label: 'New File...',
+        })}
       </div>
     </FloatingPortal>
   );

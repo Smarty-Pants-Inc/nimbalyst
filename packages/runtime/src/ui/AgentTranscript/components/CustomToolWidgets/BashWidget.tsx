@@ -15,6 +15,8 @@ import { copyToClipboard } from '../../../../utils/clipboard';
 import { ToolCallChanges } from '../ToolCallChanges';
 import { unwrapShellCommand } from '../../utils/unwrapShellCommand';
 import { useElapsedTimeRef } from './useElapsedTime';
+import '../../../AgentElements/AgentElementsPrimitives.css';
+import '../../../AgentElements/AgentElementsToolRenderers.css';
 
 /**
  * Maximum number of lines to show before adding "show more" in expanded view
@@ -224,6 +226,15 @@ export const BashWidget: React.FC<CustomToolWidgetProps> = ({ message, isExpande
   // For collapsed view
   const truncatedCommand = command ? truncateCommand(command, MAX_COLLAPSED_COMMAND_LENGTH) : null;
   const outputSummary = getOutputSummary(output);
+  const status = isRunning ? 'running' : hasError ? 'error' : 'success';
+  const shellClassName = 'bash-widget rich-transcript-agent-elements-bash-shell agent-elements-bash-tool-card';
+  const shellMarkerProps = {
+    'data-component': 'RichTranscriptAgentElementsBashShell',
+    'data-testid': 'rich-transcript-agent-elements-bash-shell',
+    'data-agent-elements-shell': 'tool-card',
+    'data-bash-state': isExpanded ? 'expanded' : 'collapsed',
+    'data-bash-status': status,
+  };
 
   // Determine border color based on state
   const getBorderClass = () => {
@@ -242,48 +253,49 @@ export const BashWidget: React.FC<CustomToolWidgetProps> = ({ message, isExpande
 
     return (
       <button
-        className={`bash-widget rounded-md bg-nim-tertiary ${getBorderClass()} border overflow-hidden font-mono flex items-center justify-between w-full py-1.5 px-2 cursor-pointer transition-colors duration-150 text-left hover:bg-nim-hover`}
+        className={`${shellClassName} rounded-md bg-nim-tertiary ${getBorderClass()} border overflow-hidden font-mono flex items-center justify-between w-full py-1.5 px-2 cursor-pointer transition-colors duration-150 text-left hover:bg-nim-hover`}
+        {...shellMarkerProps}
         onClick={onToggle}
         type="button"
       >
-        <div className="flex items-start gap-1.5 min-w-0 flex-1 overflow-hidden">
-          <div className="flex items-center justify-center shrink-0 text-nim-faint mt-0.5">
+        <div className="agent-elements-tool-header flex items-start gap-1.5 min-w-0 flex-1 overflow-hidden">
+          <div className="agent-elements-tool-icon flex items-center justify-center shrink-0 text-nim-faint mt-0.5" aria-hidden="true">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <polyline points="4 17 10 11 4 5"></polyline>
               <line x1="12" y1="19" x2="20" y2="19"></line>
             </svg>
           </div>
-          <div className="flex flex-col gap-0.5 min-w-0 flex-1 overflow-hidden">
+          <div className="agent-elements-tool-title-group flex flex-col gap-0.5 min-w-0 flex-1 overflow-hidden">
             {description ? (
               <>
-                <span className="text-xs text-nim-muted font-sans whitespace-nowrap overflow-hidden text-ellipsis">{description}</span>
+                <span className="agent-elements-tool-title text-xs text-nim-muted font-sans whitespace-nowrap overflow-hidden text-ellipsis">{description}</span>
                 {displayCommand && (
-                  <code className="text-[0.7rem] text-nim-faint whitespace-nowrap overflow-hidden text-ellipsis">{displayCommand}</code>
+                  <code className="agent-elements-tool-subtitle text-[0.7rem] text-nim-faint whitespace-nowrap overflow-hidden text-ellipsis">{displayCommand}</code>
                 )}
               </>
             ) : displayCommand ? (
-              <code className="text-[0.7rem] text-nim-faint whitespace-nowrap overflow-hidden text-ellipsis">{displayCommand}</code>
+              <code className="agent-elements-tool-title text-[0.7rem] text-nim-faint whitespace-nowrap overflow-hidden text-ellipsis">{displayCommand}</code>
             ) : (
-              <span className="text-xs text-nim-faint font-sans">Bash</span>
+              <span className="agent-elements-tool-title text-xs text-nim-faint font-sans">Bash</span>
             )}
           </div>
         </div>
         <div className="flex items-center gap-1.5 shrink-0 ml-2">
           {isRunning && (
-            <span className="flex items-center gap-1 text-[0.7rem] font-medium font-sans text-nim-primary">
+            <span className="agent-elements-status-pill flex items-center gap-1 text-[0.7rem] font-medium font-sans text-nim-primary" data-tone="running">
               <span className="w-2.5 h-2.5 border-[1.5px] border-[color-mix(in_srgb,var(--nim-primary)_30%,transparent)] border-t-nim-primary rounded-full animate-spin" />
               <span ref={elapsedRef} className="tabular-nums" />
             </span>
           )}
           {!isRunning && !hasError && (
-            <span className="flex items-center gap-1 text-[0.7rem] font-medium font-sans text-nim-success">
+            <span className="agent-elements-status-pill flex items-center gap-1 text-[0.7rem] font-medium font-sans text-nim-success" data-tone="success">
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
                 <polyline points="20 6 9 17 4 12"></polyline>
               </svg>
             </span>
           )}
           {!isRunning && hasError && (
-            <span className="flex items-center gap-1 text-[0.7rem] font-medium font-sans text-nim-error">
+            <span className="agent-elements-status-pill flex items-center gap-1 text-[0.7rem] font-medium font-sans text-nim-error" data-tone="error">
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
                 <line x1="18" y1="6" x2="6" y2="18"></line>
                 <line x1="6" y1="6" x2="18" y2="18"></line>
@@ -300,34 +312,37 @@ export const BashWidget: React.FC<CustomToolWidgetProps> = ({ message, isExpande
 
   // Expanded view - full details
   return (
-    <div className={`bash-widget rounded-md bg-nim-tertiary ${getBorderClass()} border overflow-hidden font-mono`}>
+    <div
+      className={`${shellClassName} rounded-md bg-nim-tertiary ${getBorderClass()} border overflow-hidden font-mono`}
+      {...shellMarkerProps}
+    >
       {/* Header with terminal icon and status */}
-      <button className="flex items-center justify-between w-full py-1.5 px-2 bg-nim-secondary border-b border-nim gap-2 cursor-pointer transition-colors duration-150 text-left hover:bg-nim-hover" onClick={onToggle} type="button">
-        <div className="flex items-center gap-1.5">
-          <div className="flex items-center justify-center text-nim-faint">
+      <button className="agent-elements-tool-header flex items-center justify-between w-full py-1.5 px-2 bg-nim-secondary border-b border-nim gap-2 cursor-pointer transition-colors duration-150 text-left hover:bg-nim-hover" onClick={onToggle} type="button">
+        <div className="agent-elements-bash-tool-title-row flex items-center gap-1.5 min-w-0">
+          <div className="agent-elements-tool-icon flex items-center justify-center text-nim-faint" aria-hidden="true">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <polyline points="4 17 10 11 4 5"></polyline>
               <line x1="12" y1="19" x2="20" y2="19"></line>
             </svg>
           </div>
-          <span className="text-[0.7rem] font-medium text-nim-faint uppercase tracking-wide font-sans">Terminal</span>
+          <span className="agent-elements-tool-title text-[0.7rem] font-medium text-nim-faint uppercase tracking-wide font-sans">Terminal</span>
         </div>
         <div className="flex items-center gap-1.5">
           {isRunning && (
-            <span className="flex items-center gap-1 text-[0.7rem] font-medium font-sans text-nim-primary">
+            <span className="agent-elements-status-pill flex items-center gap-1 text-[0.7rem] font-medium font-sans text-nim-primary" data-tone="running">
               <span className="w-2.5 h-2.5 border-[1.5px] border-[color-mix(in_srgb,var(--nim-primary)_30%,transparent)] border-t-nim-primary rounded-full animate-spin" />
               Running <span ref={elapsedRef} className="tabular-nums" />
             </span>
           )}
           {!isRunning && !hasError && (
-            <span className="flex items-center gap-1 text-[0.7rem] font-medium font-sans text-nim-success">
+            <span className="agent-elements-status-pill flex items-center gap-1 text-[0.7rem] font-medium font-sans text-nim-success" data-tone="success">
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
                 <polyline points="20 6 9 17 4 12"></polyline>
               </svg>
             </span>
           )}
           {!isRunning && hasError && (
-            <span className="flex items-center gap-1 text-[0.7rem] font-medium font-sans text-nim-error">
+            <span className="agent-elements-status-pill flex items-center gap-1 text-[0.7rem] font-medium font-sans text-nim-error" data-tone="error">
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
                 <line x1="18" y1="6" x2="6" y2="18"></line>
                 <line x1="6" y1="6" x2="18" y2="18"></line>

@@ -21,6 +21,21 @@ import { MaterialSymbol, ProviderIcon } from '@nimbalyst/runtime';
 import { usePostHog } from 'posthog-js/react';
 import type { UnifiedDiffHeaderProps } from './DiffCapabilities';
 
+const diffHeaderRootClasses =
+  'unified-diff-header agent-elements-unified-diff-header agent-elements-tool-card sticky top-0 left-0 right-0 z-[100] border-b border-nim bg-nim-secondary shadow-[0_12px_32px_color-mix(in_srgb,var(--nim-text)_8%,transparent)] @container/diff-header';
+
+const diffHeaderContentClasses =
+  'unified-diff-header-content flex min-h-[48px] items-center justify-between gap-3 px-4 py-2 @[max-450px]/diff-header:flex-wrap @[max-450px]/diff-header:gap-2 @[max-450px]/diff-header:px-3 @[max-450px]/diff-header:py-2 @[max-350px]/diff-header:px-2 @[max-350px]/diff-header:py-1.5';
+
+const iconButtonClasses =
+  'unified-diff-header-nav-button agent-elements-unified-diff-header-icon-button flex h-7 w-7 items-center justify-center rounded-[6px] border border-nim bg-nim p-0 text-nim-muted cursor-pointer transition-[background-color,color,border-color,opacity] duration-150 hover:enabled:bg-nim-hover hover:enabled:text-nim disabled:opacity-40 disabled:cursor-not-allowed focus-visible:outline-2 focus-visible:outline-[var(--nim-primary)] focus-visible:outline-offset-1';
+
+const secondaryButtonClasses =
+  'unified-diff-header-button agent-elements-unified-diff-header-button flex items-center gap-2 rounded-[8px] border border-nim bg-nim px-3 py-1.5 text-[13px] font-medium leading-5 text-nim cursor-pointer whitespace-nowrap transition-[background-color,color,border-color,opacity] duration-150 hover:enabled:bg-nim-hover disabled:opacity-40 disabled:cursor-not-allowed focus-visible:outline-2 focus-visible:outline-[var(--nim-primary)] focus-visible:outline-offset-2 @[max-450px]/diff-header:px-2.5 @[max-350px]/diff-header:px-2 @[max-350px]/diff-header:py-[5px] @[max-350px]/diff-header:text-xs';
+
+const primaryButtonClasses =
+  'unified-diff-header-button agent-elements-unified-diff-header-button flex items-center gap-2 rounded-[8px] border border-[var(--nim-primary)] bg-[var(--nim-primary)] px-3 py-1.5 text-[13px] font-medium leading-5 text-[var(--nim-bg)] cursor-pointer whitespace-nowrap transition-[background-color,color,border-color,opacity] duration-150 hover:enabled:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed focus-visible:outline-2 focus-visible:outline-[var(--nim-primary)] focus-visible:outline-offset-2 @[max-450px]/diff-header:px-2.5 @[max-350px]/diff-header:px-2 @[max-350px]/diff-header:py-[5px] @[max-350px]/diff-header:text-xs';
+
 /**
  * Format a timestamp as a relative time string (e.g., "2 hours ago")
  */
@@ -107,18 +122,20 @@ export const UnifiedDiffHeader: React.FC<UnifiedDiffHeaderProps> = ({
 
       const sessionLink = (
         <button
-          className={`unified-diff-header-session-link flex items-center gap-1.5 py-0.5 px-1 -my-0.5 -mx-1 bg-transparent border-none rounded font-inherit text-[13px] text-[var(--nim-text)] transition-colors duration-150 min-w-0 overflow-hidden shrink ${canNavigate ? 'unified-diff-header-session-link--clickable cursor-pointer hover:bg-[var(--nim-bg-hover)]' : 'cursor-default'}`}
+          className={`unified-diff-header-session-link agent-elements-unified-diff-header-session-link flex min-w-0 shrink items-center gap-2 overflow-hidden rounded-[8px] border-0 bg-transparent px-2 py-1 text-[13px] text-nim transition-[background-color,color] duration-150 ${canNavigate ? 'unified-diff-header-session-link--clickable cursor-pointer hover:bg-nim-hover focus-visible:outline-2 focus-visible:outline-[var(--nim-primary)] focus-visible:outline-offset-1' : 'cursor-default'}`}
           onClick={canNavigate ? handleGoToSession : undefined}
           type="button"
           disabled={!canNavigate}
           title={canNavigate ? `Open "${sessionInfo.sessionTitle}" session` : undefined}
+          data-testid="agent-elements-unified-diff-header-session-link"
+          data-agent-elements-shell="unified-diff-header-session-link"
         >
           {provider ? (
-            <ProviderIcon provider={provider} size={18} className="unified-diff-header-session-icon shrink-0" />
+            <ProviderIcon provider={provider} size={18} className="unified-diff-header-session-icon agent-elements-unified-diff-header-session-icon shrink-0" />
           ) : (
-            <MaterialSymbol icon="smart_toy" size={18} className="unified-diff-header-session-icon shrink-0" />
+            <MaterialSymbol icon="smart_toy" size={18} className="unified-diff-header-session-icon agent-elements-unified-diff-header-session-icon shrink-0" />
           )}
-          <span className="unified-diff-header-session-name font-semibold text-[var(--nim-primary)] overflow-hidden text-ellipsis whitespace-nowrap @[max-350px]/diff-header:max-w-[120px]">{sessionInfo.sessionTitle}</span>
+          <span className="unified-diff-header-session-name overflow-hidden text-ellipsis whitespace-nowrap font-semibold text-[var(--nim-primary)] @[max-350px]/diff-header:max-w-[120px]">{sessionInfo.sessionTitle}</span>
           {canNavigate && (
             <MaterialSymbol icon="open_in_new" size={14} className="unified-diff-header-session-open-icon opacity-0 text-[var(--nim-text-faint)] transition-opacity duration-150 shrink-0 group-hover/session:opacity-100" />
           )}
@@ -126,7 +143,7 @@ export const UnifiedDiffHeader: React.FC<UnifiedDiffHeaderProps> = ({
       );
 
       return (
-        <div className="unified-diff-header-session flex items-center gap-1.5 text-[13px] text-[var(--nim-text)] min-w-0 overflow-hidden group/session">
+        <div className="unified-diff-header-session agent-elements-unified-diff-header-session flex min-w-0 items-center gap-2 overflow-hidden text-[13px] text-nim group/session">
           {sessionLink}
           {/*<span className="unified-diff-header-edit-text text-[var(--nim-text-muted)] shrink-0 @[max-550px]/diff-header:hidden">*/}
           {/*  edited {fileName || 'file'}*/}
@@ -142,18 +159,21 @@ export const UnifiedDiffHeader: React.FC<UnifiedDiffHeaderProps> = ({
 
     // Fallback to simple label with sparkle icon
     return (
-      <span className="unified-diff-header-label flex items-center gap-2 text-[13px] font-medium text-[var(--nim-text)]">
-        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" className="unified-diff-header-sparkle shrink-0">
-          <path d="M8 1L9 5L13 6L9 7L8 11L7 7L3 6L7 5L8 1Z" fill="currentColor"/>
-        </svg>
+      <span className="unified-diff-header-label agent-elements-unified-diff-header-label flex items-center gap-2 text-[13px] font-medium text-nim">
+        <MaterialSymbol icon="auto_awesome" size={16} className="unified-diff-header-sparkle shrink-0 text-[var(--nim-primary)]" />
         AI changes to {fileName || 'file'}
       </span>
     );
   };
 
   return (
-    <div className="unified-diff-header sticky top-0 left-0 right-0 z-[100] border-b border-[var(--nim-border)] shadow-[0_2px_4px_rgba(0,0,0,0.1)] dark:shadow-[0_2px_4px_rgba(0,0,0,0.3)] bg-[var(--nim-bg-secondary)] @container/diff-header">
-      <div className="unified-diff-header-content flex items-center justify-between py-2 px-4 gap-4 min-h-[48px] @[max-450px]/diff-header:flex-wrap @[max-450px]/diff-header:py-2 @[max-450px]/diff-header:px-3 @[max-450px]/diff-header:gap-2 @[max-350px]/diff-header:py-1.5 @[max-350px]/diff-header:px-2">
+    <div
+      className={diffHeaderRootClasses}
+      data-testid="agent-elements-unified-diff-header"
+      data-component="UnifiedDiffHeader"
+      data-agent-elements-shell="unified-diff-header"
+    >
+      <div className={diffHeaderContentClasses}>
         {/* Left section: Session info */}
         <div className="unified-diff-header-info flex items-center gap-3 shrink min-w-0 overflow-hidden @[max-450px]/diff-header:flex-[1_1_100%] @[max-450px]/diff-header:order-1">
           {renderSessionInfo()}
@@ -165,13 +185,17 @@ export const UnifiedDiffHeader: React.FC<UnifiedDiffHeaderProps> = ({
             <button
               onClick={changeGroups.onNavigatePrevious}
               aria-label="Previous change"
-              className="unified-diff-header-nav-button bg-transparent border border-[var(--nim-border)] rounded w-6 h-6 flex items-center justify-center cursor-pointer text-[var(--nim-text)] p-0 transition-colors duration-150 hover:enabled:bg-[var(--nim-bg-hover)] disabled:opacity-40 disabled:cursor-not-allowed"
+              className={iconButtonClasses}
+              type="button"
+              data-testid="agent-elements-unified-diff-header-previous"
+              data-agent-elements-shell="unified-diff-header-nav-button"
             >
-              <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-                <path d="M6 9L3 6L6 3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
+              <MaterialSymbol icon="chevron_left" size={18} />
             </button>
-            <span className="unified-diff-header-change-counter text-[13px] text-[var(--nim-text-muted)] min-w-[80px] text-center select-none @[max-350px]/diff-header:min-w-[60px] @[max-350px]/diff-header:text-xs">
+            <span
+              className="unified-diff-header-change-counter min-w-[80px] select-none text-center text-[13px] text-nim-muted @[max-350px]/diff-header:min-w-[60px] @[max-350px]/diff-header:text-xs"
+              data-testid="agent-elements-unified-diff-header-counter"
+            >
               {hasSelection
                 ? `${changeGroups.currentIndex! + 1} of ${changeGroups.count}`
                 : `${changeGroups.count} changes`}
@@ -179,11 +203,12 @@ export const UnifiedDiffHeader: React.FC<UnifiedDiffHeaderProps> = ({
             <button
               onClick={changeGroups.onNavigateNext}
               aria-label="Next change"
-              className="unified-diff-header-nav-button bg-transparent border border-[var(--nim-border)] rounded w-6 h-6 flex items-center justify-center cursor-pointer text-[var(--nim-text)] p-0 transition-colors duration-150 hover:enabled:bg-[var(--nim-bg-hover)] disabled:opacity-40 disabled:cursor-not-allowed"
+              className={iconButtonClasses}
+              type="button"
+              data-testid="agent-elements-unified-diff-header-next"
+              data-agent-elements-shell="unified-diff-header-nav-button"
             >
-              <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-                <path d="M6 3L9 6L6 9" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
+              <MaterialSymbol icon="chevron_right" size={18} />
             </button>
           </div>
         )}
@@ -194,53 +219,49 @@ export const UnifiedDiffHeader: React.FC<UnifiedDiffHeaderProps> = ({
           {hasChangeGroups && supportsPerChangeActions && (
             <>
               <button
-                className="unified-diff-header-button unified-diff-header-button-reject-single py-1.5 px-3 rounded-md text-[13px] font-medium cursor-pointer transition-all duration-150 border border-[var(--nim-border)] flex items-center gap-1.5 whitespace-nowrap bg-[var(--nim-bg)] text-[var(--nim-text)] hover:enabled:bg-[var(--nim-bg-hover)] hover:enabled:opacity-100 active:enabled:scale-[0.98] disabled:opacity-40 disabled:cursor-not-allowed @[max-450px]/diff-header:py-1.5 @[max-450px]/diff-header:px-2.5 @[max-350px]/diff-header:py-[5px] @[max-350px]/diff-header:px-2 @[max-350px]/diff-header:text-xs"
+                className={`${secondaryButtonClasses} unified-diff-header-button-reject-single`}
                 onClick={handleRejectCurrent}
                 title="Revert this change"
                 disabled={!hasSelection}
+                type="button"
+                data-testid="agent-elements-unified-diff-header-revert-current"
               >
-                <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                  <path d="M10 4L4 10M4 4L10 10" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-                </svg>
+                <MaterialSymbol icon="close" size={16} />
                 Revert
               </button>
               <button
-                className="unified-diff-header-button unified-diff-header-button-accept-single py-1.5 px-3 rounded-md text-[13px] font-medium cursor-pointer transition-all duration-150 border border-[var(--nim-primary)] flex items-center gap-1.5 whitespace-nowrap bg-[var(--nim-primary)] text-white hover:enabled:opacity-90 active:enabled:scale-[0.98] disabled:opacity-40 disabled:cursor-not-allowed @[max-450px]/diff-header:py-1.5 @[max-450px]/diff-header:px-2.5 @[max-350px]/diff-header:py-[5px] @[max-350px]/diff-header:px-2 @[max-350px]/diff-header:text-xs"
+                className={`${primaryButtonClasses} unified-diff-header-button-accept-single`}
                 onClick={handleAcceptCurrent}
                 title="Keep this change"
                 disabled={!hasSelection}
+                type="button"
+                data-testid="agent-elements-unified-diff-header-keep-current"
               >
-                <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                  <path d="M12 3L5 10L2 7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                </svg>
+                <MaterialSymbol icon="check" size={16} />
                 Keep
               </button>
             </>
           )}
           {/* All buttons (always shown) */}
           <button
-            className="unified-diff-header-button unified-diff-header-button-reject py-1.5 px-3 rounded-md text-[13px] font-medium cursor-pointer transition-all duration-150 border border-[var(--nim-border)] flex items-center gap-1.5 whitespace-nowrap bg-[var(--nim-bg)] text-[var(--nim-text)] hover:enabled:bg-[var(--nim-bg-hover)] hover:enabled:opacity-100 active:enabled:scale-[0.98] disabled:opacity-40 disabled:cursor-not-allowed @[max-450px]/diff-header:py-1.5 @[max-450px]/diff-header:px-2.5 @[max-350px]/diff-header:py-[5px] @[max-350px]/diff-header:px-2 @[max-350px]/diff-header:text-xs"
+            className={`${secondaryButtonClasses} unified-diff-header-button-reject`}
             onClick={handleRejectAll}
             type="button"
             data-testid="diff-revert-all"
           >
             {hasChangeGroups && supportsPerChangeActions && (
-              <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                <path d="M10 4L4 10M4 4L10 10" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-              </svg>
+              <MaterialSymbol icon="close" size={16} />
             )}
             Revert{hasChangeGroups && supportsPerChangeActions ? ' All' : ''}
           </button>
           <button
-            className="unified-diff-header-button unified-diff-header-button-accept py-1.5 px-3 rounded-md text-[13px] font-medium cursor-pointer transition-all duration-150 border border-[var(--nim-primary)] flex items-center gap-1.5 whitespace-nowrap bg-[var(--nim-primary)] text-white hover:enabled:opacity-90 active:enabled:scale-[0.98] disabled:opacity-40 disabled:cursor-not-allowed @[max-450px]/diff-header:py-1.5 @[max-450px]/diff-header:px-2.5 @[max-350px]/diff-header:py-[5px] @[max-350px]/diff-header:px-2 @[max-350px]/diff-header:text-xs"
+            className={`${primaryButtonClasses} unified-diff-header-button-accept`}
             onClick={handleAcceptAll}
             type="button"
             data-testid="diff-keep-all"
           >
             {hasChangeGroups && supportsPerChangeActions && (
-              <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                <path d="M12 3L5 10L2 7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
+              <MaterialSymbol icon="check" size={16} />
             )}
             Keep{hasChangeGroups && supportsPerChangeActions ? ' All' : ''}
           </button>

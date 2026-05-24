@@ -18,6 +18,10 @@ interface PendingVoiceCommandProps {
   onSubmit: (prompt: string, sessionId: string, workspacePath: string, codingAgentPrompt?: { prepend?: string; append?: string }) => void;
 }
 
+const iconButtonClass = 'inline-flex h-7 w-7 cursor-pointer items-center justify-center rounded-[var(--an-input-border-radius)] border border-transparent bg-transparent p-0 text-[var(--an-foreground-muted)] transition-[background-color,border-color,color] duration-150 hover:border-[var(--an-border-color)] hover:bg-[var(--an-background-tertiary)] hover:text-[var(--an-foreground)] focus-visible:ring-2 focus-visible:ring-[var(--an-input-focus-outline)]';
+const secondaryButtonClass = 'inline-flex cursor-pointer items-center gap-[var(--an-spacing-xxs)] rounded-[var(--an-input-border-radius)] border border-[var(--an-border-color)] bg-transparent px-[var(--an-spacing-sm)] py-[var(--an-spacing-xxs)] text-[12px] font-medium text-[var(--an-foreground-muted)] transition-[background-color,border-color,color] duration-150 hover:border-[var(--an-primary-color)] hover:bg-[var(--an-background-tertiary)] hover:text-[var(--an-foreground)] focus-visible:ring-2 focus-visible:ring-[var(--an-input-focus-outline)]';
+const primaryButtonClass = 'inline-flex cursor-pointer items-center gap-[var(--an-spacing-xxs)] rounded-[var(--an-input-border-radius)] border border-[var(--an-send-button-bg)] bg-[var(--an-send-button-bg)] px-[var(--an-spacing-md)] py-[var(--an-spacing-xxs)] text-[12px] font-medium text-[var(--an-send-button-color)] transition-[background-color,border-color,color] duration-150 hover:border-[var(--an-primary-color)] hover:bg-[color-mix(in_srgb,var(--an-primary-color)_90%,var(--an-background))] focus-visible:ring-2 focus-visible:ring-[var(--an-input-focus-outline)]';
+
 export function PendingVoiceCommand({ sessionId, onSubmit }: PendingVoiceCommandProps) {
   const [pendingCommand, setPendingCommand] = useAtom(pendingVoiceCommandAtom);
   const [remainingMs, setRemainingMs] = useState<number>(0);
@@ -131,29 +135,41 @@ export function PendingVoiceCommand({ sessionId, onSubmit }: PendingVoiceCommand
 
   return (
     <div
-      className="bg-nim-tertiary border border-nim-primary rounded-lg mb-2 overflow-hidden shadow-[0_2px_8px_rgba(59,130,246,0.15)]"
+      className="pending-voice-command agent-elements-pending-voice-command mb-[var(--an-spacing-sm)] overflow-hidden rounded-[var(--an-tool-border-radius)] border border-[var(--an-border-color)] bg-[var(--an-background-secondary)] text-[var(--an-foreground)] [container-type:inline-size]"
+      data-agent-elements-shell="pending-voice-command"
+      data-component="UnifiedAIPendingVoiceCommand"
+      data-session-id={pendingCommand.sessionId}
+      data-testid="agent-elements-pending-voice-command"
     >
-      {/* Header */}
       <div
-        className="flex items-center justify-between py-2 px-3 bg-[rgba(59,130,246,0.1)] border-b border-[rgba(59,130,246,0.2)]"
+        className="pending-voice-command-header agent-elements-pending-voice-command-header flex items-center justify-between border-b border-[var(--an-border-color)] bg-[var(--an-background-tertiary)] px-[var(--an-spacing-md)] py-[var(--an-spacing-sm)]"
+        data-agent-elements-shell="pending-voice-command-header"
+        data-testid="agent-elements-pending-voice-command-header"
       >
         <div
-          className="flex items-center gap-2 text-[13px] font-medium text-nim-primary"
+          className="flex min-w-0 items-center gap-[var(--an-spacing-xs)] text-[13px] font-medium text-[var(--an-foreground)]"
         >
-          <MaterialSymbol icon="mic" size={18} />
-          Voice Command
+          <span className="agent-elements-status-pill shrink-0" data-tone={isEditing ? 'warning' : 'running'}>
+            <MaterialSymbol icon="mic" size={14} />
+          </span>
+          <span className="truncate">Voice Command</span>
         </div>
         <button
           onClick={handleCancel}
-          className="flex items-center justify-center w-6 h-6 border-none bg-transparent text-nim-muted cursor-pointer rounded transition-all duration-150 hover:bg-red-500/10 hover:text-nim-error"
+          className={iconButtonClass}
+          aria-label="Cancel voice command"
           title="Cancel (Esc)"
+          type="button"
         >
           <MaterialSymbol icon="close" size={18} />
         </button>
       </div>
 
-      {/* Body - editable textarea */}
-      <div className="p-3">
+      <div
+        className="pending-voice-command-body agent-elements-pending-voice-command-body p-[var(--an-spacing-md)]"
+        data-agent-elements-shell="pending-voice-command-body"
+        data-testid="agent-elements-pending-voice-command-body"
+      >
         <textarea
           ref={textareaRef}
           value={editedPrompt}
@@ -161,28 +177,32 @@ export function PendingVoiceCommand({ sessionId, onSubmit }: PendingVoiceCommand
           onFocus={() => setIsEditing(true)}
           onBlur={handleTextareaBlur}
           onKeyDown={handleKeyDown}
-          className="w-full min-h-[60px] py-2.5 px-3 border border-nim rounded-md bg-nim-secondary text-nim font-inherit text-sm leading-normal resize-none transition-[border-color] duration-150"
+          className="pending-voice-command-input min-h-[64px] w-full resize-none rounded-[var(--an-input-border-radius)] border border-[var(--an-border-color)] bg-[var(--an-background)] px-[var(--an-spacing-md)] py-[var(--an-spacing-sm)] text-[13px] leading-relaxed text-[var(--an-foreground)] outline-none transition-[background-color,border-color] duration-150 placeholder:text-[var(--an-input-placeholder-color)] focus:border-[var(--an-primary-color)] focus:ring-2 focus:ring-[var(--an-input-focus-outline)]"
           placeholder="Voice command..."
         />
       </div>
 
-      {/* Footer */}
       <div
-        className="flex items-center justify-between py-2 px-3 border-t border-nim"
+        className="pending-voice-command-footer agent-elements-pending-voice-command-footer flex flex-wrap items-center justify-between gap-[var(--an-spacing-sm)] border-t border-[var(--an-border-color)] px-[var(--an-spacing-md)] py-[var(--an-spacing-sm)]"
+        data-agent-elements-shell="pending-voice-command-footer"
+        data-testid="agent-elements-pending-voice-command-footer"
       >
-        {/* Countdown section */}
         <div
-          className="flex items-center gap-2.5"
+          className="pending-voice-command-countdown agent-elements-pending-voice-command-countdown flex min-w-0 items-center gap-[var(--an-spacing-sm)]"
+          data-agent-elements-shell="pending-voice-command-countdown"
+          data-testid="agent-elements-pending-voice-command-countdown"
         >
-          {/* Circular countdown */}
-          <div className="relative w-8 h-8">
+          <div
+            className="pending-voice-command-countdown-ring relative h-8 w-8 shrink-0"
+            data-testid="agent-elements-pending-voice-command-countdown-ring"
+          >
             <svg width="32" height="32" viewBox="0 0 32 32" className="-rotate-90">
               <circle
                 cx="16"
                 cy="16"
                 r="12"
                 fill="none"
-                stroke="var(--nim-border)"
+                stroke="var(--an-border-color)"
                 strokeWidth="3"
               />
               <circle
@@ -190,7 +210,7 @@ export function PendingVoiceCommand({ sessionId, onSubmit }: PendingVoiceCommand
                 cy="16"
                 r="12"
                 fill="none"
-                stroke={isEditing ? 'var(--nim-text-faint)' : 'var(--nim-primary)'}
+                stroke={isEditing ? 'var(--an-foreground-muted)' : 'var(--an-primary-color)'}
                 strokeWidth="3"
                 strokeLinecap="round"
                 strokeDasharray={circumference}
@@ -199,29 +219,34 @@ export function PendingVoiceCommand({ sessionId, onSubmit }: PendingVoiceCommand
               />
             </svg>
           </div>
-          <span className="text-[13px] font-medium text-nim-muted">
+          <span className="agent-elements-status-pill min-w-0 font-mono" data-tone={isEditing ? 'warning' : 'running'}>
             {isEditing ? (
               'Paused - editing'
             ) : (
-              <>Sending in <span className="text-nim tabular-nums">{(remainingMs / 1000).toFixed(1)}s</span></>
+              <>Sending in <span className="tabular-nums text-[var(--an-foreground)]">{(remainingMs / 1000).toFixed(1)}s</span></>
             )}
           </span>
         </div>
 
-        {/* Action buttons */}
         <div
-          className="flex items-center gap-2"
+          className="pending-voice-command-actions agent-elements-pending-voice-command-actions flex items-center gap-[var(--an-spacing-xs)]"
+          data-agent-elements-shell="pending-voice-command-actions"
+          data-testid="agent-elements-pending-voice-command-actions"
         >
           <button
             onClick={handleEditClick}
-            className="flex items-center gap-1.5 py-1.5 px-3 border border-nim rounded-md bg-transparent text-nim-muted text-[13px] font-medium cursor-pointer transition-all duration-150 hover:bg-nim-secondary hover:border-nim-focus hover:text-nim"
+            className={secondaryButtonClass}
+            aria-label="Edit"
+            type="button"
           >
             <MaterialSymbol icon="edit" size={16} />
             Edit
           </button>
           <button
             onClick={handleSubmit}
-            className="flex items-center gap-1.5 py-1.5 px-3.5 border-none rounded-md bg-nim-primary text-white text-[13px] font-medium cursor-pointer transition-all duration-150 hover:bg-nim-primary-hover"
+            className={primaryButtonClass}
+            aria-label="Send Now"
+            type="button"
           >
             Send Now
             <MaterialSymbol icon="arrow_forward" size={16} />

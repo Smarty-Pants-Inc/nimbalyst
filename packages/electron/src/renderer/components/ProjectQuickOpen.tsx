@@ -142,45 +142,67 @@ export const ProjectQuickOpen: React.FC<ProjectQuickOpenProps> = ({
   return (
     <>
       <div
-        className="project-quick-open-backdrop fixed inset-0 bg-black/50 z-[99998] nim-animate-fade-in"
+        className="project-quick-open-backdrop agent-elements-project-quick-open-backdrop fixed inset-0 z-[99998] nim-animate-fade-in bg-[color-mix(in_srgb,var(--nim-text)_36%,transparent)]"
         onClick={onClose}
+        data-testid="agent-elements-project-quick-open-backdrop"
+        data-agent-elements-shell="project-quick-open-backdrop"
       />
-      <div className="project-quick-open-modal fixed top-[20%] left-1/2 -translate-x-1/2 w-[90%] max-w-[600px] max-h-[60vh] flex flex-col overflow-hidden rounded-lg z-[99999] bg-[var(--nim-bg)] border border-[var(--nim-border)] shadow-[0_20px_60px_rgba(0,0,0,0.3)]">
-        <div className="project-quick-open-header p-3 border-b border-[var(--nim-border)]">
-          <div className="text-[11px] font-medium text-[var(--nim-text-faint)] uppercase tracking-wide mb-2">
+      <div
+        className="project-quick-open-modal agent-elements-project-quick-open agent-elements-tool-card fixed top-[18%] left-1/2 -translate-x-1/2 w-[90vw] max-w-[640px] max-h-[62vh] !gap-0 !p-0 flex flex-col overflow-hidden rounded-[var(--an-border-radius)] z-[99999] bg-[var(--an-background)] border border-[var(--an-border-color)] shadow-[0_20px_60px_color-mix(in_srgb,var(--nim-text)_18%,transparent)]"
+        data-testid="agent-elements-project-quick-open"
+        data-component="ProjectQuickOpen"
+        data-agent-elements-shell="project-quick-open"
+      >
+        <div
+          className="project-quick-open-header agent-elements-project-quick-open-header p-[var(--an-spacing-lg)] border-b border-[var(--an-border-color)]"
+          data-testid="agent-elements-project-quick-open-header"
+          data-agent-elements-shell="project-quick-open-header"
+        >
+          <div className="project-quick-open-title agent-elements-project-quick-open-title text-[12px] font-medium text-[var(--an-foreground-muted)] mb-2">
             Projects
           </div>
           <input
             ref={searchInputRef}
             type="text"
-            className="project-quick-open-search w-full py-2 px-3 text-base rounded-md outline-none box-border bg-[var(--nim-bg-secondary)] border border-[var(--nim-border)] text-[var(--nim-text)] focus:border-[#007aff] focus:shadow-[0_0_0_3px_rgba(0,122,255,0.1)]"
+            className="project-quick-open-search agent-elements-project-quick-open-input w-full py-2 px-3 text-sm rounded-[var(--an-input-border-radius)] outline-none box-border bg-[var(--an-input-background)] border border-[var(--an-input-border-color)] text-[var(--an-input-color)] placeholder:text-[var(--an-input-placeholder-color)] focus:border-[var(--an-input-focus-outline)] focus:ring-2 focus:ring-[var(--an-input-focus-outline)]"
             placeholder="Search projects..."
             value={searchQuery}
             onChange={(e) => {
               setSearchQuery(e.target.value);
               setSelectedIndex(0);
             }}
+            data-testid="agent-elements-project-quick-open-input"
+            data-agent-elements-shell="project-quick-open-input"
           />
         </div>
 
-        <div className="project-quick-open-results flex-1 overflow-y-auto min-h-[200px]">
+        <div
+          className="project-quick-open-results agent-elements-project-quick-open-results flex-1 overflow-y-auto min-h-[200px] py-1"
+          data-testid="agent-elements-project-quick-open-results"
+          data-agent-elements-shell="project-quick-open-results"
+        >
           {displayProjects.length === 0 && (
-            <div className="project-quick-open-empty p-10 text-center text-[var(--nim-text-faint)]">
+            <div
+              className="project-quick-open-empty agent-elements-project-quick-open-empty p-10 text-center text-[var(--an-foreground-subtle)]"
+              data-testid="agent-elements-project-quick-open-empty"
+              data-agent-elements-shell="project-quick-open-empty"
+            >
               {searchQuery ? 'No projects found' : 'No recent projects'}
             </div>
           )}
           {displayProjects.length > 0 && (
             <ul
-              className={`project-quick-open-list list-none m-0 p-0 ${mouseHasMoved ? '' : 'pointer-events-none'}`}
+              className={`project-quick-open-list agent-elements-project-quick-open-list list-none m-0 p-0 ${mouseHasMoved ? '' : 'pointer-events-none'}`}
               ref={resultsListRef}
+              data-agent-elements-shell="project-quick-open-list"
             >
               {displayProjects.map((project, index) => (
                 <li
                   key={project.path}
-                  className={`project-quick-open-item flex items-center gap-3 py-2.5 px-4 cursor-pointer border-l-[3px] border-transparent transition-all duration-100 hover:bg-[var(--nim-bg-hover)] ${
+                  className={`project-quick-open-item agent-elements-project-quick-open-item flex items-center gap-3 mx-2 my-1 py-2.5 px-3 cursor-pointer rounded-[var(--an-tool-border-radius)] border transition-[background-color,border-color,box-shadow] duration-150 ease-out ${
                     index === selectedIndex
-                      ? 'selected bg-[rgba(0,122,255,0.1)] border-l-[#007aff]'
-                      : ''
+                      ? 'selected bg-[var(--an-background-tertiary)] border-[var(--an-tool-border-color)] shadow-[inset_0_0_0_1px_color-mix(in_srgb,var(--an-primary-color)_16%,transparent)]'
+                      : 'border-transparent hover:bg-[var(--an-background-tertiary)] hover:border-[var(--an-tool-border-color)]'
                   }`}
                   onClick={() => handleProjectSelect(project)}
                   onMouseEnter={() => {
@@ -188,29 +210,50 @@ export const ProjectQuickOpen: React.FC<ProjectQuickOpenProps> = ({
                       setSelectedIndex(index);
                     }
                   }}
+                  data-testid={`agent-elements-project-quick-open-item-${index}`}
+                  data-agent-elements-shell="project-quick-open-result"
+                  data-selected={index === selectedIndex ? 'true' : 'false'}
+                  data-current={project.isCurrent ? 'true' : 'false'}
+                  data-open={project.isOpen ? 'true' : 'false'}
                 >
-                  <div className="shrink-0 flex items-center justify-center w-5 h-5 text-[var(--nim-text-muted)]">
+                  <div
+                    className="project-quick-open-item-icon agent-elements-project-quick-open-item-icon shrink-0 flex items-center justify-center w-7 h-7 rounded-[8px] border border-[var(--an-tool-border-color)] bg-[var(--an-background-secondary)] text-[var(--an-foreground-muted)]"
+                    data-agent-elements-shell="project-quick-open-icon"
+                  >
                     <MaterialSymbol
                       icon="folder"
                       size={16}
                       fill={project.isOpen}
                     />
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="text-sm font-medium text-[var(--nim-text)] flex items-center gap-2 overflow-hidden text-ellipsis whitespace-nowrap">
+                  <div className="project-quick-open-item-content agent-elements-project-quick-open-item-content flex-1 min-w-0">
+                    <div
+                      className="project-quick-open-item-name agent-elements-project-quick-open-item-name text-sm font-medium text-[var(--an-foreground)] flex items-center gap-2 overflow-hidden text-ellipsis whitespace-nowrap"
+                      data-testid={`agent-elements-project-quick-open-item-name-${index}`}
+                      data-agent-elements-shell="project-quick-open-item-name"
+                    >
                       {project.name}
                       {project.isCurrent && (
-                        <span className="shrink-0 text-[10px] py-0.5 px-1.5 rounded-[3px] font-semibold bg-[var(--nim-primary)] text-white">
+                        <span
+                          className="project-quick-open-badge agent-elements-status-pill shrink-0 text-[10px]"
+                          data-agent-elements-shell="project-quick-open-current-badge"
+                        >
                           Current
                         </span>
                       )}
                       {project.isOpen && !project.isCurrent && (
-                        <span className="shrink-0 text-[10px] py-0.5 px-1.5 rounded-[3px] font-semibold bg-[var(--nim-success)] text-white">
+                        <span
+                          className="project-quick-open-badge agent-elements-status-pill shrink-0 text-[10px]"
+                          data-agent-elements-shell="project-quick-open-open-badge"
+                        >
                           Open
                         </span>
                       )}
                     </div>
-                    <div className="text-xs text-[var(--nim-text-faint)] mt-0.5 overflow-hidden text-ellipsis whitespace-nowrap direction-rtl text-left">
+                    <div
+                      className="project-quick-open-item-path agent-elements-project-quick-open-item-path text-xs text-[var(--an-foreground-subtle)] mt-0.5 overflow-hidden text-ellipsis whitespace-nowrap direction-rtl text-left"
+                      data-agent-elements-shell="project-quick-open-item-path"
+                    >
                       {project.path}
                     </div>
                   </div>
@@ -220,22 +263,26 @@ export const ProjectQuickOpen: React.FC<ProjectQuickOpenProps> = ({
           )}
         </div>
 
-        <div className="project-quick-open-footer flex justify-between py-2 px-4 border-t border-[var(--nim-border)] bg-[var(--nim-bg-secondary)]">
+        <div
+          className="project-quick-open-footer agent-elements-project-quick-open-footer flex justify-between py-2 px-4 border-t border-[var(--an-border-color)] bg-[var(--an-background-secondary)]"
+          data-testid="agent-elements-project-quick-open-footer"
+          data-agent-elements-shell="project-quick-open-footer"
+        >
           <div className="flex gap-4">
-            <span className="text-[11px] text-[var(--nim-text-faint)] flex items-center gap-1">
-              <kbd className="py-0.5 px-1.5 rounded-[3px] font-mono text-[10px] bg-[var(--nim-bg)] border border-[var(--nim-border)] text-[var(--nim-text)]">
+            <span className="project-quick-open-hint agent-elements-project-quick-open-hint text-[11px] text-[var(--an-foreground-subtle)] flex items-center gap-1">
+              <kbd className="agent-elements-project-quick-open-kbd py-0.5 px-1.5 rounded-[5px] font-mono text-[10px] bg-[var(--an-background)] border border-[var(--an-border-color)] text-[var(--an-foreground)]">
                 Up/Down
               </kbd>{' '}
               Navigate
             </span>
-            <span className="text-[11px] text-[var(--nim-text-faint)] flex items-center gap-1">
-              <kbd className="py-0.5 px-1.5 rounded-[3px] font-mono text-[10px] bg-[var(--nim-bg)] border border-[var(--nim-border)] text-[var(--nim-text)]">
+            <span className="project-quick-open-hint agent-elements-project-quick-open-hint text-[11px] text-[var(--an-foreground-subtle)] flex items-center gap-1">
+              <kbd className="agent-elements-project-quick-open-kbd py-0.5 px-1.5 rounded-[5px] font-mono text-[10px] bg-[var(--an-background)] border border-[var(--an-border-color)] text-[var(--an-foreground)]">
                 Enter
               </kbd>{' '}
               Open
             </span>
-            <span className="text-[11px] text-[var(--nim-text-faint)] flex items-center gap-1">
-              <kbd className="py-0.5 px-1.5 rounded-[3px] font-mono text-[10px] bg-[var(--nim-bg)] border border-[var(--nim-border)] text-[var(--nim-text)]">
+            <span className="project-quick-open-hint agent-elements-project-quick-open-hint text-[11px] text-[var(--an-foreground-subtle)] flex items-center gap-1">
+              <kbd className="agent-elements-project-quick-open-kbd py-0.5 px-1.5 rounded-[5px] font-mono text-[10px] bg-[var(--an-background)] border border-[var(--an-border-color)] text-[var(--an-foreground)]">
                 Esc
               </kbd>{' '}
               Close

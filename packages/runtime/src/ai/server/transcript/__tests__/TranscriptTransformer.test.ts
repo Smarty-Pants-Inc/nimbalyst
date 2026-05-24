@@ -1225,6 +1225,7 @@ describe('TranscriptTransformer', () => {
 
   describe('Codex reasoning and todo_list transformation', () => {
     const CODEX_PROVIDER = 'openai-codex';
+    const CODEX_ACP_PROVIDER = 'openai-codex-acp';
 
     it('transforms Codex reasoning events into assistant thinking messages', async () => {
       const rawStore = createMockRawStore([
@@ -1258,7 +1259,36 @@ describe('TranscriptTransformer', () => {
       expect(reasoningEvent?.searchableText).toBe('');
     });
 
-    it('transforms Codex todo_list items as markdown assistant messages', async () => {
+    it('transforms Codex ACP thought chunks into assistant thinking messages', async () => {
+      const rawStore = createMockRawStore([
+        makeRawMessage({
+          id: 1,
+          sessionId: SESSION_ID,
+          source: 'openai-codex-acp',
+          direction: 'output',
+          content: JSON.stringify({
+            type: 'session/update',
+            sessionId: SESSION_ID,
+            update: {
+              sessionUpdate: 'agent_thought_chunk',
+              content: { type: 'text', text: 'Reason about the ACP patch.' },
+            },
+          }),
+        }),
+      ]);
+      const transformer = new TranscriptTransformer(rawStore, transcriptStore, metadataStore);
+
+      await transformer.ensureTransformed(SESSION_ID, CODEX_ACP_PROVIDER);
+
+      const events = await transcriptStore.getSessionEvents(SESSION_ID);
+      const assistantEvents = events.filter((e) => e.eventType === 'assistant_message');
+      expect(assistantEvents).toHaveLength(1);
+      const payload = assistantEvents[0].payload as Record<string, unknown>;
+      expect(payload.thinking).toBe('Reason about the ACP patch.');
+      expect(assistantEvents[0].searchableText).toBe('');
+    });
+
+    it('transforms Codex todo_list items as structured todo tool calls', async () => {
       const rawStore = createMockRawStore([
         makeRawMessage({
           id: 1,
@@ -1284,14 +1314,23 @@ describe('TranscriptTransformer', () => {
       await transformer.ensureTransformed(SESSION_ID, CODEX_PROVIDER);
 
       const events = await transcriptStore.getSessionEvents(SESSION_ID);
-      const assistantEvents = events.filter((e) => e.eventType === 'assistant_message');
-      expect(assistantEvents.length).toBeGreaterThanOrEqual(1);
-      const todoEvent = assistantEvents.find(
-        (e) => e.searchableText?.includes('- [x] Read the file'),
-      );
+      const todoEvent = events.find((e) => {
+        const payload = e.payload as Record<string, unknown>;
+        return e.eventType === 'tool_call' && payload.toolName === 'todo_list';
+      });
       expect(todoEvent).toBeDefined();
-      expect(todoEvent!.searchableText).toContain('- [ ] Fix the bug');
-      expect(todoEvent!.searchableText).toContain('- [ ] Write tests');
+      const payload = todoEvent!.payload as {
+        arguments: { items: Array<{ content: string; status: string }> };
+        status: string;
+        result?: string;
+      };
+      expect(payload.status).toBe('completed');
+      expect(payload.result).toBe('Todo list updated.');
+      expect(payload.arguments.items).toEqual([
+        { id: 'todo-0', content: 'Read the file', status: 'completed' },
+        { id: 'todo-1', content: 'Fix the bug', status: 'pending' },
+        { id: 'todo-2', content: 'Write tests', status: 'pending' },
+      ]);
     });
 
     it('skips todo_list with empty items array', async () => {

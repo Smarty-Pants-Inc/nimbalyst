@@ -36,7 +36,7 @@ import {
   globalSessionActivityAtom,
   projectActivitySummaryAtom,
 } from '../store/atoms/sessionActivity';
-import { generateWorkspaceAccentColor } from './WorkspaceSummaryHeader';
+import { generateWorkspaceAccentColor } from './workspaceAccent';
 import './ProjectRail.css';
 
 const REVEAL_LABEL = (() => {
@@ -54,6 +54,10 @@ function projectInitials(name: string): string {
     return (words[0][0] + words[1][0]).toUpperCase();
   }
   return trimmed.slice(0, 2).toUpperCase();
+}
+
+function toAgentElementsId(value: string): string {
+  return value.replace(/[^a-zA-Z0-9_-]+/g, '-');
 }
 
 interface ProjectRailIconProps {
@@ -123,6 +127,7 @@ function ProjectRailIcon({
   // badge to keep the rail quiet.
   const showBadge = !isActive && (processingCount > 0 || unreadCount > 0);
   const badgeLabel = processingCount > 0 ? `${processingCount}` : unreadCount > 0 ? `${unreadCount}` : '';
+  const agentElementsId = toAgentElementsId(project.path);
 
   // Wrapper is a non-interactive container so the activate button and the
   // close button can sit as siblings. Nesting a button inside a button is
@@ -130,24 +135,35 @@ function ProjectRailIcon({
   return (
     <div
       ref={tooltipRefs.setReference}
-      className={className}
+      className={`${className} agent-elements-project-rail-item`}
       onContextMenu={handleContextMenu}
       data-testid="project-rail-item"
+      data-component="ProjectRailIcon"
+      data-agent-elements-shell="project-rail-item"
+      data-agent-elements-id={agentElementsId}
+      data-active={isActive ? 'true' : 'false'}
+      data-processing-count={processingCount}
+      data-unread-count={unreadCount}
       data-project-path={project.path}
       style={{ ['--rail-item-accent' as any]: accentColor }}
       {...getTooltipRefProps()}
     >
       <button
         type="button"
-        className="project-rail-item-main"
+        className="project-rail-item-main agent-elements-project-rail-avatar"
         onClick={handleClick}
+        data-testid={`agent-elements-project-rail-activate-${agentElementsId}`}
+        data-agent-elements-shell="project-rail-avatar"
         aria-label={`Switch to project ${project.name}`}
         aria-current={isActive ? 'true' : undefined}
       >
         {projectInitials(project.name)}
         {showBadge && (
           <span
-            className="project-rail-item-badge"
+            className="project-rail-item-badge agent-elements-project-rail-badge"
+            data-testid={`agent-elements-project-rail-badge-${agentElementsId}`}
+            data-agent-elements-shell="project-rail-badge"
+            data-tone={processingCount > 0 ? 'running' : 'unread'}
             aria-label={processingCount > 0 ? `${processingCount} streaming session(s)` : `${unreadCount} unread`}
           >
             {badgeLabel}
@@ -156,8 +172,10 @@ function ProjectRailIcon({
       </button>
       <button
         type="button"
-        className="project-rail-item-close"
+        className="project-rail-item-close agent-elements-project-rail-icon-button"
         onClick={handleClose}
+        data-testid={`agent-elements-project-rail-close-${agentElementsId}`}
+        data-agent-elements-shell="project-rail-close"
         aria-label={`Close ${project.name}`}
       >
         ×
@@ -166,8 +184,9 @@ function ProjectRailIcon({
         <FloatingPortal>
           <div
             ref={tooltipRefs.setFloating}
-            className="project-rail-tooltip"
+            className="project-rail-tooltip agent-elements-project-rail-tooltip"
             style={tooltipFloatingStyles}
+            data-agent-elements-shell="project-rail-tooltip"
             {...getTooltipFloatingProps()}
           >
             <span className="project-rail-tooltip-name">{project.name}</span>
@@ -402,7 +421,13 @@ export function ProjectRail() {
   if (!isMultiProjectMode) return null;
 
   return (
-    <nav className="project-rail" data-testid="project-rail" aria-label="Open projects">
+    <nav
+      className="project-rail agent-elements-project-rail"
+      data-testid="project-rail"
+      data-component="ProjectRail"
+      data-agent-elements-shell="project-rail"
+      aria-label="Open projects"
+    >
       {openProjects.map((project) => {
         const activity = activitySummary.get(project.path);
         return (
@@ -418,14 +443,21 @@ export function ProjectRail() {
           />
         );
       })}
-      {openProjects.length > 0 && <div className="project-rail-divider" aria-hidden="true" />}
+      {openProjects.length > 0 && (
+        <div
+          className="project-rail-divider agent-elements-project-rail-divider"
+          data-agent-elements-shell="project-rail-divider"
+          aria-hidden="true"
+        />
+      )}
       <button
         ref={addButtonRef}
         type="button"
-        className="project-rail-add"
+        className="project-rail-add agent-elements-project-rail-add"
         onClick={handleOpenAddMenu}
         disabled={atCap}
         data-testid="project-rail-add"
+        data-agent-elements-shell="project-rail-add"
         aria-label="Add project to rail"
         {...getAddTooltipRefProps()}
       >
@@ -435,8 +467,9 @@ export function ProjectRail() {
         <FloatingPortal>
           <div
             ref={addTooltipRefs.setFloating}
-            className="project-rail-tooltip"
+            className="project-rail-tooltip agent-elements-project-rail-tooltip"
             style={addTooltipFloatingStyles}
+            data-agent-elements-shell="project-rail-tooltip"
             {...getAddTooltipFloatingProps()}
           >
             {atCap ? 'Rail full (8 projects max)' : 'Add project'}
@@ -448,14 +481,16 @@ export function ProjectRail() {
         <FloatingPortal>
           <div
             ref={addRefs.setFloating}
-            className="project-rail-context-menu project-rail-add-menu"
+            className="project-rail-context-menu project-rail-add-menu agent-elements-project-rail-menu agent-elements-tool-card"
             style={addFloatingStyles}
             data-testid="project-rail-add-menu"
+            data-agent-elements-shell="project-rail-add-menu"
             {...getAddFloatingProps()}
           >
             <button
               type="button"
-              className="project-rail-context-menu-item"
+              className="project-rail-context-menu-item agent-elements-project-rail-menu-item"
+              data-agent-elements-shell="project-rail-menu-item"
               onClick={() => {
                 setAddMenuOpen(false);
                 handlePickFolder();
@@ -465,13 +500,19 @@ export function ProjectRail() {
             </button>
             {filteredRecents.length > 0 && (
               <>
-                <div className="project-rail-context-menu-divider" />
-                <div className="project-rail-context-menu-heading">Recent projects</div>
+                <div
+                  className="project-rail-context-menu-divider agent-elements-project-rail-menu-divider"
+                  data-agent-elements-shell="project-rail-menu-divider"
+                />
+                <div className="project-rail-context-menu-heading agent-elements-project-rail-menu-heading">
+                  Recent projects
+                </div>
                 {filteredRecents.map((recent) => (
                   <button
                     key={recent.path}
                     type="button"
-                    className="project-rail-context-menu-item project-rail-context-menu-item-recent"
+                    className="project-rail-context-menu-item project-rail-context-menu-item-recent agent-elements-project-rail-menu-item"
+                    data-agent-elements-shell="project-rail-recent-project"
                     onClick={() => {
                       setAddMenuOpen(false);
                       addProjectByPath(recent.path);
@@ -492,29 +533,36 @@ export function ProjectRail() {
         <FloatingPortal>
           <div
             ref={refs.setFloating}
-            className="project-rail-context-menu"
+            className="project-rail-context-menu agent-elements-project-rail-menu agent-elements-tool-card"
             style={floatingStyles}
             data-testid="project-rail-context-menu"
+            data-agent-elements-shell="project-rail-context-menu"
             {...getFloatingProps()}
           >
             <button
               type="button"
-              className="project-rail-context-menu-item"
+              className="project-rail-context-menu-item agent-elements-project-rail-menu-item"
+              data-agent-elements-shell="project-rail-menu-item"
               onClick={() => handleOpenInNewWindow(menu.project)}
             >
               Open in new window
             </button>
             <button
               type="button"
-              className="project-rail-context-menu-item"
+              className="project-rail-context-menu-item agent-elements-project-rail-menu-item"
+              data-agent-elements-shell="project-rail-menu-item"
               onClick={() => handleRevealInFinder(menu.project)}
             >
               {REVEAL_LABEL}
             </button>
-            <div className="project-rail-context-menu-divider" />
+            <div
+              className="project-rail-context-menu-divider agent-elements-project-rail-menu-divider"
+              data-agent-elements-shell="project-rail-menu-divider"
+            />
             <button
               type="button"
-              className="project-rail-context-menu-item"
+              className="project-rail-context-menu-item agent-elements-project-rail-menu-item"
+              data-agent-elements-shell="project-rail-menu-item"
               onClick={() => {
                 closeMenu();
                 handleClose(menu.project);

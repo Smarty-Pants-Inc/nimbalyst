@@ -27,6 +27,15 @@ interface TrackerSyncRejectionBannerProps {
   workspacePath?: string;
 }
 
+const iconShellClass =
+  'agent-elements-tracker-sync-rejection-icon inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-[var(--an-input-border-radius)] border border-[var(--an-border-color)] bg-[var(--an-background)]';
+
+const actionButtonClass =
+  'inline-flex h-7 items-center justify-center rounded-[var(--an-input-border-radius)] border border-[var(--an-border-color)] bg-[var(--an-background)] px-3 text-xs font-medium text-[var(--an-foreground)] transition-[background-color,border-color,color] duration-150 ease-out hover:bg-[var(--an-background-tertiary)] focus:outline-none focus:ring-2 focus:ring-[var(--an-input-focus-outline)]';
+
+const iconButtonClass =
+  'inline-flex h-7 w-7 items-center justify-center rounded-[var(--an-input-border-radius)] border border-transparent bg-transparent p-0 text-[var(--an-foreground-subtle)] transition-[background-color,border-color,color] duration-150 ease-out hover:border-[var(--an-border-color)] hover:bg-[var(--an-background-tertiary)] hover:text-[var(--an-foreground)] focus:outline-none focus:ring-2 focus:ring-[var(--an-input-focus-outline)]';
+
 export const TrackerSyncRejectionBanner: React.FC<TrackerSyncRejectionBannerProps> = ({ workspacePath }) => {
   const state = useAtomValue(trackerSyncRejectionAtom);
   const setRejection = useSetAtom(trackerSyncRejectionAtom);
@@ -70,43 +79,96 @@ export const TrackerSyncRejectionBanner: React.FC<TrackerSyncRejectionBannerProp
 
   return (
     <div
-      className="tracker-sync-rejection-banner flex items-center gap-2 px-3 py-2 border-b border-nim bg-nim-tertiary text-xs text-nim shrink-0"
+      className="tracker-sync-rejection-banner agent-elements-tracker-sync-rejection-banner agent-elements-tool-card !gap-[var(--an-spacing-sm)] !rounded-none !border-x-0 !border-t-0 !border-b !border-[var(--an-border-color)] !bg-[var(--an-background-secondary)] !px-[var(--an-spacing-lg)] !py-[var(--an-spacing-md)] !text-[var(--an-foreground)] flex-row items-start shrink-0 [container-type:inline-size]"
       role="status"
+      aria-live="polite"
+      data-component="TrackerSyncRejectionBanner"
+      data-agent-elements-shell="tracker-sync-rejection-banner"
       data-testid="tracker-sync-rejection-banner"
       data-rejection-code={active.code}
     >
       {isRotation ? (
         <>
-          <MaterialSymbol icon="sync" size={16} className="text-nim-faint animate-spin" />
-          <span className="flex-1">
-            Team key rotation in progress. Your changes will resume in a moment.
+          <span
+            className={`${iconShellClass} text-[var(--an-foreground-muted)]`}
+            data-testid="agent-elements-tracker-sync-rejection-icon"
+            data-agent-elements-shell="tracker-sync-rejection-icon"
+          >
+            <MaterialSymbol icon="sync" size={16} className="animate-spin motion-reduce:animate-none" />
+          </span>
+          <span className="flex min-w-0 flex-1 flex-col gap-[var(--an-spacing-xxs)]">
+            <span
+              className="agent-elements-tracker-sync-rejection-message select-text text-sm leading-relaxed text-[var(--an-foreground)]"
+              data-testid="agent-elements-tracker-sync-rejection-message"
+              data-agent-elements-shell="tracker-sync-rejection-message"
+            >
+              Team key rotation in progress. Your changes will resume in a moment.
+            </span>
+            <span
+              className="agent-elements-status-pill w-fit"
+              data-testid="agent-elements-tracker-sync-rejection-status"
+              data-agent-elements-shell="tracker-sync-rejection-status"
+              data-tone="running"
+            >
+              Syncing
+            </span>
           </span>
         </>
       ) : (
         <>
-          <MaterialSymbol icon="key_off" size={16} className="text-nim-warning" />
-          <span className="flex-1">
-            Your team's encryption key changed. Ask your team admin to share the new key envelope with you.
+          <span
+            className={`${iconShellClass} text-[var(--nim-warning)]`}
+            data-testid="agent-elements-tracker-sync-rejection-icon"
+            data-agent-elements-shell="tracker-sync-rejection-icon"
+          >
+            <MaterialSymbol icon="key_off" size={16} />
           </span>
+          <span className="flex min-w-0 flex-1 flex-col gap-[var(--an-spacing-xxs)]">
+            <span
+              className="agent-elements-tracker-sync-rejection-message select-text text-sm leading-relaxed text-[var(--an-foreground)]"
+              data-testid="agent-elements-tracker-sync-rejection-message"
+              data-agent-elements-shell="tracker-sync-rejection-message"
+            >
+              Your team's encryption key changed. Ask your team admin to share the new key envelope with you.
+            </span>
+            <span
+              className="agent-elements-status-pill w-fit"
+              data-testid="agent-elements-tracker-sync-rejection-status"
+              data-agent-elements-shell="tracker-sync-rejection-status"
+              data-tone="warning"
+            >
+              Action needed
+            </span>
+          </span>
+        </>
+      )}
+      <span
+        className="agent-elements-tracker-sync-rejection-actions flex shrink-0 items-center gap-[var(--an-spacing-xs)]"
+        data-testid="agent-elements-tracker-sync-rejection-actions"
+        data-agent-elements-shell="tracker-sync-rejection-actions"
+      >
+        {!isRotation ? (
           <button
             type="button"
-            className="px-2 py-0.5 rounded border border-nim text-nim-muted hover:bg-nim hover:text-nim transition-colors"
+            className={actionButtonClass}
             onClick={handleRetry}
             data-testid="tracker-sync-rejection-retry"
+            data-agent-elements-shell="tracker-sync-rejection-retry"
           >
             Check again
           </button>
-        </>
-      )}
-      <button
-        type="button"
-        className="text-nim-faint hover:text-nim p-0.5"
-        onClick={handleDismiss}
-        aria-label="Dismiss"
-        data-testid="tracker-sync-rejection-dismiss"
-      >
-        <MaterialSymbol icon="close" size={14} />
-      </button>
+        ) : null}
+        <button
+          type="button"
+          className={iconButtonClass}
+          onClick={handleDismiss}
+          aria-label="Dismiss"
+          data-testid="tracker-sync-rejection-dismiss"
+          data-agent-elements-shell="tracker-sync-rejection-dismiss"
+        >
+          <MaterialSymbol icon="close" size={14} />
+        </button>
+      </span>
     </div>
   );
 };

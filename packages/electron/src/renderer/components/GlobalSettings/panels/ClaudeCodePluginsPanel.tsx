@@ -103,6 +103,8 @@ const CATEGORY_ORDER = [
   'external',
 ];
 
+const getPluginDomId = (value: string) => value.replace(/[^a-zA-Z0-9_-]+/g, '-');
+
 // Component to render plugin icon
 function PluginIcon({ pluginName, category, isDark }: { pluginName: string; category: string; isDark: boolean }) {
   void isDark;
@@ -285,16 +287,36 @@ function ClaudeCodePluginsPanelInner({ scope = 'user', workspacePath }: ClaudeCo
 
   if (loading) {
     return (
-      <div className="provider-panel flex flex-col">
-        <div className="plugin-loading p-8 text-center text-[var(--nim-text-muted)]">Loading Claude Code plugins...</div>
+      <div
+        className="provider-panel claude-code-plugins-panel agent-elements-settings-panel flex flex-col"
+        data-agent-elements-shell="claude-plugins-panel"
+        data-component="ClaudeCodePluginsPanel"
+        data-testid="agent-elements-claude-plugins-panel"
+      >
+        <div
+          className="plugin-loading agent-elements-tool-card rounded-lg border border-[var(--nim-border)] bg-[var(--nim-bg-secondary)] p-8 text-center text-[var(--nim-text-muted)]"
+          data-agent-elements-shell="claude-plugins-loading"
+          data-testid="agent-elements-claude-plugins-loading"
+        >
+          Loading Claude Code plugins...
+        </div>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="provider-panel flex flex-col">
-        <div className="plugin-error p-8 text-center text-[#e74c3c]">
+      <div
+        className="provider-panel claude-code-plugins-panel agent-elements-settings-panel flex flex-col"
+        data-agent-elements-shell="claude-plugins-panel"
+        data-component="ClaudeCodePluginsPanel"
+        data-testid="agent-elements-claude-plugins-panel"
+      >
+        <div
+          className="plugin-error agent-elements-tool-card rounded-lg border border-[var(--nim-error)] bg-[var(--nim-bg-secondary)] p-8 text-center text-[#e74c3c]"
+          data-agent-elements-shell="claude-plugins-error"
+          data-testid="agent-elements-claude-plugins-error"
+        >
           Error: {error}
           <button onClick={loadData} className="plugin-retry-button ml-4 px-4 py-2 bg-[var(--nim-primary)] text-white border-none rounded cursor-pointer">Retry</button>
         </div>
@@ -303,9 +325,20 @@ function ClaudeCodePluginsPanelInner({ scope = 'user', workspacePath }: ClaudeCo
   }
 
   const renderDiscover = () => (
-    <div className="plugin-discover" role="main" aria-label="Plugin discovery">
+    <div
+      className="plugin-discover claude-code-plugins-discover"
+      role="main"
+      aria-label="Plugin discovery"
+      data-agent-elements-shell="claude-plugins-discover-view"
+      data-testid="agent-elements-claude-plugins-discover-view"
+    >
       {/* Search Bar */}
-      <div className="plugin-search relative mb-6" role="search">
+      <div
+        className="plugin-search agent-elements-tool-card relative mb-6 rounded-lg border border-[var(--nim-border)] bg-[var(--nim-bg-secondary)] p-3"
+        role="search"
+        data-agent-elements-shell="claude-plugins-search"
+        data-testid="agent-elements-claude-plugins-search"
+      >
         <input
           type="text"
           value={searchQuery}
@@ -313,6 +346,7 @@ function ClaudeCodePluginsPanelInner({ scope = 'user', workspacePath }: ClaudeCo
           placeholder="Search plugins..."
           className="plugin-search-input w-full py-3 pl-4 pr-10 border border-[var(--nim-border)] rounded-lg bg-[var(--nim-bg)] text-[var(--nim-text)] text-[0.9375rem] outline-none focus:border-[var(--nim-primary)] placeholder:text-[var(--nim-text-faint)]"
           aria-label="Search Claude Code plugins"
+          data-testid="agent-elements-claude-plugins-search-input"
           autoFocus
         />
         {searchQuery && (
@@ -333,17 +367,24 @@ function ClaudeCodePluginsPanelInner({ scope = 'user', workspacePath }: ClaudeCo
         if (!plugins || plugins.length === 0) return null;
 
         return (
-          <div key={category} className="plugin-category mb-6">
+          <div
+            key={category}
+            className="plugin-category claude-code-plugins-category mb-6"
+            data-agent-elements-shell="claude-plugins-category"
+            data-category={category}
+            data-testid={`agent-elements-claude-plugins-category-${getPluginDomId(category)}`}
+          >
             <h4 className="plugin-category-title text-xs font-semibold uppercase tracking-wider text-[var(--nim-text-faint)] m-0 mb-3 pb-2 border-b border-[var(--nim-border)]">{CATEGORY_LABELS[category] || category}</h4>
             <div className="plugin-grid grid grid-cols-[repeat(auto-fill,minmax(260px,1fr))] gap-3 @container" role="list" aria-label={CATEGORY_LABELS[category] || category}>
               {plugins.map((plugin) => {
                 const installed = isPluginInstalled(plugin.name);
                 const status = installStatus[plugin.name] || 'idle';
+                const pluginDomId = getPluginDomId(plugin.name);
 
                 return (
                   <div
                     key={plugin.name}
-                    className={`plugin-card flex flex-col p-4 border rounded-lg cursor-pointer transition-all duration-150 ${installed ? 'installed border-[rgba(39,174,96,0.3)] bg-[rgba(39,174,96,0.05)]' : 'border-[var(--nim-border)] bg-[var(--nim-bg-secondary)]'} hover:border-[var(--nim-primary)] hover:bg-[var(--nim-bg-hover)]`}
+                    className={`plugin-card agent-elements-tool-card flex flex-col p-4 border rounded-lg cursor-pointer transition-all duration-150 ${installed ? 'installed border-[rgba(39,174,96,0.3)] bg-[rgba(39,174,96,0.05)]' : 'border-[var(--nim-border)] bg-[var(--nim-bg-secondary)]'} hover:border-[var(--nim-primary)] hover:bg-[var(--nim-bg-hover)]`}
                     onClick={() => setSelectedPlugin(plugin)}
                     onKeyDown={(e) => {
                       if (e.key === 'Enter' || e.key === ' ') {
@@ -354,6 +395,9 @@ function ClaudeCodePluginsPanelInner({ scope = 'user', workspacePath }: ClaudeCo
                     role="button"
                     tabIndex={0}
                     aria-label={`${plugin.name} by ${plugin.author} - ${plugin.description}`}
+                    data-agent-elements-shell="claude-plugins-card"
+                    data-installed={installed ? 'true' : 'false'}
+                    data-testid={`agent-elements-claude-plugins-card-${pluginDomId}`}
                   >
                     <div className="plugin-card-header flex items-center gap-3 mb-2">
                       <div className="plugin-card-icon w-8 h-8 rounded-md bg-[var(--nim-bg-tertiary)] flex items-center justify-center text-base shrink-0 overflow-hidden" aria-hidden="true">
@@ -369,6 +413,7 @@ function ClaudeCodePluginsPanelInner({ scope = 'user', workspacePath }: ClaudeCo
                       ) : (
                         <button
                           className={`plugin-install-button py-1.5 px-3 border-none rounded bg-[var(--nim-primary)] text-white text-xs font-medium cursor-pointer transition-opacity duration-150 hover:opacity-90 disabled:opacity-60 disabled:cursor-not-allowed ${status === 'installing' ? 'installing bg-[var(--nim-bg-tertiary)] text-[var(--nim-text-muted)]' : ''}`}
+                          data-testid={`agent-elements-claude-plugins-install-${pluginDomId}`}
                           onClick={(e) => {
                             e.stopPropagation();
                             handleInstall(plugin);
@@ -397,9 +442,19 @@ function ClaudeCodePluginsPanelInner({ scope = 'user', workspacePath }: ClaudeCo
   );
 
   const renderInstalled = () => (
-    <div className="plugin-installed-view" role="main" aria-label="Installed plugins">
+    <div
+      className="plugin-installed-view claude-code-plugins-installed-view"
+      role="main"
+      aria-label="Installed plugins"
+      data-agent-elements-shell="claude-plugins-installed-view"
+      data-testid="agent-elements-claude-plugins-installed-view"
+    >
       {installedPlugins.length === 0 ? (
-        <div className="plugin-empty-state flex flex-col items-center justify-center py-12 px-6 text-center text-[var(--nim-text-faint)]">
+        <div
+          className="plugin-empty-state agent-elements-tool-card flex flex-col items-center justify-center rounded-lg border border-[var(--nim-border)] bg-[var(--nim-bg-secondary)] py-12 px-6 text-center text-[var(--nim-text-faint)]"
+          data-agent-elements-shell="claude-plugins-empty"
+          data-testid="agent-elements-claude-plugins-empty"
+        >
           <span className="plugin-empty-icon material-symbols-outlined text-5xl mb-4 opacity-50">extension_off</span>
           <p className="m-0 mb-6 text-[0.9375rem]">No plugins installed yet</p>
           <button
@@ -411,28 +466,40 @@ function ClaudeCodePluginsPanelInner({ scope = 'user', workspacePath }: ClaudeCo
         </div>
       ) : (
         <div className="plugin-installed-list flex flex-col gap-2" role="list">
-          {installedPlugins.map((plugin) => (
-            <div key={plugin.name} className="plugin-installed-item flex items-center justify-between p-4 border border-[var(--nim-border)] rounded-lg bg-[var(--nim-bg-secondary)]" role="listitem">
-              <div className="plugin-installed-info flex items-center gap-3 flex-1 min-w-0">
-                <div className="plugin-installed-icon w-9 h-9 rounded-md bg-[var(--nim-bg-tertiary)] flex items-center justify-center shrink-0 overflow-hidden">
-                  <PluginIcon pluginName={plugin.name} category="external" isDark={isDark} />
+          {installedPlugins.map((plugin) => {
+            const pluginDomId = getPluginDomId(plugin.name);
+
+            return (
+              <div
+                key={plugin.name}
+                className="plugin-installed-item agent-elements-tool-card flex items-center justify-between p-4 border border-[var(--nim-border)] rounded-lg bg-[var(--nim-bg-secondary)]"
+                role="listitem"
+                data-agent-elements-shell="claude-plugins-installed-item"
+                data-plugin-enabled={plugin.enabled ? 'true' : 'false'}
+                data-testid={`agent-elements-claude-plugins-installed-${pluginDomId}`}
+              >
+                <div className="plugin-installed-info flex items-center gap-3 flex-1 min-w-0">
+                  <div className="plugin-installed-icon w-9 h-9 rounded-md bg-[var(--nim-bg-tertiary)] flex items-center justify-center shrink-0 overflow-hidden">
+                    <PluginIcon pluginName={plugin.name} category="external" isDark={isDark} />
+                  </div>
+                  <div className="plugin-installed-details flex-1 min-w-0">
+                    <div className="plugin-installed-name font-medium text-[0.9375rem] text-[var(--nim-text)] mb-0.5">{plugin.name}</div>
+                    <div className="plugin-installed-path text-xs text-[var(--nim-text-faint)] overflow-hidden text-ellipsis whitespace-nowrap">{plugin.path}</div>
+                  </div>
                 </div>
-                <div className="plugin-installed-details flex-1 min-w-0">
-                  <div className="plugin-installed-name font-medium text-[0.9375rem] text-[var(--nim-text)] mb-0.5">{plugin.name}</div>
-                  <div className="plugin-installed-path text-xs text-[var(--nim-text-faint)] overflow-hidden text-ellipsis whitespace-nowrap">{plugin.path}</div>
+                <div className="plugin-installed-actions flex gap-2">
+                  <button
+                    className="plugin-uninstall-button py-1.5 px-3 border border-[#e74c3c] rounded bg-transparent text-[#e74c3c] text-xs font-medium cursor-pointer transition-all duration-150 hover:bg-[#e74c3c] hover:text-white"
+                    data-testid={`agent-elements-claude-plugins-uninstall-${pluginDomId}`}
+                    onClick={() => handleUninstall(plugin.name)}
+                    aria-label={`Uninstall ${plugin.name}`}
+                  >
+                    Uninstall
+                  </button>
                 </div>
               </div>
-              <div className="plugin-installed-actions flex gap-2">
-                <button
-                  className="plugin-uninstall-button py-1.5 px-3 border border-[#e74c3c] rounded bg-transparent text-[#e74c3c] text-xs font-medium cursor-pointer transition-all duration-150 hover:bg-[#e74c3c] hover:text-white"
-                  onClick={() => handleUninstall(plugin.name)}
-                  aria-label={`Uninstall ${plugin.name}`}
-                >
-                  Uninstall
-                </button>
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>
@@ -445,8 +512,18 @@ function ClaudeCodePluginsPanelInner({ scope = 'user', workspacePath }: ClaudeCo
     const status = installStatus[selectedPlugin.name] || 'idle';
 
     return (
-      <div className="plugin-details-overlay fixed inset-0 bg-black/50 flex items-center justify-center z-[1000] p-4" onClick={() => setSelectedPlugin(null)}>
-        <div className="plugin-details-modal bg-[var(--nim-bg)] rounded-xl p-6 max-w-[500px] w-full max-h-[80vh] overflow-y-auto relative shadow-[0_20px_40px_rgba(0,0,0,0.3)]" onClick={(e) => e.stopPropagation()}>
+      <div
+        className="plugin-details-overlay fixed inset-0 bg-black/50 flex items-center justify-center z-[1000] p-4"
+        data-agent-elements-shell="claude-plugins-details-overlay"
+        data-testid="agent-elements-claude-plugins-details-overlay"
+        onClick={() => setSelectedPlugin(null)}
+      >
+        <div
+          className="plugin-details-modal agent-elements-tool-card bg-[var(--nim-bg)] rounded-xl p-6 max-w-[500px] w-full max-h-[80vh] overflow-y-auto relative shadow-[0_20px_40px_rgba(0,0,0,0.3)]"
+          data-agent-elements-shell="claude-plugins-details-modal"
+          data-testid="agent-elements-claude-plugins-details-modal"
+          onClick={(e) => e.stopPropagation()}
+        >
           <button
             className="plugin-details-close absolute top-4 right-4 w-7 h-7 border-none rounded-full bg-[var(--nim-bg-tertiary)] text-[var(--nim-text-muted)] text-base cursor-pointer flex items-center justify-center transition-all duration-150 hover:bg-[var(--nim-text-faint)] hover:text-[var(--nim-bg)]"
             onClick={() => setSelectedPlugin(null)}
@@ -518,8 +595,18 @@ function ClaudeCodePluginsPanelInner({ scope = 'user', workspacePath }: ClaudeCo
   };
 
   return (
-    <div className="provider-panel flex flex-col">
-      <div className="provider-panel-header mb-6 pb-4 border-b border-[var(--nim-border)]">
+    <div
+      className="provider-panel claude-code-plugins-panel agent-elements-settings-panel flex flex-col"
+      data-agent-elements-shell="claude-plugins-panel"
+      data-component="ClaudeCodePluginsPanel"
+      data-scope={scope}
+      data-testid="agent-elements-claude-plugins-panel"
+    >
+      <div
+        className="provider-panel-header claude-code-plugins-header agent-elements-settings-panel-header mb-6 pb-4 border-b border-[var(--nim-border)]"
+        data-agent-elements-shell="claude-plugins-header"
+        data-testid="agent-elements-claude-plugins-header"
+      >
         <h3 className="provider-panel-title text-xl font-semibold leading-tight mb-2 text-[var(--nim-text)]">Claude Code Plugins</h3>
         <p className="provider-panel-description text-sm leading-relaxed text-[var(--nim-text-muted)]">
           Discover and install plugins to extend Claude Code's capabilities.
@@ -527,13 +614,18 @@ function ClaudeCodePluginsPanelInner({ scope = 'user', workspacePath }: ClaudeCo
       </div>
 
       {/* View Switcher */}
-      <div className="plugin-view-switcher flex gap-1 mb-4 p-1 bg-[var(--nim-bg-tertiary)] rounded-lg w-fit">
+      <div
+        className="plugin-view-switcher claude-code-plugins-view-switcher flex gap-1 mb-4 p-1 bg-[var(--nim-bg-tertiary)] rounded-lg w-fit"
+        data-agent-elements-shell="claude-plugins-view-switcher"
+        data-testid="agent-elements-claude-plugins-view-switcher"
+      >
         <button
           className={`plugin-view-button py-2 px-4 border-none rounded-md text-sm font-medium cursor-pointer transition-all duration-150 ${
             viewState === 'discover'
               ? 'bg-[var(--nim-primary)] text-white shadow-sm'
               : 'bg-transparent text-[var(--nim-text-muted)] hover:text-[var(--nim-text)] hover:bg-[var(--nim-bg-hover)]'
           }`}
+          data-testid="agent-elements-claude-plugins-tab-discover"
           onClick={() => setViewState('discover')}
         >
           Discover
@@ -544,6 +636,7 @@ function ClaudeCodePluginsPanelInner({ scope = 'user', workspacePath }: ClaudeCo
               ? 'bg-[var(--nim-primary)] text-white shadow-sm'
               : 'bg-transparent text-[var(--nim-text-muted)] hover:text-[var(--nim-text)] hover:bg-[var(--nim-bg-hover)]'
           }`}
+          data-testid="agent-elements-claude-plugins-tab-installed"
           onClick={() => setViewState('installed')}
         >
           Installed ({installedPlugins.length})
@@ -552,13 +645,23 @@ function ClaudeCodePluginsPanelInner({ scope = 'user', workspacePath }: ClaudeCo
 
       {/* Status Message */}
       {installMessage && (
-        <div className="plugin-status-message py-3 px-4 mb-4 bg-[rgba(52,152,219,0.1)] border border-[rgba(52,152,219,0.3)] rounded-md text-sm text-[var(--nim-text)]" role="status" aria-live="polite">
+        <div
+          className="plugin-status-message agent-elements-tool-card py-3 px-4 mb-4 bg-[rgba(52,152,219,0.1)] border border-[rgba(52,152,219,0.3)] rounded-md text-sm text-[var(--nim-text)]"
+          role="status"
+          aria-live="polite"
+          data-agent-elements-shell="claude-plugins-status-message"
+          data-testid="agent-elements-claude-plugins-status-message"
+        >
           {installMessage}
         </div>
       )}
 
       {/* Content */}
-      <div className="plugin-content [container-type:inline-size] [container-name:plugin-content]">
+      <div
+        className="plugin-content claude-code-plugins-content [container-type:inline-size] [container-name:plugin-content]"
+        data-agent-elements-shell="claude-plugins-content"
+        data-testid="agent-elements-claude-plugins-content"
+      >
         {viewState === 'discover' && renderDiscover()}
         {viewState === 'installed' && renderInstalled()}
       </div>

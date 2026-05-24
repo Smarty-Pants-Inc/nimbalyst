@@ -35,7 +35,7 @@ export const ModelComparison: React.FC<ModelComparisonProps> = ({ workspaceId })
 
   if (loading) {
     return (
-      <div className="model-comparison-loading flex items-center justify-center min-h-[400px] text-base text-nim-muted">
+      <div className="model-comparison-loading agent-elements-ai-usage-loading flex min-h-[400px] items-center justify-center text-base text-nim-muted">
         Loading...
       </div>
     );
@@ -48,8 +48,11 @@ export const ModelComparison: React.FC<ModelComparisonProps> = ({ workspaceId })
   }));
 
   return (
-    <div className="model-comparison flex flex-col gap-6">
-      <h3 className="m-0 text-lg font-semibold text-nim">Usage by Model</h3>
+    <div
+      className="model-comparison agent-elements-ai-usage-model-comparison flex flex-col gap-6"
+      data-agent-elements-shell="ai-usage-model-comparison"
+    >
+      <h3 className="m-0 text-base font-semibold leading-6 text-nim">Usage by Model</h3>
 
       {chartData.length > 0 ? (
         <ResponsiveContainer width="100%" height={400}>
@@ -61,7 +64,7 @@ export const ModelComparison: React.FC<ModelComparisonProps> = ({ workspaceId })
               contentStyle={{
                 background: 'var(--nim-bg-secondary)',
                 border: '1px solid var(--nim-border)',
-                borderRadius: '6px',
+                borderRadius: '8px',
                 color: 'var(--nim-text)',
               }}
             />
@@ -70,7 +73,7 @@ export const ModelComparison: React.FC<ModelComparisonProps> = ({ workspaceId })
           </BarChart>
         </ResponsiveContainer>
       ) : (
-        <div className="no-data flex items-center justify-center min-h-[400px] text-base text-nim-muted">
+        <div className="no-data agent-elements-ai-usage-empty flex min-h-[400px] items-center justify-center text-base text-nim-muted">
           No model usage data available
         </div>
       )}

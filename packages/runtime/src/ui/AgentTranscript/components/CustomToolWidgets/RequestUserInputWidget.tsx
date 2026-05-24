@@ -81,6 +81,8 @@ import type {
   RequestUserInputReorderField,
   RequestUserInputSingleSelectField,
 } from '../../../../ai/server/providers/shared/requestUserInputTypes';
+import { AgentStatusPill, type AgentStatusTone } from '../../../AgentElements/AgentElementsPrimitives';
+import '../../../AgentElements/AgentElementsFrameworkEvents.css';
 
 // ============================================================
 // Argument / result parsing
@@ -323,6 +325,20 @@ function computeVoiceHint(args: RequestUserInputArgs): VoiceHint {
   return { friendly: true, reason: 'Voice can read this aloud' };
 }
 
+type RequestInputVisualState = 'pending' | 'submitted' | 'cancelled';
+
+function getRequestInputTone(state: RequestInputVisualState): AgentStatusTone {
+  if (state === 'submitted') return 'success';
+  if (state === 'cancelled') return 'error';
+  return 'running';
+}
+
+function getRequestInputStatusLabel(state: RequestInputVisualState): string {
+  if (state === 'submitted') return 'submitted';
+  if (state === 'cancelled') return 'cancelled';
+  return 'awaiting input';
+}
+
 // ============================================================
 // Sub-renderers per field type
 // ============================================================
@@ -359,7 +375,7 @@ function MultiSelectRenderer({
   };
 
   return (
-    <div className="flex flex-col gap-1.5" data-testid={`request-user-input-multiselect-${field.id}`}>
+    <div className="flex flex-col gap-1.5 agent-elements-question-options" data-testid={`request-user-input-multiselect-${field.id}`}>
       {field.items.map((item) => {
         const isSelected = selected.has(item.id);
         return (
@@ -369,9 +385,10 @@ function MultiSelectRenderer({
             data-testid="request-user-input-multiselect-row"
             data-item-id={item.id}
             data-selected={isSelected}
+            aria-pressed={isSelected}
             onClick={() => toggle(item.id)}
             disabled={disabled}
-            className={`flex items-start gap-2 py-2 px-2.5 rounded border transition-colors duration-150 cursor-pointer text-left bg-transparent disabled:opacity-50 disabled:cursor-not-allowed ${
+            className={`agent-elements-question-option disabled:opacity-50 disabled:cursor-not-allowed ${
               isSelected
                 ? 'border-nim-primary bg-[color-mix(in_srgb,var(--nim-primary)_8%,var(--nim-bg-secondary))]'
                 : 'border-nim bg-nim-secondary hover:bg-nim-hover'
@@ -444,7 +461,7 @@ function SingleSelectRenderer({
   };
 
   return (
-    <div className="flex flex-col gap-1.5" data-testid={`request-user-input-singleselect-${field.id}`}>
+    <div className="flex flex-col gap-1.5 agent-elements-question-options" data-testid={`request-user-input-singleselect-${field.id}`}>
       {field.options.map((option) => {
         const isSelected = draft.state.selectedId === option.id;
         return (
@@ -454,9 +471,10 @@ function SingleSelectRenderer({
             data-testid="request-user-input-singleselect-row"
             data-option-id={option.id}
             data-selected={isSelected}
+            aria-pressed={isSelected}
             onClick={() => pick(option.id)}
             disabled={disabled}
-            className={`flex items-start gap-2 py-2 px-2.5 rounded border transition-colors duration-150 cursor-pointer text-left bg-transparent disabled:opacity-50 disabled:cursor-not-allowed ${
+            className={`agent-elements-question-option disabled:opacity-50 disabled:cursor-not-allowed ${
               isSelected
                 ? 'border-nim-primary bg-[color-mix(in_srgb,var(--nim-primary)_8%,var(--nim-bg-secondary))]'
                 : 'border-nim bg-nim-secondary hover:bg-nim-hover'
@@ -481,7 +499,7 @@ function SingleSelectRenderer({
         <div
           data-testid="request-user-input-singleselect-other"
           data-selected={draft.state.otherSelected}
-          className={`rounded border transition-colors ${
+          className={`agent-elements-question-other-shell rounded border transition-colors ${
             draft.state.otherSelected
               ? 'border-nim-primary bg-[color-mix(in_srgb,var(--nim-primary)_8%,var(--nim-bg-secondary))]'
               : 'border-nim bg-nim-secondary hover:bg-nim-hover'
@@ -512,7 +530,7 @@ function SingleSelectRenderer({
                 placeholder="Type your answer..."
                 disabled={disabled}
                 rows={2}
-                className="w-full px-2.5 py-2 rounded border border-nim bg-nim text-sm text-nim placeholder-nim-faint resize-y focus:outline-none focus:border-nim-primary disabled:opacity-50"
+                className="agent-elements-question-textarea disabled:opacity-50"
               />
             </div>
           )}
@@ -559,7 +577,7 @@ function ReorderRow({ itemId, index, title, subtitle, removable, canRemove, onRe
       data-testid="request-user-input-reorder-row"
       data-item-id={itemId}
       data-dragging={isDragging || undefined}
-      className={`flex items-center gap-2.5 py-2 px-2.5 rounded border bg-nim-secondary ${
+      className={`agent-elements-request-user-input-reorder-row flex items-center gap-2.5 py-2 px-2.5 rounded border bg-nim-secondary ${
         isDragging ? 'border-nim-primary shadow-lg' : 'border-nim'
       }`}
     >
@@ -669,7 +687,7 @@ function ReorderRenderer({
   };
 
   return (
-    <div data-testid={`request-user-input-reorder-${field.id}`} className="flex flex-col gap-1.5">
+    <div data-testid={`request-user-input-reorder-${field.id}`} className="flex flex-col gap-1.5 agent-elements-question-options">
       <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
         <SortableContext items={draft.state.orderedIds} strategy={verticalListSortingStrategy}>
           {draft.state.orderedIds.map((id, index) => {
@@ -878,7 +896,7 @@ function InlineLexicalEditor({ initialText, format, placeholder, onChange, disab
   );
 
   return (
-    <div className="rui-lexical-shell border border-nim rounded bg-nim-secondary overflow-hidden">
+    <div className="rui-lexical-shell agent-elements-question-textarea border border-nim rounded bg-nim-secondary overflow-hidden">
       <LexicalComposer initialConfig={initialConfig}>
         {format === 'markdown' && <FormatToolbar disabled={disabled} />}
         <div className="relative">
@@ -967,7 +985,7 @@ function ConfirmRenderer({
       data-checked={value}
       onClick={toggle}
       disabled={disabled}
-      className={`flex items-start gap-2 py-2 px-2.5 rounded border transition-colors duration-150 cursor-pointer text-left bg-transparent disabled:opacity-50 disabled:cursor-not-allowed w-full ${
+      className={`agent-elements-question-option disabled:opacity-50 disabled:cursor-not-allowed w-full ${
         value
           ? 'border-nim-primary bg-[color-mix(in_srgb,var(--nim-primary)_8%,var(--nim-bg-secondary))]'
           : 'border-nim bg-nim-secondary hover:bg-nim-hover'
@@ -1028,14 +1046,16 @@ function FieldCard({
   })();
 
   return (
-    <div className="bg-nim border border-nim rounded-md p-3 flex flex-col gap-2">
+    <div className="agent-elements-request-user-input-field-card agent-elements-question-shell bg-nim border border-nim rounded-md p-3 flex flex-col gap-2">
+      <div className="agent-elements-question-copy">
       <div className="flex items-center gap-2">
         <span className="text-[0.6875rem] font-semibold uppercase tracking-wide text-nim-primary bg-[color-mix(in_srgb,var(--nim-primary)_12%,transparent)] py-0.5 px-2 rounded-full">
           {field.label}
         </span>
         {helper && <span className="text-[0.6875rem] text-nim-faint italic">{helper}</span>}
       </div>
-      {field.description && <div className="text-xs text-nim-muted leading-snug">{field.description}</div>}
+      {field.description && <div className="agent-elements-question-description">{field.description}</div>}
+      </div>
       {field.type === 'multiSelect' && (
         <MultiSelectRenderer field={field} draft={draft} setDraft={setDraft} disabled={disabled} />
       )}
@@ -1151,6 +1171,19 @@ export const RequestUserInputWidget: React.FC<CustomToolWidgetProps> = ({ messag
 
   const displayResult = localResult || (isCompleted && parsedResult ? parsedResult : null);
   const displayCancelled = displayResult?.cancelled === true;
+  const requestInputState: RequestInputVisualState = displayResult || hasResponded
+    ? displayCancelled ? 'cancelled' : 'submitted'
+    : 'pending';
+  const fieldCountLabel = `${args.fields.length} field${args.fields.length === 1 ? '' : 's'}`;
+  const shellClassName = `request-user-input-widget agent-elements-tool-card agent-elements-question-card agent-elements-request-user-input-card ${
+    requestInputState === 'pending' ? '' : 'opacity-85'
+  }`;
+  const shellProps = {
+    'data-component': 'RichTranscriptAgentElementsRequestUserInput',
+    'data-agent-elements-shell': 'input-card',
+    'data-request-user-input-state': requestInputState,
+    'data-testid': 'request-user-input-widget',
+  };
 
   const voiceHint = computeVoiceHint(args);
 
@@ -1160,18 +1193,25 @@ export const RequestUserInputWidget: React.FC<CustomToolWidgetProps> = ({ messag
 
     return (
       <div
-        data-testid="request-user-input-widget"
+        {...shellProps}
         data-state={displayCancelled ? 'cancelled' : 'completed'}
-        className="request-user-input-widget rounded-lg bg-nim-secondary border border-nim overflow-hidden opacity-85"
+        className={shellClassName}
       >
-        <div className="flex items-center gap-2 py-3 px-4 border-b border-nim bg-nim-tertiary">
+        <div className="agent-elements-tool-header">
           <RequestUserInputIcon />
-          <span className="text-sm font-semibold text-nim flex-1">{args.title || statusText}</span>
+          <div className="agent-elements-tool-title-group">
+            <span className="agent-elements-tool-title">{args.title || statusText}</span>
+            <span className="agent-elements-tool-subtitle">{fieldCountLabel}</span>
+          </div>
+          <span className="agent-elements-tool-trailing">
+            <AgentStatusPill tone={getRequestInputTone(requestInputState)}>
+              <span data-testid="request-user-input-status">{getRequestInputStatusLabel(requestInputState)}</span>
+            </AgentStatusPill>
+          </span>
+        </div>
+        <div className="agent-elements-tool-footer">
           {!displayCancelled && (
-            <span
-              data-testid="request-user-input-completed"
-              className="flex items-center gap-1 text-xs font-medium text-nim-success py-1 px-2 bg-[color-mix(in_srgb,var(--nim-success)_12%,transparent)] rounded-full"
-            >
+            <span data-testid="request-user-input-completed" className="agent-elements-status-pill text-nim-success">
               <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
                 <path d="M10 3L4.5 8.5L2 6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
               </svg>
@@ -1179,10 +1219,7 @@ export const RequestUserInputWidget: React.FC<CustomToolWidgetProps> = ({ messag
             </span>
           )}
           {displayCancelled && (
-            <span
-              data-testid="request-user-input-cancelled"
-              className="flex items-center gap-1 text-xs font-medium text-nim-muted py-1 px-2 bg-nim-tertiary rounded-full"
-            >
+            <span data-testid="request-user-input-cancelled" className="agent-elements-status-pill text-nim-muted">
               <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
                 <path d="M9 3L3 9M3 3l6 6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
               </svg>
@@ -1190,8 +1227,8 @@ export const RequestUserInputWidget: React.FC<CustomToolWidgetProps> = ({ messag
             </span>
           )}
         </div>
-        <div className="p-3 flex flex-col gap-2">
-          {args.intro && <div className="text-sm text-nim-muted">{args.intro}</div>}
+        <div className="agent-elements-tool-primary flex flex-col gap-3">
+          {args.intro && <div className="agent-elements-question-description">{args.intro}</div>}
           <CompletedSummary fields={args.fields} answers={displayResult?.answers ?? {}} cancelled={displayCancelled} />
         </div>
       </div>
@@ -1202,16 +1239,24 @@ export const RequestUserInputWidget: React.FC<CustomToolWidgetProps> = ({ messag
   if (!host) {
     return (
       <div
-        data-testid="request-user-input-widget"
+        {...shellProps}
         data-state="pending"
-        className="request-user-input-widget rounded-lg bg-nim-secondary border border-nim-primary overflow-hidden"
+        className={shellClassName}
       >
-        <div className="flex items-center gap-2 py-3 px-4 bg-nim-tertiary">
+        <div className="agent-elements-tool-header">
           <RequestUserInputIcon />
-          <span className="text-sm font-semibold text-nim flex-1">{args.title || 'Input requested'}</span>
-          <span data-testid="request-user-input-pending" className="text-xs text-nim-muted">
-            Waiting...
+          <div className="agent-elements-tool-title-group">
+            <span className="agent-elements-tool-title">{args.title || 'Input requested'}</span>
+            <span className="agent-elements-tool-subtitle">{fieldCountLabel}</span>
+          </div>
+          <span className="agent-elements-tool-trailing">
+            <AgentStatusPill tone={getRequestInputTone(requestInputState)}>
+              <span data-testid="request-user-input-status">{getRequestInputStatusLabel(requestInputState)}</span>
+            </AgentStatusPill>
           </span>
+        </div>
+        <div className="agent-elements-tool-footer">
+          <span data-testid="request-user-input-pending" className="agent-elements-status-pill text-nim-muted">Waiting...</span>
         </div>
       </div>
     );
@@ -1220,20 +1265,25 @@ export const RequestUserInputWidget: React.FC<CustomToolWidgetProps> = ({ messag
   // ---- Pending interactive state ----
   return (
     <div
-      data-testid="request-user-input-widget"
+      {...shellProps}
       data-state="pending"
-      className="request-user-input-widget rounded-lg bg-nim-secondary border border-nim-primary overflow-hidden"
+      className={shellClassName}
     >
-      <div className="flex items-center gap-2 py-3 px-4 border-b border-nim bg-nim-tertiary">
+      <div className="agent-elements-tool-header">
         <RequestUserInputIcon />
-        <span className="text-sm font-semibold text-nim flex-1">{args.title || 'Input requested'}</span>
-        <span className="text-[0.6875rem] font-semibold uppercase tracking-wide text-nim-primary bg-[color-mix(in_srgb,var(--nim-primary)_14%,transparent)] py-0.5 px-2 rounded-full">
-          Input requested
+        <div className="agent-elements-tool-title-group">
+          <span className="agent-elements-tool-title">{args.title || 'Input requested'}</span>
+          <span className="agent-elements-tool-subtitle">{fieldCountLabel}</span>
+        </div>
+        <span className="agent-elements-tool-trailing">
+          <AgentStatusPill tone={getRequestInputTone(requestInputState)}>
+            <span data-testid="request-user-input-status">{getRequestInputStatusLabel(requestInputState)}</span>
+          </AgentStatusPill>
         </span>
       </div>
 
-      <div className="p-3 flex flex-col gap-3">
-        {args.intro && <div className="text-sm text-nim leading-snug">{args.intro}</div>}
+      <div className="agent-elements-tool-primary flex flex-col gap-3">
+        {args.intro && <div className="agent-elements-question-description">{args.intro}</div>}
 
         {args.fields.map((field) => {
           const fd = draft.fields[field.id];
@@ -1249,7 +1299,7 @@ export const RequestUserInputWidget: React.FC<CustomToolWidgetProps> = ({ messag
           );
         })}
 
-        <div className="flex items-center justify-between gap-2 pt-2 border-t border-nim">
+        <div className="agent-elements-question-actions pt-2 border-t border-nim">
           <div
             className={`flex items-center gap-1.5 text-[0.6875rem] ${
               voiceHint.friendly ? 'text-nim-faint' : 'text-nim-warning'
@@ -1288,7 +1338,7 @@ export const RequestUserInputWidget: React.FC<CustomToolWidgetProps> = ({ messag
 
 function RequestUserInputIcon() {
   return (
-    <span className="w-5 h-5 text-nim-primary shrink-0 flex items-center justify-center">
+    <span className="agent-elements-tool-icon text-nim-primary">
       <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
         <path d="M3 4h10M3 8h10M3 12h10" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
       </svg>
@@ -1313,7 +1363,7 @@ function CompletedSummary({
       {fields.map((field) => {
         const ans = answers[field.id];
         return (
-          <div key={field.id} className="bg-nim border border-nim rounded-md p-2.5">
+          <div key={field.id} className="agent-elements-request-user-input-field-card bg-nim border border-nim rounded-md p-2.5">
             <div className="text-[0.6875rem] font-semibold uppercase tracking-wide text-nim-primary mb-1">
               {field.label}
             </div>

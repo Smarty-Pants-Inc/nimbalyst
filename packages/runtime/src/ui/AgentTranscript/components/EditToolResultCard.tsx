@@ -5,6 +5,8 @@ import { NewFilePreview } from './NewFilePreview';
 import { toProjectRelative, shortenPath } from '../utils/pathResolver';
 import { formatToolDisplayName } from '../utils/toolNameFormatter';
 import { MaterialSymbol } from '../../icons/MaterialSymbol';
+import '../../AgentElements/AgentElementsPrimitives.css';
+import '../../AgentElements/AgentElementsToolRenderers.css';
 
 /** Returns true if the edit represents a new file creation (content only, no diff) */
 const isNewFileEdit = (edit: any): boolean => {
@@ -97,13 +99,17 @@ export const EditToolResultCard: React.FC<EditToolResultCardProps> = ({
   };
 
   return (
-    <div className="rich-transcript-edit-card rounded bg-nim-secondary border border-nim p-2 flex flex-col gap-2">
-      <div className="rich-transcript-edit-card__header flex items-start gap-2">
-        <div className="rich-transcript-edit-card__icon w-5 h-5 text-nim-primary shrink-0 p-1 rounded-lg flex items-center justify-center" aria-hidden="true">
+    <div
+      className="rich-transcript-edit-card agent-elements-edit-tool-card agent-elements-tool-card"
+      data-component="RichTranscriptAgentElementsEditCard"
+      data-testid="rich-transcript-agent-elements-edit-card"
+    >
+      <div className="rich-transcript-edit-card__header agent-elements-tool-header">
+        <div className="rich-transcript-edit-card__icon agent-elements-tool-icon" aria-hidden="true">
           <MaterialSymbol icon={allNewFiles ? "note_add" : "edit"} size={16} />
         </div>
-        <div className="rich-transcript-edit-card__details flex-1 min-w-0">
-          <div className="rich-transcript-edit-card__title font-mono text-[0.85rem] text-nim font-semibold flex flex-wrap items-baseline gap-1 leading-[1.4]">
+        <div className="rich-transcript-edit-card__details agent-elements-tool-title-group">
+          <div className="rich-transcript-edit-card__title agent-elements-tool-title flex flex-wrap items-baseline gap-1">
             {toolDisplayName}
             {prettyPath && (
               <>
@@ -122,7 +128,7 @@ export const EditToolResultCard: React.FC<EditToolResultCardProps> = ({
               </>
             )}
           </div>
-          <div className="rich-transcript-edit-card__meta flex items-center gap-1 text-xs text-nim-faint">
+          <div className="rich-transcript-edit-card__meta agent-elements-tool-subtitle flex items-center gap-1">
             <span>{editCountLabel}</span>
             {instruction && <span className="rich-transcript-edit-card__meta-divider text-nim-faint">•</span>}
             {instruction && <span>Instruction</span>}
@@ -138,7 +144,10 @@ export const EditToolResultCard: React.FC<EditToolResultCardProps> = ({
             <MaterialSymbol icon="open_in_new" size={14} />
           </button>
         )}
-        <span className={`rich-transcript-edit-card__status rich-transcript-edit-card__status--${statusClass} text-[0.7rem] font-semibold py-0.5 px-2 rounded-full uppercase tracking-[0.02em] ${statusClass === 'success' ? 'text-nim-success' : 'text-nim-error'}`}>
+        <span
+          className={`rich-transcript-edit-card__status rich-transcript-edit-card__status--${statusClass} agent-elements-status-pill ${statusClass === 'success' ? 'text-nim-success' : 'text-nim-error'}`}
+          data-tone={statusClass}
+        >
           {statusLabel}
         </span>
       </div>

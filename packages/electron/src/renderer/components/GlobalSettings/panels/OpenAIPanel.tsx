@@ -15,6 +15,8 @@ interface OpenAIPanelProps {
   onConfigChange: (updates: Partial<ProviderConfig>) => void;
 }
 
+const getModelDomId = (modelId: string) => modelId.replace(/[^a-zA-Z0-9_-]+/g, '-');
+
 export function OpenAIPanel({
   config,
   apiKeys,
@@ -28,8 +30,17 @@ export function OpenAIPanel({
   onConfigChange
 }: OpenAIPanelProps) {
   return (
-    <div className="provider-panel flex flex-col">
-      <div className="provider-panel-header mb-6 pb-4 border-b border-[var(--nim-border)]">
+    <div
+      className="provider-panel openai-panel agent-elements-settings-panel agent-elements-openai-panel flex flex-col"
+      data-agent-elements-shell="openai-panel"
+      data-component="OpenAIPanel"
+      data-testid="agent-elements-openai-panel"
+    >
+      <div
+        className="provider-panel-header openai-panel-header agent-elements-settings-panel-header mb-6 pb-4 border-b border-[var(--nim-border)]"
+        data-agent-elements-shell="openai-header"
+        data-testid="agent-elements-openai-header"
+      >
         <h3 className="provider-panel-title text-xl font-semibold leading-tight mb-2 text-[var(--nim-text)]">OpenAI</h3>
         <p className="provider-panel-description text-sm leading-relaxed text-[var(--nim-text-muted)]">
           Access to GPT-5.4, GPT-5.3 Chat, GPT-5 mini/nano, GPT-4.1, GPT-4o, and other current OpenAI models.
@@ -42,30 +53,44 @@ export function OpenAIPanel({
         name="Enable OpenAI"
         checked={config.enabled}
         onChange={onToggle}
+        testId="agent-elements-openai-enable-toggle"
       />
 
       {config.enabled && (
         <>
-          <div className="provider-panel-section py-4 mb-4 border-b border-[var(--nim-border)] last:border-b-0 last:mb-0 last:pb-0">
+          <div
+            className="provider-panel-section openai-panel-section agent-elements-settings-section py-4 mb-4 border-b border-[var(--nim-border)] last:border-b-0 last:mb-0 last:pb-0"
+            data-agent-elements-shell="openai-api-section"
+            data-section="api-configuration"
+            data-testid="agent-elements-openai-api-section"
+          >
             <h4 className="provider-panel-section-title text-base font-semibold mb-3 text-[var(--nim-text)]">API Configuration</h4>
-            <div className="api-key-section mt-4">
+            <div
+              className="api-key-section openai-api-card agent-elements-tool-card mt-4 rounded-lg border border-[var(--nim-border)] bg-[var(--nim-bg-secondary)] p-3"
+              data-agent-elements-shell="openai-api-card"
+              data-testid="agent-elements-openai-api-card"
+            >
               <div className="api-key-row flex gap-2 items-center">
                 <input
+                  aria-label="OpenAI API key"
+                  data-testid="agent-elements-openai-api-key-input"
                   type="password"
                   value={apiKeys.openai || ''}
                   onChange={(e) => onApiKeyChange('openai', e.target.value)}
                   onFocus={(e) => e.target.select()}
                   placeholder="sk-..."
-                  className="api-key-input flex-1 py-2 px-3 rounded-md bg-[var(--nim-bg-secondary)] border border-[var(--nim-border)] text-[var(--nim-text)] outline-none font-mono focus:border-[var(--nim-primary)]"
+                  className="api-key-input openai-api-key-input flex-1 py-2 px-3 rounded-md bg-[var(--nim-bg)] border border-[var(--nim-border)] text-[var(--nim-text)] outline-none font-mono focus:border-[var(--nim-primary)]"
                 />
                 <button
-                  className={`test-button inline-flex items-center justify-center py-2 px-4 rounded-md text-sm font-medium whitespace-nowrap cursor-pointer transition-all bg-[var(--nim-bg-tertiary)] text-[var(--nim-text)] border border-[var(--nim-border)] hover:bg-[var(--nim-bg-hover)] hover:border-[var(--nim-primary)] ${
+                  className={`test-button openai-test-button inline-flex items-center justify-center py-2 px-4 rounded-md text-sm font-medium whitespace-nowrap cursor-pointer transition-all bg-[var(--nim-bg-tertiary)] text-[var(--nim-text)] border border-[var(--nim-border)] hover:bg-[var(--nim-bg-hover)] hover:border-[var(--nim-primary)] ${
                     config.testStatus === 'testing' ? 'opacity-60 cursor-wait' : ''
                   } ${config.testStatus === 'success' ? 'text-[var(--nim-success)] border-[var(--nim-success)]' : ''} ${
                     config.testStatus === 'error' ? 'text-[var(--nim-error)] border-[var(--nim-error)]' : ''
                   }`}
                   onClick={onTestConnection}
                   disabled={config.testStatus === 'testing'}
+                  data-test-status={config.testStatus || 'idle'}
+                  data-testid="agent-elements-openai-test-button"
                 >
                   {config.testStatus === 'testing' ? 'Testing...' :
                    config.testStatus === 'success' ? '✓ Connected' :
@@ -73,22 +98,47 @@ export function OpenAIPanel({
                 </button>
               </div>
               {config.testMessage && config.testStatus === 'error' && (
-                <div className="test-error text-xs mt-2 text-[var(--nim-error)]">{config.testMessage}</div>
+                <div
+                  className="test-error openai-test-error text-xs mt-2 text-[var(--nim-error)]"
+                  data-agent-elements-shell="openai-test-error"
+                  data-testid="agent-elements-openai-test-error"
+                >
+                  {config.testMessage}
+                </div>
               )}
             </div>
           </div>
 
-          <div className="provider-panel-section py-4 mb-4 border-b border-[var(--nim-border)] last:border-b-0 last:mb-0 last:pb-0">
+          <div
+            className="provider-panel-section openai-panel-section agent-elements-settings-section py-4 mb-4 border-b border-[var(--nim-border)] last:border-b-0 last:mb-0 last:pb-0"
+            data-agent-elements-shell="openai-models-section"
+            data-section="available-models"
+            data-testid="agent-elements-openai-models-section"
+          >
             <h4 className="provider-panel-section-title text-base font-semibold mb-3 text-[var(--nim-text)]">Available Models</h4>
             {loading && (
-              <div className="models-loading text-sm text-[var(--nim-text-muted)] py-2">Loading models...</div>
+              <div
+                className="models-loading openai-models-loading text-sm text-[var(--nim-text-muted)] py-2"
+                data-agent-elements-shell="openai-models-loading"
+                data-testid="agent-elements-openai-models-loading"
+              >
+                Loading models...
+              </div>
             )}
 
             {!loading && availableModels.length > 0 && (
-              <div className="models-section">
+              <div
+                className="models-section openai-models-list"
+                data-agent-elements-shell="openai-models-list"
+                data-testid="agent-elements-openai-models-list"
+              >
                 <div className="models-header flex items-center justify-between mb-3">
                   <span className="text-sm text-[var(--nim-text-muted)]">Select models to enable:</span>
-                  <div className="models-actions flex gap-2">
+                  <div
+                    className="models-actions openai-model-actions flex gap-2"
+                    data-agent-elements-shell="openai-model-actions"
+                    data-testid="agent-elements-openai-model-actions"
+                  >
                     <button
                       className="models-action-btn text-xs py-1 px-2 rounded bg-[var(--nim-bg-secondary)] border border-[var(--nim-border)] text-[var(--nim-text-muted)] hover:text-[var(--nim-text)] hover:bg-[var(--nim-bg-hover)] cursor-pointer transition-all"
                       onClick={() => onSelectAllModels(true)}
@@ -105,7 +155,13 @@ export function OpenAIPanel({
                 </div>
                 <div className="models-grid flex flex-col gap-2">
                   {availableModels.map(model => (
-                    <label key={model.id} className="model-checkbox flex items-center gap-3 py-2 px-3 rounded-md bg-[var(--nim-bg-secondary)] border border-[var(--nim-border)] cursor-pointer hover:bg-[var(--nim-bg-hover)]">
+                    <label
+                      key={model.id}
+                      className="model-checkbox openai-model-row agent-elements-tool-card flex items-center gap-3 py-2 px-3 rounded-md bg-[var(--nim-bg-secondary)] border border-[var(--nim-border)] cursor-pointer hover:bg-[var(--nim-bg-hover)]"
+                      data-agent-elements-shell="openai-model-row"
+                      data-model-id={model.id}
+                      data-testid={`agent-elements-openai-model-row-${getModelDomId(model.id)}`}
+                    >
                       <input
                         type="checkbox"
                         checked={config.models?.includes(model.id) ?? false}
@@ -120,7 +176,13 @@ export function OpenAIPanel({
             )}
 
             {!loading && availableModels.length === 0 && apiKeys.openai && (
-              <div className="models-loading text-sm text-[var(--nim-text-muted)] py-2">No models available. Check your API key and connection.</div>
+              <div
+                className="models-loading openai-models-empty text-sm text-[var(--nim-text-muted)] py-2"
+                data-agent-elements-shell="openai-models-empty"
+                data-testid="agent-elements-openai-models-empty"
+              >
+                No models available. Check your API key and connection.
+              </div>
             )}
           </div>
         </>

@@ -17,6 +17,14 @@ interface UserMenuPopoverProps {
   anchorEl: HTMLElement | null;
 }
 
+interface UserMenuItem {
+  label: string;
+  action: string;
+  icon: string;
+  alpha?: boolean;
+  onClick: () => void;
+}
+
 export function UserMenuPopover({ onNavigateSettings, onClose, isProjectConnected = false, anchorEl }: UserMenuPopoverProps) {
   const authState = useAtomValue(stytchAuthAtom);
 
@@ -37,10 +45,11 @@ export function UserMenuPopover({ onNavigateSettings, onClose, isProjectConnecte
   const email = authState?.user?.emails?.[0]?.email;
   const isSignedIn = authState?.isAuthenticated ?? false;
 
-  const menuItems = [
+  const menuItems: UserMenuItem[] = [
     {
       label: 'User Settings',
-      icon: 'person' as const,
+      action: 'user-settings',
+      icon: 'person',
       onClick: () => {
         onNavigateSettings('user');
         onClose();
@@ -48,7 +57,8 @@ export function UserMenuPopover({ onNavigateSettings, onClose, isProjectConnecte
     },
     {
       label: 'Project Settings',
-      icon: 'folder' as const,
+      action: 'project-settings',
+      icon: 'folder',
       onClick: () => {
         onNavigateSettings('project');
         onClose();
@@ -57,7 +67,8 @@ export function UserMenuPopover({ onNavigateSettings, onClose, isProjectConnecte
     // Show Team Settings when connected AND collaboration alpha is enabled
     ...(isProjectConnected && isCollaborationEnabled ? [{
       label: 'Team Settings',
-      icon: 'group' as const,
+      action: 'team-settings',
+      icon: 'group',
       alpha: true,
       onClick: () => {
         onNavigateSettings('project', 'team');
@@ -67,7 +78,8 @@ export function UserMenuPopover({ onNavigateSettings, onClose, isProjectConnecte
     // Sync Settings -- always available (login and mobile sync are GA features)
     {
       label: 'Sync Settings',
-      icon: 'sync' as const,
+      action: 'sync-settings',
+      icon: 'sync',
       onClick: () => {
         onNavigateSettings('user', 'sync');
         onClose();
@@ -75,51 +87,131 @@ export function UserMenuPopover({ onNavigateSettings, onClose, isProjectConnecte
     },
   ];
 
+  const menuShellClasses = [
+    'user-menu-popover',
+    'agent-elements-user-menu-popover',
+    'agent-elements-tool-card',
+    'z-50',
+    'w-56',
+    'overflow-hidden',
+    'rounded-[var(--an-tool-border-radius)]',
+    'border',
+    'border-[var(--an-tool-border-color)]',
+    'bg-[var(--an-tool-background)]',
+    'p-1',
+    'text-[13px]',
+    'leading-5',
+    'text-[var(--an-tool-color)]',
+    'shadow-[0_12px_32px_color-mix(in_srgb,var(--an-foreground)_10%,transparent)]',
+  ].join(' ');
+
+  const menuItemClasses = [
+    'agent-elements-user-menu-item',
+    'flex',
+    'w-full',
+    'items-center',
+    'gap-2.5',
+    'rounded-[8px]',
+    'border-0',
+    'bg-transparent',
+    'px-3',
+    'py-2',
+    'text-left',
+    'text-[13px]',
+    'leading-5',
+    'text-[var(--an-tool-color)]',
+    'transition-[background-color,color]',
+    'duration-150',
+    'cursor-pointer',
+    'select-none',
+    'hover:bg-[var(--an-background-tertiary)]',
+    'focus-visible:outline-2',
+    'focus-visible:outline-[var(--an-primary-color)]',
+    'focus-visible:outline-offset-2',
+  ].join(' ');
+
+  const iconClasses = 'agent-elements-user-menu-icon flex h-5 w-5 shrink-0 items-center justify-center text-[var(--an-tool-color-muted)]';
+
   return (
     <FloatingPortal>
       <div
         ref={menu.refs.setFloating}
         style={menu.floatingStyles}
         {...menu.getFloatingProps()}
-        className="w-56 bg-nim-secondary border border-nim rounded-lg shadow-lg z-50 overflow-hidden"
+        className={menuShellClasses}
+        data-component="UserMenuPopover"
+        data-agent-elements-shell="user-menu-popover"
         data-testid="user-menu-popover"
       >
-        {/* Navigation links */}
         <div className="py-1">
           {menuItems.map((item) => (
             <button
               key={item.label}
-              className="w-full flex items-center gap-3 px-3 py-2 text-sm text-nim hover:bg-nim-tertiary cursor-pointer border-none bg-transparent text-left transition-colors duration-100"
+              className={menuItemClasses}
               onClick={item.onClick}
-              data-testid={`user-menu-${item.label.toLowerCase().replace(/\s+/g, '-')}`}
+              role="menuitem"
+              data-testid={`user-menu-${item.action}`}
+              data-agent-elements-shell="user-menu-item"
+              data-menu-action={item.action}
             >
-              <MaterialSymbol icon={item.icon} size={18} className="text-nim-muted shrink-0" />
-              <span className="flex-1">{item.label}</span>
-              {'alpha' in item && item.alpha && <AlphaBadge size="xs" />}
+              <span className={iconClasses}>
+                <MaterialSymbol icon={item.icon} size={18} />
+              </span>
+              <span className="agent-elements-user-menu-label min-w-0 flex-1 truncate">{item.label}</span>
+              {item.alpha && <AlphaBadge size="xs" />}
             </button>
           ))}
         </div>
 
-        {/* Identity row - always shown for login and mobile sync access */}
-        <div className="border-t border-nim" />
+        <div
+          className="agent-elements-user-menu-separator mx-2 my-1 h-px bg-[var(--an-tool-border-color)]"
+          data-agent-elements-shell="user-menu-separator"
+        />
         <button
-          className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-nim-tertiary cursor-pointer border-none bg-transparent text-left transition-colors duration-100"
+          className={[
+            'agent-elements-user-menu-identity',
+            'flex',
+            'w-full',
+            'items-center',
+            'gap-2.5',
+            'rounded-[8px]',
+            'border-0',
+            'bg-transparent',
+            'px-3',
+            'py-2.5',
+            'text-left',
+            'transition-[background-color,color]',
+            'duration-150',
+            'cursor-pointer',
+            'select-none',
+            'hover:bg-[var(--an-background-tertiary)]',
+            'focus-visible:outline-2',
+            'focus-visible:outline-[var(--an-primary-color)]',
+            'focus-visible:outline-offset-2',
+          ].join(' ')}
           onClick={() => {
             onNavigateSettings('user', 'sync');
             onClose();
           }}
+          role="menuitem"
           data-testid="user-menu-identity"
+          data-agent-elements-shell="user-menu-identity"
+          data-menu-action="sync-identity"
+          data-signed-in={isSignedIn ? 'true' : 'false'}
         >
-          <div className="w-7 h-7 rounded-full bg-nim-primary flex items-center justify-center shrink-0">
-            <span className="text-xs font-semibold text-white leading-none">
+          <div className="agent-elements-user-menu-avatar flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[var(--an-primary-color)]">
+            <span
+              className="text-[12px] font-semibold leading-none text-[var(--an-background)]"
+              data-agent-elements-shell="user-menu-avatar-initial"
+            >
               {email ? email[0].toUpperCase() : '?'}
             </span>
           </div>
           <div className="flex flex-col min-w-0">
-            <span className="text-sm text-nim truncate">
+            <span className="truncate text-[13px] leading-5 text-[var(--an-tool-color)]">
               {email ?? 'No account'}
             </span>
-            <span className="text-xs text-nim-muted">
+            <span className="text-[12px] leading-4 text-[var(--an-tool-color-muted)]">
               {isSignedIn ? 'Signed in' : 'Not signed in'}
             </span>
           </div>

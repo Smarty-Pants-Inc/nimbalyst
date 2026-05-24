@@ -1,5 +1,6 @@
-import React, { useCallback, useEffect, useRef, useState, memo } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState, memo } from 'react';
 import { useSetAtom } from 'jotai';
+import { MaterialSymbol } from '@nimbalyst/runtime';
 import { Tab } from './TabManager';
 import {
   useTabDirty,
@@ -9,6 +10,7 @@ import {
 import { CommonFileActions } from '../CommonFileActions';
 import { historyDialogFileAtom } from '../../store';
 import { KeyboardShortcuts, getShortcutDisplay } from '../../../shared/KeyboardShortcuts';
+import { useFloatingMenu, FloatingPortal, virtualElement } from '../../hooks/useFloatingMenu';
 
 // Separate component for dirty indicator - subscribes to its own tab's dirty state
 // This allows only this component to re-render when dirty state changes
@@ -101,7 +103,8 @@ const TabItem: React.FC<TabItemProps> = ({
   return (
     <div
       ref={(el) => onTabRef(tab.id, el)}
-      className={`tab group flex items-center h-[30px] px-3 mr-px cursor-pointer relative min-w-[120px] max-w-[200px] shrink-0 rounded-t-md border border-[var(--nim-border)] bg-[var(--nim-bg-secondary)] transition-all duration-200 hover:bg-[var(--nim-bg-tertiary)] ${tab.id === activeTabId ? 'active z-[1] border-b-0 bg-[var(--nim-bg)]' : ''} ${isDirty || hasCollabUnsyncedChanges ? 'dirty' : ''} ${tab.isPinned ? 'pinned min-w-[40px] max-w-[150px]' : ''} ${draggedIndex === index ? 'dragging opacity-50 cursor-grabbing' : ''} ${dragOverIndex === index ? 'drag-over border-l-2 border-l-[var(--nim-primary)]' : ''}`}
+      className={`tab agent-elements-tab group flex items-center h-[30px] px-3 mr-px cursor-pointer relative min-w-[120px] max-w-[200px] shrink-0 rounded-t-md border border-[var(--nim-border)] bg-[var(--nim-bg-secondary)] transition-[background-color,border-color,box-shadow,opacity] duration-150 hover:bg-[var(--nim-bg-tertiary)] ${tab.id === activeTabId ? 'active z-[1] border-b-0 bg-[var(--nim-bg)]' : ''} ${isDirty || hasCollabUnsyncedChanges ? 'dirty' : ''} ${tab.isPinned ? 'pinned min-w-[40px] max-w-[150px]' : ''} ${draggedIndex === index ? 'dragging opacity-50 cursor-grabbing' : ''} ${dragOverIndex === index ? 'drag-over ring-1 ring-[var(--nim-primary)]' : ''}`}
+      data-agent-elements-shell="tab"
       data-tab-type={tab.isVirtual ? 'session' : 'document'}
       data-tab-id={tab.id}
       data-filename={tab.fileName}
@@ -128,7 +131,11 @@ const TabItem: React.FC<TabItemProps> = ({
       {tab.id === activeTabId && (
         <span className="absolute top-0 left-px right-px h-0.5 rounded-sm bg-[var(--nim-primary)]" />
       )}
-      {tab.isPinned && <span className="tab-pin-icon text-[10px] mr-1 opacity-70">📌</span>}
+      {tab.isPinned && (
+        <span className="tab-pin-icon agent-elements-tab-pin-icon mr-1 flex h-4 w-4 items-center justify-center text-[var(--nim-text-muted)]">
+          <MaterialSymbol icon="push_pin" size={14} />
+        </span>
+      )}
       {tab.isProcessing && (
         <span className="tab-processing-indicator inline-flex items-center justify-center mr-1.5 text-[var(--nim-primary)] opacity-80" title="Processing...">
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -169,13 +176,14 @@ const TabItem: React.FC<TabItemProps> = ({
       )}
       {!tab.isPinned && (
         <button
-          className="tab-close-button flex items-center justify-center w-[18px] h-[18px] ml-2 border-none bg-transparent text-[var(--nim-text-faint)] cursor-pointer rounded text-lg leading-none p-0 opacity-0 transition-opacity duration-200 group-hover:opacity-100 hover:bg-[var(--nim-error)] hover:text-white"
+          className="tab-close-button agent-elements-tab-close-button flex items-center justify-center w-[18px] h-[18px] ml-2 border-none bg-transparent text-[var(--nim-text-faint)] cursor-pointer rounded p-0 opacity-0 transition-[background-color,color,opacity] duration-150 group-hover:opacity-100 hover:bg-[var(--nim-error-subtle)] hover:text-[var(--nim-error)] focus-visible:opacity-100 focus-visible:outline-2 focus-visible:outline-[var(--nim-primary)] focus-visible:outline-offset-1"
+          data-agent-elements-shell="tab-close-button"
           data-testid={`tab-close-button-${tab.id}`}
           data-filename={tab.fileName}
           onClick={(e) => onCloseClick(e, tab.id)}
           title="Close tab"
         >
-          ×
+          <MaterialSymbol icon="close" size={14} />
         </button>
       )}
     </div>
@@ -218,8 +226,6 @@ export const TabBar: React.FC<TabBarProps> = ({
   const openHistoryDialog = useSetAtom(historyDialogFileAtom);
   const [contextMenuTab, setContextMenuTab] = useState<string | null>(null);
   const [contextMenuPosition, setContextMenuPosition] = useState({ x: 0, y: 0 });
-  const [adjustedContextMenuPosition, setAdjustedContextMenuPosition] = useState<{ x: number; y: number } | null>(null);
-  const contextMenuRef = useRef<HTMLDivElement>(null);
   const [showTabMenu, setShowTabMenu] = useState(false);
   const [menuSelectedIndex, setMenuSelectedIndex] = useState<number>(-1);
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
@@ -228,11 +234,41 @@ export const TabBar: React.FC<TabBarProps> = ({
   const [editingValue, setEditingValue] = useState<string>('');
   const isDraggingRef = useRef(false);
   const tabBarRef = useRef<HTMLDivElement>(null);
-  const tabMenuRef = useRef<HTMLDivElement>(null);
   const tabRefs = useRef<Map<string, HTMLDivElement>>(new Map());
   const editInputRef = useRef<HTMLInputElement>(null);
   const clickCountRef = useRef<Map<string, number>>(new Map());
   const clickTimerRef = useRef<Map<string, NodeJS.Timeout>>(new Map());
+
+  const closeContextMenu = useCallback(() => {
+    setContextMenuTab(null);
+  }, []);
+
+  const contextMenuReference = useMemo(
+    () => contextMenuTab ? virtualElement(contextMenuPosition.x, contextMenuPosition.y) : null,
+    [contextMenuPosition.x, contextMenuPosition.y, contextMenuTab]
+  );
+
+  const contextMenu = useFloatingMenu({
+    placement: 'right-start',
+    reference: contextMenuReference,
+    open: Boolean(contextMenuTab),
+    onOpenChange: (open) => {
+      if (!open) closeContextMenu();
+    },
+  });
+
+  const handleTabMenuOpenChange = useCallback((open: boolean) => {
+    setShowTabMenu(open);
+    if (!open) {
+      setMenuSelectedIndex(-1);
+    }
+  }, []);
+
+  const tabMenu = useFloatingMenu({
+    placement: 'bottom-end',
+    open: showTabMenu,
+    onOpenChange: handleTabMenuOpenChange,
+  });
 
   // Handle tab click (including double-click for rename)
   const handleTabClick = useCallback((e: React.MouseEvent, tabId: string) => {
@@ -307,12 +343,6 @@ export const TabBar: React.FC<TabBarProps> = ({
     setContextMenuPosition({ x: e.clientX, y: e.clientY });
   }, []);
 
-  // Close context menu
-  const closeContextMenu = useCallback(() => {
-    setContextMenuTab(null);
-    setAdjustedContextMenuPosition(null);
-  }, []);
-
   // Handle context menu actions
   const handleCloseOthers = useCallback(() => {
     tabs.forEach(tab => {
@@ -364,6 +394,58 @@ export const TabBar: React.FC<TabBarProps> = ({
   // Get the file info for the context menu tab (used by CommonFileActions)
   const contextMenuTabData = contextMenuTab ? tabs.find(t => t.id === contextMenuTab) : null;
 
+  const tabMenuShellClasses =
+    'tab-menu-dropdown agent-elements-tab-menu agent-elements-tool-card min-w-[220px] max-w-[320px] overflow-y-auto rounded-[10px] border border-nim bg-nim-secondary p-1 text-[13px] shadow-[0_12px_32px_color-mix(in_srgb,var(--nim-text)_10%,transparent)] z-[10000]';
+  const tabMenuItemClasses =
+    'tab-menu-item agent-elements-tab-menu-item flex w-full items-center gap-2.5 rounded-[8px] border-0 bg-transparent px-3 py-2 text-left text-[13px] leading-5 text-nim transition-[background-color,color] duration-150 cursor-pointer select-none hover:bg-nim-hover focus-visible:outline-2 focus-visible:outline-[var(--nim-primary)] focus-visible:outline-offset-2';
+  const tabMenuSelectedClasses =
+    'bg-nim-hover shadow-[inset_0_0_0_1px_var(--nim-primary)]';
+  const tabMenuActiveClasses = 'active bg-nim-selected text-nim';
+  const tabMenuSeparatorClasses =
+    'tab-menu-separator agent-elements-tab-menu-separator mx-2 my-1 h-px bg-[var(--nim-border)]';
+
+  const contextMenuShellClasses =
+    'tab-context-menu agent-elements-tab-context-menu agent-elements-tool-card min-w-[190px] max-h-[calc(100vh-20px)] overflow-y-auto rounded-[10px] border border-nim bg-nim-secondary p-1 text-[13px] shadow-[0_12px_32px_color-mix(in_srgb,var(--nim-text)_10%,transparent)] z-[10000]';
+  const contextMenuItemClasses =
+    'context-menu-item agent-elements-tab-context-menu-item flex w-full items-center gap-2.5 rounded-[8px] border-0 bg-transparent px-3 py-2 text-left text-[13px] leading-5 text-nim transition-[background-color,color] duration-150 cursor-pointer select-none hover:bg-nim-hover focus-visible:outline-2 focus-visible:outline-[var(--nim-primary)] focus-visible:outline-offset-2';
+  const contextMenuSeparatorClasses =
+    'context-menu-separator agent-elements-tab-context-menu-separator mx-2 my-1 h-px bg-[var(--nim-border)]';
+
+  const renderContextMenuSeparator = (id: string) => (
+    <div
+      className={contextMenuSeparatorClasses}
+      data-testid={`agent-elements-tab-context-menu-separator-${id}`}
+      data-agent-elements-shell="tab-context-menu-separator"
+    />
+  );
+
+  const renderContextMenuItem = ({
+    id,
+    icon,
+    label,
+    onClick,
+  }: {
+    id: string;
+    icon: string;
+    label: string;
+    onClick: () => void;
+  }) => (
+    <button
+      type="button"
+      className={contextMenuItemClasses}
+      onClick={onClick}
+      role="menuitem"
+      data-testid={`agent-elements-tab-context-menu-${id}`}
+      data-agent-elements-shell="tab-context-menu-item"
+      data-tab-context-action={id}
+    >
+      <span className="agent-elements-tab-context-menu-icon flex h-5 w-5 shrink-0 items-center justify-center text-nim-muted">
+        <MaterialSymbol icon={icon} size={18} />
+      </span>
+      <span className="agent-elements-tab-context-menu-label min-w-0 truncate">{label}</span>
+    </button>
+  );
+
   // Drag and drop handlers
   const handleDragStart = useCallback((e: React.DragEvent, index: number) => {
     isDraggingRef.current = true;
@@ -413,16 +495,14 @@ export const TabBar: React.FC<TabBarProps> = ({
 
   // Toggle tab menu
   const toggleTabMenu = useCallback(() => {
-    setShowTabMenu(!showTabMenu);
-    setMenuSelectedIndex(-1);
-  }, [showTabMenu]);
+    handleTabMenuOpenChange(!showTabMenu);
+  }, [handleTabMenuOpenChange, showTabMenu]);
 
   // Handle tab menu item click
   const handleTabMenuSelect = useCallback((tabId: string) => {
     onTabSelect(tabId);
-    setShowTabMenu(false);
-    setMenuSelectedIndex(-1);
-  }, [onTabSelect]);
+    handleTabMenuOpenChange(false);
+  }, [onTabSelect, handleTabMenuOpenChange]);
 
   // Close all tabs from menu
   const handleCloseAllFromMenu = useCallback(() => {
@@ -431,9 +511,8 @@ export const TabBar: React.FC<TabBarProps> = ({
         onTabClose(tab.id);
       }
     });
-    setShowTabMenu(false);
-    setMenuSelectedIndex(-1);
-  }, [tabs, onTabClose]);
+    handleTabMenuOpenChange(false);
+  }, [tabs, onTabClose, handleTabMenuOpenChange]);
 
   // Handle rename completion
   const completeRename = useCallback((save: boolean) => {
@@ -459,61 +538,6 @@ export const TabBar: React.FC<TabBarProps> = ({
   const handleRenameBlur = useCallback(() => {
     completeRename(true);
   }, [completeRename]);
-
-
-  // Click outside to close context menu
-  React.useEffect(() => {
-    if (contextMenuTab) {
-      const handleClickOutside = () => closeContextMenu();
-      document.addEventListener('click', handleClickOutside);
-      return () => document.removeEventListener('click', handleClickOutside);
-    }
-    return undefined;
-  }, [contextMenuTab, closeContextMenu]);
-
-  // Adjust context menu position to keep it within viewport
-  useEffect(() => {
-    if (contextMenuTab && contextMenuRef.current) {
-      const rect = contextMenuRef.current.getBoundingClientRect();
-      const viewportWidth = window.innerWidth;
-      const viewportHeight = window.innerHeight;
-
-      let newX = contextMenuPosition.x;
-      let newY = contextMenuPosition.y;
-
-      // If menu extends beyond right edge, shift it left
-      if (contextMenuPosition.x + rect.width > viewportWidth) {
-        newX = contextMenuPosition.x - rect.width;
-      }
-      // If menu extends beyond bottom edge, shift it up
-      if (contextMenuPosition.y + rect.height > viewportHeight) {
-        newY = contextMenuPosition.y - rect.height;
-      }
-
-      // Ensure menu doesn't go off the left or top edge
-      newX = Math.max(0, newX);
-      newY = Math.max(0, newY);
-
-      if (newX !== contextMenuPosition.x || newY !== contextMenuPosition.y) {
-        setAdjustedContextMenuPosition({ x: newX, y: newY });
-      }
-    }
-  }, [contextMenuTab, contextMenuPosition]);
-
-  // Click outside to close tab menu
-  React.useEffect(() => {
-    if (showTabMenu) {
-      const handleClickOutside = (e: MouseEvent) => {
-        if (tabMenuRef.current && !tabMenuRef.current.contains(e.target as Node)) {
-          setShowTabMenu(false);
-          setMenuSelectedIndex(-1);
-        }
-      };
-      document.addEventListener('click', handleClickOutside);
-      return () => document.removeEventListener('click', handleClickOutside);
-    }
-    return undefined;
-  }, [showTabMenu]);
 
   // Keyboard navigation for dropdown menu
   React.useEffect(() => {
@@ -552,8 +576,7 @@ export const TabBar: React.FC<TabBarProps> = ({
           
         case 'Escape':
           e.preventDefault();
-          setShowTabMenu(false);
-          setMenuSelectedIndex(-1);
+          handleTabMenuOpenChange(false);
           break;
           
         default:
@@ -571,7 +594,7 @@ export const TabBar: React.FC<TabBarProps> = ({
 
     window.addEventListener('keydown', handleMenuKeyDown);
     return () => window.removeEventListener('keydown', handleMenuKeyDown);
-  }, [showTabMenu, menuSelectedIndex, tabs, handleCloseAllFromMenu, handleTabMenuSelect]);
+  }, [showTabMenu, menuSelectedIndex, tabs, handleCloseAllFromMenu, handleTabMenuSelect, handleTabMenuOpenChange]);
 
   // Auto-scroll active tab into view
   React.useEffect(() => {
@@ -665,62 +688,95 @@ export const TabBar: React.FC<TabBarProps> = ({
         </div>
         
         <div className="tab-bar-actions flex items-center px-2 gap-1 shrink-0">
-          <div className="tab-menu-container relative" ref={tabMenuRef}>
+          <div className="tab-menu-container relative">
             <button
-              className="tab-menu-button flex items-center justify-center w-7 h-7 border border-[var(--nim-border)] bg-[var(--nim-bg-secondary)] text-[var(--nim-text-muted)] cursor-pointer rounded p-0 transition-all duration-200 hover:bg-[var(--nim-bg-tertiary)] hover:text-[var(--nim-text)]"
+              ref={tabMenu.refs.setReference}
+              className={`tab-menu-button agent-elements-tab-menu-button flex items-center justify-center w-7 h-7 border border-[var(--nim-border)] bg-[var(--nim-bg-secondary)] text-[var(--nim-text-muted)] cursor-pointer rounded-[6px] p-0 transition-[background-color,color,border-color] duration-150 hover:bg-[var(--nim-bg-tertiary)] hover:text-[var(--nim-text)] focus-visible:outline-2 focus-visible:outline-[var(--nim-primary)] focus-visible:outline-offset-1 ${showTabMenu ? 'active bg-[var(--nim-bg-tertiary)] text-[var(--nim-text)]' : ''}`}
               onClick={toggleTabMenu}
               title="Tab menu"
+              type="button"
+              data-agent-elements-shell="tab-menu-button"
+              {...tabMenu.getReferenceProps()}
             >
-              <svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor">
-                <path d="M6 8L2 4h8z"/>
-              </svg>
+              <MaterialSymbol icon="keyboard_arrow_down" size={18} />
             </button>
 
             {showTabMenu && (
-              <div className="tab-menu-dropdown absolute top-[calc(100%+4px)] right-0 bg-[var(--nim-bg-secondary)] border border-[var(--nim-border)] rounded-md shadow-lg min-w-[200px] max-w-[300px] max-h-[400px] overflow-y-auto z-[1000]" role="menu" aria-label="Tab menu">
-                <div className="tab-menu-section py-1">
-                  <div
-                    className={`tab-menu-item tab-menu-action flex items-center justify-between px-3 py-2 text-[13px] text-[var(--nim-text-muted)] cursor-pointer transition-colors duration-150 whitespace-nowrap overflow-hidden text-ellipsis outline-none font-medium hover:bg-[var(--nim-bg-tertiary)] ${menuSelectedIndex === 0 ? 'selected bg-[var(--nim-bg-tertiary)] shadow-[inset_0_0_0_1px_var(--nim-primary)]' : ''}`}
-                    onClick={handleCloseAllFromMenu}
-                    role="menuitem"
-                    tabIndex={0}
-                  >
-                    Close All Tabs
+              <FloatingPortal>
+                <div
+                  ref={tabMenu.refs.setFloating}
+                  style={tabMenu.floatingStyles}
+                  className={tabMenuShellClasses}
+                  role="menu"
+                  aria-label="Tab menu"
+                  data-component="TabBarOverflowMenu"
+                  data-testid="agent-elements-tab-menu"
+                  data-agent-elements-shell="tab-menu"
+                  {...tabMenu.getFloatingProps()}
+                >
+                  <div className="tab-menu-section agent-elements-tab-menu-section py-0.5">
+                    <button
+                      type="button"
+                      className={`tab-menu-action ${tabMenuItemClasses} font-medium ${menuSelectedIndex === 0 ? `selected ${tabMenuSelectedClasses}` : ''}`}
+                      onClick={handleCloseAllFromMenu}
+                      role="menuitem"
+                      data-testid="agent-elements-tab-menu-close-all"
+                      data-agent-elements-shell="tab-menu-item"
+                      data-tab-menu-action="close-all"
+                    >
+                      <span className="agent-elements-tab-menu-icon flex h-5 w-5 shrink-0 items-center justify-center text-nim-muted">
+                        <MaterialSymbol icon="cancel" size={18} />
+                      </span>
+                      <span className="agent-elements-tab-menu-title min-w-0 flex-1 truncate">Close All Tabs</span>
+                    </button>
                   </div>
+                  {tabs.length > 0 && (
+                    <>
+                      <div
+                        className={tabMenuSeparatorClasses}
+                        data-testid="agent-elements-tab-menu-separator"
+                        data-agent-elements-shell="tab-menu-separator"
+                      />
+                      <div className="tab-menu-section tab-menu-list agent-elements-tab-menu-list max-h-[300px] overflow-y-auto py-0.5">
+                        {tabs.map((tab, index) => (
+                          <button
+                            key={tab.id}
+                            type="button"
+                            className={`${tabMenuItemClasses} ${tab.id === activeTabId ? tabMenuActiveClasses : ''} ${menuSelectedIndex === index + 1 ? `selected ${tabMenuSelectedClasses}` : ''}`}
+                            onClick={() => handleTabMenuSelect(tab.id)}
+                            role="menuitem"
+                            data-testid={`agent-elements-tab-menu-item-${tab.id}`}
+                            data-agent-elements-shell="tab-menu-item"
+                            data-tab-id={tab.id}
+                          >
+                            <span className="tab-menu-index agent-elements-tab-menu-index flex h-5 min-w-5 items-center justify-center rounded-[6px] text-[11px] text-nim-faint">{index + 1}</span>
+                            <span className="tab-menu-title agent-elements-tab-menu-title min-w-0 flex-1 truncate">
+                              {tab.isPinned && (
+                                <span className="agent-elements-tab-menu-pin mr-1 inline-flex align-[-2px] text-nim-muted">
+                                  <MaterialSymbol icon="push_pin" size={13} />
+                                </span>
+                              )}
+                              {tab.fileName}
+                              <MenuItemDirtyIndicator filePath={tab.filePath} />
+                            </span>
+                          </button>
+                        ))}
+                      </div>
+                    </>
+                  )}
                 </div>
-                {tabs.length > 0 && (
-                  <>
-                    <div className="tab-menu-separator h-px bg-[var(--nim-border)] m-0" />
-                    <div className="tab-menu-section tab-menu-list py-1 max-h-[300px] overflow-y-auto">
-                      {tabs.map((tab, index) => (
-                        <div
-                          key={tab.id}
-                          className={`tab-menu-item flex items-center justify-between px-3 py-2 text-[13px] text-[var(--nim-text-muted)] cursor-pointer transition-colors duration-150 whitespace-nowrap overflow-hidden text-ellipsis outline-none hover:bg-[var(--nim-bg-tertiary)] ${tab.id === activeTabId ? 'active bg-[var(--nim-primary)] text-white' : ''} ${menuSelectedIndex === index + 1 ? 'selected bg-[var(--nim-bg-tertiary)] shadow-[inset_0_0_0_1px_var(--nim-primary)]' : ''}`}
-                          onClick={() => handleTabMenuSelect(tab.id)}
-                          role="menuitem"
-                          tabIndex={0}
-                        >
-                          <span className="tab-menu-index inline-block min-w-[20px] mr-2 text-[var(--nim-text-faint)] text-[11px]">{index + 1}</span>
-                          <span className="tab-menu-title flex-1 overflow-hidden text-ellipsis">
-                            {tab.isPinned && '📌 '}
-                            {tab.fileName}
-                            <MenuItemDirtyIndicator filePath={tab.filePath} />
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                  </>
-                )}
-              </div>
+              </FloatingPortal>
             )}
           </div>
           {onToggleAIChat && (
             <button
-              className="ai-chat-toggle-button flex items-center justify-center w-7 h-7 border border-[var(--nim-border)] bg-[var(--nim-bg-secondary)] text-[var(--nim-primary)] cursor-pointer rounded p-0 transition-all duration-200 hover:bg-[var(--nim-bg-tertiary)] hover:scale-105 active:scale-95"
+              className="ai-chat-toggle-button agent-elements-tab-ai-toggle flex items-center justify-center w-7 h-7 border border-[var(--nim-border)] bg-[var(--nim-bg-secondary)] text-[var(--nim-primary)] cursor-pointer rounded-[6px] p-0 transition-[background-color,color,border-color] duration-150 hover:bg-[var(--nim-bg-tertiary)] focus-visible:outline-2 focus-visible:outline-[var(--nim-primary)] focus-visible:outline-offset-1"
               data-testid="ai-sidebar-toggle"
+              data-agent-elements-shell="tab-ai-toggle"
               onClick={onToggleAIChat}
               title={`${isAIChatCollapsed ? 'Open' : 'Close'} AI Assistant (${getShortcutDisplay(KeyboardShortcuts.view.toggleAIChat)})`}
               aria-label={isAIChatCollapsed ? "Open AI Assistant" : "Close AI Assistant"}
+              type="button"
             >
               <svg width="16" height="16" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <path d="M10 2L11.5 7.5L17 9L11.5 10.5L10 16L8.5 10.5L3 9L8.5 7.5L10 2Z" fill="currentColor"/>
@@ -734,64 +790,84 @@ export const TabBar: React.FC<TabBarProps> = ({
 
       {/* Context Menu */}
       {contextMenuTab && (
-        <div
-          ref={contextMenuRef}
-          className="tab-context-menu bg-[var(--nim-bg-secondary)] border border-[var(--nim-border)] rounded-md shadow-lg py-1 z-[1000] min-w-[150px]"
-          style={{
-            position: 'fixed',
-            left: (adjustedContextMenuPosition || contextMenuPosition).x,
-            top: (adjustedContextMenuPosition || contextMenuPosition).y
-          }}
-        >
-          <div className="context-menu-item px-4 py-2 text-[13px] text-[var(--nim-text-muted)] cursor-pointer transition-colors duration-150 hover:bg-[var(--nim-bg-hover)]" onClick={handleTogglePin}>
-            {tabs.find(t => t.id === contextMenuTab)?.isPinned ? 'Unpin' : 'Pin'} Tab
+        <FloatingPortal>
+          <div
+            ref={contextMenu.refs.setFloating}
+            style={contextMenu.floatingStyles}
+            className={contextMenuShellClasses}
+            data-component="TabBarContextMenu"
+            data-testid="agent-elements-tab-context-menu"
+            data-agent-elements-shell="tab-context-menu"
+            {...contextMenu.getFloatingProps()}
+          >
+            {renderContextMenuItem({
+              id: 'pin',
+              icon: 'push_pin',
+              label: `${tabs.find(t => t.id === contextMenuTab)?.isPinned ? 'Unpin' : 'Pin'} Tab`,
+              onClick: handleTogglePin,
+            })}
+            {renderContextMenuSeparator('pin')}
+            {renderContextMenuItem({
+              id: 'history',
+              icon: 'history',
+              label: 'View History...',
+              onClick: handleViewHistory,
+            })}
+            {/* Common file actions (Open in Default App, External Editor, Finder, Copy Path, Share) */}
+            {contextMenuTabData && (
+              <>
+                {renderContextMenuSeparator('common-file-actions')}
+                <CommonFileActions
+                  filePath={contextMenuTabData.filePath}
+                  fileName={contextMenuTabData.fileName}
+                  onClose={closeContextMenu}
+                  menuItemClass={contextMenuItemClasses}
+                  separatorClass={contextMenuSeparatorClasses}
+                  useButtons
+                />
+              </>
+            )}
+            {renderContextMenuSeparator('close')}
+            {renderContextMenuItem({
+              id: 'close',
+              icon: 'close',
+              label: 'Close',
+              onClick: () => { onTabClose(contextMenuTab); closeContextMenu(); },
+            })}
+            {renderContextMenuItem({
+              id: 'close-others',
+              icon: 'tab_close',
+              label: 'Close Others',
+              onClick: handleCloseOthers,
+            })}
+            {renderContextMenuItem({
+              id: 'close-to-right',
+              icon: 'tab_close_right',
+              label: 'Close to the Right',
+              onClick: handleCloseToRight,
+            })}
+            {renderContextMenuItem({
+              id: 'close-all',
+              icon: 'cancel',
+              label: 'Close All',
+              onClick: handleCloseAll,
+            })}
+            {onReopenLastClosed && hasClosedTabs && (
+              <>
+                {renderContextMenuSeparator('reopen')}
+                {renderContextMenuItem({
+                  id: 'reopen-closed',
+                  icon: 'restore',
+                  label: 'Reopen Closed Tab',
+                  onClick: () => {
+                    onReopenLastClosed();
+                    closeContextMenu();
+                  },
+                })}
+              </>
+            )}
           </div>
-          <div className="context-menu-separator h-px bg-[var(--nim-border)] my-1" />
-          <div className="context-menu-item px-4 py-2 text-[13px] text-[var(--nim-text-muted)] cursor-pointer transition-colors duration-150 hover:bg-[var(--nim-bg-hover)]" onClick={handleViewHistory}>
-            View History...
-          </div>
-          {/* Common file actions (Open in Default App, External Editor, Finder, Copy Path, Share) */}
-          {contextMenuTabData && (
-            <>
-              <div className="context-menu-separator h-px bg-[var(--nim-border)] my-1" />
-              <CommonFileActions
-                filePath={contextMenuTabData.filePath}
-                fileName={contextMenuTabData.fileName}
-                onClose={closeContextMenu}
-                menuItemClass="context-menu-item px-4 py-2 text-[13px] text-[var(--nim-text-muted)] cursor-pointer transition-colors duration-150 hover:bg-[var(--nim-bg-hover)]"
-                separatorClass="context-menu-separator h-px bg-[var(--nim-border)] my-1"
-                showIcons={false}
-              />
-            </>
-          )}
-          <div className="context-menu-separator h-px bg-[var(--nim-border)] my-1" />
-          <div className="context-menu-item px-4 py-2 text-[13px] text-[var(--nim-text-muted)] cursor-pointer transition-colors duration-150 hover:bg-[var(--nim-bg-hover)]" onClick={() => { onTabClose(contextMenuTab); closeContextMenu(); }}>
-            Close
-          </div>
-          <div className="context-menu-item px-4 py-2 text-[13px] text-[var(--nim-text-muted)] cursor-pointer transition-colors duration-150 hover:bg-[var(--nim-bg-hover)]" onClick={handleCloseOthers}>
-            Close Others
-          </div>
-          <div className="context-menu-item px-4 py-2 text-[13px] text-[var(--nim-text-muted)] cursor-pointer transition-colors duration-150 hover:bg-[var(--nim-bg-hover)]" onClick={handleCloseToRight}>
-            Close to the Right
-          </div>
-          <div className="context-menu-item px-4 py-2 text-[13px] text-[var(--nim-text-muted)] cursor-pointer transition-colors duration-150 hover:bg-[var(--nim-bg-hover)]" onClick={handleCloseAll}>
-            Close All
-          </div>
-          {onReopenLastClosed && hasClosedTabs && (
-            <>
-              <div className="context-menu-separator h-px bg-[var(--nim-border)] my-1" />
-              <div
-                className="context-menu-item px-4 py-2 text-[13px] text-[var(--nim-text-muted)] cursor-pointer transition-colors duration-150 hover:bg-[var(--nim-bg-hover)]"
-                onClick={() => {
-                  onReopenLastClosed();
-                  closeContextMenu();
-                }}
-              >
-                Reopen Closed Tab
-              </div>
-            </>
-          )}
-        </div>
+        </FloatingPortal>
       )}
     </>
   );

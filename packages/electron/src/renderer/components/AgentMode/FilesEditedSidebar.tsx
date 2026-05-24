@@ -632,9 +632,19 @@ export const FilesEditedSidebar: React.FC<FilesEditedSidebarProps> = React.memo(
   }, [setFileScopeMode]);
 
   return (
-    <div className="files-edited-sidebar shrink-0 flex flex-col h-full bg-[var(--nim-bg-secondary)]" style={{ width }}>
+    <div
+      className="files-edited-sidebar agent-elements-files-edited-agent-mode agent-elements-edit-panel shrink-0 flex flex-col h-full bg-[var(--nim-bg-secondary)]"
+      data-agent-elements-shell="agent-mode-files-edited"
+      data-component="FilesEditedSidebar"
+      data-testid="agent-elements-agent-mode-files-edited-sidebar"
+      style={{ width }}
+    >
       {/* Header with scope dropdown and controls */}
-      <div className="files-edited-sidebar__header flex items-center gap-2 px-3 py-2 border-b border-[var(--nim-border)] bg-[var(--nim-bg-secondary)] shrink-0">
+      <div
+        className="files-edited-sidebar__header agent-elements-files-edited-header flex items-center gap-2 px-3 py-2 border-b border-[var(--nim-border)] bg-[var(--nim-bg-secondary)] shrink-0"
+        data-agent-elements-shell="files-edited-header"
+        data-testid="agent-elements-files-edited-header"
+      >
         <FilesScopeDropdown
           fileScopeMode={fileScopeMode}
           onFileScopeModeChange={setFileScopeMode}
@@ -651,7 +661,10 @@ export const FilesEditedSidebar: React.FC<FilesEditedSidebarProps> = React.memo(
         {/* Spacer to push controls to the right */}
         <div className="flex-1" />
         {/* Expand/Collapse controls */}
-        <div className="files-edited-sidebar__controls flex gap-1 shrink-0">
+        <div
+          className="files-edited-sidebar__controls agent-elements-files-edited-controls flex gap-1 shrink-0"
+          data-agent-elements-shell="files-edited-controls"
+        >
           <button
             onClick={handleRevertSelected}
             disabled={isReverting || selectedSessionOwnedUncommittedFiles.length === 0}
@@ -670,7 +683,7 @@ export const FilesEditedSidebar: React.FC<FilesEditedSidebarProps> = React.memo(
               window.dispatchEvent(new CustomEvent('file-edits-sidebar:expand-all'));
             }}
             disabled={!groupByDirectory}
-            className="files-edited-sidebar__control-btn flex items-center justify-center w-6 h-6 border-none rounded bg-transparent text-[var(--nim-text-muted)] cursor-pointer hover:enabled:bg-[var(--nim-bg-tertiary)] disabled:text-[var(--nim-text-disabled)] disabled:cursor-default disabled:opacity-50"
+            className="files-edited-sidebar__control-btn agent-elements-files-edited-control flex items-center justify-center w-6 h-6 border-none rounded bg-transparent text-[var(--nim-text-muted)] cursor-pointer hover:enabled:bg-[var(--nim-bg-tertiary)] disabled:text-[var(--nim-text-disabled)] disabled:cursor-default disabled:opacity-50"
             title="Expand all"
           >
             <MaterialSymbol icon="unfold_more" size={16} />
@@ -680,7 +693,7 @@ export const FilesEditedSidebar: React.FC<FilesEditedSidebarProps> = React.memo(
               window.dispatchEvent(new CustomEvent('file-edits-sidebar:collapse-all'));
             }}
             disabled={!groupByDirectory}
-            className="files-edited-sidebar__control-btn flex items-center justify-center w-6 h-6 border-none rounded bg-transparent text-[var(--nim-text-muted)] cursor-pointer hover:enabled:bg-[var(--nim-bg-tertiary)] disabled:text-[var(--nim-text-disabled)] disabled:cursor-default disabled:opacity-50"
+            className="files-edited-sidebar__control-btn agent-elements-files-edited-control flex items-center justify-center w-6 h-6 border-none rounded bg-transparent text-[var(--nim-text-muted)] cursor-pointer hover:enabled:bg-[var(--nim-bg-tertiary)] disabled:text-[var(--nim-text-disabled)] disabled:cursor-default disabled:opacity-50"
             title="Collapse all"
           >
             <MaterialSymbol icon="unfold_less" size={16} />
@@ -690,16 +703,26 @@ export const FilesEditedSidebar: React.FC<FilesEditedSidebarProps> = React.memo(
 
       {/* Keep All button - show when there are pending files (only in non-git repos) */}
       {!isGitRepo && pendingReviewFiles.size > 0 && (
-        <div className="files-edited-sidebar__keep-all-banner flex items-center justify-between px-3 py-2 bg-[color-mix(in_srgb,var(--nim-warning)_10%,var(--nim-bg))] border-b border-[color-mix(in_srgb,var(--nim-warning)_30%,transparent)] shrink-0">
+        <div
+          className="files-edited-sidebar__keep-all-banner agent-elements-files-edited-review-banner agent-elements-edit-approval flex items-center justify-between px-3 py-2 bg-[color-mix(in_srgb,var(--nim-warning)_10%,var(--nim-bg))] border-b border-[color-mix(in_srgb,var(--nim-warning)_30%,transparent)] shrink-0"
+          data-agent-elements-shell="files-edited-review-banner"
+          data-testid="agent-elements-files-edited-review-banner"
+        >
           <div className="files-edited-sidebar__keep-all-info flex items-center gap-2">
             <MaterialSymbol icon="rate_review" size={16} className="files-edited-sidebar__keep-all-icon text-[var(--nim-warning)]" />
             <span className="files-edited-sidebar__keep-all-text text-xs text-[var(--nim-warning)] font-medium">
-              <span className="files-edited-sidebar__keep-all-count font-semibold">{pendingReviewFiles.size}</span>
+              <span
+                className="files-edited-sidebar__keep-all-count agent-elements-status-pill font-semibold"
+                data-testid="agent-elements-files-edited-review-count"
+                data-tone="warning"
+              >
+                {pendingReviewFiles.size}
+              </span>
               {' '}file{pendingReviewFiles.size !== 1 ? 's' : ''} pending review
             </span>
           </div>
           <button
-            className="files-edited-sidebar__keep-all-btn flex items-center gap-1 px-2.5 py-1 bg-transparent border border-[var(--nim-warning)] rounded text-[var(--nim-warning)] text-[11px] font-medium cursor-pointer transition-all duration-200 font-inherit hover:enabled:bg-[color-mix(in_srgb,var(--nim-warning)_15%,transparent)] disabled:opacity-50 disabled:cursor-not-allowed"
+            className="files-edited-sidebar__keep-all-btn agent-elements-files-edited-keep-all flex items-center gap-1 px-2.5 py-1 bg-transparent border border-[var(--nim-warning)] rounded text-[var(--nim-warning)] text-[11px] font-medium cursor-pointer transition-all duration-200 font-inherit hover:enabled:bg-[color-mix(in_srgb,var(--nim-warning)_15%,transparent)] disabled:opacity-50 disabled:cursor-not-allowed"
             onClick={handleKeepAll}
             disabled={isClearing}
             title="Accept all pending AI changes"
@@ -724,7 +747,11 @@ export const FilesEditedSidebar: React.FC<FilesEditedSidebarProps> = React.memo(
       )}
 
       {/* Files Content */}
-      <div className="files-edited-sidebar__content flex-1 overflow-hidden flex flex-col">
+      <div
+        className="files-edited-sidebar__content agent-elements-files-edited-content flex-1 overflow-hidden flex flex-col"
+        data-agent-elements-shell="files-edited-content"
+        data-testid="agent-elements-files-edited-content"
+      >
         <div className="flex-1 overflow-auto">
           <FileEditsSidebarComponent
             fileEdits={fileEdits}

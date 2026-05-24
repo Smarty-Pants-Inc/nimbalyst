@@ -10,33 +10,7 @@
 import React from 'react';
 import type { SessionLayoutMode } from '../../store';
 import { HelpTooltip } from '../../help';
-
-// Custom SVG icons for layout modes
-// Each shows a panel with a divider line indicating where the split is
-
-/** Editor maximized - divider near bottom */
-const EditorMaxIcon = () => (
-  <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <rect x="1.5" y="1.5" width="13" height="13" rx="1.5" stroke="currentColor" strokeWidth="1.5" fill="none" />
-    <line x1="3" y1="12" x2="13" y2="12" stroke="currentColor" strokeWidth="1.5" />
-  </svg>
-);
-
-/** Split view - divider in middle */
-const SplitViewIcon = () => (
-  <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <rect x="1.5" y="1.5" width="13" height="13" rx="1.5" stroke="currentColor" strokeWidth="1.5" fill="none" />
-    <line x1="3" y1="8" x2="13" y2="8" stroke="currentColor" strokeWidth="1.5" />
-  </svg>
-);
-
-/** Transcript maximized - divider near top */
-const TranscriptMaxIcon = () => (
-  <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <rect x="1.5" y="1.5" width="13" height="13" rx="1.5" stroke="currentColor" strokeWidth="1.5" fill="none" />
-    <line x1="3" y1="4" x2="13" y2="4" stroke="currentColor" strokeWidth="1.5" />
-  </svg>
-);
+import { MaterialSymbol } from '@nimbalyst/runtime';
 
 interface LayoutControlsProps {
   mode: SessionLayoutMode;
@@ -45,36 +19,65 @@ interface LayoutControlsProps {
 }
 
 export function LayoutControls({ mode, hasTabs, onModeChange }: LayoutControlsProps) {
+  const getControlClass = (targetMode: SessionLayoutMode, withLabel = false) => {
+    const isActive = mode === targetMode;
+    return [
+      'layout-control-btn',
+      'agent-elements-layout-control',
+      withLabel ? 'with-label w-auto gap-[var(--an-spacing-xs)] px-[var(--an-spacing-sm)]' : 'w-7 px-0',
+      'flex h-6 items-center justify-center rounded-[calc(var(--an-tool-border-radius)_-_4px)] border-none py-0 text-[11px] font-medium outline-none transition-[background-color,border-color,color] duration-150 disabled:cursor-not-allowed disabled:opacity-40',
+      isActive
+        ? 'active agent-elements-layout-control-active bg-[var(--an-primary-color)] text-[var(--an-send-button-color)]'
+        : 'bg-transparent text-[var(--an-foreground-muted)] hover:enabled:bg-[var(--an-background-tertiary)] hover:enabled:text-[var(--an-foreground)] focus-visible:ring-2 focus-visible:ring-[var(--an-focus-ring)]',
+    ].join(' ');
+  };
+
   return (
     <HelpTooltip testId="layout-controls">
-      <div className="layout-controls flex items-center gap-0.5 p-1 bg-nim-tertiary rounded-md" data-testid="layout-controls">
+      <div
+        className="layout-controls agent-elements-layout-controls flex items-center gap-[var(--an-spacing-xxs)] rounded-[var(--an-tool-border-radius)] border border-[var(--an-border-color)] bg-[var(--an-background-secondary)] p-[var(--an-spacing-xxs)]"
+        data-agent-elements-shell="layout-controls"
+        data-component="UnifiedAILayoutControls"
+        data-has-tabs={hasTabs}
+        data-layout-mode={mode}
+        data-testid="layout-controls"
+      >
         <button
-          className={`layout-control-btn with-label flex items-center justify-center gap-1 w-auto h-6 px-2 py-0 border-none rounded cursor-pointer transition-all duration-150 disabled:opacity-40 disabled:cursor-not-allowed ${mode === 'editor' ? 'active bg-nim-primary text-white hover:bg-nim-primary-hover' : 'bg-transparent text-nim-muted hover:enabled:bg-nim-hover hover:enabled:text-nim'}`}
+          className={getControlClass('editor', true)}
           onClick={() => onModeChange('editor')}
           aria-label="Maximize editor"
+          aria-pressed={mode === 'editor'}
+          data-layout-mode="editor"
           disabled={!hasTabs}
           data-testid="layout-maximize-editor"
+          type="button"
         >
-          <span className="layout-label text-[11px] font-medium uppercase tracking-[0.02em]">Files</span>
-          <EditorMaxIcon />
+          <span className="layout-label">Files</span>
+          <MaterialSymbol icon="article" size={14} />
         </button>
         <button
-          className={`layout-control-btn flex items-center justify-center w-7 h-6 p-0 border-none rounded cursor-pointer transition-all duration-150 disabled:opacity-40 disabled:cursor-not-allowed ${mode === 'split' ? 'active bg-nim-primary text-white hover:bg-nim-primary-hover' : 'bg-transparent text-nim-muted hover:enabled:bg-nim-hover hover:enabled:text-nim'}`}
+          className={getControlClass('split')}
           onClick={() => onModeChange('split')}
           aria-label="Split view"
+          aria-pressed={mode === 'split'}
+          data-layout-mode="split"
           disabled={!hasTabs}
           data-testid="layout-split-view"
+          type="button"
         >
-          <SplitViewIcon />
+          <MaterialSymbol icon="vertical_split" size={14} />
         </button>
         <button
-          className={`layout-control-btn with-label flex items-center justify-center gap-1 w-auto h-6 px-2 py-0 border-none rounded cursor-pointer transition-all duration-150 disabled:opacity-40 disabled:cursor-not-allowed ${mode === 'transcript' ? 'active bg-nim-primary text-white hover:bg-nim-primary-hover' : 'bg-transparent text-nim-muted hover:enabled:bg-nim-hover hover:enabled:text-nim'}`}
+          className={getControlClass('transcript', true)}
           onClick={() => onModeChange('transcript')}
           aria-label="Maximize transcript"
+          aria-pressed={mode === 'transcript'}
+          data-layout-mode="transcript"
           data-testid="layout-maximize-transcript"
+          type="button"
         >
-          <TranscriptMaxIcon />
-          <span className="layout-label text-[11px] font-medium uppercase tracking-[0.02em]">Agent</span>
+          <MaterialSymbol icon="chat" size={14} />
+          <span className="layout-label">Agent</span>
         </button>
       </div>
     </HelpTooltip>

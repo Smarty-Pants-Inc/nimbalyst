@@ -49,7 +49,11 @@ export const HistoricalGraph: React.FC<HistoricalGraphProps> = ({ workspaceId })
   }, [timeRange, workspaceId]);
 
   if (loading) {
-    return <div className="historical-graph-loading flex items-center justify-center min-h-[400px] text-nim-muted text-base">Loading...</div>;
+    return (
+      <div className="historical-graph-loading agent-elements-ai-usage-loading flex min-h-[400px] items-center justify-center text-base text-nim-muted">
+        Loading...
+      </div>
+    );
   }
 
   const chartData = data.map((point) => ({
@@ -61,16 +65,19 @@ export const HistoricalGraph: React.FC<HistoricalGraphProps> = ({ workspaceId })
   }));
 
   return (
-    <div className="historical-graph flex flex-col gap-6">
-      <div className="historical-graph-controls flex justify-between items-center">
-        <h3 className="m-0 text-lg font-semibold text-nim">Token Usage Over Time</h3>
-        <div className="time-range-selector flex gap-1">
+    <div
+      className="historical-graph agent-elements-ai-usage-chart flex flex-col gap-6"
+      data-agent-elements-shell="ai-usage-chart"
+    >
+      <div className="historical-graph-controls flex items-center justify-between gap-4">
+        <h3 className="m-0 text-base font-semibold leading-6 text-nim">Token Usage Over Time</h3>
+        <div className="time-range-selector flex gap-1 rounded-[10px] border border-nim bg-nim-tertiary p-1">
           {(['week', 'month', 'quarter', 'year'] as const).map((range) => (
             <button
               key={range}
-              className={`px-3.5 py-1.5 border rounded text-[13px] cursor-pointer transition-all duration-200 ${
+              className={`rounded-[8px] border px-3.5 py-1.5 text-[13px] leading-5 cursor-pointer transition-[background-color,border-color,color] duration-150 focus-visible:outline-2 focus-visible:outline-[var(--nim-primary)] focus-visible:outline-offset-2 ${
                 timeRange === range
-                  ? 'bg-[var(--nim-primary)] text-white border-[var(--nim-primary)]'
+                  ? 'border-[var(--nim-primary)] bg-[var(--nim-primary)] text-[var(--nim-bg)]'
                   : 'bg-nim-secondary border-nim text-nim-muted hover:bg-nim-hover hover:text-nim'
               }`}
               onClick={() => setTimeRange(range)}
@@ -91,17 +98,17 @@ export const HistoricalGraph: React.FC<HistoricalGraphProps> = ({ workspaceId })
               contentStyle={{
                 background: 'var(--nim-bg-secondary)',
                 border: '1px solid var(--nim-border)',
-                borderRadius: '6px',
+                borderRadius: '8px',
                 color: 'var(--nim-text)',
               }}
             />
             <Legend />
-            <Line type="monotone" dataKey="Input Tokens" stroke="#8884d8" strokeWidth={2} />
-            <Line type="monotone" dataKey="Output Tokens" stroke="#82ca9d" strokeWidth={2} />
+            <Line type="monotone" dataKey="Input Tokens" stroke="var(--nim-info)" strokeWidth={2} />
+            <Line type="monotone" dataKey="Output Tokens" stroke="var(--nim-success)" strokeWidth={2} />
           </LineChart>
         </ResponsiveContainer>
       ) : (
-        <div className="no-data flex items-center justify-center min-h-[400px] text-nim-muted text-base">No data available for this time range</div>
+        <div className="no-data agent-elements-ai-usage-empty flex min-h-[400px] items-center justify-center text-base text-nim-muted">No data available for this time range</div>
       )}
     </div>
   );

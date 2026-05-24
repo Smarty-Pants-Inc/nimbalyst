@@ -112,6 +112,27 @@ describe('CodexACPRawParser', () => {
     });
   });
 
+  describe('agent_thought_chunk', () => {
+    it('maps text content to the assistant thinking side-channel', async () => {
+      const parser = new CodexACPRawParser();
+      const msg = makeRawMessage({
+        content: envelope({
+          sessionUpdate: 'agent_thought_chunk',
+          content: { type: 'text', text: 'Let me reason through the edit.' },
+        }),
+      });
+
+      const descriptors = await parser.parseMessage(msg, makeContext());
+
+      expect(descriptors).toHaveLength(1);
+      expect(descriptors[0]).toMatchObject({
+        type: 'assistant_message',
+        text: '',
+        thinking: 'Let me reason through the edit.',
+      });
+    });
+  });
+
   describe('tool_call', () => {
     it('emits tool_call_started with derived name and target file path', async () => {
       const parser = new CodexACPRawParser();
@@ -288,6 +309,42 @@ describe('CodexACPRawParser', () => {
         type: 'tool_call_completed',
         status: 'error',
         isError: true,
+      });
+    });
+  });
+
+  describe('plan', () => {
+    it('emits structured plan tool-call descriptors for ACP plan updates', async () => {
+      const parser = new CodexACPRawParser();
+      const msg = makeRawMessage({
+        content: envelope({
+          sessionUpdate: 'plan',
+          entries: [
+            { content: 'Read parser contracts', status: 'completed' },
+            { content: 'Render plan card', status: 'in_progress' },
+          ],
+        }),
+      });
+
+      const descriptors = await parser.parseMessage(msg, makeContext());
+
+      expect(descriptors).toHaveLength(2);
+      expect(descriptors[0]).toMatchObject({
+        type: 'tool_call_started',
+        toolName: 'update_plan',
+        toolDisplayName: 'Update plan',
+        arguments: {
+          title: 'Plan update',
+          steps: [
+            { id: 'plan-step-0', step: 'Read parser contracts', status: 'completed' },
+            { id: 'plan-step-1', step: 'Render plan card', status: 'in_progress' },
+          ],
+        },
+      });
+      expect(descriptors[1]).toMatchObject({
+        type: 'tool_call_completed',
+        status: 'completed',
+        result: 'Plan updated.',
       });
     });
   });

@@ -64,7 +64,11 @@ function getTaskIcon(task: BackgroundTask): string {
 }
 
 const SessionRunningIndicator: React.FC = () => (
-  <div className="session-list-item-status processing flex h-5 w-5 items-center justify-center text-[var(--nim-primary)] opacity-80" title="Processing...">
+  <div
+    className="session-list-item-status processing agent-elements-background-task-running flex h-5 w-5 items-center justify-center text-[var(--an-primary-color)] opacity-80"
+    data-agent-elements-shell="background-task-running"
+    title="Processing..."
+  >
     <MaterialSymbol icon="progress_activity" size={14} className="animate-spin" />
   </div>
 );
@@ -85,14 +89,31 @@ function getTaskStatusLabel(task: BackgroundTask): string {
 function getTaskStatusClasses(task: BackgroundTask): string {
   switch (task.status) {
     case 'running':
-      return 'bg-[rgba(59,130,246,0.12)] text-[#3b82f6]';
+      return 'border-[color-mix(in_srgb,var(--nim-info)_26%,var(--an-border-color))] bg-[color-mix(in_srgb,var(--nim-info)_10%,var(--an-background))] text-[var(--nim-info)]';
     case 'connected':
-      return 'bg-[rgba(34,197,94,0.12)] text-[#22c55e]';
+      return 'border-[color-mix(in_srgb,var(--nim-success)_26%,var(--an-border-color))] bg-[color-mix(in_srgb,var(--nim-success)_10%,var(--an-background))] text-[var(--nim-success)]';
     case 'error':
-      return 'bg-[rgba(239,68,68,0.12)] text-[#ef4444]';
+      return 'border-[color-mix(in_srgb,var(--nim-error)_26%,var(--an-border-color))] bg-[color-mix(in_srgb,var(--nim-error)_10%,var(--an-background))] text-[var(--nim-error)]';
     default:
-      return 'bg-nim-tertiary text-nim-muted';
+      return 'border-[var(--an-border-color)] bg-[var(--an-background-secondary)] text-[var(--an-foreground-muted)]';
   }
+}
+
+function getTaskIconClasses(task: BackgroundTask): string {
+  switch (task.status) {
+    case 'running':
+      return 'border-[color-mix(in_srgb,var(--nim-info)_22%,var(--an-border-color))] bg-[color-mix(in_srgb,var(--nim-info)_8%,var(--an-background))] text-[var(--nim-info)]';
+    case 'connected':
+      return 'border-[color-mix(in_srgb,var(--nim-success)_22%,var(--an-border-color))] bg-[color-mix(in_srgb,var(--nim-success)_8%,var(--an-background))] text-[var(--nim-success)]';
+    case 'error':
+      return 'border-[color-mix(in_srgb,var(--nim-error)_22%,var(--an-border-color))] bg-[color-mix(in_srgb,var(--nim-error)_8%,var(--an-background))] text-[var(--nim-error)]';
+    default:
+      return 'border-[var(--an-border-color)] bg-[var(--an-background-secondary)] text-[var(--an-foreground-muted)]';
+  }
+}
+
+function getTaskDomId(task: BackgroundTask): string {
+  return task.id.replace(/[^a-zA-Z0-9]+/g, '-').replace(/^-|-$/g, '');
 }
 
 const TaskRow: React.FC<{
@@ -101,10 +122,17 @@ const TaskRow: React.FC<{
   onOpenSession?: (sessionId: string) => void;
 }> = ({ task, now, onOpenSession }) => {
   const canOpenSession = Boolean(task.sessionId && onOpenSession);
+  const taskDomId = getTaskDomId(task);
 
   return (
-    <div className="flex items-start gap-3 rounded-md border border-nim bg-nim-tertiary px-3 py-2">
-      <div className={`mt-0.5 flex h-7 w-7 items-center justify-center rounded-md bg-nim-tertiary text-nim-muted ${task.status === 'running' ? 'text-[#3b82f6]' : ''} ${task.status === 'error' ? 'text-[#ef4444]' : ''}`}>
+    <div
+      className="agent-elements-background-task-row flex items-start gap-3 rounded-[var(--an-tool-border-radius)] border border-[var(--an-border-color)] bg-[var(--an-background-secondary)] px-3 py-2 text-[var(--an-foreground)]"
+      data-agent-elements-shell="background-task-row"
+      data-task-category={task.category}
+      data-task-status={task.status}
+      data-testid={`agent-elements-background-task-row-${taskDomId}`}
+    >
+      <div className={`agent-elements-background-task-icon mt-0.5 flex h-7 w-7 items-center justify-center rounded-[var(--an-tool-border-radius)] border ${getTaskIconClasses(task)}`}>
         {task.category === 'ai-session' ? (
           <ProviderIcon provider={task.provider || 'claude-code'} size={16} />
         ) : (
@@ -114,25 +142,25 @@ const TaskRow: React.FC<{
       <div className="min-w-0 flex-1">
         <div className="flex items-start justify-between gap-2">
           <div className="min-w-0">
-            <div className="truncate text-[13px] font-medium text-nim">{task.label}</div>
-            <div className="mt-0.5 text-[11px] text-nim-muted">{task.detail}</div>
+            <div className="agent-elements-background-task-label truncate text-[13px] font-medium leading-5 text-[var(--an-foreground)] select-text">{task.label}</div>
+            <div className="agent-elements-background-task-detail mt-0.5 text-[11px] leading-4 text-[var(--an-foreground-muted)] select-text">{task.detail}</div>
           </div>
           {task.category === 'ai-session' && task.status === 'running' ? (
             <SessionRunningIndicator />
           ) : (
-            <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-medium ${getTaskStatusClasses(task)}`}>
+            <span className={`agent-elements-status-pill agent-elements-background-task-status shrink-0 rounded-[999px] border px-2 py-0.5 text-[10px] font-medium leading-4 ${getTaskStatusClasses(task)}`}>
               {getTaskStatusLabel(task)}
             </span>
           )}
         </div>
         <div className="mt-2 flex items-center justify-between gap-3">
-          <span className="text-[10px] text-nim-faint">
+          <span className="agent-elements-background-task-duration text-[10px] leading-4 text-[var(--an-foreground-subtle)]">
             {task.startedAt ? `Active ${formatDuration(task.startedAt, now)}` : 'Standing by'}
           </span>
           {canOpenSession && task.sessionId ? (
             <button
               type="button"
-              className="text-[11px] font-medium text-[var(--nim-primary)] transition-colors hover:text-[var(--nim-primary-hover)]"
+              className="agent-elements-background-task-action rounded-[var(--an-tool-border-radius)] border border-transparent px-2 py-0.5 text-[11px] font-medium text-[var(--an-primary-color)] transition-[background-color,border-color,color] duration-150 ease-out hover:border-[var(--an-border-color)] hover:bg-[var(--an-background-tertiary)] hover:text-[var(--nim-primary-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--an-input-focus-outline)]"
               onClick={() => {
                 if (task.sessionId) {
                   onOpenSession?.(task.sessionId);
@@ -149,7 +177,10 @@ const TaskRow: React.FC<{
 };
 
 const EmptyState: React.FC<{ label: string }> = ({ label }) => (
-  <div className="rounded-md border border-dashed border-nim px-3 py-2 text-[12px] text-nim-muted">
+  <div
+    className="agent-elements-background-task-empty rounded-[var(--an-tool-border-radius)] border border-dashed border-[var(--an-border-color)] bg-[var(--an-background-secondary)] px-3 py-2 text-[12px] leading-5 text-[var(--an-foreground-muted)]"
+    data-agent-elements-shell="background-task-empty"
+  >
     {label}
   </div>
 );
@@ -240,17 +271,23 @@ export const BackgroundTaskIndicator: React.FC<BackgroundTaskIndicatorProps> = (
       : 'No active background tasks';
 
   return (
-    <div className="background-task-indicator relative">
+    <div
+      className="background-task-indicator agent-elements-background-task-indicator relative"
+      data-component="BackgroundTaskIndicator"
+      data-agent-elements-shell="background-task-indicator"
+    >
       <HelpTooltip testId="gutter-background-tasks-button" placement="right">
         <button
           ref={menu.refs.setReference}
           {...menu.getReferenceProps()}
           type="button"
-          className={`nav-button relative flex h-9 w-9 items-center justify-center rounded-md border-none bg-transparent p-0 text-nim-muted transition-all duration-150 hover:bg-nim-tertiary hover:text-nim active:scale-95 focus-visible:outline-2 focus-visible:outline-[var(--nim-primary)] focus-visible:outline-offset-2 ${hasError ? 'text-[#ef4444]' : ''}`}
+          className={`nav-button agent-elements-background-task-button relative flex h-9 w-9 items-center justify-center rounded-[var(--an-tool-border-radius)] border border-transparent bg-transparent p-0 transition-[background-color,border-color,color,box-shadow] duration-150 ease-out hover:border-[var(--an-border-color)] hover:bg-[var(--an-background-tertiary)] hover:text-[var(--an-foreground)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--an-input-focus-outline)] ${hasError ? 'text-[var(--nim-error)]' : 'text-[var(--an-foreground-muted)]'}`}
           onClick={() => menu.setIsOpen(!menu.isOpen)}
           aria-label={buttonLabel}
           aria-expanded={menu.isOpen}
           aria-haspopup="menu"
+          data-component="BackgroundTaskIndicator"
+          data-agent-elements-shell="background-task-button"
           data-testid="gutter-background-tasks-button"
         >
           <MaterialSymbol
@@ -258,12 +295,18 @@ export const BackgroundTaskIndicator: React.FC<BackgroundTaskIndicatorProps> = (
             size={20}
           />
           {activeTaskCount > 0 ? (
-            <span className="absolute -right-0.5 -top-0.5 flex min-h-[16px] min-w-[16px] items-center justify-center rounded-full bg-[var(--nim-primary)] px-1 text-[10px] font-semibold text-white">
+            <span
+              className="agent-elements-background-task-count absolute -right-0.5 -top-0.5 flex min-h-[16px] min-w-[16px] items-center justify-center rounded-[999px] bg-[var(--an-primary-color)] px-1 text-[10px] font-semibold text-[var(--an-background)]"
+              data-agent-elements-shell="background-task-count"
+            >
               {activeTaskCount > 9 ? '9+' : activeTaskCount}
             </span>
           ) : null}
           {hasError ? (
-            <span className="absolute right-1 top-1 h-2.5 w-2.5 rounded-full bg-[#ef4444]" />
+            <span
+              className="agent-elements-background-task-error-dot absolute right-1 top-1 h-2.5 w-2.5 rounded-[999px] border border-[var(--an-background)] bg-[var(--nim-error)]"
+              data-agent-elements-shell="background-task-error-dot"
+            />
           ) : null}
         </button>
       </HelpTooltip>
@@ -274,19 +317,21 @@ export const BackgroundTaskIndicator: React.FC<BackgroundTaskIndicatorProps> = (
             ref={menu.refs.setFloating}
             style={menu.floatingStyles}
             {...menu.getFloatingProps()}
-            className="z-50 w-80 overflow-y-auto rounded-lg border border-nim bg-nim-secondary shadow-lg"
+            className="background-tasks-popover agent-elements-background-tasks-popover agent-elements-tool-card z-50 max-h-[min(480px,calc(100vh-24px))] w-80 overflow-y-auto rounded-[var(--an-border-radius)] border border-[var(--an-border-color)] bg-[var(--an-background)] text-[var(--an-foreground)] shadow-[0_20px_60px_color-mix(in_srgb,var(--nim-text)_18%,transparent)]"
+            data-component="BackgroundTaskIndicatorPopover"
+            data-agent-elements-shell="background-tasks-popover"
             data-testid="background-tasks-popover"
           >
-            <div className="flex items-center justify-between border-b border-nim px-4 py-3">
+            <div className="agent-elements-background-tasks-header flex items-center justify-between border-b border-[var(--an-border-color)] px-4 py-3">
               <div>
-                <div className="text-[14px] font-semibold text-nim">Background Tasks</div>
-                <div className="mt-0.5 text-[11px] text-nim-muted">
+                <div className="text-[14px] font-semibold leading-5 text-[var(--an-foreground)]">Background Tasks</div>
+                <div className="mt-0.5 text-[11px] leading-4 text-[var(--an-foreground-muted)]">
                   Dev mode only. {activeTaskCount > 0 ? `${activeTaskCount} active` : 'No active work'}.
                 </div>
               </div>
               <button
                 type="button"
-                className="rounded p-1 text-nim-muted transition-colors hover:bg-nim-tertiary hover:text-nim"
+                className="agent-elements-background-tasks-close rounded-[var(--an-tool-border-radius)] border border-transparent p-1 text-[var(--an-foreground-muted)] transition-[background-color,border-color,color] duration-150 ease-out hover:border-[var(--an-border-color)] hover:bg-[var(--an-background-tertiary)] hover:text-[var(--an-foreground)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--an-input-focus-outline)]"
                 onClick={() => menu.setIsOpen(false)}
                 aria-label="Close background tasks"
               >
@@ -294,13 +339,13 @@ export const BackgroundTaskIndicator: React.FC<BackgroundTaskIndicatorProps> = (
               </button>
             </div>
 
-            <div className="space-y-4 px-4 py-3">
+            <div className="agent-elements-background-tasks-sections space-y-4 px-4 py-3">
               <section>
                 <div className="mb-2 flex items-center justify-between">
-                  <h3 className="text-[12px] font-semibold uppercase tracking-[0.08em] text-nim-muted">
+                  <h3 className="m-0 text-[12px] font-semibold leading-5 text-[var(--an-foreground-muted)]">
                     AI Sessions
                   </h3>
-                  <span className="text-[11px] text-nim-faint">
+                  <span className="agent-elements-status-pill rounded-[999px] border border-[var(--an-border-color)] bg-[var(--an-background-secondary)] px-2 py-0.5 text-[10px] font-medium leading-4 text-[var(--an-foreground-subtle)]">
                     {tasksByCategory.aiSessions.length} running
                   </span>
                 </div>
@@ -325,10 +370,10 @@ export const BackgroundTaskIndicator: React.FC<BackgroundTaskIndicatorProps> = (
 
               <section>
                 <div className="mb-2 flex items-center justify-between">
-                  <h3 className="text-[12px] font-semibold uppercase tracking-[0.08em] text-nim-muted">
+                  <h3 className="m-0 text-[12px] font-semibold leading-5 text-[var(--an-foreground-muted)]">
                     Sync
                   </h3>
-                  <span className="text-[11px] text-nim-faint">
+                  <span className="text-[11px] leading-4 text-[var(--an-foreground-subtle)]">
                     Last sync {formatLastSync(syncStatus.stats.lastSyncedAt)}
                   </span>
                 </div>

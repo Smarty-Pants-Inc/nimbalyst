@@ -12,6 +12,7 @@ import { JSONViewer } from './JSONViewer';
 import { formatToolArguments, extractFilePathFromArgs } from '../utils/pathResolver';
 import { EditToolResultCard } from './EditToolResultCard';
 import { AsyncEditToolResultCard } from './AsyncEditToolResultCard';
+import { isApiServiceError } from './ApiServiceErrorWidget';
 import { TranscriptSearchBar } from './TranscriptSearchBar';
 import { formatToolDisplayName } from '../utils/toolNameFormatter';
 import { isToolLikeMessage } from '../utils/messageTypeHelpers';
@@ -20,6 +21,11 @@ import { useTranscriptToolWidgetRegistryVersion } from '../contributions';
 import { ToolCallChanges } from './ToolCallChanges';
 import { setSessionIsAtBottom, getSessionIsAtBottom } from '../../../store/atoms/transcriptScroll';
 import { isAppleMobileWebKit } from '../../../utils/platform';
+import {
+  AgentElementsEventRenderer,
+  AgentTranscriptRow,
+  projectTranscriptViewMessageToAgentElementsModels,
+} from '../../AgentElements';
 
 // Per-session VList cache - survives component remounts so returning to a session
 // doesn't re-measure all items from scratch
@@ -539,7 +545,17 @@ const WRITE_TOOL_NAMES = new Set(['write', 'notebookedit']);
  * `settings.showToolCalls` is false, so the user can still respond to prompts
  * (permission grants, plan-mode exits, AskUserQuestion answers, commit proposals).
  */
-const INTERACTIVE_WIDGET_TOOLS = new Set(['ToolPermission', 'ExitPlanMode', 'AskUserQuestion', 'GitCommitProposal']);
+const INTERACTIVE_WIDGET_TOOLS = new Set([
+  'ToolPermission',
+  'ExitPlanMode',
+  'AskUserQuestion',
+  'GitCommitProposal',
+  'git_commit_proposal',
+  'developer_git_commit_proposal',
+  'developer.git_commit_proposal',
+  'mcp__nimbalyst-mcp__developer_git_commit_proposal',
+  'mcp__nimbalyst-extension-dev__developer_git_commit_proposal',
+]);
 
 const isFileModifyingTool = (name?: string): boolean => {
   if (!name) return false;
@@ -1639,6 +1655,56 @@ export const RichTranscriptView = React.forwardRef<
     return index === messages.length - 1;
   };
 
+  const isSystemReminderMessage = (message: TranscriptViewMessage): boolean => {
+    if (message.type !== 'system_message') {
+      return false;
+    }
+
+    return (
+      (message.metadata?.promptType as string) === 'system_reminder' ||
+      !!message.systemMessage?.reminderKind ||
+      typeof message.metadata?.reminderKind === 'string' ||
+      /<SYSTEM_REMINDER>/i.test(message.text ?? '')
+    );
+  };
+
+  const isOpenAIAuthSystemError = (message: TranscriptViewMessage): boolean => {
+    const lowerText = (message.text ?? '').toLowerCase();
+    return (
+      lowerText.includes('api.openai.com') &&
+      (lowerText.includes('401 unauthorized') || (lowerText.includes('401') && lowerText.includes('authentication')))
+    );
+  };
+
+  const isContextLimitSystemError = (message: TranscriptViewMessage): boolean => {
+    const lowerText = (message.text ?? '').toLowerCase();
+    return (
+      lowerText.includes('prompt is too long') ||
+      lowerText.includes('prompt too long') ||
+      lowerText.includes('context limit') ||
+      lowerText.includes('context window') ||
+      lowerText.includes('exceeds maximum context') ||
+      lowerText.includes('maximum context length')
+    );
+  };
+
+  const isRateLimitSystemError = (message: TranscriptViewMessage): boolean => {
+    const text = message.text ?? '';
+    return text.includes('[RATE_LIMIT_WARNING]') || text.includes('[RATE_LIMIT]');
+  };
+
+  const shouldKeepSystemMessageOnSpecialWidgetPath = (message: TranscriptViewMessage): boolean => {
+    const text = message.text ?? '';
+    return (
+      isSystemReminderMessage(message) ||
+      isLoginRequiredError(message) ||
+      isOpenAIAuthSystemError(message) ||
+      isContextLimitSystemError(message) ||
+      isRateLimitSystemError(message) ||
+      isApiServiceError(text)
+    );
+  };
+
   // Helper to get provider display name
   const getProviderDisplayName = (provider?: string): string => {
     switch (provider) {
@@ -1678,7 +1744,78 @@ export const RichTranscriptView = React.forwardRef<
 
   // Recursive tool rendering helper
   const renderToolCard = (toolMsg: TranscriptViewMessage, toolIndex: number, depth: number = 0): JSX.Element | null => {
-    if (!toolMsg.toolCall) return null;
+    const toolRenderKey = getTranscriptToolKey(toolMsg, toolIndex, depth);
+    const renderAgentElementsToolBridge = (
+      agentElementsModels: ReturnType<typeof projectTranscriptViewMessageToAgentElementsModels>,
+      bridgeKind: 'tool' | 'prompt' | 'subagent',
+      trailingContent?: React.ReactNode,
+    ) => {
+      const children = agentElementsModels.map((model, modelIndex) => (
+        <AgentElementsEventRenderer
+          key={`${toolRenderKey}-agent-elements-${model.kind}-${modelIndex}`}
+          model={model}
+        />
+      ));
+
+      if (bridgeKind === 'subagent') {
+        return (
+          <div
+            key={toolRenderKey}
+            className={`rich-transcript-tool-container agent-elements-live-bridge mb-2 ${depth > 0 ? 'nested ml-0' : ''}`}
+            style={{ marginLeft: depth > 0 ? '1rem' : '0' }}
+          data-component="rich-transcript-agent-elements-subagent-bridge"
+          data-testid="rich-transcript-agent-elements-subagent-bridge"
+        >
+          {children}
+          {trailingContent}
+        </div>
+      );
+    }
+
+      if (bridgeKind === 'prompt') {
+        return (
+          <div
+            key={toolRenderKey}
+            className={`rich-transcript-tool-container agent-elements-live-bridge mb-2 ${depth > 0 ? 'nested ml-0' : ''}`}
+            style={{ marginLeft: depth > 0 ? '1rem' : '0' }}
+          data-component="rich-transcript-agent-elements-prompt-bridge"
+          data-testid="rich-transcript-agent-elements-prompt-bridge"
+        >
+          {children}
+          {trailingContent}
+        </div>
+      );
+    }
+
+      return (
+        <div
+          key={toolRenderKey}
+          className={`rich-transcript-tool-container agent-elements-live-bridge mb-2 ${depth > 0 ? 'nested ml-0' : ''}`}
+          style={{ marginLeft: depth > 0 ? '1rem' : '0' }}
+        data-component="rich-transcript-agent-elements-tool-bridge"
+        data-testid="rich-transcript-agent-elements-tool-bridge"
+      >
+        {children}
+        {trailingContent}
+      </div>
+    );
+  };
+
+    if (!toolMsg.toolCall) {
+      if (toolMsg.type === 'interactive_prompt' && toolMsg.interactivePrompt) {
+        const agentElementsModels = projectTranscriptViewMessageToAgentElementsModels(toolMsg);
+        if (agentElementsModels.length > 0) {
+          return renderAgentElementsToolBridge(agentElementsModels, 'prompt');
+        }
+      }
+      if (toolMsg.type === 'subagent' && toolMsg.subagent) {
+        const agentElementsModels = projectTranscriptViewMessageToAgentElementsModels(toolMsg);
+        if (agentElementsModels.length > 0) {
+          return renderAgentElementsToolBridge(agentElementsModels, 'subagent');
+        }
+      }
+      return null;
+    }
 
     // Hide Task tool calls that were cancelled as siblings of a parallel spawn.
     // These get exactly "<tool_use_error>Sibling tool call errored</tool_use_error>"
@@ -1693,11 +1830,51 @@ export const RichTranscriptView = React.forwardRef<
 
     const tool = toolMsg.toolCall;
     const toolId = tool.providerToolCallId || tool.toolName || `tool-${toolIndex}`;
-    const toolRenderKey = getTranscriptToolKey(toolMsg, toolIndex, depth);
     const isExpanded = expandedTools.has(toolId);
     const isSubAgent = toolMsg.type === 'subagent';
     const isTeammate = isSubAgent && !!(toolMsg.subagent?.teammateName || toolMsg.subagent?.teamName);
     const hasChildren = isSubAgent && toolMsg.subagent?.childEvents && toolMsg.subagent.childEvents.length > 0;
+
+    // Lazy-mount heavy widget bodies on the flat-list path so a long
+    // transcript doesn't pay the full mount cost up-front. VList already
+    // mounts rows on demand, so nested lazy-mount would just flicker; in
+    // that path we render immediately.
+    const wrapHeavy = (placeholderHeight: number, render: () => React.ReactNode): React.ReactNode => {
+      const usingVirtualizedRows = true;
+      if (usingVirtualizedRows) return render();
+      return <LazyMount placeholderHeight={placeholderHeight}>{render}</LazyMount>;
+    };
+
+    const renderAgentElementsEditBridge = (children: React.ReactNode) => (
+      <div
+        key={toolRenderKey}
+        className={`rich-transcript-tool-container rich-transcript-agent-elements-edit-bridge agent-elements-live-bridge mb-2 ${depth > 0 ? 'nested ml-0' : ''}`}
+        style={{ marginLeft: depth > 0 ? '1rem' : '0' }}
+        data-component="rich-transcript-agent-elements-edit-bridge"
+        data-testid="rich-transcript-agent-elements-edit-bridge"
+      >
+        {children}
+      </div>
+    );
+
+    const renderAttachedToolCallChanges = (forceFetch: boolean = false) => {
+      if (isSubAgent || !getToolCallDiffs || !tool.providerToolCallId || tool.result === undefined || tool.result === null) {
+        return null;
+      }
+
+      return (
+        <ToolCallChanges
+          toolCallItemId={tool.providerToolCallId}
+          toolCallTimestamp={toolMsg.createdAt?.getTime() ?? 0}
+          getToolCallDiffs={getToolCallDiffs}
+          isExpanded={forceFetch || isExpanded}
+          workspacePath={workspacePath}
+          onOpenFile={onOpenFile}
+          renderEmbeddedFile={renderEmbeddedFile}
+          canEmbedFile={canEmbedFile}
+        />
+      );
+    };
 
     // Check for custom widget first
     const CustomWidget = tool.toolName ? getCustomToolWidget(tool.toolName) : undefined;
@@ -1729,12 +1906,8 @@ export const RichTranscriptView = React.forwardRef<
     // using the synthetic edit-group ID (Phase 1-3 plumbing) and then renders
     // through the same EditToolResultCard look as Claude's Edit tool.
     if (tool.toolName === 'file_change' && getToolCallDiffs) {
-      return (
-        <div
-          key={toolRenderKey}
-          className={`rich-transcript-tool-container mb-2 ${depth > 0 ? 'nested ml-0' : ''}`}
-          style={{ marginLeft: depth > 0 ? '1rem' : '0' }}
-        >
+      return renderAgentElementsEditBridge(
+        wrapHeavy(280, () => (
           <AsyncEditToolResultCard
             toolMessage={toolMsg}
             workspacePath={workspacePath}
@@ -1743,7 +1916,7 @@ export const RichTranscriptView = React.forwardRef<
             canEmbedFile={canEmbedFile}
             getToolCallDiffs={getToolCallDiffs}
           />
-        </div>
+        ))
       );
     }
 
@@ -1752,12 +1925,8 @@ export const RichTranscriptView = React.forwardRef<
     const toolDisplayName = formatToolDisplayName(tool.toolName || '') || tool.toolName || 'Tool';
 
     if (editTool && editEntries.length > 0) {
-      return (
-        <div
-          key={toolRenderKey}
-          className={`rich-transcript-tool-container mb-2 ${depth > 0 ? 'nested ml-0' : ''}`}
-          style={{ marginLeft: depth > 0 ? '1rem' : '0' }}
-        >
+      return renderAgentElementsEditBridge(
+        wrapHeavy(280, () => (
           <EditToolResultCard
             toolMessage={toolMsg}
             edits={editEntries}
@@ -1766,8 +1935,15 @@ export const RichTranscriptView = React.forwardRef<
             renderEmbeddedFile={renderEmbeddedFile}
             canEmbedFile={canEmbedFile}
           />
-        </div>
+        ))
       );
+    }
+
+    if (toolMsg.type === 'tool_call') {
+      const agentElementsModels = projectTranscriptViewMessageToAgentElementsModels(toolMsg);
+      if (agentElementsModels.length > 0) {
+        return renderAgentElementsToolBridge(agentElementsModels, 'tool', renderAttachedToolCallChanges(true));
+      }
     }
 
     // Extract description from arguments for sub-agents
@@ -1997,18 +2173,7 @@ export const RichTranscriptView = React.forwardRef<
               )}
 
               {/* File changes caused by this tool call */}
-              {!isSubAgent && getToolCallDiffs && tool.providerToolCallId && tool.result !== undefined && tool.result !== null && (
-                <ToolCallChanges
-                  toolCallItemId={tool.providerToolCallId}
-                  toolCallTimestamp={toolMsg.createdAt?.getTime() ?? 0}
-                  getToolCallDiffs={getToolCallDiffs}
-                  isExpanded={isExpanded}
-                  workspacePath={workspacePath}
-                  onOpenFile={onOpenFile}
-                  renderEmbeddedFile={renderEmbeddedFile}
-                  canEmbedFile={canEmbedFile}
-                />
-              )}
+              {renderAttachedToolCallChanges()}
             </div>
           )}
         </div>
@@ -2115,6 +2280,49 @@ export const RichTranscriptView = React.forwardRef<
         </div>
       );
     }
+    if (isTool && message.type === 'subagent' && message.subagent) {
+      return (
+        <div key={messageKey} className="rich-transcript-tool-container orphan ml-6 mb-2">
+          {renderToolCard(message, index, 0)}
+        </div>
+      );
+    }
+    if (isTool && message.type === 'interactive_prompt' && message.interactivePrompt) {
+      return (
+        <div key={messageKey} className="rich-transcript-tool-container orphan ml-6 mb-2">
+          {renderToolCard(message, index, 0)}
+        </div>
+      );
+    }
+
+    if (message.type === 'tool_progress' || message.type === 'turn_ended') {
+      const agentElementsModels = projectTranscriptViewMessageToAgentElementsModels(message);
+      if (agentElementsModels.length > 0) {
+        return (
+          <div
+            key={messageKey}
+            data-message-index={index}
+            ref={(el) => {
+              if (el) {
+                messageRefs.current.set(index, el);
+              } else {
+                messageRefs.current.delete(index);
+              }
+            }}
+            className="rich-transcript-tool-container rich-transcript-agent-elements-stream-bridge agent-elements-live-bridge mb-2"
+            data-component="rich-transcript-agent-elements-stream-bridge"
+            data-testid="rich-transcript-agent-elements-stream-bridge"
+          >
+            {agentElementsModels.map((model, modelIndex) => (
+              <AgentElementsEventRenderer
+                key={`${messageKey}-agent-elements-stream-${model.kind}-${modelIndex}`}
+                model={model}
+              />
+            ))}
+          </div>
+        );
+      }
+    }
 
     // Render teammate/sub-agent messages as compact inline notifications
     if (isUser && message.metadata?.isTeammateMessage) {
@@ -2160,7 +2368,7 @@ export const RichTranscriptView = React.forwardRef<
       );
     }
 
-    if ((message.type === 'system_message' && message.systemMessage?.systemType !== 'error') || (message.metadata?.promptType as string) === 'system_reminder') {
+    if (isSystemReminderMessage(message)) {
       return (
         <div
           key={messageKey}
@@ -2178,6 +2386,123 @@ export const RichTranscriptView = React.forwardRef<
       );
     }
 
+    if (message.type === 'system_message' && !shouldKeepSystemMessageOnSpecialWidgetPath(message)) {
+      const agentElementsModels = projectTranscriptViewMessageToAgentElementsModels(message);
+      if (agentElementsModels.length > 0) {
+        return (
+          <div
+            key={messageKey}
+            data-message-index={index}
+            ref={(el) => {
+              if (el) {
+                messageRefs.current.set(index, el);
+              } else {
+                messageRefs.current.delete(index);
+              }
+            }}
+            className="rich-transcript-tool-container rich-transcript-agent-elements-system-bridge agent-elements-live-bridge mb-2"
+            data-component="rich-transcript-agent-elements-system-bridge"
+            data-testid="rich-transcript-agent-elements-system-bridge"
+          >
+            {agentElementsModels.map((model, modelIndex) => (
+              <AgentElementsEventRenderer
+                key={`${messageKey}-agent-elements-system-${model.kind}-${modelIndex}`}
+                model={model}
+              />
+            ))}
+          </div>
+        );
+      }
+    }
+
+    const useAgentElementsMessageShell = message.type === 'user_message' || message.type === 'assistant_message';
+    const useAgentElementsRowShell = useAgentElementsMessageShell;
+    const messageRowClassName = useAgentElementsRowShell
+      ? `rich-transcript-message agent-elements-message-row rounded-md relative max-w-full overflow-x-hidden break-words mb-2 bg-transparent ${settings.compactMode ? 'compact px-2 py-1.5' : 'normal px-2 py-2'} ${!isNewGroup ? 'continuation -mt-1' : ''}`
+      : `rich-transcript-message rounded-md relative max-w-full overflow-x-hidden break-words mb-2 ${isUser ? 'user bg-[var(--nim-bg-secondary)]' : 'assistant bg-[var(--nim-bg)]'} ${settings.compactMode ? 'compact p-2' : 'normal p-3'} ${!isNewGroup ? 'continuation -mt-1' : ''}`;
+
+    const renderCollapseButton = () => {
+      if ((message.text ?? '').length <= 200) return null;
+      return (
+        <button
+          onClick={() => toggleMessageCollapse(index)}
+          className="rich-transcript-collapse-button p-1 rounded-md bg-transparent border-none text-[var(--nim-text-faint)] cursor-pointer transition-colors hover:bg-[var(--nim-bg-secondary)] hover:text-[var(--nim-text-muted)]"
+          title={isCollapsed ? "Show full message" : "Collapse message"}
+        >
+          {isCollapsed ? (
+            <MaterialSymbol icon="visibility" size={16} />
+          ) : (
+            <MaterialSymbol icon="visibility_off" size={16} />
+          )}
+        </button>
+      );
+    };
+
+    const renderMessageContent = (
+      indentClassName: string,
+      options: { useAgentElementsThinkingBridge?: boolean } = {},
+    ) => {
+      const agentElementsThinkingModels = options.useAgentElementsThinkingBridge && settings.showThinking
+        ? projectTranscriptViewMessageToAgentElementsModels(message).filter((model) => model.kind === 'thinking')
+        : [];
+      const messageForSegment: TranscriptViewMessage = agentElementsThinkingModels.length > 0
+        ? (() => {
+            const { thinking: _thinking, ...messageWithoutThinking } = message;
+            return messageWithoutThinking;
+          })()
+        : message;
+
+      return (
+        <div className={`rich-transcript-message-content relative ${indentClassName}`}>
+          {/* Copy button - shows on hover */}
+          <div className="rich-transcript-message-copy-action absolute -top-1 right-0 z-[1]">
+            <button
+              onClick={() => copyTranscriptViewMessageContent(message, index)}
+              className={`rich-transcript-copy-button p-1.5 rounded-md bg-[var(--nim-bg-secondary)] border border-[var(--nim-border)] cursor-pointer transition-all flex items-center justify-center hover:bg-[var(--nim-bg-hover)] ${copiedMessageIndex === index ? 'copied' : ''}`}
+              title="Copy as Markdown"
+            >
+              {copiedMessageIndex === index ? (
+                <MaterialSymbol icon="check" size={16} className="text-[var(--nim-success)]" />
+              ) : (
+                <MaterialSymbol icon="content_copy" size={16} className="text-[var(--nim-text-faint)]" />
+              )}
+            </button>
+          </div>
+          {agentElementsThinkingModels.length > 0 && (
+            <div
+              className="rich-transcript-agent-elements-thinking-bridge agent-elements-live-bridge mb-2"
+              data-component="rich-transcript-agent-elements-thinking-bridge"
+              data-testid="rich-transcript-agent-elements-thinking-bridge"
+            >
+              {agentElementsThinkingModels.map((model, modelIndex) => (
+                <AgentElementsEventRenderer
+                  key={`${messageKey}-agent-elements-thinking-${modelIndex}`}
+                  model={model}
+                />
+              ))}
+            </div>
+          )}
+          <MessageSegment
+            message={messageForSegment}
+            isUser={isUser}
+            isCollapsed={isCollapsed}
+            showToolCalls={false}
+            showThinking={settings.showThinking}
+            expandedTools={expandedTools}
+            onToggleToolExpand={toggleToolExpand}
+            documentContext={documentContext}
+            shouldShowLoginWidget={shouldShowLoginWidgetForIndex(index)}
+            sessionId={sessionId}
+            isLastMessage={index === messages.length - 1}
+            onOpenFile={onOpenFile}
+            onOpenSession={onOpenSession}
+            onCompact={onCompact}
+            provider={provider}
+          />
+        </div>
+      );
+    };
+
     return (
       <div
         key={messageKey}
@@ -2189,7 +2514,7 @@ export const RichTranscriptView = React.forwardRef<
             messageRefs.current.delete(index);
           }
         }}
-        className={`rich-transcript-message rounded-md relative max-w-full overflow-x-hidden break-words mb-2 ${isUser ? 'user bg-[var(--nim-bg-secondary)]' : 'assistant bg-[var(--nim-bg)]'} ${settings.compactMode ? 'compact p-2' : 'normal p-3'} ${!isNewGroup ? 'continuation -mt-1' : ''}`}
+        className={messageRowClassName}
       >
         {/* Restart indicator line (dev mode only) - rendered before the first message after restart */}
         {restartAfterIndex >= 0 && index === restartAfterIndex && (
@@ -2201,7 +2526,7 @@ export const RichTranscriptView = React.forwardRef<
             <div className="flex-1 h-px bg-[var(--nim-error)]" />
           </div>
         )}
-        {isNewGroup && (
+        {isNewGroup && !useAgentElementsRowShell && (
           <div className="rich-transcript-message-header flex items-center gap-2 mb-1.5">
             <div className={`rich-transcript-message-avatar w-7 h-7 rounded-full shrink-0 flex items-center justify-center ${isUser ? 'user' : 'assistant'}`}>
               {isUser ? (
@@ -2227,19 +2552,7 @@ export const RichTranscriptView = React.forwardRef<
               </span>
             </div>
             <div className="rich-transcript-message-actions flex items-center gap-1">
-              {(message.text ?? '').length > 200 && (
-                <button
-                  onClick={() => toggleMessageCollapse(index)}
-                  className="rich-transcript-collapse-button p-1 rounded-md bg-transparent border-none text-[var(--nim-text-faint)] cursor-pointer transition-colors hover:bg-[var(--nim-bg-secondary)] hover:text-[var(--nim-text-muted)]"
-                  title={isCollapsed ? "Show full message" : "Collapse message"}
-                >
-                  {isCollapsed ? (
-                    <MaterialSymbol icon="visibility" size={16} />
-                  ) : (
-                    <MaterialSymbol icon="visibility_off" size={16} />
-                  )}
-                </button>
-              )}
+              {renderCollapseButton()}
             </div>
           </div>
         )}
@@ -2251,7 +2564,8 @@ export const RichTranscriptView = React.forwardRef<
             ? toolMessagesBefore
             : toolMessagesBefore.filter(
                 ({ message: toolMsg }) =>
-                  !!toolMsg.toolCall?.toolName && INTERACTIVE_WIDGET_TOOLS.has(toolMsg.toolCall.toolName)
+                  (toolMsg.type === 'interactive_prompt' && !!toolMsg.interactivePrompt) ||
+                  (!!toolMsg.toolCall?.toolName && INTERACTIVE_WIDGET_TOOLS.has(toolMsg.toolCall.toolName))
               );
           if (visibleToolMessages.length === 0) return null;
           return (
@@ -2263,39 +2577,29 @@ export const RichTranscriptView = React.forwardRef<
           );
         })()}
 
-        <div className={`rich-transcript-message-content relative ${isNewGroup ? 'ml-6' : 'no-indent ml-0'}`}>
-          {/* Copy button - shows on hover */}
-          <div className="rich-transcript-message-copy-action absolute -top-1 right-0 z-[1]">
-            <button
-              onClick={() => copyTranscriptViewMessageContent(message, index)}
-              className={`rich-transcript-copy-button p-1.5 rounded-md bg-[var(--nim-bg-secondary)] border border-[var(--nim-border)] cursor-pointer transition-all flex items-center justify-center hover:bg-[var(--nim-bg-hover)] ${copiedMessageIndex === index ? 'copied' : ''}`}
-              title="Copy as Markdown"
-            >
-              {copiedMessageIndex === index ? (
-                <MaterialSymbol icon="check" size={16} className="text-[var(--nim-success)]" />
+        {useAgentElementsMessageShell ? (
+          <div
+            className="rich-transcript-agent-elements-message-bridge agent-elements-live-bridge"
+            data-component="rich-transcript-agent-elements-message-bridge"
+            data-testid="rich-transcript-agent-elements-message-bridge"
+          >
+            <AgentTranscriptRow
+              actions={renderCollapseButton()}
+              icon={isUser ? (
+                <MaterialSymbol icon="person" size={14} />
               ) : (
-                <MaterialSymbol icon="content_copy" size={16} className="text-[var(--nim-text-faint)]" />
+                <ProviderIcon provider={provider || 'claude-code'} size={16} />
               )}
-            </button>
+              metadata={isUser ? (message.mode === 'planning' ? 'Plan' : undefined) : (message.model ?? message.mode)}
+              name={isUser ? 'You' : getProviderDisplayName(provider)}
+              role={isUser ? 'user' : 'assistant'}
+            >
+              {renderMessageContent('agent-elements-message-body', { useAgentElementsThinkingBridge: true })}
+            </AgentTranscriptRow>
           </div>
-          <MessageSegment
-            message={message}
-            isUser={isUser}
-            isCollapsed={isCollapsed}
-            showToolCalls={false}
-            showThinking={settings.showThinking}
-            expandedTools={expandedTools}
-            onToggleToolExpand={toggleToolExpand}
-            documentContext={documentContext}
-            shouldShowLoginWidget={shouldShowLoginWidgetForIndex(index)}
-            sessionId={sessionId}
-            isLastMessage={index === messages.length - 1}
-            onOpenFile={onOpenFile}
-            onOpenSession={onOpenSession}
-            onCompact={onCompact}
-            provider={provider}
-          />
-        </div>
+        ) : (
+          renderMessageContent(isNewGroup ? 'ml-6' : 'no-indent ml-0')
+        )}
 
         {/* Show elapsed time at the end of a completed assistant turn */}
         {!isUser && (() => {

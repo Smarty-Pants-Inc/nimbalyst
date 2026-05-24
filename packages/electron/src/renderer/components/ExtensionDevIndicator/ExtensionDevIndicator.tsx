@@ -4,6 +4,7 @@ import { MaterialSymbol } from '@nimbalyst/runtime';
 import { ExtensionErrorConsole } from './ExtensionErrorConsole';
 import { extensionDevToolsEnabledAtom } from '../../store/atoms/appSettings';
 import { HelpTooltip } from '../../help';
+import { useFloatingMenu, FloatingPortal } from '../../hooks/useFloatingMenu';
 
 /**
  * Format a timestamp as a relative time string (e.g., "5m ago", "2h ago")
@@ -52,9 +53,31 @@ export const ExtensionDevIndicator: React.FC<ExtensionDevIndicatorProps> = ({
   const [relativeTime, setRelativeTime] = useState<string>('');
   const [extensions, setExtensions] = useState<InstalledExtension[]>([]);
   const [rebuildingExtension, setRebuildingExtension] = useState<string | null>(null);
-  const buttonRef = useRef<HTMLButtonElement>(null);
-  const menuRef = useRef<HTMLDivElement>(null);
-  const rebuildSubmenuRef = useRef<HTMLDivElement>(null);
+  const buttonRef = useRef<HTMLButtonElement | null>(null);
+  const handleMenuOpenChange = useCallback((open: boolean) => {
+    setMenuOpen(open);
+    if (!open) {
+      setRebuildSubmenuOpen(false);
+    }
+  }, []);
+  const menu = useFloatingMenu({
+    placement: 'right-end',
+    offsetPx: 8,
+    viewportPadding: 12,
+    open: menuOpen,
+    onOpenChange: handleMenuOpenChange,
+  });
+  const rebuildMenu = useFloatingMenu({
+    placement: 'right-start',
+    offsetPx: 4,
+    viewportPadding: 12,
+    open: rebuildSubmenuOpen,
+    onOpenChange: setRebuildSubmenuOpen,
+  });
+  const setButtonReference = useCallback((node: HTMLButtonElement | null) => {
+    buttonRef.current = node;
+    menu.refs.setReference(node);
+  }, [menu.refs]);
 
   // Check for errors periodically
   const checkErrors = useCallback(async () => {
@@ -110,26 +133,6 @@ export const ExtensionDevIndicator: React.FC<ExtensionDevIndicatorProps> = ({
     return () => clearInterval(interval);
   }, [processStartTime]);
 
-  // Close menu when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (
-        menuOpen &&
-        menuRef.current &&
-        buttonRef.current &&
-        !menuRef.current.contains(event.target as Node) &&
-        !buttonRef.current.contains(event.target as Node) &&
-        !rebuildSubmenuRef.current?.contains(event.target as Node)
-      ) {
-        setMenuOpen(false);
-        setRebuildSubmenuOpen(false);
-      }
-    };
-
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [menuOpen]);
-
   // Fetch installed extensions when menu opens
   useEffect(() => {
     if (!menuOpen) {
@@ -159,42 +162,6 @@ export const ExtensionDevIndicator: React.FC<ExtensionDevIndicatorProps> = ({
 
     fetchExtensions();
   }, [menuOpen]);
-
-  // Position the rebuild submenu to stay on screen
-  useEffect(() => {
-    if (!rebuildSubmenuOpen || !rebuildSubmenuRef.current || !menuRef.current) return;
-
-    const submenu = rebuildSubmenuRef.current;
-    const parentMenu = menuRef.current;
-    const parentRect = parentMenu.getBoundingClientRect();
-    const submenuWidth = 224; // w-56 = 14rem = 224px
-    const gap = 4;
-
-    // Calculate ideal position (to the right of parent menu)
-    let left = parentRect.right + gap;
-    let top = parentRect.top;
-
-    // Check if submenu would go off the right edge
-    if (left + submenuWidth > window.innerWidth - 16) {
-      // Position to the left of parent menu instead
-      left = parentRect.left - submenuWidth - gap;
-    }
-
-    // Check if submenu would go off the bottom edge
-    const submenuHeight = submenu.offsetHeight;
-    if (top + submenuHeight > window.innerHeight - 16) {
-      // Align bottom of submenu with bottom of viewport (with padding)
-      top = window.innerHeight - submenuHeight - 16;
-    }
-
-    // Ensure it doesn't go above the viewport
-    if (top < 16) {
-      top = 16;
-    }
-
-    submenu.style.left = `${left}px`;
-    submenu.style.top = `${top}px`;
-  }, [rebuildSubmenuOpen, extensions]);
 
   // Don't render if not enabled
   if (!isEnabled) {
@@ -262,151 +229,174 @@ export const ExtensionDevIndicator: React.FC<ExtensionDevIndicatorProps> = ({
           checkErrors(); // Refresh error count after closing
         }}
       />
-    <div className="extension-dev-indicator-container relative">
-      <HelpTooltip testId="gutter-extension-dev-button" placement="right">
-        <button
-          ref={buttonRef}
-          className="extension-dev-indicator nav-button relative w-9 h-9 flex items-center justify-center bg-transparent border-none rounded-md cursor-pointer transition-all duration-150 p-0 hover:bg-nim-tertiary active:scale-95 focus-visible:outline-2 focus-visible:outline-[var(--nim-primary)] focus-visible:outline-offset-2 text-nim-muted hover:text-nim"
-          onClick={() => setMenuOpen(!menuOpen)}
-          aria-label="Extension Development Mode"
-          aria-expanded={menuOpen}
-          aria-haspopup="menu"
-          data-testid="gutter-extension-dev-button"
-        >
-          <MaterialSymbol icon="developer_mode" size={20} />
-          <span className="extension-dev-indicator-dot absolute bottom-1 right-1 w-2 h-2 rounded-full border-2 border-[var(--nim-bg-secondary)] bg-purple-500" />
-        </button>
-      </HelpTooltip>
+      <div className="extension-dev-indicator-container relative">
+        <HelpTooltip testId="gutter-extension-dev-button" placement="right">
+          <button
+            ref={setButtonReference}
+            {...menu.getReferenceProps()}
+            className="extension-dev-indicator agent-elements-extension-dev-button nav-button relative flex h-9 w-9 items-center justify-center rounded-[10px] border border-transparent bg-transparent p-0 text-nim-muted cursor-pointer transition-[background-color,border-color,color,box-shadow] duration-150 hover:border-[color-mix(in_srgb,var(--nim-info)_24%,transparent)] hover:bg-[color-mix(in_srgb,var(--nim-info)_8%,transparent)] hover:text-nim focus-visible:outline-2 focus-visible:outline-[var(--nim-primary)] focus-visible:outline-offset-2"
+            onClick={() => menu.setIsOpen(!menu.isOpen)}
+            aria-label="Extension Development Mode"
+            aria-expanded={menuOpen}
+            aria-haspopup="menu"
+            data-testid="agent-elements-extension-dev-button"
+            data-agent-elements-shell="extension-dev-button"
+          >
+            <MaterialSymbol icon="developer_mode" size={20} />
+            <span className="extension-dev-indicator-dot agent-elements-extension-dev-dot absolute bottom-1 right-1 h-2 w-2 rounded-[999px] border-2 border-[var(--nim-bg-secondary)] bg-[var(--nim-info)]" />
+          </button>
+        </HelpTooltip>
+      </div>
 
       {menuOpen && (
-        <div
-          ref={menuRef}
-          className="extension-dev-menu absolute bottom-0 left-[calc(100%+8px)] w-60 bg-[var(--nim-bg-secondary)] border border-[var(--nim-border)] rounded-lg shadow-lg z-[100] animate-[extension-dev-menu-appear_0.15s_ease-out]"
-          role="menu"
-        >
-          <div className="extension-dev-menu-header flex items-center justify-between pt-3 px-3 pb-2">
-            <span className="extension-dev-menu-title text-[13px] font-semibold text-[var(--nim-text)]">Extension Dev Mode</span>
-          </div>
-
-          <div className="extension-dev-menu-status flex items-center gap-2 mx-3 mb-2 py-2 px-2.5 rounded-md bg-purple-500/10 border border-purple-500/30 text-xs text-[var(--nim-text-muted)] [&_.material-symbols-outlined]:text-purple-500">
-            <MaterialSymbol icon="check_circle" size={16} />
-            <span>Development tools active</span>
-          </div>
-
-          {relativeTime && (
-            <div className="extension-dev-menu-uptime flex items-center gap-2 mx-3 mb-2 text-xs text-[var(--nim-text-faint)] [&_.material-symbols-outlined]:text-[var(--nim-text-faint)]">
-              <MaterialSymbol icon="schedule" size={16} />
-              <span>Started {relativeTime}</span>
+        <FloatingPortal>
+          <div
+            ref={menu.refs.setFloating}
+            style={menu.floatingStyles}
+            {...menu.getFloatingProps()}
+            className="extension-dev-menu agent-elements-extension-dev-menu agent-elements-tool-card z-[10000] w-60 rounded-[10px] border border-nim bg-nim-secondary p-1 text-[13px] shadow-[0_12px_32px_color-mix(in_srgb,var(--nim-text)_10%,transparent)] animate-[extension-dev-menu-appear_0.15s_ease-out]"
+            role="menu"
+            data-testid="agent-elements-extension-dev-menu"
+            data-agent-elements-shell="extension-dev-menu"
+          >
+            <div className="extension-dev-menu-header agent-elements-extension-dev-header flex items-center justify-between px-2 py-2">
+              <span className="extension-dev-menu-title text-[13px] font-semibold leading-5 text-[var(--nim-text)]">Extension Dev Mode</span>
             </div>
-          )}
 
-          <div className="extension-dev-menu-divider h-px bg-[var(--nim-border)] my-1" />
-
-          <div className="extension-dev-menu-actions p-1">
-            <button
-              className="extension-dev-menu-action flex items-center gap-2 w-full p-2 border-none bg-transparent text-[var(--nim-text)] text-[13px] font-inherit text-left rounded cursor-pointer transition-colors duration-100 hover:bg-[var(--nim-bg-hover)] [&_.material-symbols-outlined]:text-[var(--nim-text-muted)]"
-              onClick={handleOpenConsole}
-              role="menuitem"
+            <div
+              className="extension-dev-menu-status agent-elements-extension-dev-status mb-1 flex items-center gap-2 rounded-[8px] border border-[color-mix(in_srgb,var(--nim-info)_28%,var(--nim-border))] bg-[color-mix(in_srgb,var(--nim-info)_10%,transparent)] px-2.5 py-2 text-xs leading-4 text-[var(--nim-text-muted)] [&_.material-symbols-outlined]:text-[var(--nim-info)]"
+              data-testid="agent-elements-extension-dev-status"
+              data-agent-elements-shell="extension-dev-status"
             >
-              <MaterialSymbol icon="terminal" size={18} />
-              <span>
-                View Logs
-                {errorCount > 0 && (
-                  <span className="extension-dev-error-badge inline-flex items-center justify-center min-w-[18px] h-[18px] px-[5px] ml-2 rounded-full bg-[var(--nim-error)] text-white text-[11px] font-semibold">{errorCount}</span>
-                )}
-              </span>
-            </button>
+              <MaterialSymbol icon="check_circle" size={16} />
+              <span>Development tools active</span>
+            </div>
 
-            {onOpenSettings && (
-              <button
-                className="extension-dev-menu-action flex items-center gap-2 w-full p-2 border-none bg-transparent text-[var(--nim-text)] text-[13px] font-inherit text-left rounded cursor-pointer transition-colors duration-100 hover:bg-[var(--nim-bg-hover)] [&_.material-symbols-outlined]:text-[var(--nim-text-muted)]"
-                onClick={handleOpenSettings}
-                role="menuitem"
-              >
-                <MaterialSymbol icon="settings" size={18} />
-                <span>Extension Settings</span>
-              </button>
+            {relativeTime && (
+              <div className="extension-dev-menu-uptime agent-elements-extension-dev-uptime mb-1 flex items-center gap-2 px-2 py-1.5 text-xs leading-4 text-[var(--nim-text-faint)] [&_.material-symbols-outlined]:text-[var(--nim-text-faint)]">
+                <MaterialSymbol icon="schedule" size={16} />
+                <span>Started {relativeTime}</span>
+              </div>
             )}
 
-            {/* Rebuild Extensions submenu */}
-            <div className="relative">
+            <div className="extension-dev-menu-divider agent-elements-extension-dev-divider mx-2 my-1 h-px bg-[var(--nim-border)]" />
+
+            <div
+              className="extension-dev-menu-actions agent-elements-extension-dev-actions flex flex-col gap-0.5"
+              data-testid="agent-elements-extension-dev-actions"
+              data-agent-elements-shell="extension-dev-actions"
+            >
               <button
-                className="extension-dev-menu-action flex items-center justify-between w-full p-2 border-none bg-transparent text-[var(--nim-text)] text-[13px] font-inherit text-left rounded cursor-pointer transition-colors duration-100 hover:bg-[var(--nim-bg-hover)] [&_.material-symbols-outlined]:text-[var(--nim-text-muted)]"
-                onClick={() => setRebuildSubmenuOpen(!rebuildSubmenuOpen)}
+                type="button"
+                className="extension-dev-menu-action agent-elements-extension-dev-action flex w-full items-center gap-2.5 rounded-[8px] border-0 bg-transparent px-2.5 py-2 text-left text-[13px] leading-5 text-[var(--nim-text)] cursor-pointer transition-[background-color,color] duration-150 hover:bg-[var(--nim-bg-hover)] focus-visible:outline-2 focus-visible:outline-[var(--nim-primary)] focus-visible:outline-offset-2 [&_.material-symbols-outlined]:text-[var(--nim-text-muted)]"
+                onClick={handleOpenConsole}
+                role="menuitem"
+              >
+                <MaterialSymbol icon="terminal" size={18} />
+                <span className="min-w-0 flex-1">
+                  View Logs
+                  {errorCount > 0 && (
+                    <span className="extension-dev-error-badge ml-2 inline-flex h-[18px] min-w-[18px] items-center justify-center rounded-[999px] bg-[var(--nim-error)] px-[5px] text-[11px] font-semibold leading-none text-[var(--nim-bg)]">{errorCount}</span>
+                  )}
+                </span>
+              </button>
+
+              {onOpenSettings && (
+                <button
+                  type="button"
+                  className="extension-dev-menu-action agent-elements-extension-dev-action flex w-full items-center gap-2.5 rounded-[8px] border-0 bg-transparent px-2.5 py-2 text-left text-[13px] leading-5 text-[var(--nim-text)] cursor-pointer transition-[background-color,color] duration-150 hover:bg-[var(--nim-bg-hover)] focus-visible:outline-2 focus-visible:outline-[var(--nim-primary)] focus-visible:outline-offset-2 [&_.material-symbols-outlined]:text-[var(--nim-text-muted)]"
+                  onClick={handleOpenSettings}
+                  role="menuitem"
+                >
+                  <MaterialSymbol icon="settings" size={18} />
+                  <span className="min-w-0 flex-1">Extension Settings</span>
+                </button>
+              )}
+
+              <button
+                type="button"
+                ref={rebuildMenu.refs.setReference}
+                {...rebuildMenu.getReferenceProps()}
+                className="extension-dev-menu-action agent-elements-extension-dev-action agent-elements-extension-dev-rebuild-trigger flex w-full items-center justify-between gap-2.5 rounded-[8px] border-0 bg-transparent px-2.5 py-2 text-left text-[13px] leading-5 text-[var(--nim-text)] cursor-pointer transition-[background-color,color] duration-150 hover:bg-[var(--nim-bg-hover)] focus-visible:outline-2 focus-visible:outline-[var(--nim-primary)] focus-visible:outline-offset-2 [&_.material-symbols-outlined]:text-[var(--nim-text-muted)]"
+                onClick={() => rebuildMenu.setIsOpen(!rebuildMenu.isOpen)}
                 role="menuitem"
                 aria-expanded={rebuildSubmenuOpen}
                 aria-haspopup="menu"
+                data-testid="agent-elements-extension-dev-rebuild-trigger"
+                data-agent-elements-shell="extension-dev-rebuild-trigger"
               >
-                <span className="flex items-center gap-2">
+                <span className="flex min-w-0 items-center gap-2.5">
                   <MaterialSymbol icon="build" size={18} />
-                  <span>{rebuildingExtension ? 'Rebuilding...' : 'Rebuild Extensions'}</span>
+                  <span className="truncate">{rebuildingExtension ? 'Rebuilding...' : 'Rebuild Extensions'}</span>
                 </span>
                 <MaterialSymbol icon="chevron_right" size={18} />
               </button>
 
-              {rebuildSubmenuOpen && (
-                <div
-                  ref={rebuildSubmenuRef}
-                  className="fixed w-56 bg-[var(--nim-bg-secondary)] border border-[var(--nim-border)] rounded-lg shadow-lg z-[101] animate-[extension-dev-menu-appear_0.1s_ease-out]"
-                  role="menu"
-                  style={{
-                    // Position will be calculated by useEffect
-                    maxHeight: 'calc(100vh - 32px)',
-                  }}
-                >
-                  <div className="p-1 max-h-[calc(100vh-48px)] overflow-y-auto">
-                    <button
-                      className="extension-dev-menu-action flex items-center gap-2 w-full p-2 border-none bg-transparent text-[var(--nim-text)] text-[13px] font-inherit text-left rounded cursor-pointer transition-colors duration-100 hover:enabled:bg-[var(--nim-bg-hover)] disabled:text-[var(--nim-text-faint)] disabled:cursor-not-allowed [&_.material-symbols-outlined]:text-[var(--nim-text-muted)]"
-                      onClick={handleRebuildAll}
-                      disabled={rebuildingExtension !== null}
-                      role="menuitem"
-                    >
-                      <MaterialSymbol icon="select_all" size={18} />
-                      <span>{rebuildingExtension === 'all' ? 'Rebuilding all...' : 'All Extensions'}</span>
-                    </button>
-
-                    {extensions.length > 0 && (
-                      <div className="h-px bg-[var(--nim-border)] my-1" />
-                    )}
-
-                    {extensions.map((ext) => (
-                      <button
-                        key={ext.id}
-                        className="extension-dev-menu-action flex items-center gap-2 w-full p-2 border-none bg-transparent text-[var(--nim-text)] text-[13px] font-inherit text-left rounded cursor-pointer transition-colors duration-100 hover:enabled:bg-[var(--nim-bg-hover)] disabled:text-[var(--nim-text-faint)] disabled:cursor-not-allowed [&_.material-symbols-outlined]:text-[var(--nim-text-muted)]"
-                        onClick={() => handleRebuildExtension(ext)}
-                        disabled={rebuildingExtension !== null}
-                        role="menuitem"
-                      >
-                        <MaterialSymbol icon="extension" size={18} />
-                        <span className="truncate">
-                          {rebuildingExtension === ext.id ? 'Rebuilding...' : ext.name}
-                        </span>
-                      </button>
-                    ))}
-
-                    {extensions.length === 0 && (
-                      <div className="px-2 py-1 text-xs text-[var(--nim-text-faint)]">
-                        No buildable extensions found
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
+              <button
+                type="button"
+                className="extension-dev-menu-action agent-elements-extension-dev-action flex w-full items-center gap-2.5 rounded-[8px] border-0 bg-transparent px-2.5 py-2 text-left text-[13px] leading-5 text-[var(--nim-text)] cursor-pointer transition-[background-color,color] duration-150 hover:enabled:bg-[var(--nim-bg-hover)] disabled:cursor-not-allowed disabled:text-[var(--nim-text-faint)] focus-visible:outline-2 focus-visible:outline-[var(--nim-primary)] focus-visible:outline-offset-2 [&_.material-symbols-outlined]:text-[var(--nim-text-muted)] [&:disabled_.material-symbols-outlined]:text-[var(--nim-text-faint)]"
+                onClick={handleRestart}
+                disabled={isRestarting}
+                role="menuitem"
+              >
+                <MaterialSymbol icon="refresh" size={18} />
+                <span className="min-w-0 flex-1">{isRestarting ? 'Restarting...' : 'Restart Nimbalyst'}</span>
+              </button>
             </div>
+          </div>
+        </FloatingPortal>
+      )}
 
+      {rebuildSubmenuOpen && (
+        <FloatingPortal>
+          <div
+            ref={rebuildMenu.refs.setFloating}
+            style={rebuildMenu.floatingStyles}
+            {...rebuildMenu.getFloatingProps()}
+            className="extension-dev-rebuild-menu agent-elements-extension-dev-rebuild-menu agent-elements-tool-card z-[10001] w-56 max-h-[calc(100vh-32px)] overflow-y-auto rounded-[10px] border border-nim bg-nim-secondary p-1 text-[13px] shadow-[0_12px_32px_color-mix(in_srgb,var(--nim-text)_10%,transparent)] animate-[extension-dev-menu-appear_0.1s_ease-out]"
+            role="menu"
+            data-testid="agent-elements-extension-dev-rebuild-menu"
+            data-agent-elements-shell="extension-dev-rebuild-menu"
+          >
             <button
-              className="extension-dev-menu-action flex items-center gap-2 w-full p-2 border-none bg-transparent text-[var(--nim-text)] text-[13px] font-inherit text-left rounded cursor-pointer transition-colors duration-100 hover:enabled:bg-[var(--nim-bg-hover)] disabled:text-[var(--nim-text-faint)] disabled:cursor-not-allowed [&_.material-symbols-outlined]:text-[var(--nim-text-muted)] [&:disabled_.material-symbols-outlined]:text-[var(--nim-text-faint)]"
-              onClick={handleRestart}
-              disabled={isRestarting}
+              type="button"
+              className="extension-dev-menu-action agent-elements-extension-dev-action flex w-full items-center gap-2.5 rounded-[8px] border-0 bg-transparent px-2.5 py-2 text-left text-[13px] leading-5 text-[var(--nim-text)] cursor-pointer transition-[background-color,color] duration-150 hover:enabled:bg-[var(--nim-bg-hover)] disabled:cursor-not-allowed disabled:text-[var(--nim-text-faint)] focus-visible:outline-2 focus-visible:outline-[var(--nim-primary)] focus-visible:outline-offset-2 [&_.material-symbols-outlined]:text-[var(--nim-text-muted)]"
+              onClick={handleRebuildAll}
+              disabled={rebuildingExtension !== null}
               role="menuitem"
             >
-              <MaterialSymbol icon="refresh" size={18} />
-              <span>{isRestarting ? 'Restarting...' : 'Restart Nimbalyst'}</span>
+              <MaterialSymbol icon="select_all" size={18} />
+              <span className="min-w-0 flex-1">{rebuildingExtension === 'all' ? 'Rebuilding all...' : 'All Extensions'}</span>
             </button>
+
+            {extensions.length > 0 && (
+              <div className="agent-elements-extension-dev-divider mx-2 my-1 h-px bg-[var(--nim-border)]" />
+            )}
+
+            {extensions.map((ext) => (
+              <button
+                key={ext.id}
+                type="button"
+                className="extension-dev-menu-action agent-elements-extension-dev-action flex w-full items-center gap-2.5 rounded-[8px] border-0 bg-transparent px-2.5 py-2 text-left text-[13px] leading-5 text-[var(--nim-text)] cursor-pointer transition-[background-color,color] duration-150 hover:enabled:bg-[var(--nim-bg-hover)] disabled:cursor-not-allowed disabled:text-[var(--nim-text-faint)] focus-visible:outline-2 focus-visible:outline-[var(--nim-primary)] focus-visible:outline-offset-2 [&_.material-symbols-outlined]:text-[var(--nim-text-muted)]"
+                onClick={() => handleRebuildExtension(ext)}
+                disabled={rebuildingExtension !== null}
+                role="menuitem"
+              >
+                <MaterialSymbol icon="extension" size={18} />
+                <span className="min-w-0 flex-1 truncate">
+                  {rebuildingExtension === ext.id ? 'Rebuilding...' : ext.name}
+                </span>
+              </button>
+            ))}
+
+            {extensions.length === 0 && (
+              <div className="px-2.5 py-2 text-xs leading-4 text-[var(--nim-text-faint)]">
+                No buildable extensions found
+              </div>
+            )}
           </div>
-        </div>
+        </FloatingPortal>
       )}
-    </div>
     </>
   );
 };

@@ -39,6 +39,10 @@ interface TerminalBottomPanelProps {
   maxHeight?: number;
 }
 
+function toAgentElementsId(value: string): string {
+  return value.replace(/[^a-zA-Z0-9_-]+/g, '-');
+}
+
 /**
  * Wrapper component that subscribes to command running state for a terminal
  * This isolates re-renders to just the affected tab when running state changes
@@ -308,16 +312,32 @@ export const TerminalBottomPanel: React.FC<TerminalBottomPanelProps> = ({
 
   return (
     <div
-      className="terminal-bottom-panel-container relative shrink-0 flex flex-col border-t-2 border-[var(--nim-border)]"
+      className="terminal-bottom-panel-container agent-elements-terminal-bottom-panel agent-elements-panel-shell relative shrink-0 flex flex-col border-t border-[var(--nim-border)]"
+      data-agent-elements-shell="terminal-bottom-panel"
+      data-component="TerminalBottomPanel"
+      data-testid="agent-elements-terminal-bottom-panel"
       style={{ height: visible ? `${height}px` : '0px', display: visible ? 'flex' : 'none' }}
     >
       <div
-        className="terminal-bottom-panel-resize-handle absolute top-0 left-0 right-0 h-1 cursor-ns-resize z-10 bg-transparent hover:bg-[var(--nim-primary)]"
+        className="terminal-bottom-panel-resize-handle agent-elements-terminal-resize-handle absolute top-0 left-0 right-0 h-1 cursor-ns-resize z-10 bg-transparent transition-colors duration-150 hover:bg-[var(--nim-primary)]"
+        data-agent-elements-shell="terminal-resize-handle"
+        data-testid="agent-elements-terminal-resize-handle"
         onMouseDown={handleMouseDown}
       />
-      <div className="terminal-bottom-panel flex flex-col h-full bg-[var(--nim-bg)] overflow-hidden">
-        <div className="terminal-bottom-panel-header flex items-center justify-between h-8 px-1.5 bg-[var(--nim-bg-secondary)] border-b border-[var(--nim-border)] shrink-0">
-          <div className="terminal-bottom-panel-tabs flex gap-0.5 items-center overflow-x-auto flex-1 min-w-0 [&::-webkit-scrollbar]:h-1 [&::-webkit-scrollbar-thumb]:bg-[var(--nim-bg-tertiary)] [&::-webkit-scrollbar-thumb]:rounded-sm">
+      <div
+        className="terminal-bottom-panel agent-elements-terminal-panel flex flex-col h-full bg-[var(--nim-bg)] overflow-hidden"
+        data-agent-elements-shell="terminal-panel"
+      >
+        <div
+          className="terminal-bottom-panel-header agent-elements-terminal-header flex items-center justify-between h-8 px-1.5 bg-[var(--nim-bg-secondary)] border-b border-[var(--nim-border)] shrink-0"
+          data-agent-elements-shell="terminal-header"
+          data-testid="agent-elements-terminal-header"
+        >
+          <div
+            className="terminal-bottom-panel-tabs agent-elements-terminal-tabs flex gap-0.5 items-center overflow-x-auto flex-1 min-w-0 [&::-webkit-scrollbar]:h-1 [&::-webkit-scrollbar-thumb]:bg-[var(--nim-bg-tertiary)] [&::-webkit-scrollbar-thumb]:rounded-sm"
+            data-agent-elements-shell="terminal-tabs"
+            data-testid="agent-elements-terminal-tabs"
+          >
             {terminals.map((terminal, index) => (
               <TerminalTabWrapper
                 key={terminal.id}
@@ -334,7 +354,9 @@ export const TerminalBottomPanel: React.FC<TerminalBottomPanelProps> = ({
               />
             ))}
             <button
-              className="terminal-bottom-panel-new-tab flex items-center justify-center w-6 h-6 p-0 bg-transparent border-none text-[var(--nim-text-muted)] cursor-pointer rounded shrink-0 transition-colors duration-150 hover:bg-[var(--nim-bg-hover)] hover:text-[var(--nim-text)]"
+              className="terminal-bottom-panel-new-tab agent-elements-terminal-icon-button flex items-center justify-center w-6 h-6 p-0 bg-transparent border-none text-[var(--nim-text-muted)] cursor-pointer rounded shrink-0 transition-colors duration-150 hover:bg-[var(--nim-bg-hover)] hover:text-[var(--nim-text)]"
+              data-agent-elements-shell="terminal-new-tab"
+              data-testid="agent-elements-terminal-new-tab"
               onClick={handleCreateTerminal}
               title="New Terminal"
             >
@@ -342,18 +364,27 @@ export const TerminalBottomPanel: React.FC<TerminalBottomPanelProps> = ({
             </button>
           </div>
           <button
-            className="terminal-bottom-panel-close flex items-center justify-center w-6 h-6 p-0 bg-transparent border-none text-[var(--nim-text-muted)] cursor-pointer rounded ml-2 shrink-0 transition-colors duration-150 hover:bg-[var(--nim-bg-hover)] hover:text-[var(--nim-text)]"
+            className="terminal-bottom-panel-close agent-elements-terminal-icon-button flex items-center justify-center w-6 h-6 p-0 bg-transparent border-none text-[var(--nim-text-muted)] cursor-pointer rounded ml-2 shrink-0 transition-colors duration-150 hover:bg-[var(--nim-bg-hover)] hover:text-[var(--nim-text)]"
+            data-agent-elements-shell="terminal-close-panel"
+            data-testid="agent-elements-terminal-close-panel"
             onClick={handleClose}
             title="Close panel"
           >
             <MaterialSymbol icon="close" size={18} />
           </button>
         </div>
-        <div className="terminal-bottom-panel-content flex-1 overflow-hidden flex flex-col min-h-0">
+        <div
+          className="terminal-bottom-panel-content agent-elements-terminal-content flex-1 overflow-hidden flex flex-col min-h-0"
+          data-agent-elements-shell="terminal-content"
+          data-testid="agent-elements-terminal-content"
+        >
           {terminals.map((terminal) => (
             <div
               key={terminal.id}
-              className="terminal-bottom-panel-terminal flex-1 flex flex-col min-h-0"
+              className="terminal-bottom-panel-terminal agent-elements-terminal-host flex-1 flex flex-col min-h-0"
+              data-agent-elements-shell="terminal-host"
+              data-terminal-id={terminal.id}
+              data-testid={`agent-elements-terminal-host-${toAgentElementsId(terminal.id)}`}
               style={{ display: activeTerminalId === terminal.id ? 'flex' : 'none' }}
             >
               <TerminalPanel
@@ -366,10 +397,16 @@ export const TerminalBottomPanel: React.FC<TerminalBottomPanelProps> = ({
             </div>
           ))}
           {terminals.length === 0 && (
-            <div className="terminal-bottom-panel-empty flex-1 flex flex-col items-center justify-center gap-3 text-[var(--nim-text-muted)] text-sm">
+            <div
+              className="terminal-bottom-panel-empty agent-elements-terminal-empty agent-elements-tool-card flex-1 flex flex-col items-center justify-center gap-3 text-[var(--nim-text-muted)] text-sm"
+              data-agent-elements-shell="terminal-empty-state"
+              data-testid="agent-elements-terminal-empty"
+            >
               <p>No terminals open</p>
               <button
-                className="flex items-center gap-1.5 px-4 py-2 bg-[var(--nim-bg-secondary)] border border-[var(--nim-border)] rounded-md text-[var(--nim-text)] text-[13px] cursor-pointer transition-colors duration-150 hover:bg-[var(--nim-bg-tertiary)] hover:border-[var(--nim-primary)]"
+                className="agent-elements-terminal-empty-action flex items-center gap-1.5 px-4 py-2 bg-[var(--nim-bg-secondary)] border border-[var(--nim-border)] rounded-md text-[var(--nim-text)] text-[13px] cursor-pointer transition-colors duration-150 hover:bg-[var(--nim-bg-tertiary)] hover:border-[var(--nim-primary)]"
+                data-agent-elements-shell="terminal-empty-new-tab"
+                data-testid="agent-elements-terminal-empty-new-tab"
                 onClick={handleCreateTerminal}
               >
                 <MaterialSymbol icon="terminal" size={16} />

@@ -660,29 +660,51 @@ export function SettingsView({
   };
 
   return (
-    <div className="settings-view flex flex-col h-full bg-[var(--nim-bg)] text-[var(--nim-text)]">
+    <div
+      className="settings-view agent-elements-settings-view agent-elements-panel-shell flex flex-col h-full bg-[var(--nim-bg)] text-[var(--nim-text)]"
+      data-agent-elements-shell="settings-view"
+      data-component="SettingsView"
+      data-testid="agent-elements-settings-view"
+    >
       {/* Settings Header */}
-      <header className="settings-view-header h-[52px] bg-[var(--nim-bg-secondary)] border-b border-[var(--nim-border)] flex items-center px-5 gap-4 shrink-0">
+      <header
+        className="settings-view-header agent-elements-settings-header h-[52px] bg-[var(--nim-bg-secondary)] border-b border-[var(--nim-border)] flex items-center px-5 gap-4 shrink-0"
+        data-agent-elements-shell="settings-header"
+        data-testid="agent-elements-settings-header"
+      >
         <h1 className="settings-view-title text-base font-semibold text-[var(--nim-text)] m-0">Settings</h1>
 
-        <div className="settings-scope-container flex items-center gap-3">
-          <div className="settings-scope-tabs flex bg-[var(--nim-bg-tertiary)] p-1 rounded-lg">
+        <div
+          className="settings-scope-container agent-elements-settings-scope-container flex items-center gap-3"
+          data-agent-elements-shell="settings-scope-container"
+        >
+          <div
+            className="settings-scope-tabs agent-elements-settings-scope-tabs flex bg-[var(--nim-bg-tertiary)] p-1 rounded-lg"
+            data-agent-elements-shell="settings-scope-tabs"
+            data-testid="agent-elements-settings-scope-tabs"
+          >
             <button
-              className={`settings-scope-tab py-1.5 px-4 rounded-md text-xs font-medium cursor-pointer transition-all duration-150 border-none ${
+              className={`settings-scope-tab agent-elements-settings-scope-tab py-1.5 px-4 rounded-md text-xs font-medium cursor-pointer transition-all duration-150 border-none ${
                 scope === 'user'
                   ? 'bg-[var(--nim-primary)] text-white shadow-sm'
                   : 'bg-transparent text-[var(--nim-text-muted)] hover:text-[var(--nim-text)] hover:bg-[var(--nim-bg-hover)]'
               }`}
+              data-agent-elements-shell="settings-scope-tab"
+              data-selected={scope === 'user' ? 'true' : 'false'}
+              data-testid="agent-elements-settings-scope-user"
               onClick={() => handleScopeChange('user')}
             >
               User
             </button>
             <button
-              className={`settings-scope-tab py-1.5 px-4 rounded-md text-xs font-medium cursor-pointer transition-all duration-150 border-none disabled:opacity-50 disabled:cursor-not-allowed ${
+              className={`settings-scope-tab agent-elements-settings-scope-tab py-1.5 px-4 rounded-md text-xs font-medium cursor-pointer transition-all duration-150 border-none disabled:opacity-50 disabled:cursor-not-allowed ${
                 scope === 'project'
                   ? 'bg-[var(--nim-primary)] text-white shadow-sm'
                   : 'bg-transparent text-[var(--nim-text-muted)] hover:text-[var(--nim-text)] hover:bg-[var(--nim-bg-hover)]'
               }`}
+              data-agent-elements-shell="settings-scope-tab"
+              data-selected={scope === 'project' ? 'true' : 'false'}
+              data-testid="agent-elements-settings-scope-project"
               onClick={() => handleScopeChange('project')}
               disabled={!workspacePath}
               title={!workspacePath ? 'Open a project to access project settings' : undefined}
@@ -698,19 +720,26 @@ export function SettingsView({
         </div>
 
         <span className="flex-1" />
-        <span className={`settings-save-status text-xs min-w-[60px] ${
+        <span
+          className={`settings-save-status agent-elements-settings-save-status text-xs min-w-[60px] ${
           saveStatus === 'saving' ? 'text-[var(--nim-text-muted)]' :
           saveStatus === 'saved' ? 'text-[var(--nim-success)]' :
           saveStatus === 'error' ? 'text-[var(--nim-error)]' :
           'text-[var(--nim-text-faint)]'
-        }`}>
+        }`}
+          data-agent-elements-shell="settings-save-status"
+        >
           {saveStatus === 'saving' && 'Saving...'}
           {saveStatus === 'saved' && 'Saved'}
           {saveStatus === 'error' && 'Error saving'}
         </span>
       </header>
 
-      <div className="settings-view-body flex flex-1 overflow-hidden relative min-h-0">
+      <div
+        className="settings-view-body agent-elements-settings-body flex flex-1 overflow-hidden relative min-h-0"
+        data-agent-elements-shell="settings-body"
+        data-testid="agent-elements-settings-body"
+      >
         <SettingsSidebar
           selectedCategory={selectedCategory}
           onSelectCategory={setSelectedCategory}
@@ -719,8 +748,16 @@ export function SettingsView({
           // releaseChannel now comes from Jotai atom in SettingsSidebar
         />
 
-        <main className="settings-view-main flex-1 overflow-y-auto p-6 bg-[var(--nim-bg)] relative z-0">
-          <div className="settings-panel-container max-w-[800px]">
+        <main
+          className="settings-view-main agent-elements-settings-main flex-1 overflow-y-auto p-6 bg-[var(--nim-bg)] relative z-0"
+          data-agent-elements-shell="settings-main"
+          data-testid="agent-elements-settings-main"
+        >
+          <div
+            className="settings-panel-container agent-elements-settings-panel max-w-[800px]"
+            data-agent-elements-shell="settings-panel-container"
+            data-testid="agent-elements-settings-panel-container"
+          >
             {renderPanel()}
           </div>
         </main>

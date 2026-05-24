@@ -20,6 +20,7 @@
  */
 import type { RawMessage } from '../TranscriptTransformer';
 import { parseMcpToolName } from '../utils';
+import { buildCodexToolLookupId } from '../../toolLookupIds';
 import type {
   IRawMessageParser,
   ParseContext,
@@ -184,9 +185,7 @@ export class CodexACPRawParser implements IRawMessageParser {
       case 'agent_message_chunk':
         return this.parseChunkAsAssistant(msg, update.content);
       case 'agent_thought_chunk':
-        // Reasoning is rendered as assistant content so it shows in the
-        // transcript -- there's no separate "reasoning" canonical type.
-        return this.parseChunkAsAssistant(msg, update.content);
+        return this.parseChunkAsThinking(msg, update.content);
       case 'tool_call':
         return this.parseToolCall(msg, update, context);
       case 'tool_call_update':
@@ -224,6 +223,35 @@ export class CodexACPRawParser implements IRawMessageParser {
     }
 
     return [];
+  }
+
+  private parseChunkAsThinking(
+    msg: RawMessage,
+    block: ACPContentBlock | undefined,
+  ): CanonicalEventDescriptor[] {
+    if (!block) return [];
+
+    const thinking = this.extractContentBlockText(block);
+    if (!thinking) return [];
+
+    return [{
+      type: 'assistant_message',
+      text: '',
+      thinking,
+      createdAt: msg.createdAt,
+    }];
+  }
+
+  private extractContentBlockText(block: ACPContentBlock): string {
+    if (block.type === 'text' && typeof block.text === 'string') {
+      return block.text;
+    }
+
+    if (block.type === 'resource_link' && typeof block.uri === 'string') {
+      return block.uri;
+    }
+
+    return '';
   }
 
   private parseToolCall(
@@ -298,24 +326,56 @@ export class CodexACPRawParser implements IRawMessageParser {
     msg: RawMessage,
     update: ACPSessionUpdate,
   ): CanonicalEventDescriptor[] {
-    // ACP `plan` updates carry an entries array of {content, status}. Render
-    // them as an assistant message so they survive reload.
     const entries = (update as { entries?: Array<{ content?: unknown; status?: unknown }> }).entries;
     if (!Array.isArray(entries) || entries.length === 0) return [];
 
-    const lines = entries
-      .map((entry) => {
-        const text = typeof entry.content === 'string' ? entry.content : String(entry.content ?? '');
-        const done = entry.status === 'completed';
-        return `- [${done ? 'x' : ' '}] ${text}`;
-      })
-      .join('\n');
+    const steps = entries
+      .map((entry, index) => ({
+        id: `plan-step-${index}`,
+        step: typeof entry.content === 'string' ? entry.content : String(entry.content ?? ''),
+        status: this.planStepStatus(entry.status),
+      }))
+      .filter((step) => step.step.length > 0);
+    if (steps.length === 0) return [];
 
-    return [{
-      type: 'assistant_message',
-      text: lines,
-      createdAt: msg.createdAt,
-    }];
+    const providerToolCallId = buildCodexToolLookupId(
+      `acp-plan-${msg.id}`,
+      msg.createdAt.getTime(),
+      msg.id,
+    );
+
+    return [
+      {
+        type: 'tool_call_started',
+        toolName: 'update_plan',
+        toolDisplayName: 'Update plan',
+        arguments: {
+          title: typeof update.title === 'string' && update.title.length > 0 ? update.title : 'Plan update',
+          steps,
+        },
+        targetFilePath: null,
+        mcpServer: null,
+        mcpTool: null,
+        providerToolCallId,
+        createdAt: msg.createdAt,
+      },
+      {
+        type: 'tool_call_completed',
+        providerToolCallId,
+        status: 'completed',
+        result: 'Plan updated.',
+        isError: false,
+      },
+    ];
+  }
+
+  private planStepStatus(value: unknown): string {
+    const status = typeof value === 'string' ? value.toLowerCase() : '';
+    if (status === 'completed' || status === 'done') return 'completed';
+    if (status === 'in_progress' || status === 'in-progress' || status === 'active' || status === 'running') return 'in_progress';
+    if (status === 'blocked') return 'blocked';
+    if (status === 'cancelled' || status === 'canceled') return 'cancelled';
+    return 'pending';
   }
 
   private parseRequestPermission(

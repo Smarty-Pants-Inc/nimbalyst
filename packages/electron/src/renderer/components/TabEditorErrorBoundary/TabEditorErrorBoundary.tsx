@@ -57,81 +57,63 @@ export class TabEditorErrorBoundary extends Component<Props, State> {
     if (this.state.hasError) {
       return (
         <div
-          className="tab-editor-error-fallback"
-          style={{
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            justifyContent: 'center',
-            height: '100%',
-            padding: '24px',
-            backgroundColor: 'var(--nim-bg-secondary)',
-            color: 'var(--nim-text)',
-          }}
+          className="tab-editor-error-fallback agent-elements-tab-editor-error-boundary agent-elements-tool-card flex h-full w-full items-center justify-center rounded-[var(--an-tool-border-radius)] border border-[var(--an-border-color)] bg-[var(--an-background-secondary)] p-[var(--an-spacing-xxl)] text-[var(--an-foreground)] [container-type:inline-size]"
+          role="alert"
+          aria-live="assertive"
+          data-testid="agent-elements-tab-editor-error-boundary"
+          data-component="TabEditorErrorBoundary"
+          data-agent-elements-shell="tab-editor-error-boundary"
         >
-          <div style={{
-            maxWidth: '500px',
-            textAlign: 'center',
-          }}>
-            <h3 style={{
-              margin: '0 0 16px 0',
-              color: 'var(--nim-text)',
-              fontSize: '18px',
-            }}>
-              Unable to Load Editor
-            </h3>
+          <div
+            className="agent-elements-tab-editor-error-boundary-content flex w-full max-w-[540px] flex-col items-start gap-[var(--an-spacing-lg)] text-left"
+            data-agent-elements-shell="tab-editor-error-boundary-content"
+          >
+            <div className="flex items-start gap-3">
+              <span
+                className="agent-elements-tab-editor-error-boundary-icon inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-[var(--an-tool-border-radius)] border border-[color-mix(in_srgb,var(--nim-error)_30%,var(--an-border-color))] bg-[color-mix(in_srgb,var(--nim-error)_10%,var(--an-background))] text-[var(--nim-error)]"
+                aria-hidden="true"
+                data-agent-elements-shell="tab-editor-error-boundary-icon"
+              >
+                !
+              </span>
+              <div className="min-w-0">
+                <h3 className="m-0 text-base font-medium leading-snug text-[var(--an-foreground)]">
+                  Unable to Load Editor
+                </h3>
 
-            <p style={{
-              margin: '0 0 8px 0',
-              color: 'var(--nim-text-muted)',
-              fontSize: '14px',
-            }}>
-              An error occurred while loading "{this.props.fileName}".
-            </p>
+                <p
+                  className="m-0 mt-1 select-text text-sm leading-relaxed text-[var(--an-foreground-muted)]"
+                  data-testid="agent-elements-tab-editor-error-boundary-message"
+                  data-agent-elements-shell="tab-editor-error-boundary-message"
+                >
+                  An error occurred while loading "{this.props.fileName}".
+                </p>
 
-            <p style={{
-              margin: '0 0 24px 0',
-              color: 'var(--nim-text-faint)',
-              fontSize: '13px',
-            }}>
-              Other tabs should continue to work normally.
-            </p>
+                <p className="m-0 mt-1 text-xs leading-relaxed text-[var(--an-foreground-subtle)]">
+                  Other tabs should continue to work normally.
+                </p>
+              </div>
+            </div>
 
             {this.state.error && (
-              <pre style={{
-                margin: '0 0 24px 0',
-                padding: '12px',
-                backgroundColor: 'var(--nim-bg-tertiary)',
-                border: '1px solid var(--nim-border)',
-                borderRadius: '4px',
-                fontSize: '12px',
-                color: 'var(--nim-text-muted)',
-                textAlign: 'left',
-                overflow: 'auto',
-                maxHeight: '150px',
-                whiteSpace: 'pre-wrap',
-                wordBreak: 'break-word',
-              }}>
+              <pre
+                className="agent-elements-tab-editor-error-boundary-detail m-0 max-h-[150px] w-full overflow-auto whitespace-pre-wrap break-words rounded-[var(--an-tool-border-radius)] border border-[var(--an-border-color)] bg-[var(--an-background)] p-[var(--an-spacing-lg)] text-left font-mono text-xs leading-relaxed text-[var(--an-foreground-muted)] select-text"
+                data-testid="agent-elements-tab-editor-error-boundary-detail"
+                data-agent-elements-shell="tab-editor-error-boundary-detail"
+              >
                 {this.state.error.message}
               </pre>
             )}
 
-            <div style={{
-              display: 'flex',
-              gap: '12px',
-              justifyContent: 'center',
-            }}>
+            <div
+              className="agent-elements-tab-editor-error-boundary-actions flex flex-wrap justify-start gap-2"
+              data-agent-elements-shell="tab-editor-error-boundary-actions"
+            >
               <button
                 onClick={this.handleRetry}
-                style={{
-                  padding: '8px 16px',
-                  backgroundColor: 'var(--nim-primary)',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '4px',
-                  cursor: 'pointer',
-                  fontSize: '14px',
-                }}
+                className="agent-elements-tab-editor-error-boundary-retry rounded-[var(--an-input-border-radius)] border border-[var(--an-send-button-bg)] bg-[var(--an-send-button-bg)] px-4 py-2 text-sm font-medium text-[var(--an-send-button-color)] transition-colors duration-150 ease-out hover:bg-[var(--nim-primary-hover)] focus:outline-none focus:ring-2 focus:ring-[var(--an-input-focus-outline)]"
+                data-testid="agent-elements-tab-editor-error-boundary-retry"
+                data-agent-elements-shell="tab-editor-error-boundary-retry"
               >
                 Try Again
               </button>
@@ -139,15 +121,9 @@ export class TabEditorErrorBoundary extends Component<Props, State> {
               {this.props.onClose && (
                 <button
                   onClick={this.handleClose}
-                  style={{
-                    padding: '8px 16px',
-                    backgroundColor: 'var(--nim-bg)',
-                    color: 'var(--nim-text)',
-                    border: '1px solid var(--nim-border)',
-                    borderRadius: '4px',
-                    cursor: 'pointer',
-                    fontSize: '14px',
-                  }}
+                  className="agent-elements-tab-editor-error-boundary-close rounded-[var(--an-input-border-radius)] border border-[var(--an-border-color)] bg-[var(--an-background)] px-4 py-2 text-sm font-medium text-[var(--an-foreground)] transition-colors duration-150 ease-out hover:bg-[var(--an-background-tertiary)] focus:outline-none focus:ring-2 focus:ring-[var(--an-input-focus-outline)]"
+                  data-testid="agent-elements-tab-editor-error-boundary-close"
+                  data-agent-elements-shell="tab-editor-error-boundary-close"
                 >
                   Close Tab
                 </button>

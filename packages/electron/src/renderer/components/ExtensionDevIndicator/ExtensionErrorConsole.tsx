@@ -167,15 +167,21 @@ export const ExtensionErrorConsole: React.FC<ExtensionErrorConsoleProps> = ({
 
   return (
     <div
-      className="extension-error-console-overlay nim-overlay z-[1000]"
+      className="extension-error-console-overlay agent-elements-extension-error-console-overlay nim-overlay z-[1000]"
       onClick={onClose}
+      data-testid="agent-elements-extension-error-console-overlay"
+      data-agent-elements-shell="extension-error-console-overlay"
     >
       <div
-        className="extension-error-console flex flex-col w-4/5 max-w-[1000px] h-[70%] max-h-[600px] rounded-xl shadow-[0_8px_32px_rgba(0,0,0,0.25)] nim-animate-slide-up bg-nim border border-nim"
+        className="extension-error-console agent-elements-extension-error-console agent-elements-tool-card flex h-[70vh] max-h-[600px] w-[min(1000px,80vw)] flex-col rounded-[12px] border border-nim bg-nim shadow-[0_16px_48px_color-mix(in_srgb,var(--nim-text)_14%,transparent)] nim-animate-slide-up"
         onClick={(e) => e.stopPropagation()}
+        data-testid="agent-elements-extension-error-console"
+        data-agent-elements-shell="extension-error-console"
       >
         <div
-          className="extension-error-console-header flex items-center gap-4 px-5 py-4 rounded-t-xl border-b border-nim bg-nim-secondary"
+          className="extension-error-console-header agent-elements-extension-error-console-header flex items-center gap-4 rounded-t-[12px] border-b border-nim bg-nim-secondary px-5 py-4"
+          data-testid="agent-elements-extension-error-console-header"
+          data-agent-elements-shell="extension-error-console-header"
         >
           <h2 className="m-0 text-base font-semibold text-nim">
             Extension Logs
@@ -199,20 +205,24 @@ export const ExtensionErrorConsole: React.FC<ExtensionErrorConsoleProps> = ({
             )}
           </div>
           <button
-            className="extension-error-console-close flex items-center justify-center w-8 h-8 border-none bg-transparent rounded-md cursor-pointer transition-all duration-100 hover:bg-nim-hover hover:text-nim text-nim-muted"
+            type="button"
+            className="extension-error-console-close agent-elements-extension-error-console-close flex h-8 w-8 items-center justify-center rounded-[8px] border-0 bg-transparent text-nim-muted cursor-pointer transition-[background-color,color] duration-150 hover:bg-nim-hover hover:text-nim focus-visible:outline-2 focus-visible:outline-[var(--nim-primary)] focus-visible:outline-offset-2"
             onClick={onClose}
             aria-label="Close"
+            data-agent-elements-shell="extension-error-console-close"
           >
             <MaterialSymbol icon="close" size={20} />
           </button>
         </div>
 
         <div
-          className="extension-error-console-toolbar flex items-center justify-between px-4 py-2 border-b border-nim bg-nim-secondary"
+          className="extension-error-console-toolbar agent-elements-extension-error-console-toolbar flex items-center justify-between gap-3 border-b border-nim bg-nim-secondary px-4 py-2"
+          data-testid="agent-elements-extension-error-console-toolbar"
+          data-agent-elements-shell="extension-error-console-toolbar"
         >
           <div className="extension-error-console-filters flex gap-2">
             <select
-              className="px-2 py-1.5 text-xs rounded-md cursor-pointer border border-nim bg-nim text-nim hover:border-[var(--nim-border-hover)]"
+              className="agent-elements-extension-error-console-select rounded-[8px] border border-nim bg-nim px-2 py-1.5 text-xs text-nim cursor-pointer transition-colors duration-150 hover:border-[var(--nim-border-hover)] focus-visible:outline-2 focus-visible:outline-[var(--nim-primary)] focus-visible:outline-offset-2"
               value={filter.logLevel}
               onChange={(e) =>
                 setFilter((f) => ({
@@ -230,7 +240,7 @@ export const ExtensionErrorConsole: React.FC<ExtensionErrorConsoleProps> = ({
             </select>
 
             <select
-              className="px-2 py-1.5 text-xs rounded-md cursor-pointer border border-nim bg-nim text-nim hover:border-[var(--nim-border-hover)]"
+              className="agent-elements-extension-error-console-select rounded-[8px] border border-nim bg-nim px-2 py-1.5 text-xs text-nim cursor-pointer transition-colors duration-150 hover:border-[var(--nim-border-hover)] focus-visible:outline-2 focus-visible:outline-[var(--nim-primary)] focus-visible:outline-offset-2"
               value={filter.source}
               onChange={(e) =>
                 setFilter((f) => ({
@@ -247,7 +257,7 @@ export const ExtensionErrorConsole: React.FC<ExtensionErrorConsoleProps> = ({
             </select>
 
             <select
-              className="px-2 py-1.5 text-xs rounded-md cursor-pointer border border-nim bg-nim text-nim hover:border-[var(--nim-border-hover)]"
+              className="agent-elements-extension-error-console-select rounded-[8px] border border-nim bg-nim px-2 py-1.5 text-xs text-nim cursor-pointer transition-colors duration-150 hover:border-[var(--nim-border-hover)] focus-visible:outline-2 focus-visible:outline-[var(--nim-primary)] focus-visible:outline-offset-2"
               value={filter.extensionId}
               onChange={(e) =>
                 setFilter((f) => ({ ...f, extensionId: e.target.value }))
@@ -274,17 +284,21 @@ export const ExtensionErrorConsole: React.FC<ExtensionErrorConsoleProps> = ({
               Auto-refresh
             </label>
             <button
-              className="toolbar-button nim-btn-icon"
+              type="button"
+              className="toolbar-button agent-elements-extension-error-console-action nim-btn-icon"
               onClick={fetchLogs}
               disabled={isLoading}
               title="Refresh"
+              data-agent-elements-shell="extension-error-console-action"
             >
               <MaterialSymbol icon="refresh" size={18} />
             </button>
             <button
-              className="toolbar-button nim-btn-icon"
+              type="button"
+              className="toolbar-button agent-elements-extension-error-console-action nim-btn-icon"
               onClick={handleClearLogs}
               title="Clear logs"
+              data-agent-elements-shell="extension-error-console-action"
             >
               <MaterialSymbol icon="delete" size={18} />
             </button>
@@ -292,10 +306,15 @@ export const ExtensionErrorConsole: React.FC<ExtensionErrorConsoleProps> = ({
         </div>
 
         <div
-          className="extension-error-console-logs flex-1 overflow-y-auto p-2 font-mono text-xs"
+          className="extension-error-console-logs agent-elements-extension-error-console-logs flex-1 overflow-y-auto p-2 font-mono text-xs"
+          data-testid="agent-elements-extension-error-console-logs"
+          data-agent-elements-shell="extension-error-console-logs"
         >
           {logs.length === 0 ? (
-            <div className="extension-error-console-empty flex flex-col items-center justify-center h-full text-center text-nim-faint">
+            <div
+              className="extension-error-console-empty agent-elements-extension-error-console-empty flex h-full flex-col items-center justify-center text-center text-nim-faint"
+              data-agent-elements-shell="extension-error-console-empty"
+            >
               <MaterialSymbol icon="check_circle" size={48} />
               <p className="mt-2 mb-0">No logs to display</p>
               <p className="hint text-xs max-w-[300px]">
@@ -307,10 +326,12 @@ export const ExtensionErrorConsole: React.FC<ExtensionErrorConsoleProps> = ({
             logs.map((log, index) => (
               <div
                 key={`${log.timestamp}-${index}`}
-                className={`log-entry log-${log.level} px-2 py-1.5 rounded mb-0.5 transition-colors duration-100 hover:bg-[var(--nim-bg-hover)] ${
+                className={`log-entry agent-elements-extension-log-entry log-${log.level} mb-0.5 rounded-[8px] px-2 py-1.5 transition-colors duration-150 hover:bg-[var(--nim-bg-hover)] ${
                   expandedLogs.has(index) ? 'expanded bg-[var(--nim-bg-secondary)]' : ''
                 } ${log.stack ? 'cursor-pointer' : 'cursor-default'}`}
                 onClick={() => log.stack && toggleExpand(index)}
+                data-testid="agent-elements-extension-log-entry"
+                data-agent-elements-shell="extension-log-entry"
               >
                 <div className="log-entry-header flex items-start gap-2">
                   <span
@@ -337,12 +358,15 @@ export const ExtensionErrorConsole: React.FC<ExtensionErrorConsoleProps> = ({
                   </span>
                   {log.extensionId && (
                     <button
-                      className="log-extension shrink-0 px-1 border-none rounded font-inherit cursor-pointer transition-all duration-100 text-[#a855f7] bg-[rgba(168,85,247,0.1)] hover:bg-[rgba(168,85,247,0.25)] hover:text-[#c084fc]"
+                      type="button"
+                      className="log-extension agent-elements-extension-log-badge shrink-0 rounded-[6px] border-0 bg-[color-mix(in_srgb,var(--nim-info)_10%,transparent)] px-1 text-[var(--nim-info)] font-inherit cursor-pointer transition-[background-color,color] duration-150 hover:bg-[color-mix(in_srgb,var(--nim-info)_16%,transparent)] hover:text-[var(--nim-text)] focus-visible:outline-2 focus-visible:outline-[var(--nim-primary)] focus-visible:outline-offset-2"
                       onClick={(e) => {
                         e.stopPropagation();
                         setFilter((f) => ({ ...f, extensionId: log.extensionId! }));
                       }}
                       title={`Filter by ${log.extensionId}`}
+                      data-testid="agent-elements-extension-log-badge"
+                      data-agent-elements-shell="extension-log-badge"
                     >
                       {log.extensionId}
                     </button>
@@ -367,7 +391,7 @@ export const ExtensionErrorConsole: React.FC<ExtensionErrorConsoleProps> = ({
                   )}
                 </div>
                 {expandedLogs.has(index) && log.stack && (
-                  <pre className="log-stack mt-2 ml-6 p-2 rounded overflow-x-auto text-[11px] whitespace-pre-wrap break-words bg-nim border border-nim text-nim-muted">
+                  <pre className="log-stack agent-elements-extension-log-stack mt-2 ml-6 overflow-x-auto rounded-[8px] border border-nim bg-nim p-2 text-[11px] whitespace-pre-wrap break-words text-nim-muted">
                     {log.stack}
                   </pre>
                 )}

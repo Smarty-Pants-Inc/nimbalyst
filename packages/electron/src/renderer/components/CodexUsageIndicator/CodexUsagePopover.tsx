@@ -1,10 +1,10 @@
 /**
- * CodexUsagePopover - Detailed Codex usage information popover
+ * CodexUsagePopover - detailed Codex usage information popover.
  *
- * Shows both session (5-hour) and weekly usage with progress bars and reset times.
+ * Shows session and weekly usage with progress bars and reset times.
  */
 
-import React, { useEffect, RefObject } from 'react';
+import React, { RefObject, useEffect } from 'react';
 import { useAtomValue, useSetAtom } from 'jotai';
 import { MaterialSymbol } from '@nimbalyst/runtime';
 import {
@@ -14,7 +14,9 @@ import {
   formatResetTime,
   setCodexUsageIndicatorEnabledAtom,
 } from '../../store/atoms/codexUsageAtoms';
-import { useFloatingMenu, FloatingPortal } from '../../hooks/useFloatingMenu';
+import { FloatingPortal, useFloatingMenu } from '../../hooks/useFloatingMenu';
+
+type UsageVisualState = 'healthy' | 'warning' | 'danger' | 'muted';
 
 interface CodexUsagePopoverProps {
   anchorRef: RefObject<HTMLElement>;
@@ -38,9 +40,44 @@ function calculateTimeElapsedPercent(resetsAt: string | null, windowDurationMs: 
   const now = Date.now();
   const windowStartTime = resetTime - windowDurationMs;
   const elapsedMs = now - windowStartTime;
-
   const percent = (elapsedMs / windowDurationMs) * 100;
   return Math.max(0, Math.min(100, percent));
+}
+
+function getUsageVisualState(color: string): UsageVisualState {
+  if (color === 'green') return 'healthy';
+  if (color === 'yellow') return 'warning';
+  if (color === 'red') return 'danger';
+  return 'muted';
+}
+
+function getUsageColorClasses(state: UsageVisualState): { text: string; fill: string; marker: string } {
+  switch (state) {
+    case 'healthy':
+      return {
+        text: 'text-[var(--nim-success)]',
+        fill: 'bg-[var(--nim-success)]',
+        marker: 'bg-[var(--nim-success)]',
+      };
+    case 'warning':
+      return {
+        text: 'text-[var(--nim-warning)]',
+        fill: 'bg-[var(--nim-warning)]',
+        marker: 'bg-[var(--nim-warning)]',
+      };
+    case 'danger':
+      return {
+        text: 'text-[var(--nim-error)]',
+        fill: 'bg-[var(--nim-error)]',
+        marker: 'bg-[var(--nim-error)]',
+      };
+    default:
+      return {
+        text: 'text-[var(--an-foreground-muted)]',
+        fill: 'bg-[var(--an-foreground-subtle)]',
+        marker: 'bg-[var(--an-foreground-subtle)]',
+      };
+  }
 }
 
 const UsageSection: React.FC<UsageSectionProps> = ({
@@ -51,40 +88,39 @@ const UsageSection: React.FC<UsageSectionProps> = ({
   color,
   windowDurationMs,
 }) => {
-  const colorClasses: Record<string, { text: string; bar: string }> = {
-    green: { text: 'text-green-500', bar: 'bg-green-500' },
-    yellow: { text: 'text-yellow-500', bar: 'bg-yellow-500' },
-    red: { text: 'text-red-500', bar: 'bg-red-500' },
-    muted: { text: 'text-nim-muted', bar: 'bg-nim-muted' },
-  };
-
-  const colors = colorClasses[color] || colorClasses.muted;
+  const state = getUsageVisualState(color);
+  const colors = getUsageColorClasses(state);
   const timeElapsedPercent = calculateTimeElapsedPercent(resetsAt, windowDurationMs);
   const isOverPacing = utilization > timeElapsedPercent;
 
   return (
-    <div className="mb-4 last:mb-0">
-      <div className="flex justify-between items-baseline mb-1">
-        <div>
-          <div className="text-[13px] font-semibold text-nim">{title}</div>
-          <div className="text-[11px] text-nim-muted">{subtitle}</div>
+    <div
+      className="agent-elements-usage-section mb-4 last:mb-0"
+      data-agent-elements-shell="usage-section"
+      data-usage-state={state}
+      data-testid="agent-elements-codex-usage-section"
+    >
+      <div className="mb-1 flex items-baseline justify-between gap-3">
+        <div className="min-w-0">
+          <div className="text-[13px] font-semibold leading-5 text-[var(--an-foreground)]">{title}</div>
+          <div className="text-[11px] leading-4 text-[var(--an-foreground-muted)]">{subtitle}</div>
         </div>
-        <div className={`text-[16px] font-semibold ${colors.text}`}>
+        <div className={`text-[16px] font-semibold leading-5 ${colors.text}`}>
           {Math.round(utilization)}%
         </div>
       </div>
-      <div className="relative h-1.5 bg-nim-tertiary rounded-full overflow-hidden mb-1.5">
+      <div className="relative mb-1.5 h-1.5 overflow-hidden rounded-[999px] bg-[var(--an-background-tertiary)]">
         <div
-          className={`h-full rounded-full transition-all duration-300 ${colors.bar}`}
+          className={`h-full rounded-[999px] transition-[width] duration-300 ease-out ${colors.fill}`}
           style={{ width: `${Math.min(utilization, 100)}%` }}
         />
         <div
-          className={`absolute top-0 h-full w-0.5 transition-all duration-300 ${isOverPacing ? 'bg-red-400' : 'bg-nim-text-muted'}`}
+          className={`absolute top-0 h-full w-0.5 transition-[left,background-color] duration-300 ease-out ${isOverPacing ? 'bg-[var(--nim-error)]' : colors.marker}`}
           style={{ left: `${timeElapsedPercent}%` }}
           title={`${Math.round(timeElapsedPercent)}% of window elapsed`}
         />
       </div>
-      <div className="flex items-center gap-1 text-[11px] text-nim-muted">
+      <div className="flex items-center gap-1 text-[11px] leading-4 text-[var(--an-foreground-muted)]">
         <MaterialSymbol icon="schedule" size={12} className="opacity-70" />
         <span>Resets in {formatResetTime(resetsAt)}</span>
       </div>
@@ -109,7 +145,6 @@ export const CodexUsagePopover: React.FC<CodexUsagePopoverProps> = ({
     onOpenChange: (open) => { if (!open) onClose(); },
   });
 
-  // Set the anchor element as the position reference
   useEffect(() => {
     if (anchorRef.current) {
       menu.refs.setReference(anchorRef.current);
@@ -131,61 +166,52 @@ export const CodexUsagePopover: React.FC<CodexUsagePopoverProps> = ({
 
   const limitsAvailable = usage.limitsAvailable ?? true;
 
-  // Determine window durations from the data
-  const sessionWindowMs = 5 * 60 * 60 * 1000; // 5 hours
-  const weeklyWindowMs = 7 * 24 * 60 * 60 * 1000; // 7 days
-
   return (
     <FloatingPortal>
       <div
         ref={menu.refs.setFloating}
         style={menu.floatingStyles}
         {...menu.getFloatingProps()}
-        className="w-60 bg-nim-secondary border border-nim rounded-lg shadow-lg z-50 overflow-y-auto"
+        className="agent-elements-usage-popover agent-elements-tool-card z-50 max-h-[min(420px,calc(100vh-24px))] w-60 overflow-y-auto rounded-[var(--an-border-radius)] border border-[var(--an-border-color)] bg-[var(--an-background)] text-[var(--an-foreground)] shadow-[0_20px_60px_color-mix(in_srgb,var(--nim-text)_18%,transparent)]"
+        data-agent-elements-shell="codex-usage-popover"
+        data-usage-provider="codex"
         data-testid="codex-usage-popover"
       >
-        {/* Header */}
-        <div className="flex items-center justify-between px-4 py-3 border-b border-nim">
+        <div className="agent-elements-usage-popover-header flex items-center justify-between border-b border-[var(--an-border-color)] px-4 py-3">
           <div className="flex items-center gap-2">
-            {/* OpenAI-style icon */}
-            <svg
-              width="18"
-              height="18"
-              viewBox="0 0 24 24"
-              fill="currentColor"
-              className="text-emerald-500"
-            >
-              <path d="M22.282 9.821a5.985 5.985 0 0 0-.516-4.91 6.046 6.046 0 0 0-6.51-2.9A6.065 6.065 0 0 0 4.981 4.18a5.985 5.985 0 0 0-3.998 2.9 6.046 6.046 0 0 0 .743 7.097 5.98 5.98 0 0 0 .51 4.911 6.051 6.051 0 0 0 6.515 2.9A5.985 5.985 0 0 0 13.26 24a6.056 6.056 0 0 0 5.772-4.206 5.99 5.99 0 0 0 3.997-2.9 6.056 6.056 0 0 0-.747-7.073zM13.26 22.43a4.476 4.476 0 0 1-2.876-1.04l.141-.081 4.779-2.758a.795.795 0 0 0 .392-.681v-6.737l2.02 1.168a.071.071 0 0 1 .038.052v5.583a4.504 4.504 0 0 1-4.494 4.494zM3.6 18.304a4.47 4.47 0 0 1-.535-3.014l.142.085 4.783 2.759a.771.771 0 0 0 .78 0l5.843-3.369v2.332a.08.08 0 0 1-.033.062L9.74 19.95a4.5 4.5 0 0 1-6.14-1.646zM2.34 7.896a4.485 4.485 0 0 1 2.366-1.973V11.6a.766.766 0 0 0 .388.676l5.815 3.355-2.02 1.168a.076.076 0 0 1-.071 0l-4.83-2.786A4.504 4.504 0 0 1 2.34 7.872zm16.597 3.855l-5.833-3.387L15.119 7.2a.076.076 0 0 1 .071 0l4.83 2.791a4.494 4.494 0 0 1-.676 8.105v-5.678a.79.79 0 0 0-.407-.667zm2.01-3.023l-.141-.085-4.774-2.782a.776.776 0 0 0-.785 0L9.409 9.23V6.897a.066.066 0 0 1 .028-.061l4.83-2.787a4.5 4.5 0 0 1 6.68 4.66zm-12.64 4.135l-2.02-1.164a.08.08 0 0 1-.038-.057V6.075a4.5 4.5 0 0 1 7.375-3.453l-.142.08L8.704 5.46a.795.795 0 0 0-.393.681zm1.097-2.365l2.602-1.5 2.607 1.5v2.999l-2.597 1.5-2.607-1.5z" />
-            </svg>
-            <span className="text-[14px] font-semibold text-nim">Codex Usage</span>
+            <span className="flex h-7 w-7 items-center justify-center rounded-[var(--an-tool-border-radius)] border border-[color-mix(in_srgb,var(--nim-info)_28%,var(--an-border-color))] bg-[color-mix(in_srgb,var(--nim-info)_10%,var(--an-background))] text-[var(--nim-info)]">
+              <MaterialSymbol icon="data_usage" size={16} />
+            </span>
+            <span className="text-[14px] font-semibold leading-5 text-[var(--an-foreground)]">Codex Usage</span>
           </div>
           <div className="flex items-center gap-1">
             <button
               onClick={handleRefresh}
               disabled={isRefreshing}
-              className="p-1 rounded hover:bg-nim-tertiary text-nim-muted hover:text-nim transition-colors disabled:opacity-50"
+              className="rounded-[var(--an-tool-border-radius)] border border-transparent p-1 text-[var(--an-foreground-muted)] transition-[background-color,border-color,color] duration-150 ease-out hover:border-[var(--an-border-color)] hover:bg-[var(--an-background-tertiary)] hover:text-[var(--an-foreground)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--an-input-focus-outline)] disabled:opacity-50"
               aria-label="Refresh usage"
             >
               <MaterialSymbol icon="refresh" size={14} className={isRefreshing ? 'animate-spin' : ''} />
             </button>
             <button
               onClick={onClose}
-              className="p-1 rounded hover:bg-nim-tertiary text-nim-muted hover:text-nim transition-colors"
-              aria-label="Close"
+              className="rounded-[var(--an-tool-border-radius)] border border-transparent p-1 text-[var(--an-foreground-muted)] transition-[background-color,border-color,color] duration-150 ease-out hover:border-[var(--an-border-color)] hover:bg-[var(--an-background-tertiary)] hover:text-[var(--an-foreground)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--an-input-focus-outline)]"
+              aria-label="Close Codex usage"
             >
               <MaterialSymbol icon="close" size={14} />
             </button>
           </div>
         </div>
 
-        {/* Content */}
         <div className="px-4 py-3">
           {usage.error ? (
-            <div className="text-[13px] text-nim-error">{usage.error}</div>
+            <div className="agent-elements-status-pill rounded-[var(--an-tool-border-radius)] border border-[color-mix(in_srgb,var(--nim-error)_28%,var(--an-border-color))] bg-[color-mix(in_srgb,var(--nim-error)_8%,var(--an-background))] px-3 py-2 text-[13px] leading-5 text-[var(--nim-error)]">
+              {usage.error}
+            </div>
           ) : (
             <>
               {!limitsAvailable && (
-                <div className="mb-3 text-[12px] text-nim-muted">
+                <div className="agent-elements-status-pill mb-3 rounded-[var(--an-tool-border-radius)] border border-[var(--an-border-color)] bg-[var(--an-background-secondary)] px-3 py-2 text-[12px] leading-5 text-[var(--an-foreground-muted)]">
                   Usage detected, but Codex limits are unavailable in recent session data.
                 </div>
               )}
@@ -195,7 +221,7 @@ export const CodexUsagePopover: React.FC<CodexUsagePopoverProps> = ({
                 utilization={usage.fiveHour.utilization}
                 resetsAt={usage.fiveHour.resetsAt}
                 color={sessionColor as 'green' | 'yellow' | 'red' | 'muted'}
-                windowDurationMs={sessionWindowMs}
+                windowDurationMs={5 * 60 * 60 * 1000}
               />
               <UsageSection
                 title="Weekly"
@@ -203,17 +229,16 @@ export const CodexUsagePopover: React.FC<CodexUsagePopoverProps> = ({
                 utilization={usage.sevenDay.utilization}
                 resetsAt={usage.sevenDay.resetsAt}
                 color={weeklyColor as 'green' | 'yellow' | 'red' | 'muted'}
-                windowDurationMs={weeklyWindowMs}
+                windowDurationMs={7 * 24 * 60 * 60 * 1000}
               />
             </>
           )}
         </div>
 
-        {/* Footer */}
-        <div className="px-4 py-2 border-t border-nim flex flex-col gap-1.5">
-          <div className="flex items-center justify-between">
+        <div className="flex flex-col gap-1.5 border-t border-[var(--an-border-color)] px-4 py-2">
+          <div className="flex items-center justify-between gap-3">
             {usage.lastUpdated && (
-              <span className="text-[10px] text-nim-faint">
+              <span className="text-[10px] leading-4 text-[var(--an-foreground-subtle)]">
                 Updated {formatLastUpdated(usage.lastUpdated)}
               </span>
             )}
@@ -222,14 +247,16 @@ export const CodexUsagePopover: React.FC<CodexUsagePopoverProps> = ({
                 setUsageIndicatorEnabled(false);
                 onClose();
               }}
-              className="text-[11px] text-nim-muted hover:text-nim transition-colors"
+              className="rounded-[var(--an-tool-border-radius)] border border-transparent px-2 py-0.5 text-[11px] font-medium text-[var(--an-foreground-muted)] transition-[background-color,border-color,color] duration-150 ease-out hover:border-[var(--an-border-color)] hover:bg-[var(--an-background-tertiary)] hover:text-[var(--an-foreground)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--an-input-focus-outline)]"
+              aria-label="Disable Codex usage indicator"
             >
               Disable
             </button>
           </div>
           <button
             onClick={() => window.electronAPI.openExternal('https://status.openai.com')}
-            className="flex items-center gap-1 text-[11px] text-nim-muted hover:text-nim transition-colors"
+            className="flex items-center gap-1 rounded-[var(--an-tool-border-radius)] border border-transparent px-1 py-0.5 text-[11px] leading-4 text-[var(--an-foreground-muted)] transition-[background-color,border-color,color] duration-150 ease-out hover:border-[var(--an-border-color)] hover:bg-[var(--an-background-tertiary)] hover:text-[var(--an-foreground)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--an-input-focus-outline)]"
+            aria-label="OpenAI Status Page"
           >
             <MaterialSymbol icon="open_in_new" size={12} />
             <span>OpenAI Status Page</span>

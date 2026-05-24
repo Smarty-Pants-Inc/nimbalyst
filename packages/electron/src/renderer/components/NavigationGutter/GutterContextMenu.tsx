@@ -45,6 +45,39 @@ export function GutterContextMenu({ x, y, onClose, targetButton, workspacePath }
   });
 
   const hasHidden = hiddenButtons.length > 0;
+  const menuShellClasses = 'gutter-context-menu agent-elements-gutter-context-menu agent-elements-tool-card min-w-[180px] overflow-hidden rounded-[10px] border border-nim bg-nim-secondary p-1 text-[13px] shadow-[0_12px_32px_color-mix(in_srgb,var(--nim-text)_10%,transparent)] z-[10000]';
+  const menuItemClasses = 'agent-elements-gutter-context-menu-item flex w-full items-center gap-2.5 rounded-[8px] border-0 bg-transparent px-3 py-2 text-left text-[13px] leading-5 text-nim transition-[background-color,color] duration-150 cursor-pointer select-none hover:bg-nim-hover focus-visible:outline-2 focus-visible:outline-[var(--nim-primary)] focus-visible:outline-offset-2';
+  const separatorClasses = 'agent-elements-gutter-context-menu-separator mx-2 my-1 h-px bg-[var(--nim-border)]';
+
+  const renderMenuItem = ({
+    id,
+    action,
+    icon,
+    label,
+    onClick,
+  }: {
+    id?: HideableGutterButton;
+    action: 'hide' | 'show' | 'show-all';
+    icon: string;
+    label: string;
+    onClick: () => void;
+  }) => (
+    <button
+      type="button"
+      className={menuItemClasses}
+      onClick={onClick}
+      role="menuitem"
+      data-testid={`agent-elements-gutter-context-menu-${action}${id ? `-${id}` : ''}`}
+      data-agent-elements-shell="gutter-context-menu-item"
+      data-gutter-action={action}
+      data-gutter-button={id}
+    >
+      <span className="agent-elements-gutter-context-menu-icon flex h-5 w-5 shrink-0 items-center justify-center text-nim-muted">
+        <MaterialSymbol icon={icon} size={18} />
+      </span>
+      <span className="agent-elements-gutter-context-menu-label min-w-0 truncate">{label}</span>
+    </button>
+  );
 
   return (
     <FloatingPortal>
@@ -52,23 +85,25 @@ export function GutterContextMenu({ x, y, onClose, targetButton, workspacePath }
         ref={menu.refs.setFloating}
         style={menu.floatingStyles}
         {...menu.getFloatingProps()}
-        className="gutter-context-menu p-1 min-w-[180px] rounded-md z-[10000] text-[13px] backdrop-blur-[10px] shadow-[0_4px_12px_rgba(0,0,0,0.15)] dark:shadow-[0_4px_20px_rgba(0,0,0,0.5)] overflow-hidden bg-nim border border-nim"
+        className={menuShellClasses}
+        data-component="GutterContextMenu"
         data-testid="gutter-context-menu"
+        data-agent-elements-shell="gutter-context-menu"
       >
         {/* If right-clicked on a specific button, show hide option */}
         {targetButton && !hiddenButtons.includes(targetButton) && (
           <>
-            <button
-              className="w-full flex items-center gap-2 px-2.5 py-1.5 text-nim hover:bg-nim-tertiary cursor-pointer border-none bg-transparent text-left rounded-sm transition-colors duration-75"
-              onClick={() => {
+            {renderMenuItem({
+              id: targetButton,
+              action: 'hide',
+              icon: 'visibility_off',
+              label: `Hide ${BUTTON_META[targetButton].label}`,
+              onClick: () => {
                 toggleHidden({ buttonId: targetButton, workspacePath });
                 onClose();
-              }}
-            >
-              <MaterialSymbol icon="visibility_off" size={16} className="text-nim-muted" />
-              <span>Hide {BUTTON_META[targetButton].label}</span>
-            </button>
-            {hasHidden && <div className="my-1 border-t border-nim" />}
+              },
+            })}
+            {hasHidden && <div className={separatorClasses} data-agent-elements-shell="gutter-context-menu-separator" />}
           </>
         )}
 
@@ -76,35 +111,39 @@ export function GutterContextMenu({ x, y, onClose, targetButton, workspacePath }
         {hasHidden && (
           <>
             {hiddenButtons.map((id) => (
-              <button
-                key={id}
-                className="w-full flex items-center gap-2 px-2.5 py-1.5 text-nim hover:bg-nim-tertiary cursor-pointer border-none bg-transparent text-left rounded-sm transition-colors duration-75"
-                onClick={() => {
-                  toggleHidden({ buttonId: id, workspacePath });
-                  onClose();
-                }}
-              >
-                <MaterialSymbol icon="visibility" size={16} className="text-nim-muted" />
-                <span>Show {BUTTON_META[id].label}</span>
-              </button>
+              <React.Fragment key={id}>
+                {renderMenuItem({
+                  id,
+                  action: 'show',
+                  icon: 'visibility',
+                  label: `Show ${BUTTON_META[id].label}`,
+                  onClick: () => {
+                    toggleHidden({ buttonId: id, workspacePath });
+                    onClose();
+                  },
+                })}
+              </React.Fragment>
             ))}
-            <div className="my-1 border-t border-nim" />
-            <button
-              className="w-full flex items-center gap-2 px-2.5 py-1.5 text-nim hover:bg-nim-tertiary cursor-pointer border-none bg-transparent text-left rounded-sm transition-colors duration-75"
-              onClick={() => {
+            <div className={separatorClasses} data-agent-elements-shell="gutter-context-menu-separator" />
+            {renderMenuItem({
+              action: 'show-all',
+              icon: 'restart_alt',
+              label: 'Show All',
+              onClick: () => {
                 showAll(workspacePath);
                 onClose();
-              }}
-            >
-              <MaterialSymbol icon="restart_alt" size={16} className="text-nim-muted" />
-              <span>Show All</span>
-            </button>
+              },
+            })}
           </>
         )}
 
         {/* If nothing to show (no target, nothing hidden) */}
         {!targetButton && !hasHidden && (
-          <div className="px-2.5 py-1.5 text-nim-muted text-center">
+          <div
+            className="agent-elements-gutter-context-menu-empty px-3 py-2 text-center text-[13px] leading-5 text-nim-muted"
+            data-testid="agent-elements-gutter-context-menu-empty"
+            data-agent-elements-shell="gutter-context-menu-empty"
+          >
             Right-click buttons to hide them
           </div>
         )}

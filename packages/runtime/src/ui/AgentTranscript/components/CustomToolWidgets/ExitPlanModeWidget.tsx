@@ -12,6 +12,8 @@ import React, { useState, useCallback, useMemo, useRef, useEffect } from 'react'
 import { useAtomValue } from 'jotai';
 import type { CustomToolWidgetProps } from './index';
 import { interactiveWidgetHostAtom } from '../../../../store/atoms/interactiveWidgetHost';
+import { AgentStatusPill, type AgentStatusTone } from '../../../AgentElements/AgentElementsPrimitives';
+import '../../../AgentElements/AgentElementsFrameworkEvents.css';
 
 // ============================================================
 // Types
@@ -20,6 +22,60 @@ import { interactiveWidgetHostAtom } from '../../../../store/atoms/interactiveWi
 interface ExitPlanModeArgs {
   planFilePath?: string;
   allowedPrompts?: Array<{ tool: string; prompt: string }>;
+}
+
+type ExitPlanVisualState = 'pending' | 'approved' | 'denied';
+
+function getExitPlanTone(state: ExitPlanVisualState): AgentStatusTone {
+  if (state === 'approved') return 'success';
+  if (state === 'denied') return 'error';
+  return 'running';
+}
+
+function getExitPlanLabel(state: ExitPlanVisualState): string {
+  if (state === 'approved') return 'approved';
+  if (state === 'denied') return 'denied';
+  return 'awaiting approval';
+}
+
+function ExitPlanStatusIcon({ state }: { state: ExitPlanVisualState }) {
+  const iconClassName = `agent-elements-tool-icon ${
+    state === 'approved'
+      ? 'text-nim-success'
+      : state === 'denied'
+        ? 'text-nim-muted'
+        : 'text-nim-primary'
+  }`;
+
+  if (state === 'approved') {
+    return (
+      <span className={iconClassName}>
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full">
+          <path d="M13.5 4.5L6 12l-3.5-3.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+        </svg>
+      </span>
+    );
+  }
+
+  if (state === 'denied') {
+    return (
+      <span className={iconClassName}>
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full">
+          <path d="M12 4L4 12M4 4l8 8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+        </svg>
+      </span>
+    );
+  }
+
+  return (
+    <span className={iconClassName}>
+      <svg width="14" height="14" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M8 4.25v3.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+        <path d="M8 10.75h.01" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+        <circle cx="8" cy="8" r="6.5" stroke="currentColor" strokeWidth="1.5"/>
+      </svg>
+    </span>
+  );
 }
 
 // ============================================================
@@ -106,6 +162,18 @@ export const ExitPlanModeWidget: React.FC<CustomToolWidgetProps> = ({
   const displayResult = localResult || (completedState ? {
     approved: completedState.type === 'approved',
   } : null);
+  const exitPlanState: ExitPlanVisualState = (displayResult || hasResponded)
+    ? (displayResult?.approved ? 'approved' : 'denied')
+    : 'pending';
+  const shellClassName = `exit-plan-mode-widget agent-elements-tool-card agent-elements-question-card agent-elements-exit-plan-mode-card ${
+    exitPlanState === 'pending' ? '' : 'opacity-85'
+  }`;
+  const shellProps = {
+    'data-component': 'RichTranscriptAgentElementsExitPlanMode',
+    'data-agent-elements-shell': 'plan-approval-card',
+    'data-exit-plan-state': exitPlanState,
+    'data-testid': 'exit-plan-mode-widget',
+  };
 
   // Handle approve
   const handleApprove = useCallback(async () => {
@@ -233,41 +301,38 @@ export const ExitPlanModeWidget: React.FC<CustomToolWidgetProps> = ({
 
     return (
       <div
-        data-testid="exit-plan-mode-widget"
+        {...shellProps}
         data-state={approved ? 'approved' : 'denied'}
-        className={`exit-plan-mode-widget rounded-lg border overflow-hidden opacity-85 ${
-          approved ? 'bg-nim-secondary border-nim-success' : 'bg-nim-secondary border-nim'
-        }`}
+        className={shellClassName}
       >
-        <div className="flex items-center gap-2 py-3 px-4 bg-nim-tertiary">
-          <div className={`w-5 h-5 shrink-0 ${approved ? 'text-nim-success' : 'text-nim-muted'}`}>
-            {approved ? (
-              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full">
-                <path d="M13 4L6 11L3 8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
-            ) : (
-              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full">
-                <path d="M12 4L4 12M4 4l8 8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
-            )}
+        <div className="agent-elements-tool-header">
+          <ExitPlanStatusIcon state={exitPlanState} />
+          <div className="agent-elements-tool-title-group">
+            <span className="agent-elements-tool-title">
+              {approved ? 'Exited Planning Mode' : 'Continued Planning'}
+            </span>
+            <span className="agent-elements-tool-subtitle">Plan mode decision</span>
           </div>
-          <span className="text-sm font-semibold text-nim flex-1">
-            {approved ? 'Exited Planning Mode' : 'Continued Planning'}
+          <span className="agent-elements-tool-trailing">
+            <AgentStatusPill tone={getExitPlanTone(exitPlanState)}>
+              <span data-testid="exit-plan-mode-status">{getExitPlanLabel(exitPlanState)}</span>
+            </AgentStatusPill>
           </span>
+        </div>
+        <div className="agent-elements-tool-footer">
           <span
             data-testid={approved ? 'exit-plan-mode-approved' : 'exit-plan-mode-denied'}
-            className={`flex items-center gap-1 text-xs font-medium py-1 px-2 rounded-full ${
-              approved ? 'text-nim-success bg-[color-mix(in_srgb,var(--nim-success)_12%,transparent)]' : 'text-nim-muted bg-nim-tertiary'
-            }`}
+            className={`agent-elements-status-pill ${approved ? 'text-nim-success' : 'text-nim-muted'}`}
           >
             {approved ? 'Approved' : 'Denied'}
           </span>
         </div>
         {planFilePath && (
-          <div className="px-4 py-2 text-[13px] text-nim-muted">
-            Plan: <button
+          <div className="agent-elements-tool-primary">
+            <span className="text-nim-muted">Plan: </span>
+            <button
               onClick={handleOpenPlanFile}
-              className="text-nim-link hover:text-nim-link-hover hover:underline cursor-pointer bg-transparent border-none p-0 font-mono text-[13px]"
+              className="agent-elements-exit-plan-file-link text-nim-link hover:text-nim-link-hover hover:underline cursor-pointer bg-transparent border-none p-0 font-mono text-[13px] select-text"
             >
               {planFilePath}
             </button>
@@ -286,21 +351,26 @@ export const ExitPlanModeWidget: React.FC<CustomToolWidgetProps> = ({
   if (!host) {
     return (
       <div
-        data-testid="exit-plan-mode-widget"
+        {...shellProps}
         data-state="pending"
-        className="exit-plan-mode-widget rounded-lg bg-nim-secondary border border-nim-primary overflow-hidden"
+        className={shellClassName}
       >
-        <div className="flex items-center gap-2 py-3 px-4 bg-nim-tertiary">
-          <div className="w-5 h-5 text-nim-primary shrink-0">
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
-              <path d="M8 1a7 7 0 100 14A7 7 0 008 1zm0 12.5a5.5 5.5 0 110-11 5.5 5.5 0 010 11z"/>
-              <path d="M8 4a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0v-3.5A.75.75 0 018 4zm0 6a1 1 0 100 2 1 1 0 000-2z"/>
-            </svg>
+        <div className="agent-elements-tool-header">
+          <ExitPlanStatusIcon state={exitPlanState} />
+          <div className="agent-elements-tool-title-group">
+            <span className="agent-elements-tool-title">
+              Ready to exit planning mode?
+            </span>
+            <span className="agent-elements-tool-subtitle">Plan approval required</span>
           </div>
-          <span className="text-sm font-semibold text-nim flex-1">
-            Ready to exit planning mode?
+          <span className="agent-elements-tool-trailing">
+            <AgentStatusPill tone={getExitPlanTone(exitPlanState)}>
+              <span data-testid="exit-plan-mode-status">{getExitPlanLabel(exitPlanState)}</span>
+            </AgentStatusPill>
           </span>
-          <span data-testid="exit-plan-mode-pending" className="text-xs text-nim-muted">Waiting...</span>
+        </div>
+        <div className="agent-elements-tool-footer">
+          <span data-testid="exit-plan-mode-pending" className="agent-elements-status-pill text-nim-muted">Waiting...</span>
         </div>
       </div>
     );
@@ -309,40 +379,43 @@ export const ExitPlanModeWidget: React.FC<CustomToolWidgetProps> = ({
   // Show interactive UI for pending request
   return (
     <div
-      data-testid="exit-plan-mode-widget"
+      {...shellProps}
       data-state="pending"
-      className="exit-plan-mode-widget rounded-lg bg-nim-secondary border border-nim-primary overflow-hidden"
+      className={shellClassName}
     >
-      <div className="flex items-center gap-2 py-3 px-4 border-b border-nim bg-nim-tertiary">
-        <div className="w-5 h-5 text-nim-primary shrink-0">
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
-            <path d="M8 1a7 7 0 100 14A7 7 0 008 1zm0 12.5a5.5 5.5 0 110-11 5.5 5.5 0 010 11z"/>
-            <path d="M8 4a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0v-3.5A.75.75 0 018 4zm0 6a1 1 0 100 2 1 1 0 000-2z"/>
-          </svg>
+      <div className="agent-elements-tool-header">
+        <ExitPlanStatusIcon state={exitPlanState} />
+        <div className="agent-elements-tool-title-group">
+          <span className="agent-elements-tool-title">
+            Ready to exit planning mode?
+          </span>
+          <span className="agent-elements-tool-subtitle">Plan approval required</span>
         </div>
-        <span className="text-sm font-semibold text-nim flex-1">
-          Ready to exit planning mode?
+        <span className="agent-elements-tool-trailing">
+          <AgentStatusPill tone={getExitPlanTone(exitPlanState)}>
+            <span data-testid="exit-plan-mode-status">{getExitPlanLabel(exitPlanState)}</span>
+          </AgentStatusPill>
         </span>
       </div>
 
-      <div className="p-4">
+      <div className="agent-elements-tool-primary flex flex-col gap-3">
         {planFilePath && (
-          <div className="mb-3 p-2 bg-nim-tertiary rounded-md text-[13px]">
+          <div className="p-2 bg-nim-tertiary rounded-md text-[13px]">
             <span className="text-nim-muted">Plan file: </span>
             <button
               onClick={handleOpenPlanFile}
-              className="text-nim-link hover:text-nim-link-hover hover:underline cursor-pointer bg-transparent border-none p-0 font-mono text-[13px]"
+              className="agent-elements-exit-plan-file-link text-nim-link hover:text-nim-link-hover hover:underline cursor-pointer bg-transparent border-none p-0 font-mono text-[13px] select-text"
             >
               {planFilePath}
             </button>
           </div>
         )}
 
-        <div className="mb-3 text-[13px] text-nim">
+        <div className="text-[13px] text-nim">
           Would you like to proceed?
         </div>
 
-        <div className="flex flex-col gap-2">
+        <div className="agent-elements-exit-plan-actions flex flex-col gap-2">
           <button
             data-testid="exit-plan-mode-new-session"
             className="w-full px-4 py-2 rounded-md text-[13px] font-medium cursor-pointer border border-nim transition-colors duration-150 hover:bg-nim-hover active:opacity-80 bg-nim-tertiary text-nim text-left disabled:opacity-50 disabled:cursor-not-allowed"
@@ -380,7 +453,7 @@ export const ExitPlanModeWidget: React.FC<CustomToolWidgetProps> = ({
                 onChange={(e) => setFeedback(e.target.value)}
                 onKeyDown={handleFeedbackKeyDown}
                 placeholder="Tell Claude what to change in the plan..."
-                className="w-full px-3 py-2 rounded-md text-[13px] border border-nim bg-nim-tertiary text-nim placeholder:text-nim-muted resize-none focus:outline-none focus:border-nim-focus"
+                className="agent-elements-question-textarea w-full disabled:opacity-50"
                 rows={3}
                 disabled={isSubmitting}
               />

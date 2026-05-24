@@ -99,11 +99,12 @@ describe('CodexRawParser', () => {
   });
 
   describe('output messages', () => {
-    it('parses todo_list items as markdown checklist', async () => {
+    it('parses todo_list items as a structured todo tool call', async () => {
       const parser = new CodexRawParser();
       const msg = makeRawMessage({
         content: JSON.stringify({
           item: {
+            id: 'todo-1',
             type: 'todo_list',
             items: [
               { text: 'First task', completed: false },
@@ -115,10 +116,22 @@ describe('CodexRawParser', () => {
 
       const descriptors = await parser.parseMessage(msg, makeContext());
 
-      expect(descriptors).toHaveLength(1);
+      expect(descriptors).toHaveLength(2);
       expect(descriptors[0]).toMatchObject({
-        type: 'assistant_message',
-        text: '- [ ] First task\n- [x] Second task',
+        type: 'tool_call_started',
+        toolName: 'todo_list',
+        toolDisplayName: 'Todo list',
+        arguments: {
+          items: [
+            { id: 'todo-0', content: 'First task', status: 'pending' },
+            { id: 'todo-1', content: 'Second task', status: 'completed' },
+          ],
+        },
+      });
+      expect(descriptors[1]).toMatchObject({
+        type: 'tool_call_completed',
+        status: 'completed',
+        result: 'Todo list updated.',
       });
     });
 

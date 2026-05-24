@@ -42,12 +42,14 @@ function DropdownRow({
   name,
   description,
   options,
+  testId,
 }: {
   value: string | number;
   onChange: (value: string) => void;
   name: string;
   description: string;
   options: { value: string | number; label: string }[];
+  testId?: string;
 }) {
   return (
     <div className="setting-item py-2">
@@ -59,6 +61,7 @@ function DropdownRow({
           </span>
         </div>
         <select
+          data-testid={testId}
           value={value}
           onChange={(e) => onChange(e.target.value)}
           className="setting-select shrink-0 py-1.5 px-2 pr-7 rounded-md text-sm bg-[var(--nim-bg-secondary)] border border-[var(--nim-border)] text-[var(--nim-text)] outline-none appearance-none bg-[url('data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2212%22%20height%3D%2212%22%20viewBox%3D%220%200%2012%2012%22%3E%3Cpath%20fill%3D%22%236b7280%22%20d%3D%22M3%204.5L6%207.5L9%204.5%22%2F%3E%3C%2Fsvg%3E')] bg-no-repeat bg-[right_8px_center] focus:border-[var(--nim-primary)]"
@@ -197,8 +200,15 @@ export function AdvancedPanel() {
   };
 
   return (
-    <div className="provider-panel flex flex-col">
-      <div className="provider-panel-header mb-6 pb-4 border-b border-[var(--nim-border)]">
+    <div
+      className="provider-panel advanced-panel agent-elements-settings-panel agent-elements-advanced-panel flex flex-col"
+      data-agent-elements-shell="advanced-panel"
+      data-testid="agent-elements-advanced-panel"
+    >
+      <div
+        className="provider-panel-header advanced-panel-header agent-elements-settings-panel-header mb-6 pb-4 border-b border-[var(--nim-border)]"
+        data-testid="agent-elements-advanced-header"
+      >
         <h3 className="provider-panel-title text-xl font-semibold leading-tight mb-2 text-[var(--nim-text)]">
           Advanced Settings
         </h3>
@@ -208,7 +218,11 @@ export function AdvancedPanel() {
       </div>
 
       {/* Application Mode - Always shown at the top */}
-      <div className="provider-panel-section">
+      <div
+        className="provider-panel-section advanced-mode-section agent-elements-settings-section"
+        data-section="application-mode"
+        data-testid="agent-elements-advanced-mode-section"
+      >
           <h4 className="provider-panel-section-title" onClick={handleModeClick}>Application Mode</h4>
           <p className="provider-panel-hint">
             Choose between a simplified experience or full developer features for this project.
@@ -216,11 +230,12 @@ export function AdvancedPanel() {
 
           <div className="mode-selection flex flex-row gap-4 mt-3">
             <label
-              className={`mode-option flex flex-1 items-start p-0 rounded-xl cursor-pointer transition-all relative border-2 ${
+              className={`mode-option agent-elements-tool-card advanced-mode-card flex flex-1 items-start p-0 rounded-lg cursor-pointer transition-all relative border ${
                 !developerMode
-                  ? 'selected bg-nim-hover border-nim-primary shadow-[0_0_0_3px_rgba(88,166,255,0.15)]'
+                  ? 'selected bg-nim-hover border-nim-primary'
                   : 'bg-nim-secondary border-nim'
               }`}
+              data-testid="agent-elements-advanced-standard-mode-card"
               onClick={() => handleDeveloperModeChange(false)}
             >
               <input
@@ -244,11 +259,12 @@ export function AdvancedPanel() {
             </label>
 
             <label
-              className={`mode-option flex flex-1 items-start p-0 rounded-xl cursor-pointer transition-all relative border-2 ${
+              className={`mode-option agent-elements-tool-card advanced-mode-card flex flex-1 items-start p-0 rounded-lg cursor-pointer transition-all relative border ${
                 developerMode
-                  ? 'selected bg-nim-hover border-nim-primary shadow-[0_0_0_3px_rgba(88,166,255,0.15)]'
+                  ? 'selected bg-nim-hover border-nim-primary'
                   : 'bg-nim-secondary border-nim'
               }`}
+              data-testid="agent-elements-advanced-developer-mode-card"
               onClick={() => handleDeveloperModeChange(true)}
             >
               <input
@@ -275,7 +291,11 @@ export function AdvancedPanel() {
 
       {/* Secret Features Menu - Cmd+Click on "Application Mode" title to show */}
       {showFeaturesMenu && (
-        <div className="provider-panel-section py-4 mb-4 border-b border-[var(--nim-border)] last:border-b-0 last:mb-0 last:pb-0">
+        <div
+          className="provider-panel-section advanced-feature-availability-section agent-elements-settings-section py-4 mb-4 border-b border-[var(--nim-border)] last:border-b-0 last:mb-0 last:pb-0"
+          data-section="feature-availability"
+          data-testid="agent-elements-advanced-feature-availability-section"
+        >
           <h4 className="provider-panel-section-title text-base font-semibold mb-3 text-[var(--nim-text)]">
             Feature Availability
           </h4>
@@ -284,7 +304,10 @@ export function AdvancedPanel() {
           </p>
 
           {/* Developer Features */}
-          <div className="mt-4 p-3 bg-nim-secondary rounded-md border border-nim">
+          <div
+            className="advanced-feature-availability-card agent-elements-tool-card mt-4 p-3 bg-nim-secondary rounded-md border border-nim"
+            data-testid="agent-elements-advanced-feature-availability-card"
+          >
             {/* "All Developer Features" master toggle */}
             <div className="setting-item mb-3 pb-3 border-b border-nim">
               <label className="setting-label">
@@ -358,7 +381,11 @@ export function AdvancedPanel() {
       )}
 
       {/* ── Debug Logging ── */}
-      <div className="provider-panel-section py-4 mb-4 border-b border-[var(--nim-border)] last:border-b-0 last:mb-0 last:pb-0">
+      <div
+        className="provider-panel-section advanced-debug-section agent-elements-settings-section py-4 mb-4 border-b border-[var(--nim-border)] last:border-b-0 last:mb-0 last:pb-0"
+        data-section="debug-logging"
+        data-testid="agent-elements-advanced-debug-section"
+      >
         <h4 className="provider-panel-section-title text-base font-semibold mb-3 text-[var(--nim-text)]">Debug Logging</h4>
         <p className="text-sm leading-relaxed text-[var(--nim-text-muted)] mb-4">
           Verbose tracing for internal subsystems. Off by default. Toggle on when reproducing a bug, then check the renderer console (Cmd+Opt+I).
@@ -386,7 +413,11 @@ export function AdvancedPanel() {
       </div>
 
       {/* ── Release Channel ── */}
-      <div className="provider-panel-section py-4 mb-4 border-b border-[var(--nim-border)] last:border-b-0 last:mb-0 last:pb-0">
+      <div
+        className="provider-panel-section advanced-release-section agent-elements-settings-section py-4 mb-4 border-b border-[var(--nim-border)] last:border-b-0 last:mb-0 last:pb-0"
+        data-section="release-channel"
+        data-testid="agent-elements-advanced-release-section"
+      >
         <h4 className="provider-panel-section-title text-base font-semibold mb-3 text-[var(--nim-text)]">Release Channel</h4>
         <p className="text-sm leading-relaxed text-[var(--nim-text-muted)] mb-4">
           Choose which release stream Nimbalyst pulls auto-updates from. Alpha and beta features are configured separately on each feature&apos;s settings page.
@@ -401,6 +432,7 @@ export function AdvancedPanel() {
             </span>
           </div>
           <select
+            data-testid="agent-elements-advanced-release-select"
             value={releaseChannel}
             onChange={(e) => {
               const newChannel = e.target.value as ReleaseChannel;
@@ -417,7 +449,11 @@ export function AdvancedPanel() {
         </div>
 
         {releaseChannel === 'alpha' && (
-          <div className="mt-3 flex items-start gap-2 p-3 rounded border border-[var(--nim-warning)]/30 bg-[var(--nim-warning)]/10">
+          <div
+            className="advanced-release-warning agent-elements-tool-card mt-3 flex items-start gap-2 p-3 rounded border border-[var(--nim-warning)]/30 bg-[var(--nim-warning)]/10"
+            data-testid="agent-elements-advanced-release-warning"
+            data-tone="warning"
+          >
             <MaterialSymbol icon="warning" size={16} className="text-[var(--nim-warning)] shrink-0 mt-0.5" />
             <p className="m-0 text-[13px] text-[var(--nim-text)] leading-snug">
               The alpha channel ships rough developer releases that may be unstable or contain unfinished work. Switch back to Stable if you encounter problems.
@@ -427,7 +463,11 @@ export function AdvancedPanel() {
       </div>
 
       {/* ── General ── */}
-      <div className="provider-panel-section py-4 mb-4 border-b border-[var(--nim-border)] last:border-b-0 last:mb-0 last:pb-0">
+      <div
+        className="provider-panel-section advanced-general-section agent-elements-settings-section py-4 mb-4 border-b border-[var(--nim-border)] last:border-b-0 last:mb-0 last:pb-0"
+        data-section="general"
+        data-testid="agent-elements-advanced-general-section"
+      >
         <h4 className="provider-panel-section-title text-base font-semibold mb-2 text-[var(--nim-text)]">General</h4>
 
         <MultiProjectModeToggle />
@@ -465,7 +505,12 @@ export function AdvancedPanel() {
       </div>
 
       {/* ── Tracker Automation ── */}
-      <div className="provider-panel-section py-4 mb-4 border-b border-[var(--nim-border)] last:border-b-0 last:mb-0 last:pb-0" data-testid="tracker-automation-section">
+      <div
+        className="provider-panel-section advanced-tracker-section agent-elements-settings-section py-4 mb-4 border-b border-[var(--nim-border)] last:border-b-0 last:mb-0 last:pb-0"
+        data-agent-elements-shell="advanced-tracker-section"
+        data-section="tracker-automation"
+        data-testid="tracker-automation-section"
+      >
         <HelpTooltip testId="tracker-automation-section">
           <h4 className="provider-panel-section-title text-base font-semibold mb-2 text-[var(--nim-text)] inline-block">Tracker Automation</h4>
         </HelpTooltip>
@@ -488,7 +533,11 @@ export function AdvancedPanel() {
       </div>
 
       {/* ── Tools & Environment ── */}
-      <div className="provider-panel-section py-4 mb-4 border-b border-[var(--nim-border)] last:border-b-0 last:mb-0 last:pb-0">
+      <div
+        className="provider-panel-section advanced-tools-section agent-elements-settings-section py-4 mb-4 border-b border-[var(--nim-border)] last:border-b-0 last:mb-0 last:pb-0"
+        data-section="tools-environment"
+        data-testid="agent-elements-advanced-tools-section"
+      >
         <h4 className="provider-panel-section-title text-base font-semibold mb-2 text-[var(--nim-text)]">Tools & Environment</h4>
 
         <DropdownRow
@@ -496,6 +545,7 @@ export function AdvancedPanel() {
           onChange={(val) => updateExternalEditorSettings({ editorType: val as ExternalEditorType })}
           name="External Editor"
           description="Editor for the 'Open in...' context menu option."
+          testId="agent-elements-advanced-external-editor-select"
           options={[
             { value: 'none', label: 'None' },
             { value: 'vscode', label: 'VS Code' },
@@ -624,6 +674,7 @@ export function AdvancedPanel() {
           />
           <div className="mt-1">
             <button
+              data-testid="agent-elements-advanced-show-path"
               onClick={() => setShowEnhancedPath(!showEnhancedPath)}
               className="text-xs text-[var(--nim-link)] hover:text-[var(--nim-link-hover)] cursor-pointer"
             >
@@ -633,7 +684,8 @@ export function AdvancedPanel() {
             {showEnhancedPath && enhancedPath && (
               <div className="mt-2">
                 <div
-                  className="p-2 rounded-md text-xs bg-[var(--nim-bg-tertiary)] border border-[var(--nim-border)] text-[var(--nim-text-muted)] font-mono overflow-x-auto"
+                  className="advanced-path-output agent-elements-tool-card select-text p-2 rounded-md text-xs bg-[var(--nim-bg-tertiary)] border border-[var(--nim-border)] text-[var(--nim-text-muted)] font-mono overflow-x-auto"
+                  data-testid="agent-elements-advanced-path-output"
                   style={{
                     maxHeight: '200px',
                     overflowY: 'auto',

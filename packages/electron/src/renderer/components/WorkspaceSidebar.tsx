@@ -42,6 +42,8 @@ const FILE_TREE_FILTER_OPTIONS: ReadonlyArray<FileTreeFilter> = ['all', 'markdow
 const CLAUDE_SESSION_FILTERS = new Set<FileTreeFilter>(['ai-read', 'ai-written']);
 const GIT_FILTERS = new Set<FileTreeFilter>(['git-uncommitted', 'git-worktree']);
 const SPECIAL_DIRECTORIES = ['nimbalyst-local'];
+const WORKSPACE_SIDEBAR_ACTION_BUTTON_CLASS =
+  'workspace-action-button agent-elements-workspace-sidebar-action relative flex h-7 w-7 cursor-pointer items-center justify-center rounded-[var(--an-message-radius-inner)] border border-transparent bg-transparent p-0 text-[var(--an-foreground-muted)] transition-[background-color,border-color,color] duration-150 ease-out hover:border-[var(--an-border-color)] hover:bg-[var(--an-background-tertiary)] hover:text-[var(--an-foreground)] focus:outline-none focus:ring-2 focus:ring-[var(--an-input-focus-outline)]';
 
 function isSpecialDirectory(name: string): boolean {
   return SPECIAL_DIRECTORIES.includes(name);
@@ -1096,7 +1098,12 @@ export function WorkspaceSidebar({
   };
 
   return (
-    <div className="workspace-sidebar w-full bg-[var(--nim-bg-secondary)] border-r border-[var(--nim-border)] flex flex-col h-full overflow-hidden relative"
+    <div
+      className="workspace-sidebar agent-elements-workspace-sidebar h-full w-full flex flex-col overflow-hidden relative border-r border-[var(--an-border-color)] bg-[var(--an-background-secondary)] text-[var(--an-foreground)] [container-type:inline-size]"
+      data-component="WorkspaceSidebar"
+      data-agent-elements-shell="workspace-sidebar"
+      data-testid="agent-elements-workspace-sidebar"
+      data-drag-over-root={isDragOverRoot ? 'true' : 'false'}
       onDragOver={handleRootDragOver}
       onDragLeave={handleRootDragLeave}
       onDrop={handleRootDrop}
@@ -1113,22 +1120,24 @@ export function WorkspaceSidebar({
               <>
                 <button
                   ref={newFileButtonRef}
-                  className="workspace-action-button bg-transparent border-none p-1.5 cursor-pointer rounded text-[var(--nim-text-faint)] flex items-center justify-center transition-all duration-200 relative hover:bg-[var(--nim-bg-hover)] hover:text-[var(--nim-text)]"
+                  className={WORKSPACE_SIDEBAR_ACTION_BUTTON_CLASS}
                   onClick={handleNewFileButtonClick}
                   title="New file"
                   aria-label="New file"
+                  data-agent-elements-shell="workspace-sidebar-new-file"
                 >
-                  <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>
+                  <span className="material-symbols-outlined text-[20px] leading-none">
                     edit_square
                   </span>
                 </button>
                 <button
-                  className="workspace-action-button bg-transparent border-none p-1.5 cursor-pointer rounded text-[var(--nim-text-faint)] flex items-center justify-center transition-all duration-200 relative hover:bg-[var(--nim-bg-hover)] hover:text-[var(--nim-text)]"
+                  className={WORKSPACE_SIDEBAR_ACTION_BUTTON_CLASS}
                   onClick={handleNewFolder}
                   title="New folder"
                   aria-label="New folder"
+                  data-agent-elements-shell="workspace-sidebar-new-folder"
                 >
-                  <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>
+                  <span className="material-symbols-outlined text-[20px] leading-none">
                     create_new_folder
                   </span>
                 </button>
@@ -1136,11 +1145,12 @@ export function WorkspaceSidebar({
                   <HelpTooltip testId="file-tree-quick-open-button">
                     <button
                       data-testid="file-tree-quick-open-button"
-                      className="workspace-action-button bg-transparent border-none p-1.5 cursor-pointer rounded text-[var(--nim-text-faint)] flex items-center justify-center transition-all duration-200 relative hover:bg-[var(--nim-bg-hover)] hover:text-[var(--nim-text)]"
+                      className={WORKSPACE_SIDEBAR_ACTION_BUTTON_CLASS}
                       onClick={onOpenQuickSearch}
                       aria-label="Search files"
+                      data-agent-elements-shell="workspace-sidebar-quick-search"
                     >
-                      <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>
+                      <span className="material-symbols-outlined text-[20px] leading-none">
                         search
                       </span>
                     </button>
@@ -1150,15 +1160,16 @@ export function WorkspaceSidebar({
                   <button
                     ref={filterButtonRef}
                     data-testid="file-tree-filter-button"
-                    className="workspace-action-button bg-transparent border-none p-1.5 cursor-pointer rounded text-[var(--nim-text-faint)] flex items-center justify-center transition-all duration-200 relative hover:bg-[var(--nim-bg-hover)] hover:text-[var(--nim-text)]"
+                    className={WORKSPACE_SIDEBAR_ACTION_BUTTON_CLASS}
                     onClick={handleFilterButtonClick}
                     aria-label="Filter files"
+                    data-agent-elements-shell="workspace-sidebar-filter"
                   >
-                    <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>
+                    <span className="material-symbols-outlined text-[20px] leading-none">
                       filter_alt
                     </span>
                     {fileTreeFilter !== 'all' && (
-                      <span className="filter-active-indicator text-[var(--nim-primary)] font-bold text-base leading-none absolute top-0.5 right-0.5" title="Filter active">•</span>
+                      <span className="filter-active-indicator agent-elements-workspace-sidebar-filter-indicator absolute right-0.5 top-0.5 text-base font-bold leading-none text-[var(--an-primary-color)]" title="Filter active">•</span>
                     )}
                   </button>
                 </HelpTooltip>
@@ -1170,28 +1181,52 @@ export function WorkspaceSidebar({
 
       {currentView === 'files' ? (
         <>
-          <div className="workspace-section-label nim-section-label py-1.5 px-3 border-b border-[var(--nim-border)] bg-[var(--nim-bg-secondary)] shrink-0">Files</div>
-          <div className={`workspace-file-tree nim-scrollbar flex-1 overflow-y-auto overflow-x-hidden py-2 relative transition-colors duration-200 ${isDragOverRoot ? 'drag-over-root bg-[var(--nim-accent-subtle)] border-2 border-dashed border-[var(--nim-primary)] !py-1.5' : ''}`}>
+          <div
+            className="workspace-section-label agent-elements-workspace-sidebar-section shrink-0 border-b border-[var(--an-border-color)] bg-[var(--an-background)] px-[var(--an-spacing-lg)] py-[var(--an-spacing-sm)] text-[11px] font-medium leading-none text-[var(--an-foreground-muted)]"
+            data-agent-elements-shell="workspace-sidebar-section"
+            data-testid="agent-elements-workspace-sidebar-section"
+          >
+            Files
+          </div>
+          <div
+            className={`workspace-file-tree agent-elements-workspace-sidebar-tree nim-scrollbar relative flex-1 overflow-y-auto overflow-x-hidden py-[var(--an-spacing-sm)] transition-[background-color,border-color,padding] duration-150 ease-out ${isDragOverRoot ? 'drag-over-root border-2 border-dashed border-[var(--an-primary-color)] bg-[var(--an-background-tertiary)] !py-[6px]' : ''}`}
+            data-agent-elements-shell="workspace-sidebar-tree"
+            data-testid="agent-elements-workspace-sidebar-tree"
+          >
             {shouldShowFilterHint && (
-              <div className="file-tree-filter-hint py-2 px-3 text-xs text-[var(--nim-text-faint)] leading-relaxed border-b border-[var(--nim-border)] mb-1">
+              <div
+                className="file-tree-filter-hint agent-elements-workspace-sidebar-filter-hint mb-1 border-b border-[var(--an-border-color)] px-[var(--an-spacing-lg)] py-[var(--an-spacing-sm)] text-xs leading-relaxed text-[var(--an-foreground-subtle)]"
+                data-agent-elements-shell="workspace-sidebar-filter-hint"
+              >
                 {aiFilterHintText}
               </div>
             )}
             {isFilteredTreeEmpty && fileTreeFilter === 'all' && !fileTreeLoaded ? (
-              <div className="flex items-center gap-2 px-4 py-3 text-[13px] text-[var(--nim-text-muted)]">
-                <span className="material-symbols-outlined text-base animate-spin">progress_activity</span>
+              <div
+                className="agent-elements-workspace-sidebar-loading flex items-center gap-2 px-[var(--an-spacing-xl)] py-[var(--an-spacing-lg)] text-[13px] text-[var(--an-foreground-muted)]"
+                data-agent-elements-shell="workspace-sidebar-loading"
+                data-agent-elements-state="loading"
+                data-testid="agent-elements-workspace-sidebar-loading"
+              >
+                <span className="material-symbols-outlined text-base animate-spin leading-none">progress_activity</span>
                 Loading files...
               </div>
             ) : isFilteredTreeEmpty && fileTreeFilter !== 'all' ? (
-              <div className="file-tree-empty-state flex flex-col items-center justify-center py-12 px-6 text-center min-h-[300px]">
-                <span className="material-symbols-outlined file-tree-empty-icon text-5xl text-[var(--nim-text-faint)] opacity-50 mb-4">
+              <div
+                className="file-tree-empty-state agent-elements-workspace-sidebar-empty flex min-h-[300px] flex-col items-center justify-center px-6 py-12 text-center"
+                data-agent-elements-shell="workspace-sidebar-empty"
+                data-agent-elements-state="empty-filtered"
+                data-testid="agent-elements-workspace-sidebar-empty"
+              >
+                <span className="material-symbols-outlined file-tree-empty-icon mb-4 text-5xl text-[var(--an-foreground-subtle)] opacity-60">
                   filter_list_off
                 </span>
-                <h3 className="file-tree-empty-title m-0 mb-2 text-base font-semibold text-[var(--nim-text)]">{getEmptyStateMessage().title}</h3>
-                <p className="file-tree-empty-description m-0 mb-6 text-[13px] text-[var(--nim-text-muted)] leading-normal max-w-[280px]">{getEmptyStateMessage().description}</p>
+                <h3 className="file-tree-empty-title m-0 mb-2 text-base font-semibold text-[var(--an-foreground)]">{getEmptyStateMessage().title}</h3>
+                <p className="file-tree-empty-description m-0 mb-6 max-w-[280px] text-[13px] leading-normal text-[var(--an-foreground-muted)]">{getEmptyStateMessage().description}</p>
                 <button
-                  className="file-tree-clear-filter-btn nim-btn-primary px-4 py-2 rounded-md text-[13px] font-medium hover:opacity-90 hover:-translate-y-px active:translate-y-0 transition-all duration-200"
+                  className="file-tree-clear-filter-btn agent-elements-workspace-sidebar-clear-filter rounded-[var(--an-message-radius-inner)] border border-[var(--an-primary-color)] bg-[var(--an-primary-color)] px-[var(--an-spacing-xl)] py-[var(--an-spacing-sm)] text-[13px] font-medium text-[var(--an-background)] transition-[background-color,border-color,opacity] duration-150 ease-out hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-[var(--an-input-focus-outline)]"
                   onClick={() => handleFilterChange('all')}
+                  data-agent-elements-shell="workspace-sidebar-clear-filter"
                 >
                   Clear Filter
                 </button>
@@ -1213,7 +1248,10 @@ export function WorkspaceSidebar({
               />
             )}
             {isDragOverRoot && (
-              <div className="root-drop-indicator sticky top-0 bg-gradient-to-b from-[var(--nim-accent-subtle)] to-transparent text-center text-[13px] font-medium text-[var(--nim-primary)] z-10 mb-2 rounded">
+              <div
+                className="root-drop-indicator agent-elements-workspace-sidebar-drop-indicator sticky top-0 z-10 mb-2 rounded-[var(--an-message-radius-inner)] border border-[var(--an-primary-color)] bg-[var(--an-background)] px-[var(--an-spacing-lg)] py-[var(--an-spacing-sm)] text-center text-[13px] font-medium text-[var(--an-primary-color)]"
+                data-agent-elements-shell="workspace-sidebar-drop-indicator"
+              >
                 Drop here to move to workspace root
               </div>
             )}

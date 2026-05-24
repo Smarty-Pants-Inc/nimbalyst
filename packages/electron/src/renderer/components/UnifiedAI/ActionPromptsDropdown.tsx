@@ -177,6 +177,36 @@ export function ActionPromptsDropdown({ workspacePath, onInsert, onLaunchNewSess
   }, [highlightedIndex, menu.isOpen]);
 
   const buttonLabel = useMemo(() => 'Actions', []);
+  const triggerClass = [
+    'action-prompts-dropdown-button',
+    'agent-elements-action-prompts-trigger',
+    'agent-elements-status-pill',
+    'flex items-center gap-[var(--an-spacing-xs)] whitespace-nowrap',
+    'rounded-[calc(var(--an-tool-border-radius)_-_4px)] border border-[var(--an-border-color)]',
+    'bg-[var(--an-background-secondary)] px-[var(--an-spacing-sm)] py-[3px]',
+    'text-[11px] font-medium text-[var(--an-foreground-muted)] outline-none',
+    'cursor-pointer transition-[background-color,border-color,color] duration-150',
+    'hover:border-[var(--an-border-color-strong)] hover:bg-[var(--an-background-tertiary)] hover:text-[var(--an-foreground)]',
+    'focus-visible:ring-2 focus-visible:ring-[var(--an-focus-ring)]',
+  ].join(' ');
+
+  const panelClass = [
+    'action-prompts-dropdown-panel',
+    'agent-elements-action-prompts-menu',
+    'z-[1000] min-w-[260px] max-w-[360px]',
+    'rounded-[var(--an-tool-border-radius)] border border-[var(--an-border-color)]',
+    'bg-[var(--an-background)] p-[var(--an-spacing-xxs)]',
+  ].join(' ');
+
+  const itemClass = (isHighlighted: boolean) => [
+    'action-prompts-dropdown-item',
+    'agent-elements-action-prompts-item',
+    'flex w-full flex-col items-start gap-[var(--an-spacing-xxs)]',
+    'rounded-[calc(var(--an-tool-border-radius)_-_4px)] border-none px-[var(--an-spacing-sm)] py-[var(--an-spacing-xs)]',
+    'cursor-pointer text-left text-[var(--an-foreground)]',
+    'transition-[background-color,color] duration-150',
+    isHighlighted ? 'bg-[var(--an-background-tertiary)]' : 'bg-transparent',
+  ].join(' ');
 
   return (
     <>
@@ -185,16 +215,20 @@ export function ActionPromptsDropdown({ workspacePath, onInsert, onLaunchNewSess
         {...menu.getReferenceProps()}
         type="button"
         data-testid="action-prompts-dropdown"
-        className="action-prompts-dropdown-button flex items-center gap-1 px-2 py-[3px] rounded-xl text-[11px] font-medium cursor-pointer transition-all duration-200 outline-none whitespace-nowrap bg-[var(--nim-bg-secondary)] text-[var(--nim-text-muted)] border border-[var(--nim-border)] hover:bg-[var(--nim-bg-hover)] hover:border-[var(--nim-primary)]"
+        className={triggerClass}
         onClick={() => menu.setIsOpen(!menu.isOpen)}
         aria-label={`${buttonLabel} (${actions.length})`}
+        aria-haspopup="menu"
+        aria-expanded={menu.isOpen}
+        data-agent-elements-shell="action-prompts-trigger"
+        data-component="UnifiedAIActionPromptsDropdown"
       >
         <MaterialSymbol icon="bolt" size={12} />
         <span>{buttonLabel}</span>
         <MaterialSymbol
           icon="expand_more"
           size={14}
-          className={`transition-transform duration-200 shrink-0 ${menu.isOpen ? 'rotate-180' : ''}`}
+          className={`shrink-0 transition-transform duration-150 ${menu.isOpen ? 'rotate-180' : ''}`}
         />
       </button>
 
@@ -207,26 +241,30 @@ export function ActionPromptsDropdown({ workspacePath, onInsert, onLaunchNewSess
             onKeyDown={handleKeyDown}
             tabIndex={-1}
             data-testid="action-prompts-dropdown-panel"
-            className="action-prompts-dropdown-panel z-[1000] min-w-[260px] max-w-[360px] rounded-lg p-1 bg-[var(--nim-bg)] border border-[var(--nim-border)] shadow-[0_8px_24px_rgba(0,0,0,0.25)]"
+            className={panelClass}
+            role="menu"
+            data-agent-elements-shell="action-prompts-menu"
+            data-component="UnifiedAIActionPromptsDropdownMenu"
+            data-action-count={actions.length}
           >
-            <div className="action-prompts-dropdown-header px-2 py-1.5 text-[10px] uppercase tracking-wider text-[var(--nim-text-faint)] flex items-center justify-between">
+            <div className="action-prompts-dropdown-header flex items-center justify-between px-[var(--an-spacing-sm)] py-[var(--an-spacing-xs)] text-[10px] font-medium text-[var(--an-foreground-subtle)]">
               <span>{state.fileExists ? 'From ai-actions.md' : 'Action prompts'}</span>
               {state.fileExists && (
-                <span className="text-[10px] text-[var(--nim-text-disabled)]">
+                <span className="text-[10px] text-[var(--an-foreground-subtle)]">
                   {actions.length}
                 </span>
               )}
             </div>
 
             {showSeedCta && (
-              <div className="px-2 py-2 flex flex-col gap-2">
-                <p className="text-xs text-[var(--nim-text-muted)] leading-snug">
-                  No <code>ai-actions.md</code> in this workspace yet. Seed it with a few example
+              <div className="agent-elements-action-prompts-empty flex flex-col gap-[var(--an-spacing-sm)] px-[var(--an-spacing-sm)] py-[var(--an-spacing-sm)]">
+                <p className="text-xs leading-snug text-[var(--an-foreground-muted)]">
+                  No <code className="rounded-[var(--an-radius-xs)] bg-[var(--an-background-tertiary)] px-[var(--an-spacing-xxs)] text-[var(--an-foreground)]">ai-actions.md</code> in this workspace yet. Seed it with a few example
                   prompts you can edit.
                 </p>
                 <button
                   type="button"
-                  className="text-[11px] font-medium text-left px-2 py-1.5 rounded border border-[var(--nim-border)] bg-[var(--nim-bg-secondary)] hover:bg-[var(--nim-bg-hover)] hover:border-[var(--nim-primary)] text-[var(--nim-text)] cursor-pointer"
+                  className="agent-elements-action-prompts-seed cursor-pointer rounded-[calc(var(--an-tool-border-radius)_-_4px)] border border-[var(--an-border-color)] bg-[var(--an-background-secondary)] px-[var(--an-spacing-sm)] py-[var(--an-spacing-xs)] text-left text-[11px] font-medium text-[var(--an-foreground)] transition-[background-color,border-color,color] duration-150 hover:border-[var(--an-border-color-strong)] hover:bg-[var(--an-background-tertiary)] focus-visible:ring-2 focus-visible:ring-[var(--an-focus-ring)]"
                   onClick={handleSeed}
                   data-testid="action-prompts-seed-button"
                 >
@@ -236,14 +274,14 @@ export function ActionPromptsDropdown({ workspacePath, onInsert, onLaunchNewSess
             )}
 
             {state.fileExists && !hasActions && (
-              <div className="px-2 py-3 text-xs text-[var(--nim-text-muted)] leading-snug">
-                <code>ai-actions.md</code> has no <code>## Heading</code> sections yet. Open the file
+              <div className="agent-elements-action-prompts-empty px-[var(--an-spacing-sm)] py-[var(--an-spacing-md)] text-xs leading-snug text-[var(--an-foreground-muted)]">
+                <code className="rounded-[var(--an-radius-xs)] bg-[var(--an-background-tertiary)] px-[var(--an-spacing-xxs)] text-[var(--an-foreground)]">ai-actions.md</code> has no <code className="rounded-[var(--an-radius-xs)] bg-[var(--an-background-tertiary)] px-[var(--an-spacing-xxs)] text-[var(--an-foreground)]">## Heading</code> sections yet. Open the file
                 and add one to get started.
               </div>
             )}
 
             {hasActions && (
-              <div className="action-prompts-dropdown-list max-h-[320px] overflow-y-auto py-1">
+              <div className="action-prompts-dropdown-list max-h-[320px] overflow-y-auto py-[var(--an-spacing-xs)]">
                 {actions.map((action, idx) => {
                   const isLauncher = action.config?.launch === 'new-session';
                   const launcherSubtitle = isLauncher
@@ -260,13 +298,14 @@ export function ActionPromptsDropdown({ workspacePath, onInsert, onLaunchNewSess
                       onMouseEnter={() => setHighlightedIndex(idx)}
                       data-testid={`action-prompt-item-${action.id}`}
                       data-action-launch={isLauncher ? 'new-session' : 'same-session'}
-                      className={`action-prompts-dropdown-item flex items-start gap-2 w-full text-left px-2 py-1.5 rounded border-none cursor-pointer text-[var(--nim-text)] ${
-                        idx === highlightedIndex ? 'bg-[var(--nim-bg-hover)]' : 'bg-transparent'
-                      }`}
+                      className={itemClass(idx === highlightedIndex)}
+                      role="menuitem"
+                      data-highlighted={idx === highlightedIndex}
+                      data-action-prompt-id={action.id}
                     >
-                      <span className="flex flex-col items-start gap-0.5 min-w-0 flex-1">
+                      <span className="flex min-w-0 flex-1 flex-col items-start gap-[var(--an-spacing-xxs)]">
                         <span className="text-[12px] font-medium leading-tight">{action.label}</span>
-                        <span className="text-[11px] text-[var(--nim-text-muted)] leading-tight truncate w-full">
+                        <span className="w-full truncate text-[11px] leading-tight text-[var(--an-foreground-muted)]">
                           {launcherSubtitle ?? firstLinePreview(action.body)}
                         </span>
                       </span>
@@ -274,7 +313,7 @@ export function ActionPromptsDropdown({ workspacePath, onInsert, onLaunchNewSess
                         <MaterialSymbol
                           icon="open_in_new"
                           size={14}
-                          className="shrink-0 mt-0.5 text-[var(--nim-text-faint)]"
+                          className="mt-0.5 shrink-0 text-[var(--an-foreground-subtle)]"
                         />
                       )}
                     </button>
@@ -283,12 +322,13 @@ export function ActionPromptsDropdown({ workspacePath, onInsert, onLaunchNewSess
               </div>
             )}
 
-            <div className="action-prompts-dropdown-footer mt-1 border-t border-[var(--nim-border)] pt-1">
+            <div className="action-prompts-dropdown-footer mt-[var(--an-spacing-xs)] border-t border-[var(--an-border-color)] pt-[var(--an-spacing-xs)]">
               <button
                 type="button"
-                className="w-full text-left px-2 py-1.5 text-[11px] text-[var(--nim-text-muted)] hover:text-[var(--nim-text)] hover:bg-[var(--nim-bg-hover)] rounded cursor-pointer flex items-center gap-1.5 border-none bg-transparent"
+                className="agent-elements-action-prompts-edit flex w-full cursor-pointer items-center gap-[var(--an-spacing-xs)] rounded-[calc(var(--an-tool-border-radius)_-_4px)] border-none bg-transparent px-[var(--an-spacing-sm)] py-[var(--an-spacing-xs)] text-left text-[11px] text-[var(--an-foreground-muted)] transition-[background-color,color] duration-150 hover:bg-[var(--an-background-tertiary)] hover:text-[var(--an-foreground)] focus-visible:ring-2 focus-visible:ring-[var(--an-focus-ring)]"
                 onClick={handleEditFile}
                 data-testid="action-prompts-edit-link"
+                role="menuitem"
               >
                 <MaterialSymbol icon="edit" size={12} />
                 <span>{state.fileExists ? 'Edit actions…' : 'Open ai-actions.md…'}</span>

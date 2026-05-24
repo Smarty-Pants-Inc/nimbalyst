@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { marked } from 'marked';
+import { MaterialSymbol } from '@nimbalyst/runtime';
 
 // Configure marked for safe rendering
 marked.setOptions({
@@ -60,79 +61,107 @@ export function ReleaseNotesDialog({
     }
   }, [releaseNotes]);
 
+  const buttonBase =
+    'update-dialog-btn inline-flex items-center justify-center gap-2 rounded-[var(--an-input-border-radius)] border px-3 py-2 text-sm font-medium transition-[background-color,border-color,color] duration-150 ease-out focus:outline-none focus:ring-2 focus:ring-[var(--an-input-focus-outline)]';
+
   return (
     <div
-      className="update-dialog-backdrop fixed inset-0 flex items-center justify-center z-[10001] bg-black/50 animate-[fadeIn_0.2s_ease-out]"
-      data-testid="release-notes-dialog-backdrop"
+      className="update-dialog-backdrop nim-overlay agent-elements-release-notes-dialog-backdrop fixed inset-0 z-[10001] flex items-center justify-center bg-[color-mix(in_srgb,var(--nim-text)_36%,transparent)] p-4 nim-animate-fade-in"
+      data-testid="agent-elements-release-notes-dialog-backdrop"
+      data-agent-elements-shell="release-notes-dialog-backdrop"
     >
       <div
-        className="update-dialog relative flex flex-col w-[600px] max-w-[90vw] max-h-[80vh] p-6 rounded-2xl border border-[var(--nim-border)] bg-[var(--nim-bg-secondary)] shadow-[0_25px_50px_-12px_rgba(0,0,0,0.4)] animate-[scaleIn_0.2s_ease-out]"
+        className="update-dialog agent-elements-release-notes-dialog agent-elements-tool-card relative flex max-h-[82vh] w-[620px] max-w-[92vw] flex-col overflow-hidden rounded-[var(--an-border-radius)] border border-[var(--an-border-color)] bg-[var(--an-background)] text-[var(--an-foreground)] shadow-[0_20px_60px_color-mix(in_srgb,var(--nim-text)_18%,transparent)] nim-animate-slide-up"
         ref={dialogRef}
         role="dialog"
         aria-modal="true"
-        data-testid="release-notes-dialog"
+        aria-labelledby="release-notes-dialog-title"
+        data-testid="agent-elements-release-notes-dialog"
+        data-component="ReleaseNotesDialog"
+        data-agent-elements-shell="release-notes-dialog"
       >
-        {/* Close button */}
         <button
-          className="update-dialog-close absolute top-4 right-4 w-7 h-7 border-none bg-transparent cursor-pointer rounded-md flex items-center justify-center p-0 text-[var(--nim-text-faint)] transition-colors duration-200 hover:bg-[var(--nim-bg-hover)] hover:text-[var(--nim-text-muted)] [&>svg]:w-4 [&>svg]:h-4"
+          className="update-dialog-close agent-elements-release-notes-dialog-close absolute right-4 top-4 z-10 inline-flex h-8 w-8 cursor-pointer items-center justify-center rounded-[var(--an-input-border-radius)] border border-transparent bg-transparent p-0 text-[var(--an-foreground-muted)] transition-[background-color,border-color,color] duration-150 ease-out hover:border-[var(--an-border-color)] hover:bg-[var(--an-background-tertiary)] hover:text-[var(--an-foreground)] focus:outline-none focus:ring-2 focus:ring-[var(--an-input-focus-outline)]"
           onClick={onClose}
           title="Close"
           aria-label="Close"
           data-testid="release-notes-close-btn"
+          data-agent-elements-shell="release-notes-dialog-close"
         >
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <path d="M18 6L6 18M6 6l12 12" />
-          </svg>
+          <MaterialSymbol icon="close" size={18} />
         </button>
 
-        {/* Header */}
-        <div className="update-dialog-header mb-4 pr-8">
-          <h2 className="update-dialog-title text-lg font-semibold text-[var(--nim-text)] m-0">A new version of Nimbalyst is available!</h2>
-        </div>
+        <header
+          className="update-dialog-header agent-elements-release-notes-dialog-header border-b border-[var(--an-border-color)] p-[var(--an-spacing-xl)] pr-14"
+          data-testid="agent-elements-release-notes-dialog-header"
+          data-agent-elements-shell="release-notes-dialog-header"
+        >
+          <div className="flex items-start gap-3">
+            <span
+              className="agent-elements-release-notes-dialog-icon inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-[var(--an-tool-border-radius)] border border-[var(--an-border-color)] bg-[var(--an-background-secondary)] text-[var(--an-primary-color)]"
+              data-agent-elements-shell="release-notes-dialog-icon"
+              aria-hidden="true"
+            >
+              <MaterialSymbol icon="release_alert" size={19} />
+            </span>
+            <div className="min-w-0">
+              <h2
+                id="release-notes-dialog-title"
+                className="update-dialog-title m-0 text-sm font-medium leading-snug text-[var(--an-foreground)]"
+              >
+                Update available
+              </h2>
+              <p className="m-0 mt-1 text-xs leading-relaxed text-[var(--an-foreground-muted)]">
+                Review the changes before downloading Nimbalyst {newVersion}.
+              </p>
+            </div>
+          </div>
+        </header>
 
-        {/* Version comparison */}
-        <div className="update-dialog-version-row flex items-center gap-2 mb-5 flex-wrap">
-          <span className="update-dialog-version-label text-xs text-[var(--nim-text-muted)]">You are currently on:</span>
-          <span className="update-dialog-version-badge text-xs font-medium text-[var(--nim-text)] bg-[var(--nim-bg-tertiary)] py-1 px-2 rounded font-mono" data-testid="current-version-badge">{currentVersion}</span>
-          <span className="update-dialog-version-arrow flex items-center text-[var(--nim-text-faint)] [&>svg]:w-4 [&>svg]:h-4">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M5 12h14M12 5l7 7-7 7" />
-            </svg>
+        <div
+          className="update-dialog-version-row agent-elements-release-notes-dialog-version-row flex flex-wrap items-center gap-2 border-b border-[var(--an-border-color)] bg-[var(--an-background-secondary)] p-[var(--an-spacing-xl)]"
+          data-testid="agent-elements-release-notes-dialog-version-row"
+          data-agent-elements-shell="release-notes-version-row"
+        >
+          <span className="update-dialog-version-label text-xs text-[var(--an-foreground-muted)]">Current</span>
+          <span className="update-dialog-version-badge rounded-[var(--an-input-border-radius)] border border-[var(--an-border-color)] bg-[var(--an-background)] px-2 py-1 font-mono text-xs font-medium text-[var(--an-foreground)]" data-testid="current-version-badge">{currentVersion}</span>
+          <span className="update-dialog-version-arrow inline-flex items-center text-[var(--an-foreground-subtle)]" aria-hidden="true">
+            <MaterialSymbol icon="arrow_forward" size={16} />
           </span>
-          <span className="update-dialog-version-label text-xs text-[var(--nim-text-muted)]">The latest version is:</span>
-          <span className="update-dialog-version-badge update-dialog-version-badge-new text-xs font-medium py-1 px-2 rounded font-mono bg-[var(--nim-primary)] text-white" data-testid="new-version-badge">{newVersion}</span>
+          <span className="update-dialog-version-label text-xs text-[var(--an-foreground-muted)]">Latest</span>
+          <span className="update-dialog-version-badge update-dialog-version-badge-new rounded-[var(--an-input-border-radius)] border border-[var(--an-primary-color)] bg-[var(--an-primary-color)] px-2 py-1 font-mono text-xs font-medium text-[var(--an-background)]" data-testid="new-version-badge">{newVersion}</span>
         </div>
 
-        {/* Release notes */}
-        <div className="update-dialog-content flex-1 overflow-y-auto mb-5 pr-2">
-          <h3 className="update-dialog-notes-title text-sm font-semibold text-[var(--nim-text)] m-0 mb-3">{newVersion} - Release Notes</h3>
+        <div className="update-dialog-content flex-1 overflow-y-auto p-[var(--an-spacing-xl)]">
+          <h3 className="update-dialog-notes-title m-0 mb-3 text-sm font-medium text-[var(--an-foreground)]">{newVersion} release notes</h3>
           <div
-            className="update-dialog-notes text-[13px] text-[var(--nim-text-muted)] leading-relaxed [&_h1]:text-[var(--nim-text)] [&_h1]:text-base [&_h1]:mt-4 [&_h1]:mb-2 [&_h2]:text-[var(--nim-text)] [&_h2]:text-sm [&_h2]:mt-4 [&_h2]:mb-2 [&_h3]:text-[var(--nim-text)] [&_h3]:text-[13px] [&_h3]:mt-4 [&_h3]:mb-2 [&_p]:my-2 [&_ul]:my-2 [&_ul]:pl-5 [&_ol]:my-2 [&_ol]:pl-5 [&_li]:my-1 [&_code]:bg-[var(--nim-bg-tertiary)] [&_code]:py-0.5 [&_code]:px-1.5 [&_code]:rounded [&_code]:font-mono [&_code]:text-xs [&_pre]:bg-[var(--nim-bg-tertiary)] [&_pre]:p-3 [&_pre]:rounded-lg [&_pre]:overflow-x-auto [&_pre_code]:bg-transparent [&_pre_code]:p-0"
+            className="update-dialog-notes agent-elements-release-notes-dialog-content select-text text-sm leading-relaxed text-[var(--an-foreground-muted)] [&_code]:rounded-[var(--an-input-border-radius)] [&_code]:bg-[var(--an-background-tertiary)] [&_code]:px-1.5 [&_code]:py-0.5 [&_code]:font-mono [&_code]:text-xs [&_h1]:mb-2 [&_h1]:mt-4 [&_h1]:text-base [&_h1]:font-medium [&_h1]:text-[var(--an-foreground)] [&_h2]:mb-2 [&_h2]:mt-4 [&_h2]:text-sm [&_h2]:font-medium [&_h2]:text-[var(--an-foreground)] [&_h3]:mb-2 [&_h3]:mt-4 [&_h3]:text-sm [&_h3]:font-medium [&_h3]:text-[var(--an-foreground)] [&_li]:my-1 [&_ol]:my-2 [&_ol]:pl-5 [&_p]:my-2 [&_pre]:overflow-x-auto [&_pre]:rounded-[var(--an-tool-border-radius)] [&_pre]:border [&_pre]:border-[var(--an-border-color)] [&_pre]:bg-[var(--an-background-secondary)] [&_pre]:p-3 [&_pre_code]:bg-transparent [&_pre_code]:p-0 [&_ul]:my-2 [&_ul]:pl-5"
             data-testid="release-notes-content"
+            data-agent-elements-shell="release-notes-content"
             dangerouslySetInnerHTML={{ __html: renderedReleaseNotes }}
           />
         </div>
 
-        {/* Action buttons */}
-        <div className="update-dialog-actions flex gap-3 justify-end">
+        <footer
+          className="update-dialog-actions agent-elements-release-notes-dialog-actions flex justify-end gap-2 border-t border-[var(--an-border-color)] p-[var(--an-spacing-xl)]"
+          data-agent-elements-shell="release-notes-dialog-actions"
+        >
           <button
-            className="update-dialog-btn update-dialog-btn-secondary flex items-center gap-2 py-2.5 px-[18px] border border-[var(--nim-border)] rounded-lg text-sm font-medium cursor-pointer transition-all duration-200 font-[inherit] bg-[var(--nim-bg-tertiary)] text-[var(--nim-text)] hover:bg-[var(--nim-bg-hover)]"
+            className={`${buttonBase} update-dialog-btn-secondary border-[var(--an-border-color)] bg-[var(--an-background)] text-[var(--an-foreground-muted)] hover:bg-[var(--an-background-tertiary)] hover:text-[var(--an-foreground)]`}
             onClick={onClose}
             data-testid="release-notes-later-btn"
           >
             Later
           </button>
           <button
-            className="update-dialog-btn update-dialog-btn-primary flex items-center gap-2 py-2.5 px-[18px] border-none rounded-lg text-sm font-medium cursor-pointer transition-all duration-200 font-[inherit] bg-[var(--nim-primary)] text-white hover:brightness-110 [&>svg]:w-4 [&>svg]:h-4"
+            className={`${buttonBase} update-dialog-btn-primary border-[var(--an-primary-color)] bg-[var(--an-primary-color)] text-[var(--an-background)] hover:border-[var(--nim-primary-hover)] hover:bg-[var(--nim-primary-hover)]`}
             onClick={onUpdate}
             data-testid="release-notes-update-btn"
           >
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3" />
-            </svg>
+            <MaterialSymbol icon="download" size={16} />
             Update to Nimbalyst {newVersion}
           </button>
-        </div>
+        </footer>
       </div>
     </div>
   );

@@ -64,17 +64,17 @@ function formatDuration(durationMs: number): string {
   return remainingMinutes === 0 ? `${hours}h` : `${hours}h ${remainingMinutes}m`;
 }
 
-function getStatusTone(status: string): string {
+function getStatusTone(status: string): 'running' | 'warning' | 'error' | 'neutral' {
   switch (status) {
     case 'running':
-      return 'text-[var(--nim-primary)] bg-[rgba(59,130,246,0.12)]';
+      return 'running';
     case 'waiting_for_input':
-      return 'text-[var(--nim-warning)] bg-[rgba(245,158,11,0.16)]';
+      return 'warning';
     case 'error':
     case 'interrupted':
-      return 'text-[var(--nim-error)] bg-[rgba(239,68,68,0.14)]';
+      return 'error';
     default:
-      return 'text-[var(--nim-text-muted)] bg-[var(--nim-bg-tertiary)]';
+      return 'neutral';
   }
 }
 
@@ -92,14 +92,14 @@ function formatTokensShort(tokens: number): string {
 function getBarTone(status: string): string {
   switch (status) {
     case 'running':
-      return 'bg-[rgba(59,130,246,0.35)]';
+      return 'bg-[var(--an-primary-color)] text-[var(--an-background)]';
     case 'waiting_for_input':
-      return 'bg-[rgba(245,158,11,0.35)]';
+      return 'bg-[var(--nim-warning)] text-[var(--an-background)]';
     case 'error':
     case 'interrupted':
-      return 'bg-[rgba(239,68,68,0.30)]';
+      return 'bg-[var(--nim-error)] text-[var(--an-background)]';
     default:
-      return 'bg-[var(--nim-bg-tertiary)]';
+      return 'bg-[var(--an-background-tertiary)] text-[var(--an-foreground-muted)]';
   }
 }
 
@@ -112,28 +112,29 @@ function TimelineRowLabel({ window }: { window: TimelineWindow }) {
   const ctxWindow = tokenUsage?.currentContext?.contextWindow ?? 0;
   const hasCtx = ctxWindow > 0;
   const ctxPct = hasCtx ? Math.round((ctxTokens / ctxWindow) * 100) : 0;
+  const statusTone = getStatusTone(window.status);
 
   return (
-    <div className="min-w-0 rounded-lg bg-[var(--nim-bg-secondary)] px-3 py-2">
-      <div className="truncate text-sm font-medium text-[var(--nim-text)]">{window.title}</div>
-      <div className="mt-1 flex items-center gap-2 text-[11px] text-[var(--nim-text-muted)]">
-        <span className={`rounded-full px-2 py-0.5 ${getStatusTone(window.status)}`}>
+    <div className="agent-elements-meta-agent-timeline-label min-w-0 rounded-[var(--an-tool-border-radius)] border border-[var(--an-border-color)] bg-[var(--an-background-secondary)] px-[var(--an-spacing-lg)] py-[var(--an-spacing-sm)]">
+      <div className="truncate text-sm font-medium text-[var(--an-foreground)]">{window.title}</div>
+      <div className="mt-[var(--an-spacing-xs)] flex items-center gap-[var(--an-spacing-sm)] text-[11px] text-[var(--an-foreground-muted)]">
+        <span className="agent-elements-status-pill" data-tone={statusTone}>
           {window.status}
         </span>
         <span>{formatDuration(window.durationMs)}</span>
       </div>
-      <div className="mt-1 flex items-center gap-2 text-[11px] text-[var(--nim-text-faint)]">
+      <div className="mt-[var(--an-spacing-xs)] flex items-center gap-[var(--an-spacing-sm)] text-[11px] text-[var(--an-foreground-subtle)]">
         <span>
           {totalTokens > 0 ? `${formatTokensShort(totalTokens)} tokens` : '--'}
         </span>
         {hasCtx && (
           <>
-            <span className="text-[var(--nim-border)]">|</span>
+            <span className="text-[var(--an-border-color)]">|</span>
             <span className="flex items-center gap-1.5">
               {formatTokensShort(ctxTokens)}/{formatTokensShort(ctxWindow)} ctx
-              <span className="inline-flex h-1.5 w-10 rounded-full bg-[var(--nim-bg-tertiary)] overflow-hidden">
+              <span className="inline-flex h-1.5 w-10 overflow-hidden rounded-full bg-[var(--an-background-tertiary)]">
                 <span
-                  className={`h-full rounded-full ${ctxPct > 80 ? 'bg-[var(--nim-warning)]' : 'bg-[var(--nim-primary)]'}`}
+                  className={`h-full rounded-full ${ctxPct > 80 ? 'bg-[var(--nim-warning)]' : 'bg-[var(--an-primary-color)]'}`}
                   style={{ width: `${Math.min(ctxPct, 100)}%` }}
                 />
               </span>
@@ -142,7 +143,7 @@ function TimelineRowLabel({ window }: { window: TimelineWindow }) {
           </>
         )}
       </div>
-      <div className="mt-0.5 text-[11px] text-[var(--nim-text-faint)]">
+      <div className="mt-0.5 text-[11px] text-[var(--an-foreground-subtle)]">
         {formatAbsoluteTime(window.startedAt)} - {formatAbsoluteTime(window.endedAt)}
       </div>
     </div>
@@ -171,7 +172,7 @@ function TimelineAggregateSummary({ sessionIds }: { sessionIds: string[] }) {
   if (totalTokens === 0) return null;
 
   return (
-    <span className="rounded-full bg-[var(--nim-bg-secondary)] px-2.5 py-1 text-[var(--nim-text-muted)]">
+    <span className="agent-elements-status-pill" data-tone="neutral">
       {formatTokensShort(totalTokens)} total tokens
     </span>
   );
@@ -405,16 +406,47 @@ export function MetaAgentMode({
   }, [childSessions]);
 
   if (loadingSession) {
-    return <div className="meta-agent-mode flex-1 flex items-center justify-center text-nim-muted">Loading meta-agent session...</div>;
+    return (
+      <div
+        className="meta-agent-mode agent-elements-meta-agent-mode flex flex-1 items-center justify-center bg-[var(--an-background)] text-sm text-[var(--an-foreground-muted)]"
+        data-component="MetaAgentMode"
+        data-agent-elements-shell="meta-agent-mode"
+        data-active={isActive ? 'true' : 'false'}
+        data-state="loading"
+        data-testid="agent-elements-meta-agent-mode"
+      >
+        Loading meta-agent session...
+      </div>
+    );
   }
 
   if (!metaSessionId) {
-    return <div className="meta-agent-mode flex-1 flex items-center justify-center text-nim-muted">Unable to initialize meta-agent mode.</div>;
+    return (
+      <div
+        className="meta-agent-mode agent-elements-meta-agent-mode flex flex-1 items-center justify-center bg-[var(--an-background)] text-sm text-[var(--an-foreground-muted)]"
+        data-component="MetaAgentMode"
+        data-agent-elements-shell="meta-agent-mode"
+        data-active={isActive ? 'true' : 'false'}
+        data-state="empty"
+        data-testid="agent-elements-meta-agent-mode"
+      >
+        Unable to initialize meta-agent mode.
+      </div>
+    );
   }
 
   return (
-    <div className="meta-agent-mode relative flex-1 flex min-h-0" data-testid="meta-agent-mode">
-      <div className="flex flex-col flex-1 min-w-0 min-h-0 overflow-hidden border-r border-nim">
+    <div
+      className="meta-agent-mode agent-elements-meta-agent-mode relative flex min-h-0 flex-1 bg-[var(--an-background)] text-[var(--an-foreground)] [container-type:inline-size]"
+      data-component="MetaAgentMode"
+      data-agent-elements-shell="meta-agent-mode"
+      data-active={isActive ? 'true' : 'false'}
+      data-testid="agent-elements-meta-agent-mode"
+    >
+      <div
+        className="agent-elements-meta-agent-transcript flex min-w-0 flex-1 flex-col overflow-hidden border-r border-[var(--an-border-color)]"
+        data-agent-elements-shell="meta-agent-transcript"
+      >
         <SessionTranscript
           sessionId={metaSessionId}
           workspacePath={workspacePath}
@@ -425,17 +457,21 @@ export function MetaAgentMode({
         />
       </div>
 
-      <aside className="w-[360px] max-w-[420px] min-w-[320px] flex flex-col min-h-0 bg-[var(--nim-bg-secondary)]" data-testid="meta-agent-dashboard">
-        <div className="px-4 py-4 border-b border-nim">
+      <aside
+        className="agent-elements-meta-agent-dashboard flex min-h-0 w-[360px] min-w-[320px] max-w-[420px] flex-col bg-[var(--an-background-secondary)]"
+        data-agent-elements-shell="meta-agent-dashboard"
+        data-testid="agent-elements-meta-agent-dashboard"
+      >
+        <div className="agent-elements-meta-agent-dashboard-header border-b border-[var(--an-border-color)] px-[var(--an-spacing-xxl)] py-[var(--an-spacing-xl)]">
           <div className="flex items-center justify-between gap-3">
             <div>
-              <h2 className="text-sm font-semibold text-[var(--nim-text)]">Delegated Sessions</h2>
-              <p className="text-xs text-[var(--nim-text-muted)]">Child sessions created by this meta-agent.</p>
+              <h2 className="m-0 text-sm font-semibold leading-snug text-[var(--an-foreground)]">Delegated Sessions</h2>
+              <p className="m-0 mt-[var(--an-spacing-xxs)] text-xs leading-snug text-[var(--an-foreground-muted)]">Child sessions created by this meta-agent.</p>
             </div>
             <div className="flex items-center gap-2">
               <button
                 type="button"
-                className="nim-btn-secondary text-xs px-2.5 py-1 rounded disabled:opacity-50"
+                className="agent-elements-meta-agent-action inline-flex min-h-[28px] items-center justify-center rounded-[var(--an-tool-border-radius)] border border-[var(--an-border-color)] bg-[var(--an-background)] px-[var(--an-spacing-md)] text-xs font-medium text-[var(--an-foreground-muted)] transition-colors duration-150 ease-out hover:bg-[var(--an-background-tertiary)] disabled:cursor-not-allowed disabled:opacity-50"
                 onClick={() => setShowTimeline(true)}
                 disabled={childSessions.length === 0}
                 data-testid="meta-agent-open-timeline"
@@ -444,7 +480,7 @@ export function MetaAgentMode({
               </button>
               <button
                 type="button"
-                className="nim-btn-secondary text-xs px-2.5 py-1 rounded"
+                className="agent-elements-meta-agent-action inline-flex min-h-[28px] items-center justify-center rounded-[var(--an-tool-border-radius)] border border-[var(--an-border-color)] bg-[var(--an-background)] px-[var(--an-spacing-md)] text-xs font-medium text-[var(--an-foreground-muted)] transition-colors duration-150 ease-out hover:bg-[var(--an-background-tertiary)]"
                 onClick={() => void handleClearMetaSession()}
                 data-testid="meta-agent-clear"
               >
@@ -452,7 +488,7 @@ export function MetaAgentMode({
               </button>
               <button
                 type="button"
-                className="nim-btn-secondary text-xs px-2.5 py-1 rounded"
+                className="agent-elements-meta-agent-action inline-flex min-h-[28px] items-center justify-center rounded-[var(--an-tool-border-radius)] border border-[var(--an-border-color)] bg-[var(--an-background)] px-[var(--an-spacing-md)] text-xs font-medium text-[var(--an-foreground-muted)] transition-colors duration-150 ease-out hover:bg-[var(--an-background-tertiary)]"
                 onClick={() => void refreshSpawnedSessions(metaSessionId)}
                 data-testid="meta-agent-refresh"
               >
@@ -460,70 +496,82 @@ export function MetaAgentMode({
               </button>
             </div>
           </div>
-          <div className="mt-3 flex gap-2 text-xs">
-            <span className="px-2 py-1 rounded-full bg-[var(--nim-bg-tertiary)] text-[var(--nim-text-muted)]">
+          <div className="agent-elements-meta-agent-summary mt-[var(--an-spacing-lg)] flex flex-wrap gap-[var(--an-spacing-xs)] text-xs" data-testid="agent-elements-meta-agent-summary">
+            <span className="agent-elements-status-pill" data-tone="neutral">
               {summary.total} total
             </span>
-            <span className="px-2 py-1 rounded-full bg-[rgba(59,130,246,0.12)] text-[var(--nim-primary)]">
+            <span className="agent-elements-status-pill" data-tone="running">
               {summary.runningCount} running
             </span>
-            <span className="px-2 py-1 rounded-full bg-[rgba(245,158,11,0.16)] text-[var(--nim-warning)]">
+            <span className="agent-elements-status-pill" data-tone="warning">
               {summary.waitingCount} waiting
             </span>
           </div>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-3 space-y-3">
+        <div className="agent-elements-meta-agent-session-list flex-1 space-y-[var(--an-spacing-md)] overflow-y-auto p-[var(--an-spacing-md)]">
           {loadingChildren && childSessions.length === 0 ? (
-            <div className="text-sm text-[var(--nim-text-muted)] px-2 py-4">Loading child sessions...</div>
+            <div className="agent-elements-meta-agent-loading px-[var(--an-spacing-sm)] py-[var(--an-spacing-xl)] text-sm text-[var(--an-foreground-muted)]">Loading child sessions...</div>
           ) : childSessions.length === 0 ? (
-            <div className="border border-dashed border-nim rounded-lg p-4 text-sm text-[var(--nim-text-muted)]" data-testid="meta-agent-empty-state">
+            <div
+              className="agent-elements-meta-agent-empty-state rounded-[var(--an-tool-border-radius)] border border-dashed border-[var(--an-border-color)] bg-[var(--an-background)] p-[var(--an-spacing-xxl)] text-sm leading-relaxed text-[var(--an-foreground-muted)]"
+              data-agent-elements-shell="meta-agent-empty-state"
+              data-testid="meta-agent-empty-state"
+            >
               No delegated sessions yet. The meta-agent will populate this dashboard as it spawns child sessions.
             </div>
           ) : (
             childSessions.map((session) => (
               <section
                 key={session.sessionId}
-                className="rounded-xl border border-nim bg-[var(--nim-bg)] p-3 shadow-sm"
+                className="agent-elements-meta-agent-child-card agent-elements-tool-card"
+                data-agent-elements-shell="meta-agent-child-card"
                 data-testid="meta-agent-child-card"
                 data-session-id={session.sessionId}
               >
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
-                    <div className="text-sm font-medium text-[var(--nim-text)] truncate">{session.title}</div>
-                    <div className="mt-1 flex items-center gap-2 text-[11px] text-[var(--nim-text-faint)]">
+                    <div className="truncate text-sm font-medium text-[var(--an-foreground)]">{session.title}</div>
+                    <div className="mt-[var(--an-spacing-xs)] flex items-center gap-[var(--an-spacing-sm)] text-[11px] text-[var(--an-foreground-subtle)]">
                       <span>{session.provider}</span>
                       {session.model && <span>{session.model}</span>}
                     </div>
                   </div>
-                  <span className={`shrink-0 rounded-full px-2 py-1 text-[11px] font-medium ${getStatusTone(session.status)}`}>
+                  <span
+                    className="agent-elements-status-pill shrink-0"
+                    data-tone={getStatusTone(session.status)}
+                    data-testid="agent-elements-meta-agent-status-pill"
+                  >
                     {session.status}
                   </span>
                 </div>
 
-                <div className="mt-3 space-y-2 text-xs text-[var(--nim-text-muted)]">
+                <div className="agent-elements-tool-primary mt-[var(--an-spacing-sm)] space-y-[var(--an-spacing-sm)] text-xs text-[var(--an-foreground-muted)]">
                   <div className="flex items-center gap-1">
                     <MaterialSymbol icon="schedule" size={14} />
                     <span>Last activity {session.lastActivity ? getRelativeTimeString(session.lastActivity) : 'No activity yet'}</span>
                   </div>
                   {session.originalPrompt && (
                     <p className="line-clamp-2">
-                      <span className="text-[var(--nim-text-faint)]">Task:</span> {session.originalPrompt}
+                      <span className="text-[var(--an-foreground-subtle)]">Task:</span> {session.originalPrompt}
                     </p>
                   )}
                   {session.lastResponse && (
                     <p className="line-clamp-3">
-                      <span className="text-[var(--nim-text-faint)]">Result:</span> {session.lastResponse}
+                      <span className="text-[var(--an-foreground-subtle)]">Result:</span> {session.lastResponse}
                     </p>
                   )}
                   {session.pendingPrompt && (
-                    <div className="rounded-lg bg-[rgba(245,158,11,0.10)] px-2 py-2 text-[var(--nim-warning)]">
+                    <div
+                      className="agent-elements-meta-agent-pending-prompt rounded-[var(--an-tool-border-radius)] border border-[var(--an-border-color)] bg-[var(--an-background-tertiary)] px-[var(--an-spacing-sm)] py-[var(--an-spacing-sm)] text-[var(--nim-warning)]"
+                      data-testid="agent-elements-meta-agent-pending-prompt"
+                    >
                       Waiting for {session.pendingPrompt.promptType}
                     </div>
                   )}
                   {session.editedFiles.length > 0 && (
                     <p className="line-clamp-2">
-                      <span className="text-[var(--nim-text-faint)]">Edited:</span> {session.editedFiles.join(', ')}
+                      <span className="text-[var(--an-foreground-subtle)]">Edited:</span> {session.editedFiles.join(', ')}
                     </p>
                   )}
                 </div>
@@ -531,7 +579,7 @@ export function MetaAgentMode({
                 <div className="mt-3 flex justify-end">
                   <button
                     type="button"
-                    className="nim-btn-secondary text-xs px-2.5 py-1 rounded"
+                    className="agent-elements-meta-agent-action inline-flex min-h-[28px] items-center justify-center rounded-[var(--an-tool-border-radius)] border border-[var(--an-border-color)] bg-[var(--an-background)] px-[var(--an-spacing-md)] text-xs font-medium text-[var(--an-foreground-muted)] transition-colors duration-150 ease-out hover:bg-[var(--an-background-tertiary)]"
                     onClick={() => onOpenSessionInAgent?.(session.sessionId)}
                     data-testid="meta-agent-open-session"
                   >
@@ -545,18 +593,23 @@ export function MetaAgentMode({
       </aside>
 
       {showTimeline && (
-        <div className="absolute inset-4 z-20 flex flex-col rounded-2xl border border-nim bg-[var(--nim-bg)] shadow-2xl" data-testid="meta-agent-gantt-view">
-          <div className="flex items-center justify-between gap-4 border-b border-nim px-5 py-3">
-            <div className="flex items-center gap-3 text-xs">
-              <h3 className="text-sm font-semibold text-[var(--nim-text)]">Timeline</h3>
-              <span className="text-[var(--nim-text-muted)]">
+        <div className="absolute inset-4 z-20" data-testid="meta-agent-gantt-view">
+          <div
+            className="agent-elements-meta-agent-timeline flex h-full flex-col rounded-[var(--an-tool-border-radius)] border border-[var(--an-border-color)] bg-[var(--an-background)] shadow-lg"
+            data-agent-elements-shell="meta-agent-timeline"
+            data-testid="agent-elements-meta-agent-timeline"
+          >
+          <div className="flex items-center justify-between gap-4 border-b border-[var(--an-border-color)] px-[var(--an-spacing-xxl)] py-[var(--an-spacing-lg)]">
+            <div className="flex items-center gap-[var(--an-spacing-md)] text-xs">
+              <h3 className="m-0 text-sm font-semibold text-[var(--an-foreground)]">Timeline</h3>
+              <span className="text-[var(--an-foreground-muted)]">
                 {timeline.windows.length} sessions
               </span>
-              <span className="text-[var(--nim-primary)]" data-testid="meta-agent-gantt-peak">
+              <span className="text-[var(--an-primary-color)]" data-testid="meta-agent-gantt-peak">
                 Peak {timeline.peakConcurrency}x
               </span>
               {timeline.spanLabel && (
-                <span className="text-[var(--nim-text-faint)]">
+                <span className="text-[var(--an-foreground-subtle)]">
                   {timeline.spanLabel}
                 </span>
               )}
@@ -564,7 +617,7 @@ export function MetaAgentMode({
             </div>
             <button
               type="button"
-              className="nim-btn-secondary text-xs px-2.5 py-1 rounded"
+              className="agent-elements-meta-agent-action inline-flex min-h-[28px] items-center justify-center rounded-[var(--an-tool-border-radius)] border border-[var(--an-border-color)] bg-[var(--an-background-secondary)] px-[var(--an-spacing-md)] text-xs font-medium text-[var(--an-foreground-muted)] transition-colors duration-150 ease-out hover:bg-[var(--an-background-tertiary)]"
               onClick={() => setShowTimeline(false)}
               data-testid="meta-agent-close-timeline"
             >
@@ -572,15 +625,15 @@ export function MetaAgentMode({
             </button>
           </div>
 
-          <div className="flex-1 overflow-auto px-5 py-4">
+          <div className="flex-1 overflow-auto px-[var(--an-spacing-xxl)] py-[var(--an-spacing-xl)]">
             {timeline.windows.length === 0 ? (
-              <div className="rounded-lg border border-dashed border-nim px-4 py-6 text-sm text-[var(--nim-text-muted)]">
+              <div className="rounded-[var(--an-tool-border-radius)] border border-dashed border-[var(--an-border-color)] px-[var(--an-spacing-xxl)] py-6 text-sm text-[var(--an-foreground-muted)]">
                 No delegated sessions yet.
               </div>
             ) : (
               <div className="min-w-[720px]">
                 <div className="grid grid-cols-[220px_minmax(420px,1fr)] items-end gap-3 pb-2">
-                  <div className="text-[11px] font-medium uppercase tracking-[0.12em] text-[var(--nim-text-faint)]">
+                  <div className="text-[11px] font-medium uppercase text-[var(--an-foreground-subtle)]">
                     Session
                   </div>
                   <div className="relative h-5">
@@ -590,8 +643,8 @@ export function MetaAgentMode({
                         className="absolute bottom-0"
                         style={{ left: `${tick.leftPct}%` }}
                       >
-                        <div className="h-2 w-px bg-[var(--nim-border)] opacity-60" />
-                        <span className="absolute bottom-2.5 -translate-x-1/2 whitespace-nowrap text-[10px] text-[var(--nim-text-faint)]">
+                        <div className="h-2 w-px bg-[var(--an-border-color)] opacity-60" />
+                        <span className="absolute bottom-2.5 -translate-x-1/2 whitespace-nowrap text-[10px] text-[var(--an-foreground-subtle)]">
                           {tick.label}
                         </span>
                       </div>
@@ -603,7 +656,7 @@ export function MetaAgentMode({
                   {timeline.windows.map((window) => (
                     <div
                       key={window.sessionId}
-                      className="grid grid-cols-[220px_minmax(420px,1fr)] gap-3 rounded-lg py-1.5 px-1"
+                      className="agent-elements-meta-agent-timeline-row grid grid-cols-[220px_minmax(420px,1fr)] gap-3 rounded-[var(--an-tool-border-radius)] px-1 py-1.5"
                       data-testid="meta-agent-gantt-row"
                     >
                       <TimelineRowLabel window={window} />
@@ -611,22 +664,22 @@ export function MetaAgentMode({
                       <div className="relative flex items-center min-h-[52px]">
                         {timeline.ticks.map((tick) => (
                           <div
-                            key={`${window.sessionId}-${tick.label}`}
-                            className="absolute top-0 h-2"
-                            style={{ left: `${tick.leftPct}%` }}
-                          >
-                            <div className="h-full w-px bg-[var(--nim-border)] opacity-30" />
+                             key={`${window.sessionId}-${tick.label}`}
+                             className="absolute top-0 h-2"
+                             style={{ left: `${tick.leftPct}%` }}
+                           >
+                            <div className="h-full w-px bg-[var(--an-border-color)] opacity-30" />
                           </div>
                         ))}
                         <div
-                          className={`absolute h-7 rounded-md px-2 shadow-sm ${getBarTone(window.status)}`}
+                          className={`agent-elements-meta-agent-timeline-bar absolute h-7 rounded-[var(--an-tool-border-radius)] px-[var(--an-spacing-sm)] shadow-sm ${getBarTone(window.status)}`}
                           style={{
                             left: `${window.leftPct}%`,
                             width: `${window.widthPct}%`,
                           }}
                           data-testid="meta-agent-gantt-bar"
                         >
-                          <div className="truncate pt-1 text-[11px] font-medium text-[var(--nim-text)]">
+                          <div className="truncate pt-1 text-[11px] font-medium">
                             {formatDuration(window.durationMs)}
                           </div>
                         </div>
@@ -636,6 +689,7 @@ export function MetaAgentMode({
                 </div>
               </div>
             )}
+          </div>
           </div>
         </div>
       )}

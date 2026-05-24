@@ -24,6 +24,100 @@ interface FileTreeFilterMenuProps {
   onClose: () => void;
 }
 
+interface FilterMenuRowProps {
+  icon: string;
+  label: string;
+  onClick: () => void;
+  action: string;
+  selected?: boolean;
+  disabled?: boolean;
+  count?: number;
+  role?: 'menuitem' | 'menuitemradio' | 'menuitemcheckbox';
+  checked?: boolean;
+}
+
+function FilterMenuSectionLabel({ children }: { children: React.ReactNode }) {
+  return (
+    <div
+      className="filter-menu-section-label nim-section-label agent-elements-file-tree-filter-menu-section px-3 pb-1 pt-2 text-[11px] font-medium uppercase text-[var(--an-foreground-subtle)]"
+      data-agent-elements-shell="file-tree-filter-menu-section"
+    >
+      {children}
+    </div>
+  );
+}
+
+function FilterMenuHint({ children }: { children: React.ReactNode }) {
+  return (
+    <div
+      className="filter-menu-hint agent-elements-file-tree-filter-menu-hint px-3 pb-1.5 text-[11px] text-[var(--an-foreground-subtle)]"
+      data-agent-elements-shell="file-tree-filter-menu-hint"
+    >
+      {children}
+    </div>
+  );
+}
+
+function FilterMenuRow({
+  icon,
+  label,
+  onClick,
+  action,
+  selected = false,
+  disabled = false,
+  count,
+  role = 'menuitem',
+  checked,
+}: FilterMenuRowProps) {
+  const checkedValue = role === 'menuitem' ? undefined : Boolean(checked ?? selected);
+  const stateClass = selected
+    ? 'active border-[color-mix(in_srgb,var(--an-primary-color)_24%,var(--an-border-color))] bg-[color-mix(in_srgb,var(--an-primary-color)_10%,var(--an-background))]'
+    : 'border-transparent bg-transparent';
+  const enabledClass = disabled
+    ? 'disabled cursor-not-allowed opacity-60'
+    : 'cursor-pointer hover:border-[var(--an-border-color)] hover:bg-[var(--an-background-tertiary)]';
+
+  return (
+    <button
+      type="button"
+      className={`filter-menu-item agent-elements-file-tree-filter-menu-item relative flex w-full items-center gap-2.5 rounded-[var(--an-tool-border-radius)] border px-3 py-2 text-left text-[13px] text-[var(--an-foreground)] transition-[background-color,border-color,color] duration-150 ease-out focus:outline-none focus:ring-2 focus:ring-[var(--an-input-focus-outline)] ${stateClass} ${enabledClass}`}
+      onClick={onClick}
+      disabled={disabled}
+      role={role}
+      aria-checked={checkedValue}
+      aria-disabled={disabled || undefined}
+      data-agent-elements-shell="file-tree-filter-menu-item"
+      data-filter-action={action}
+      data-selected={selected ? 'true' : 'false'}
+    >
+      <span
+        className="agent-elements-file-tree-filter-menu-icon flex h-5 w-5 shrink-0 items-center justify-center text-[var(--an-foreground-muted)]"
+        data-agent-elements-shell="file-tree-filter-menu-icon"
+      >
+        <MaterialSymbol icon={icon} size={18} />
+      </span>
+      <span className="min-w-0 flex-1 truncate">{label}</span>
+      {typeof count === 'number' && count > 0 ? (
+        <span
+          className="filter-menu-pill agent-elements-file-tree-filter-menu-pill rounded-full bg-[color-mix(in_srgb,var(--an-primary-color)_10%,var(--an-background))] px-2 text-[11px] font-semibold leading-[18px] text-[var(--an-primary-color)]"
+          data-agent-elements-shell="file-tree-filter-menu-pill"
+        >
+          {count}
+        </span>
+      ) : null}
+      {selected ? (
+        <span
+          className="filter-menu-check agent-elements-file-tree-filter-menu-check flex h-4 w-4 shrink-0 items-center justify-center text-[var(--an-primary-color)]"
+          data-agent-elements-shell="file-tree-filter-menu-check"
+          aria-hidden="true"
+        >
+          <MaterialSymbol icon="check" size={16} />
+        </span>
+      ) : null}
+    </button>
+  );
+}
+
 export function FileTreeFilterMenu({
   x,
   y,
@@ -65,142 +159,130 @@ export function FileTreeFilterMenu({
         ref={menu.refs.setFloating}
         style={menu.floatingStyles}
         {...menu.getFloatingProps()}
-        className="file-tree-filter-menu min-w-[200px] p-1 rounded-md text-[13px] z-[10000] backdrop-blur-[10px] bg-[var(--nim-bg)] border border-[var(--nim-border)] shadow-[0_4px_12px_rgba(0,0,0,0.15)]"
+        className="file-tree-filter-menu agent-elements-file-tree-filter-menu agent-elements-tool-card z-[10000] min-w-[220px] rounded-[var(--an-border-radius)] border border-[var(--an-border-color)] bg-[var(--an-background)] p-1 text-[13px] text-[var(--an-foreground)] shadow-[0_12px_32px_color-mix(in_srgb,var(--an-foreground)_10%,transparent)]"
+        role="menu"
+        aria-label="File tree filters"
+        data-testid="agent-elements-file-tree-filter-menu"
+        data-component="FileTreeFilterMenu"
+        data-agent-elements-shell="file-tree-filter-menu"
       >
-        <div className="filter-menu-section-label nim-section-label px-3 pt-2 pb-1">Show Files</div>
+        <FilterMenuSectionLabel>Show Files</FilterMenuSectionLabel>
 
-        <div
-          className={`filter-menu-item flex items-center gap-2.5 px-3 py-2 rounded cursor-pointer relative transition-colors text-[var(--nim-text)] hover:bg-[var(--nim-bg-hover)] ${currentFilter === 'all' ? 'active bg-[var(--nim-bg-selected)]' : ''}`}
+        <FilterMenuRow
+          icon="folder_open"
+          label="All Files"
+          action="all"
+          role="menuitemradio"
+          selected={currentFilter === 'all'}
           onClick={() => handleFilterSelect('all')}
-        >
-          <MaterialSymbol icon="folder_open" size={18} />
-          <span>All Files</span>
-          {currentFilter === 'all' && (
-            <MaterialSymbol icon="check" size={16} className="filter-menu-check ml-auto text-[var(--nim-primary)]" />
-          )}
-        </div>
+        />
 
-        <div
-          className={`filter-menu-item flex items-center gap-2.5 px-3 py-2 rounded cursor-pointer relative transition-colors text-[var(--nim-text)] hover:bg-[var(--nim-bg-hover)] ${currentFilter === 'markdown' ? 'active bg-[var(--nim-bg-selected)]' : ''}`}
+        <FilterMenuRow
+          icon="description"
+          label="Markdown Only"
+          action="markdown"
+          role="menuitemradio"
+          selected={currentFilter === 'markdown'}
           onClick={() => handleFilterSelect('markdown')}
-        >
-          <MaterialSymbol icon="description" size={18} />
-          <span>Markdown Only</span>
-          {currentFilter === 'markdown' && (
-            <MaterialSymbol icon="check" size={16} className="filter-menu-check ml-auto text-[var(--nim-primary)]" />
-          )}
-        </div>
+        />
 
-        <div
-          className={`filter-menu-item flex items-center gap-2.5 px-3 py-2 rounded cursor-pointer relative transition-colors text-[var(--nim-text)] hover:bg-[var(--nim-bg-hover)] ${currentFilter === 'known' ? 'active bg-[var(--nim-bg-selected)]' : ''}`}
+        <FilterMenuRow
+          icon="filter_list"
+          label="Known Files"
+          action="known"
+          role="menuitemradio"
+          selected={currentFilter === 'known'}
           onClick={() => handleFilterSelect('known')}
-        >
-          <MaterialSymbol icon="filter_list" size={18} />
-          <span>Known Files</span>
-          {currentFilter === 'known' && (
-            <MaterialSymbol icon="check" size={16} className="filter-menu-check ml-auto text-[var(--nim-primary)]" />
-          )}
-        </div>
+        />
 
-        <div className="filter-menu-section-label nim-section-label px-3 pt-2 pb-1">Git</div>
+        <FilterMenuSectionLabel>Git</FilterMenuSectionLabel>
 
-        <div
-          className={`filter-menu-item flex items-center gap-2.5 px-3 py-2 rounded relative transition-colors text-[var(--nim-text)] ${!isGitRepo ? 'disabled opacity-60 cursor-not-allowed' : 'cursor-pointer hover:bg-[var(--nim-bg-hover)]'} ${currentFilter === 'git-uncommitted' ? 'active bg-[var(--nim-bg-selected)]' : ''}`}
+        <FilterMenuRow
+          icon="difference"
+          label="Uncommitted Changes"
+          action="git-uncommitted"
+          role="menuitemradio"
+          selected={currentFilter === 'git-uncommitted'}
+          disabled={!isGitRepo}
+          count={gitUncommittedCount}
           onClick={() => handleFilterSelect('git-uncommitted', !isGitRepo)}
-        >
-          <MaterialSymbol icon="difference" size={18} />
-          <span>Uncommitted Changes</span>
-          {gitUncommittedCount > 0 && (
-            <span className="filter-menu-pill ml-auto rounded-full px-2 text-[11px] font-semibold leading-[18px] bg-[var(--nim-accent-subtle)] text-[var(--nim-primary)]">{gitUncommittedCount}</span>
-          )}
-          {currentFilter === 'git-uncommitted' && (
-            <MaterialSymbol icon="check" size={16} className={`filter-menu-check text-[var(--nim-primary)] ${gitUncommittedCount > 0 ? 'ml-2' : 'ml-auto'}`} />
-          )}
-        </div>
+        />
 
         {isGitWorktree && (
-          <div
-            className={`filter-menu-item flex items-center gap-2.5 px-3 py-2 rounded cursor-pointer relative transition-colors text-[var(--nim-text)] hover:bg-[var(--nim-bg-hover)] ${currentFilter === 'git-worktree' ? 'active bg-[var(--nim-bg-selected)]' : ''}`}
+          <FilterMenuRow
+            icon="account_tree"
+            label="Worktree Changes"
+            action="git-worktree"
+            role="menuitemradio"
+            selected={currentFilter === 'git-worktree'}
+            count={gitWorktreeCount}
             onClick={() => handleFilterSelect('git-worktree')}
-          >
-            <MaterialSymbol icon="account_tree" size={18} />
-            <span>Worktree Changes</span>
-            {gitWorktreeCount > 0 && (
-              <span className="filter-menu-pill ml-auto rounded-full px-2 text-[11px] font-semibold leading-[18px] bg-[var(--nim-accent-subtle)] text-[var(--nim-primary)]">{gitWorktreeCount}</span>
-            )}
-            {currentFilter === 'git-worktree' && (
-              <MaterialSymbol icon="check" size={16} className={`filter-menu-check text-[var(--nim-primary)] ${gitWorktreeCount > 0 ? 'ml-2' : 'ml-auto'}`} />
-            )}
-          </div>
+          />
         )}
 
         {!isGitRepo && (
-          <div className="filter-menu-hint text-[11px] text-[var(--nim-text-faint)] px-3 pb-1.5">
-            Not a git repository.
-          </div>
+          <FilterMenuHint>Not a git repository.</FilterMenuHint>
         )}
 
-        <div className="filter-menu-section-label nim-section-label px-3 pt-2 pb-1">Claude Agent Session</div>
+        <FilterMenuSectionLabel>Claude Agent Session</FilterMenuSectionLabel>
 
-        <div
-          className={`filter-menu-item flex items-center gap-2.5 px-3 py-2 rounded relative transition-colors text-[var(--nim-text)] ${!hasActiveClaudeSession ? 'disabled opacity-60 cursor-not-allowed' : 'cursor-pointer hover:bg-[var(--nim-bg-hover)]'} ${currentFilter === 'ai-read' ? 'active bg-[var(--nim-bg-selected)]' : ''}`}
+        <FilterMenuRow
+          icon="visibility"
+          label="Files Read"
+          action="ai-read"
+          role="menuitemradio"
+          selected={currentFilter === 'ai-read'}
+          disabled={!hasActiveClaudeSession}
+          count={claudeSessionFileCounts.read}
           onClick={() => handleFilterSelect('ai-read', !hasActiveClaudeSession)}
-        >
-          <MaterialSymbol icon="visibility" size={18} />
-          <span>Files Read</span>
-          {claudeSessionFileCounts.read > 0 && (
-            <span className="filter-menu-pill ml-auto rounded-full px-2 text-[11px] font-semibold leading-[18px] bg-[var(--nim-accent-subtle)] text-[var(--nim-primary)]">{claudeSessionFileCounts.read}</span>
-          )}
-          {currentFilter === 'ai-read' && (
-            <MaterialSymbol icon="check" size={16} className={`filter-menu-check text-[var(--nim-primary)] ${claudeSessionFileCounts.read > 0 ? 'ml-2' : 'ml-auto'}`} />
-          )}
-        </div>
+        />
 
-        <div
-          className={`filter-menu-item flex items-center gap-2.5 px-3 py-2 rounded relative transition-colors text-[var(--nim-text)] ${!hasActiveClaudeSession ? 'disabled opacity-60 cursor-not-allowed' : 'cursor-pointer hover:bg-[var(--nim-bg-hover)]'} ${currentFilter === 'ai-written' ? 'active bg-[var(--nim-bg-selected)]' : ''}`}
+        <FilterMenuRow
+          icon="edit_note"
+          label="Files Written"
+          action="ai-written"
+          role="menuitemradio"
+          selected={currentFilter === 'ai-written'}
+          disabled={!hasActiveClaudeSession}
+          count={claudeSessionFileCounts.written}
           onClick={() => handleFilterSelect('ai-written', !hasActiveClaudeSession)}
-        >
-          <MaterialSymbol icon="edit_note" size={18} />
-          <span>Files Written</span>
-          {claudeSessionFileCounts.written > 0 && (
-            <span className="filter-menu-pill ml-auto rounded-full px-2 text-[11px] font-semibold leading-[18px] bg-[var(--nim-accent-subtle)] text-[var(--nim-primary)]">{claudeSessionFileCounts.written}</span>
-          )}
-          {currentFilter === 'ai-written' && (
-            <MaterialSymbol icon="check" size={16} className={`filter-menu-check text-[var(--nim-primary)] ${claudeSessionFileCounts.written > 0 ? 'ml-2' : 'ml-auto'}`} />
-          )}
-        </div>
+        />
 
         {!hasActiveClaudeSession && (
-          <div className="filter-menu-hint text-[11px] text-[var(--nim-text-faint)] px-3 pb-1.5">
-            Open a Claude Agent session to enable these filters.
-          </div>
+          <FilterMenuHint>Open a Claude Agent session to enable these filters.</FilterMenuHint>
         )}
 
-        <div className="filter-menu-separator h-px mx-2 my-1 bg-[var(--nim-border)]" />
-
         <div
-          className="filter-menu-item flex items-center gap-2.5 px-3 py-2 rounded cursor-pointer relative transition-colors text-[var(--nim-text)] hover:bg-[var(--nim-bg-hover)]"
+          className="filter-menu-separator agent-elements-file-tree-filter-menu-separator mx-2 my-1 h-px bg-[var(--an-border-color)]"
+          data-agent-elements-shell="file-tree-filter-menu-separator"
+        />
+
+        <FilterMenuRow
+          icon={showIcons ? 'check_box' : 'check_box_outline_blank'}
+          label="Show Icons"
+          action="show-icons"
+          role="menuitemcheckbox"
+          checked={showIcons}
           onClick={() => onShowIconsChange(!showIcons)}
-        >
-          <MaterialSymbol icon={showIcons ? 'check_box' : 'check_box_outline_blank'} size={18} />
-          <span>Show Icons</span>
-        </div>
+        />
 
-        <div
-          className="filter-menu-item flex items-center gap-2.5 px-3 py-2 rounded cursor-pointer relative transition-colors text-[var(--nim-text)] hover:bg-[var(--nim-bg-hover)]"
+        <FilterMenuRow
+          icon={showGitStatus ? 'check_box' : 'check_box_outline_blank'}
+          label="Show Git Status"
+          action="show-git-status"
+          role="menuitemcheckbox"
+          checked={showGitStatus}
           onClick={() => onShowGitStatusChange(!showGitStatus)}
-        >
-          <MaterialSymbol icon={showGitStatus ? 'check_box' : 'check_box_outline_blank'} size={18} />
-          <span>Show Git Status</span>
-        </div>
+        />
 
-        <div
-          className="filter-menu-item flex items-center gap-2.5 px-3 py-2 rounded cursor-pointer relative transition-colors text-[var(--nim-text)] hover:bg-[var(--nim-bg-hover)]"
+        <FilterMenuRow
+          icon={enableAutoScroll ? 'check_box' : 'check_box_outline_blank'}
+          label="Auto-Scroll to Active File"
+          action="auto-scroll"
+          role="menuitemcheckbox"
+          checked={enableAutoScroll}
           onClick={() => onEnableAutoScrollChange(!enableAutoScroll)}
-        >
-          <MaterialSymbol icon={enableAutoScroll ? 'check_box' : 'check_box_outline_blank'} size={18} />
-          <span>Auto-Scroll to Active File</span>
-        </div>
+        />
       </div>
     </FloatingPortal>
   );

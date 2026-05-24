@@ -1,4 +1,5 @@
 import React from 'react';
+import { MaterialSymbol } from '@nimbalyst/runtime';
 
 export interface RosettaWarningProps {
   isOpen: boolean;
@@ -6,23 +7,6 @@ export interface RosettaWarningProps {
   onDismiss: () => void;
   onDownload: () => void;
 }
-
-const WarningIcon = () => (
-  <svg
-    className="w-12 h-12 text-white"
-    viewBox="0 0 24 24"
-    fill="none"
-    xmlns="http://www.w3.org/2000/svg"
-  >
-    <path
-      d="M12 9V13M12 17H12.01M5.07183 19H18.9282C20.4678 19 21.4301 17.3333 20.6603 16L13.7321 4C12.9623 2.66667 11.0378 2.66667 10.268 4L3.33978 16C2.56998 17.3333 3.53223 19 5.07183 19Z"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    />
-  </svg>
-);
 
 export const RosettaWarning: React.FC<RosettaWarningProps> = ({
   isOpen,
@@ -48,56 +32,89 @@ export const RosettaWarning: React.FC<RosettaWarningProps> = ({
 
   return (
     <div
-      className="nim-overlay bg-black/60"
+      className="nim-overlay agent-elements-rosetta-warning-backdrop bg-[color-mix(in_srgb,var(--nim-text)_36%,transparent)]"
+      data-testid="agent-elements-rosetta-warning-backdrop"
+      data-agent-elements-shell="platform-warning-backdrop"
       onClick={handleRemindLater}
     >
       <div
-        className="relative overflow-hidden rounded-2xl p-0 w-[460px] max-w-[90vw] nim-animate-slide-up bg-nim border border-nim shadow-[0_8px_32px_rgba(0,0,0,0.4)]"
+        className="agent-elements-rosetta-warning agent-elements-tool-card flex w-[min(92vw,460px)] flex-col overflow-hidden rounded-[var(--an-border-radius)] border border-[var(--an-border-color)] bg-[var(--an-background)] text-[var(--an-foreground)] shadow-[0_20px_60px_color-mix(in_srgb,var(--nim-text)_18%,transparent)]"
+        data-testid="agent-elements-rosetta-warning"
+        data-component="RosettaWarning"
+        data-agent-elements-shell="platform-warning"
         onClick={(e) => e.stopPropagation()}
       >
-        <button
-          className="absolute top-4 right-4 bg-transparent border-none text-[28px] cursor-pointer p-0 w-8 h-8 flex items-center justify-center leading-none z-[1] rounded-md transition-all duration-200 hover:scale-110 text-nim-muted hover:text-nim hover:bg-nim-hover"
-          onClick={handleRemindLater}
-          aria-label="Close"
+        <div
+          className="agent-elements-rosetta-warning-header flex items-start justify-between gap-3 border-b border-[var(--an-border-color)] p-[var(--an-spacing-xl)]"
+          data-testid="agent-elements-rosetta-warning-header"
+          data-agent-elements-shell="platform-warning-header"
         >
-          &times;
-        </button>
-
-        <div className="px-8 pt-12 pb-8 text-center">
-          <div className="mx-auto mb-6 w-20 h-20 rounded-[20px] flex items-center justify-center bg-gradient-to-br from-amber-500 to-amber-600 shadow-[0_4px_16px_rgba(245,158,11,0.3)]">
-            <WarningIcon />
+          <div className="flex min-w-0 items-start gap-3">
+            <span
+              className="agent-elements-rosetta-warning-icon inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-[var(--an-tool-border-radius)] border border-[color-mix(in_srgb,var(--nim-warning)_28%,var(--an-border-color))] bg-[color-mix(in_srgb,var(--nim-warning)_12%,var(--an-background))] text-[var(--nim-warning)]"
+              data-agent-elements-shell="platform-warning-icon"
+              aria-hidden="true"
+            >
+              <MaterialSymbol icon="warning" size={20} />
+            </span>
+            <div className="min-w-0">
+              <h2 className="m-0 text-sm font-medium text-[var(--an-foreground)]">
+                Running via Rosetta Translation
+              </h2>
+              <p className="m-0 mt-1 text-xs leading-relaxed text-[var(--an-foreground-muted)]">
+                Intel build on Apple Silicon
+              </p>
+            </div>
           </div>
+          <button
+            type="button"
+            className="agent-elements-rosetta-warning-close flex h-8 w-8 cursor-pointer items-center justify-center rounded-[var(--an-input-border-radius)] border border-transparent bg-transparent p-0 text-[var(--an-foreground-muted)] transition-[background-color,border-color,color] duration-150 ease-out hover:border-[var(--an-border-color)] hover:bg-[var(--an-background-tertiary)] hover:text-[var(--an-foreground)] focus:outline-none focus:ring-2 focus:ring-[var(--an-input-focus-outline)]"
+            data-testid="agent-elements-rosetta-warning-close"
+            data-agent-elements-shell="platform-warning-close"
+            onClick={handleRemindLater}
+            aria-label="Close"
+          >
+            <MaterialSymbol icon="close" size={18} />
+          </button>
+        </div>
 
-          <h2 className="m-0 mb-3 text-2xl font-bold tracking-tight text-nim">
-            Running via Rosetta Translation
-          </h2>
-
-          <p className="mb-8 text-[15px] leading-relaxed max-w-[380px] mx-auto text-nim-muted">
+        <div
+          className="agent-elements-rosetta-warning-body p-[var(--an-spacing-xl)]"
+          data-agent-elements-shell="platform-warning-body"
+        >
+          <p className="m-0 text-sm leading-relaxed text-[var(--an-foreground-muted)]">
             You're running the Intel (x64) build on an Apple Silicon Mac.
             Download the native Apple Silicon build for significantly better performance.
           </p>
+        </div>
 
-          <div className="flex justify-center mb-6">
+        <div
+          className="agent-elements-rosetta-warning-actions flex flex-col gap-2 border-t border-[var(--an-border-color)] p-[var(--an-spacing-xl)]"
+          data-testid="agent-elements-rosetta-warning-actions"
+          data-agent-elements-shell="platform-warning-actions"
+        >
+          <button
+            type="button"
+            className="agent-elements-rosetta-warning-primary inline-flex min-h-9 cursor-pointer items-center justify-center gap-2 rounded-[var(--an-input-border-radius)] border border-[var(--an-primary-color)] bg-[var(--an-primary-color)] px-4 py-2 text-sm font-medium text-[var(--nim-bg)] transition-[background-color,border-color,transform] duration-150 ease-out hover:bg-[var(--nim-primary-hover)] focus:outline-none focus:ring-2 focus:ring-[var(--an-input-focus-outline)] active:translate-y-px"
+            onClick={handleDownload}
+          >
+            <MaterialSymbol icon="download" size={17} />
+            Download Apple Silicon Build
+          </button>
+          <div className="flex items-center justify-center gap-2">
             <button
-              className="py-3.5 px-8 rounded-lg border-none text-base font-semibold cursor-pointer whitespace-nowrap flex items-center gap-2.5 text-white transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0 bg-gradient-to-br from-amber-500 to-amber-600 shadow-[0_4px_12px_rgba(245,158,11,0.4)] hover:shadow-[0_6px_16px_rgba(245,158,11,0.5)]"
-              onClick={handleDownload}
-            >
-              Download Apple Silicon Build
-            </button>
-          </div>
-
-          <div className="pt-4 flex items-center justify-center gap-2 border-t border-nim">
-            <button
-              className="bg-transparent border-none text-[13px] cursor-pointer py-1 px-2 no-underline transition-colors duration-200 hover:underline text-nim-muted hover:text-nim"
+              type="button"
+              className="agent-elements-rosetta-warning-link cursor-pointer rounded-[var(--an-input-border-radius)] border border-transparent bg-transparent px-2 py-1 text-xs text-[var(--an-foreground-muted)] transition-[background-color,color] duration-150 ease-out hover:bg-[var(--an-background-tertiary)] hover:text-[var(--an-foreground)] focus:outline-none focus:ring-2 focus:ring-[var(--an-input-focus-outline)]"
               onClick={handleRemindLater}
             >
               Remind Me Later
             </button>
-            <span className="text-[13px] select-none text-nim-faint">
-              &bull;
+            <span className="text-xs text-[var(--an-foreground-subtle)]" aria-hidden="true">
+              /
             </span>
             <button
-              className="bg-transparent border-none text-[13px] cursor-pointer py-1 px-2 no-underline transition-colors duration-200 hover:underline text-nim-muted hover:text-nim"
+              type="button"
+              className="agent-elements-rosetta-warning-link cursor-pointer rounded-[var(--an-input-border-radius)] border border-transparent bg-transparent px-2 py-1 text-xs text-[var(--an-foreground-muted)] transition-[background-color,color] duration-150 ease-out hover:bg-[var(--an-background-tertiary)] hover:text-[var(--an-foreground)] focus:outline-none focus:ring-2 focus:ring-[var(--an-input-focus-outline)]"
               onClick={handleDontRemind}
             >
               Don't Show Again

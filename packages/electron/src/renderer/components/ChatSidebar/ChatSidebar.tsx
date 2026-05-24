@@ -20,6 +20,9 @@ import {
 import { defaultAgentModelAtom } from '../../store/atoms/appSettings';
 import type { SerializableDocumentContext } from '../../hooks/useDocumentContext';
 
+const chatSidebarShellClass = 'chat-sidebar agent-elements-chat-sidebar agent-elements-tool-card flex h-full flex-col overflow-hidden border-l border-[var(--an-border-color)] bg-[var(--an-background)] text-[var(--an-foreground)]';
+const chatSidebarCenteredClass = `${chatSidebarShellClass} relative items-center justify-center text-[var(--an-foreground-muted)]`;
+
 export interface ChatSidebarRef {
   focusInput: () => void;
   loadSession: (sessionId: string) => void;
@@ -278,11 +281,16 @@ export const ChatSidebar = forwardRef<ChatSidebarRef, ChatSidebarProps>(({
   if (isLoading) {
     return (
       <div
-        className="chat-sidebar chat-sidebar-loading flex flex-col h-full overflow-hidden bg-nim border-l border-nim relative items-center justify-center text-nim-muted"
+        className={`chat-sidebar-loading agent-elements-chat-sidebar-loading ${chatSidebarCenteredClass}`}
         style={{ width: onWidthChange ? width : undefined }}
         data-session-id={sessionId}
+        data-component="ChatSidebar"
+        data-agent-elements-shell="chat-sidebar-loading"
       >
-        <div className="chat-sidebar-spinner w-6 h-6 border-2 border-nim border-t-nim-primary rounded-full animate-spin" />
+        <div
+          className="chat-sidebar-spinner h-6 w-6 animate-spin rounded-full border-2 border-[var(--an-border-color)] border-t-[var(--an-primary-color)]"
+          data-agent-elements-shell="chat-sidebar-spinner"
+        />
       </div>
     );
   }
@@ -290,9 +298,11 @@ export const ChatSidebar = forwardRef<ChatSidebarRef, ChatSidebarProps>(({
   if (!sessionId) {
     return (
       <div
-        className="chat-sidebar chat-sidebar-error flex flex-col h-full overflow-hidden bg-nim border-l border-nim relative items-center justify-center text-nim-muted"
+        className={`chat-sidebar-error agent-elements-chat-sidebar-error ${chatSidebarCenteredClass}`}
         style={{ width: onWidthChange ? width : undefined }}
         data-session-id={sessionId}
+        data-component="ChatSidebar"
+        data-agent-elements-shell="chat-sidebar-error"
       >
         <p>Failed to load chat session</p>
       </div>
@@ -302,20 +312,27 @@ export const ChatSidebar = forwardRef<ChatSidebarRef, ChatSidebarProps>(({
   return (
     <div
       ref={panelRef}
-      className="chat-sidebar flex flex-col h-full overflow-hidden bg-nim border-l border-nim relative"
+      className={`${chatSidebarShellClass} relative`}
       style={{ width: onWidthChange ? width : undefined }}
       data-testid="chat-sidebar-panel"
       data-session-id={sessionId}
+      data-component="ChatSidebar"
+      data-agent-elements-shell="chat-sidebar"
     >
       {onWidthChange && (
         <div
-          className="chat-sidebar-resize-handle absolute -left-0.5 top-0 bottom-0 w-[5px] cursor-col-resize z-10 before:content-[''] before:absolute before:left-0.5 before:top-0 before:bottom-0 before:w-0.5 before:bg-nim hover:before:bg-nim-primary"
+          className="chat-sidebar-resize-handle agent-elements-chat-sidebar-resize absolute -left-0.5 bottom-0 top-0 z-10 w-[5px] cursor-col-resize before:absolute before:bottom-0 before:left-0.5 before:top-0 before:w-0.5 before:bg-[var(--an-border-color)] before:content-[''] hover:before:bg-[var(--an-primary-color)]"
           onMouseDown={handleMouseDown}
+          data-agent-elements-shell="chat-sidebar-resize"
         />
       )}
 
       {/* Header with session dropdown */}
-      <div className="chat-sidebar-header flex items-center gap-2 p-2 border-b border-nim justify-between shrink-0">
+      <div
+        className="chat-sidebar-header agent-elements-chat-sidebar-header flex shrink-0 items-center justify-between gap-2 border-b border-[var(--an-border-color)] bg-[var(--an-background)] p-2"
+        data-testid="agent-elements-chat-sidebar-header"
+        data-agent-elements-shell="chat-sidebar-header"
+      >
         <SessionDropdown
           currentSessionId={sessionId}
           sessions={availableSessions}
@@ -325,20 +342,27 @@ export const ChatSidebar = forwardRef<ChatSidebarRef, ChatSidebarProps>(({
           onRenameSession={handleRenameSession}
           onOpenSessionManager={onSwitchToAgentMode}
         />
-        <div className="flex items-center gap-1">
+        <div
+          className="agent-elements-chat-sidebar-actions flex items-center gap-1"
+          data-agent-elements-shell="chat-sidebar-actions"
+        >
           {onSwitchToAgentMode && (
             <button
-              className="chat-sidebar-maximize-button flex items-center justify-center w-7 h-7 rounded-md text-nim-muted border-none cursor-pointer transition-colors duration-150 hover:bg-nim-bg-active hover:text-nim bg-transparent"
+              className="chat-sidebar-maximize-button agent-elements-chat-sidebar-action flex h-7 w-7 cursor-pointer items-center justify-center rounded-[var(--an-small-border-radius)] border border-transparent bg-transparent text-[var(--an-foreground-muted)] transition-[background-color,border-color,color] duration-150 ease-out hover:border-[var(--an-border-color)] hover:bg-[var(--an-background-tertiary)] hover:text-[var(--an-foreground)] focus:outline-none focus:ring-2 focus:ring-[var(--an-input-focus-outline)]"
               onClick={() => onSwitchToAgentMode(sessionId ?? undefined)}
               title="Open in agent mode"
+              aria-label="Open in agent mode"
+              data-agent-elements-shell="chat-sidebar-open-agent-mode"
             >
               <MaterialSymbol icon="zoom_out_map" size={16} />
             </button>
           )}
           <button
-            className="chat-sidebar-new-button flex items-center gap-1 px-3 py-1.5 rounded-md text-[0.8125rem] font-medium bg-nim-primary text-white border-none cursor-pointer transition-opacity duration-150 hover:opacity-90"
+            className="chat-sidebar-new-button agent-elements-chat-sidebar-new-button flex cursor-pointer items-center gap-1 rounded-[var(--an-small-border-radius)] border border-[var(--an-primary-color)] bg-[var(--an-primary-color)] px-3 py-1.5 text-[0.8125rem] font-medium text-[var(--an-background)] transition-[background-color,border-color,opacity] duration-150 ease-out hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-[var(--an-input-focus-outline)] disabled:cursor-not-allowed disabled:opacity-60"
             onClick={handleNewSession}
             title="Start new conversation"
+            aria-label="Start new conversation"
+            data-agent-elements-shell="chat-sidebar-new-session"
           >
             <MaterialSymbol icon="add" size={16} />
             New

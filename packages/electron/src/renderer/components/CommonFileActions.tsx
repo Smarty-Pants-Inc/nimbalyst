@@ -259,11 +259,15 @@ export function CommonFileActions({
   }, [filePath, fileName, runShareToTeam]);
 
   const Item = useButtons ? 'button' : 'div';
+  const itemProps = useButtons
+    ? { type: 'button' as const, role: 'menuitem' }
+    : {};
 
   return (
     <>
       {/* Open in Default App */}
       <Item
+        {...itemProps}
         className={menuItemClass}
         onClick={() => { actions.openInDefaultApp(); onClose(); }}
       >
@@ -274,6 +278,7 @@ export function CommonFileActions({
       {/* Open in External Editor (conditional) */}
       {actions.hasExternalEditor && (
         <Item
+          {...itemProps}
           className={menuItemClass}
           onClick={() => { actions.openInExternalEditor(); onClose(); }}
         >
@@ -284,6 +289,7 @@ export function CommonFileActions({
 
       {/* Show in Finder */}
       <Item
+        {...itemProps}
         className={menuItemClass}
         onClick={() => { actions.revealInFinder(); onClose(); }}
       >
@@ -293,6 +299,7 @@ export function CommonFileActions({
 
       {/* Copy Path */}
       <Item
+        {...itemProps}
         className={menuItemClass}
         onClick={() => { actions.copyFilePath(); onClose(); }}
       >
@@ -303,6 +310,7 @@ export function CommonFileActions({
       {/* Share Link (conditional on file type) */}
       {actions.isShareable && (
         <Item
+          {...itemProps}
           className={menuItemClass}
           onClick={() => { actions.shareLink(); onClose(); }}
         >
@@ -316,6 +324,7 @@ export function CommonFileActions({
           `collaboration.supported: true`) AND the workspace has a team. */}
       {collabDocumentType && hasTeam && (
         <Item
+          {...itemProps}
           className={menuItemClass}
           onClick={() => { openShareToTeamDialog(); onClose(); }}
         >

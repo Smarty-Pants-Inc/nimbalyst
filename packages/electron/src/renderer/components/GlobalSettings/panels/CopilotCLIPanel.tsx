@@ -58,8 +58,17 @@ export function CopilotCLIPanel({
   };
 
   return (
-    <div className="provider-panel flex flex-col">
-      <div className="provider-panel-header mb-6 pb-4 border-b border-[var(--nim-border)]">
+    <div
+      className="provider-panel copilot-cli-panel agent-elements-settings-panel agent-elements-copilot-cli-panel flex flex-col"
+      data-agent-elements-shell="copilot-cli-panel"
+      data-component="CopilotCLIPanel"
+      data-testid="agent-elements-copilot-cli-panel"
+    >
+      <div
+        className="provider-panel-header copilot-cli-panel-header agent-elements-settings-panel-header mb-6 pb-4 border-b border-[var(--nim-border)]"
+        data-agent-elements-shell="copilot-cli-header"
+        data-testid="agent-elements-copilot-cli-header"
+      >
         <h3 className="provider-panel-title text-xl font-semibold leading-tight mb-2 text-[var(--nim-text)] flex items-center gap-2">
           GitHub Copilot
           <AlphaBadge size="sm" tooltip={SETTINGS_ALPHA_TOOLTIP} />
@@ -70,15 +79,30 @@ export function CopilotCLIPanel({
         </p>
       </div>
 
-      <div className="provider-panel-section py-4 mb-4 border-b border-[var(--nim-border)]">
+      <div
+        className="provider-panel-section copilot-cli-panel-section agent-elements-settings-section py-4 mb-4 border-b border-[var(--nim-border)]"
+        data-agent-elements-shell="copilot-cli-section"
+        data-section="cli-installation"
+        data-testid="agent-elements-copilot-cli-cli-section"
+      >
         <h4 className="provider-panel-section-title text-base font-semibold mb-3 text-[var(--nim-text)]">Copilot CLI</h4>
 
         {cliStatus === 'checking' && (
-          <p className="text-[13px] text-[var(--nim-text-muted)]">Checking for Copilot CLI...</p>
+          <p
+            className="copilot-cli-checking text-[13px] text-[var(--nim-text-muted)]"
+            data-agent-elements-shell="copilot-cli-checking"
+            data-testid="agent-elements-copilot-cli-checking"
+          >
+            Checking for Copilot CLI...
+          </p>
         )}
 
         {cliStatus === 'installed' && (
-          <div className="flex items-center gap-2">
+          <div
+            className="copilot-cli-installed agent-elements-tool-card flex items-center gap-2 rounded-md border border-[var(--nim-border)] bg-[var(--nim-bg-secondary)] p-3"
+            data-agent-elements-shell="copilot-cli-installed"
+            data-testid="agent-elements-copilot-cli-installed"
+          >
             <span className="w-2 h-2 rounded-full bg-[var(--nim-success)] shrink-0" />
             <span className="text-[13px] text-[var(--nim-text)]">
               Installed{cliVersion ? ` (${cliVersion})` : ''}
@@ -87,21 +111,34 @@ export function CopilotCLIPanel({
         )}
 
         {(cliStatus === 'not-installed' || cliStatus === 'install-error') && (
-          <div>
+          <div
+            className="copilot-cli-install-card agent-elements-tool-card rounded-lg border border-[var(--nim-border)] bg-[var(--nim-bg-secondary)] p-3"
+            data-agent-elements-shell="copilot-cli-install-card"
+            data-testid="agent-elements-copilot-cli-install-card"
+          >
             <p className="text-[13px] text-[var(--nim-text-muted)] mb-3 leading-relaxed">
               The GitHub Copilot CLI is required to run the agent. Install it with:
             </p>
-            <code className="block text-[13px] text-[var(--nim-code-text)] bg-[var(--nim-code-bg)] px-3 py-2 rounded mb-3 select-text">
+            <code
+              className="copilot-cli-install-command block text-[13px] text-[var(--nim-code-text)] bg-[var(--nim-code-bg)] px-3 py-2 rounded mb-3 select-text"
+              data-agent-elements-shell="copilot-cli-install-command"
+              data-testid="agent-elements-copilot-cli-install-command"
+            >
               npm install -g @github/copilot
             </code>
             <button
               className="inline-flex items-center justify-center py-2 px-4 rounded-md text-sm font-medium cursor-pointer transition-all bg-[var(--nim-primary)] text-white border border-[var(--nim-primary)] hover:opacity-90"
               onClick={handleInstall}
+              data-testid="agent-elements-copilot-cli-install-button"
             >
               Install Copilot CLI
             </button>
             {installError && (
-              <div className="text-xs mt-2 text-[var(--nim-error)]">
+              <div
+                className="copilot-cli-install-error text-xs mt-2 text-[var(--nim-error)]"
+                data-agent-elements-shell="copilot-cli-install-error"
+                data-testid="agent-elements-copilot-cli-install-error"
+              >
                 {installError}
                 <p className="mt-1 text-[var(--nim-text-muted)]">
                   Try running manually: <code className="text-[var(--nim-code-text)] bg-[var(--nim-code-bg)] px-1 rounded">npm install -g @github/copilot</code>
@@ -112,12 +149,20 @@ export function CopilotCLIPanel({
         )}
 
         {cliStatus === 'installing' && (
-          <div className="flex items-center gap-2">
+          <div
+            className="copilot-cli-installing agent-elements-tool-card flex items-center gap-2 rounded-md border border-[var(--nim-border)] bg-[var(--nim-bg-secondary)] p-3"
+            data-agent-elements-shell="copilot-cli-installing"
+            data-testid="agent-elements-copilot-cli-installing"
+          >
             <span className="text-[13px] text-[var(--nim-text-muted)]">Installing Copilot CLI...</span>
           </div>
         )}
 
-        <p className="text-[13px] text-[var(--nim-text-muted)] mt-3 leading-relaxed">
+        <p
+          className="copilot-cli-docs text-[13px] text-[var(--nim-text-muted)] mt-3 leading-relaxed"
+          data-agent-elements-shell="copilot-cli-docs"
+          data-testid="agent-elements-copilot-cli-docs"
+        >
           See the{' '}
           <a
             href="https://docs.github.com/en/copilot/reference/copilot-cli-reference/cli-command-reference"
@@ -136,12 +181,22 @@ export function CopilotCLIPanel({
         name="Enable GitHub Copilot"
         checked={config.enabled || false}
         onChange={onToggle}
+        testId="agent-elements-copilot-cli-enable-toggle"
       />
 
       {config.enabled && (
-        <div className="provider-panel-section py-4 mb-4 border-b border-[var(--nim-border)] last:border-b-0 last:mb-0 last:pb-0">
+        <div
+          className="provider-panel-section copilot-cli-panel-section agent-elements-settings-section py-4 mb-4 border-b border-[var(--nim-border)] last:border-b-0 last:mb-0 last:pb-0"
+          data-agent-elements-shell="copilot-cli-auth-section"
+          data-section="authentication"
+          data-testid="agent-elements-copilot-cli-auth-section"
+        >
           <h4 className="provider-panel-section-title text-base font-semibold mb-3 text-[var(--nim-text)]">Authentication</h4>
-          <div className="cli-config-section">
+          <div
+            className="cli-config-section copilot-cli-auth-card agent-elements-tool-card rounded-lg border border-[var(--nim-border)] bg-[var(--nim-bg-secondary)] p-3"
+            data-agent-elements-shell="copilot-cli-auth-card"
+            data-testid="agent-elements-copilot-cli-auth-card"
+          >
             <p className="text-[13px] text-[var(--nim-text-muted)] mb-3">
               GitHub Copilot uses your existing login for authentication. Run{' '}
               <code className="text-[var(--nim-code-text)] bg-[var(--nim-code-bg)] px-1 rounded">copilot</code>{' '}

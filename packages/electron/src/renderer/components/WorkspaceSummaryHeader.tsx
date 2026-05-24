@@ -1,18 +1,10 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useAtomValue } from 'jotai';
 import { getFileName } from '../utils/pathUtils';
-import { providersAtom, type ProviderConfig } from '../store/atoms/appSettings';
+import { providersAtom } from '../store/atoms/appSettings';
+import { generateWorkspaceAccentColor } from './workspaceAccent';
 
-export function generateWorkspaceAccentColor(path: string): string {
-  let hash = 0;
-  for (let i = 0; i < path.length; i++) {
-    hash = ((hash << 5) - hash) + path.charCodeAt(i);
-    hash &= hash;
-  }
-
-  const hue = Math.abs(hash) % 360;
-  return `hsl(${hue}, 65%, 55%)`;
-}
+export { generateWorkspaceAccentColor } from './workspaceAccent';
 
 interface WorkspaceSummaryHeaderProps {
   workspacePath: string;
@@ -31,6 +23,21 @@ interface GitStatusView {
   hasUncommitted?: boolean;
 }
 
+interface WorkspaceRuntimeHealth {
+  cliProxy?: { reachable?: boolean };
+  modelBackend?: { selectedModel?: string };
+  langSmithTracing?: { enabled?: boolean };
+  localMode?: { localOnly?: boolean };
+}
+
+interface WorkspaceRuntimeProviderConfig {
+  enabled?: boolean;
+  baseUrl?: string;
+  testStatus?: 'idle' | 'testing' | 'success' | 'error';
+  runtimeHealth?: WorkspaceRuntimeHealth;
+  lastSuccessfulRuntimeHealth?: WorkspaceRuntimeHealth;
+}
+
 function formatServerUrl(value?: string): string {
   if (!value) return 'not configured';
   try {
@@ -47,8 +54,8 @@ export function formatWorkspaceLocalModeStatus(runtimeHealth?: { localMode?: { l
 }
 
 export function getWorkspaceRuntimeHealth(
-  provider?: Pick<ProviderConfig, 'enabled' | 'runtimeHealth' | 'lastSuccessfulRuntimeHealth' | 'testStatus'>,
-): Record<string, any> | undefined {
+  provider?: Pick<WorkspaceRuntimeProviderConfig, 'enabled' | 'runtimeHealth' | 'lastSuccessfulRuntimeHealth' | 'testStatus'>,
+): WorkspaceRuntimeHealth | undefined {
   if (provider?.enabled === false) return undefined;
   if (provider?.runtimeHealth) return provider.runtimeHealth;
   if (provider?.testStatus === 'testing' || provider?.testStatus === 'error') return undefined;
@@ -57,7 +64,7 @@ export function getWorkspaceRuntimeHealth(
 
 function WorkspaceExecutionContext({ workspacePath }: { workspacePath: string }) {
   const providers = useAtomValue(providersAtom);
-  const smartyServer = providers['smarty-server'];
+  const smartyServer = providers['smarty-server'] as WorkspaceRuntimeProviderConfig | undefined;
   const [gitStatus, setGitStatus] = useState<GitStatusView | null>(null);
 
   const fetchGitStatus = useCallback(async () => {
@@ -103,8 +110,9 @@ function WorkspaceExecutionContext({ workspacePath }: { workspacePath: string })
 
   return (
     <div
-      className="workspace-execution-context mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-[10px] leading-tight text-[var(--nim-text-muted)] opacity-80"
+      className="workspace-execution-context agent-elements-workspace-execution-context mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-[10px] leading-tight text-[var(--an-foreground-muted)]"
       data-testid="workspace-execution-context"
+      data-agent-elements-shell="workspace-execution-context"
       data-workspace-path={workspacePath}
       data-branch={branch}
       data-dirty={dirtyState}
@@ -116,19 +124,19 @@ function WorkspaceExecutionContext({ workspacePath }: { workspacePath: string })
       data-local-mode={localOnlyStatus}
     >
       <span data-testid="workspace-execution-context-branch">branch {branch}</span>
-      <span aria-hidden="true">·</span>
+      <span className="text-[var(--an-foreground-subtle)]" aria-hidden="true">/</span>
       <span data-testid="workspace-execution-context-dirty">{dirtyState}</span>
-      <span aria-hidden="true">·</span>
+      <span className="text-[var(--an-foreground-subtle)]" aria-hidden="true">/</span>
       <span data-testid="workspace-execution-context-server">
         smarty-server {serverStatus}{serverUrl ? ` ${formatServerUrl(serverUrl)}` : ''}
       </span>
-      <span aria-hidden="true">·</span>
+      <span className="text-[var(--an-foreground-subtle)]" aria-hidden="true">/</span>
       <span data-testid="workspace-execution-context-cliproxy">cliproxy {cliProxyStatus}</span>
-      <span aria-hidden="true">·</span>
+      <span className="text-[var(--an-foreground-subtle)]" aria-hidden="true">/</span>
       <span data-testid="workspace-execution-context-model">model {selectedModel}</span>
-      <span aria-hidden="true">·</span>
+      <span className="text-[var(--an-foreground-subtle)]" aria-hidden="true">/</span>
       <span data-testid="workspace-execution-context-tracing">tracing {tracingStatus}</span>
-      <span aria-hidden="true">·</span>
+      <span className="text-[var(--an-foreground-subtle)]" aria-hidden="true">/</span>
       <span data-testid="workspace-execution-context-local-mode">{localOnlyStatus}</span>
     </div>
   );
@@ -149,32 +157,41 @@ export function WorkspaceSummaryHeader({
     <>
       {showAccent && (
         <div
-          className="workspace-color-accent h-[3px] w-full opacity-90 shrink-0"
+          className="workspace-color-accent agent-elements-workspace-summary-header-accent h-[3px] w-full shrink-0"
+          data-testid="workspace-summary-header-accent"
+          data-agent-elements-shell="workspace-summary-header-accent"
           style={{ backgroundColor: generateWorkspaceAccentColor(workspacePath) }}
         />
       )}
       <div
-        className={`workspace-summary-header px-3 pt-2.5 pb-2 border-b border-[var(--nim-border)] bg-[var(--nim-bg)] gap-2 min-h-14 shrink-0 ${headerClassName}`.trim()}
+        className={`workspace-summary-header agent-elements-workspace-summary-header px-3 pt-2.5 pb-2 border-b border-[var(--an-border-color)] bg-[var(--an-background)] text-[var(--an-foreground)] gap-2 min-h-14 shrink-0 ${headerClassName}`.trim()}
+        data-testid="workspace-summary-header"
+        data-component="WorkspaceSummaryHeader"
+        data-agent-elements-shell="workspace-summary-header"
       >
         <div className="workspace-summary-header-top flex items-start gap-2">
           <div className="workspace-summary-header-title-row flex items-baseline gap-2.5 min-w-0 flex-1">
-            <h3 className="workspace-summary-header-name m-0 text-[15px] font-bold text-[var(--nim-text)] overflow-hidden text-ellipsis whitespace-nowrap tracking-tight leading-tight">
+            <h3 className="workspace-summary-header-name agent-elements-workspace-summary-header-name m-0 text-[15px] font-semibold text-[var(--an-foreground)] overflow-hidden text-ellipsis whitespace-nowrap leading-tight">
               {displayName}
             </h3>
             {subtitle ? (
-              <span className="workspace-summary-header-subtitle text-[13px] font-medium text-[var(--nim-text-muted)] opacity-70 whitespace-nowrap">
+              <span className="workspace-summary-header-subtitle agent-elements-workspace-summary-header-subtitle text-[13px] font-medium text-[var(--an-foreground-muted)] whitespace-nowrap">
                 {subtitle}
               </span>
             ) : null}
           </div>
           {actions ? (
-            <div className={`workspace-summary-header-actions flex items-center gap-1.5 shrink-0 ${actionsClassName}`.trim()}>
+            <div
+              className={`workspace-summary-header-actions agent-elements-workspace-summary-header-actions flex items-center gap-1.5 shrink-0 ${actionsClassName}`.trim()}
+              data-testid="workspace-summary-header-actions"
+            >
               {actions}
             </div>
           ) : null}
         </div>
         <div
-          className="workspace-summary-header-path mt-0.5 text-[11px] text-[var(--nim-text-muted)] overflow-hidden text-ellipsis whitespace-nowrap opacity-75 font-normal"
+          className="workspace-summary-header-path agent-elements-workspace-summary-header-path mt-0.5 text-[11px] text-[var(--an-foreground-muted)] overflow-hidden text-ellipsis whitespace-nowrap font-normal"
+          data-testid="workspace-summary-header-path"
           title={workspacePath}
         >
           {workspacePath}

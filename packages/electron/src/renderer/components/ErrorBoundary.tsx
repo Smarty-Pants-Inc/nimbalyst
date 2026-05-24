@@ -49,20 +49,45 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
         <div
           role="alert"
           aria-live="assertive"
-          className="p-8 text-center text-nim bg-nim-secondary rounded-lg border border-nim"
+          className="error-boundary-fallback agent-elements-error-boundary agent-elements-tool-card flex min-h-[240px] w-full items-center justify-center rounded-[var(--an-tool-border-radius)] border border-[var(--an-border-color)] bg-[var(--an-background-secondary)] p-[var(--an-spacing-xxl)] text-[var(--an-foreground)] [container-type:inline-size]"
+          data-testid="agent-elements-error-boundary"
+          data-component="ErrorBoundary"
+          data-agent-elements-shell="error-boundary"
         >
-          <h3 className="mt-0 mb-4 text-lg">
-            Something went wrong
-          </h3>
-          <p className="mb-6 text-nim-muted">
-            {this.state.error?.message || 'An unexpected error occurred'}
-          </p>
-          <button
-            onClick={this.handleReset}
-            className="px-4 py-2 bg-nim-primary text-white border-none rounded-md cursor-pointer text-sm hover:bg-nim-primary-hover"
+          <div
+            className="agent-elements-error-boundary-content flex w-full max-w-[520px] flex-col items-start gap-[var(--an-spacing-lg)] text-left"
+            data-agent-elements-shell="error-boundary-content"
           >
-            Try Again
-          </button>
+            <div className="flex items-start gap-3">
+              <span
+                className="agent-elements-error-boundary-icon inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-[var(--an-tool-border-radius)] border border-[color-mix(in_srgb,var(--nim-error)_30%,var(--an-border-color))] bg-[color-mix(in_srgb,var(--nim-error)_10%,var(--an-background))] text-[var(--nim-error)]"
+                aria-hidden="true"
+                data-agent-elements-shell="error-boundary-icon"
+              >
+                !
+              </span>
+              <div className="min-w-0">
+                <h3 className="m-0 text-base font-medium leading-snug text-[var(--an-foreground)]">
+                  Something went wrong
+                </h3>
+                <p
+                  className="m-0 mt-1 select-text text-sm leading-relaxed text-[var(--an-foreground-muted)]"
+                  data-testid="agent-elements-error-boundary-message"
+                  data-agent-elements-shell="error-boundary-message"
+                >
+                  {this.state.error?.message || 'An unexpected error occurred'}
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={this.handleReset}
+              className="agent-elements-error-boundary-retry rounded-[var(--an-input-border-radius)] border border-[var(--an-send-button-bg)] bg-[var(--an-send-button-bg)] px-4 py-2 text-sm font-medium text-[var(--an-send-button-color)] transition-colors duration-150 ease-out hover:bg-[var(--nim-primary-hover)] focus:outline-none focus:ring-2 focus:ring-[var(--an-input-focus-outline)]"
+              data-testid="agent-elements-error-boundary-retry"
+              data-agent-elements-shell="error-boundary-retry"
+            >
+              Try Again
+            </button>
+          </div>
         </div>
       );
     }

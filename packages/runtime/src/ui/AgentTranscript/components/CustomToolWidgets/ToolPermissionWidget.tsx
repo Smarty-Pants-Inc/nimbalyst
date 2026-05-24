@@ -31,6 +31,7 @@ import type { CustomToolWidgetProps } from './index';
 import { interactiveWidgetHostAtom, getInteractiveWidgetHost } from '../../../../store/atoms/interactiveWidgetHost';
 import type { PermissionScope } from './InteractiveWidgetHost';
 import { unwrapShellCommand } from '../../utils/unwrapShellCommand';
+import { AgentStatusPill, type AgentStatusTone } from '../../../AgentElements/AgentElementsPrimitives';
 
 /**
  * Get a human-readable display name for a tool pattern
@@ -91,6 +92,88 @@ function getPatternDisplayName(pattern: string): string {
   }
 
   return pattern;
+}
+
+type PermissionVisualState = 'pending' | 'granted' | 'denied' | 'cancelled';
+
+function getApprovalState(
+  displayResult: { decision: 'allow' | 'deny'; scope: PermissionScope; cancelled?: boolean } | null | undefined,
+  hasResponded: boolean
+): PermissionVisualState {
+  if (!displayResult && !hasResponded) return 'pending';
+  if (displayResult?.cancelled) return 'cancelled';
+  return displayResult?.decision === 'allow' ? 'granted' : 'denied';
+}
+
+function getApprovalTone(state: PermissionVisualState, isDestructive: boolean): AgentStatusTone {
+  if (state === 'granted') return 'success';
+  if (state === 'denied' || state === 'cancelled') return 'error';
+  return isDestructive ? 'warning' : 'running';
+}
+
+function getApprovalLabel(state: PermissionVisualState): string {
+  if (state === 'granted') return 'granted';
+  if (state === 'denied') return 'denied';
+  if (state === 'cancelled') return 'cancelled';
+  return 'awaiting approval';
+}
+
+function PermissionStatusIcon({
+  state,
+  isDestructive,
+}: {
+  state: PermissionVisualState;
+  isDestructive: boolean;
+}) {
+  const iconClassName = `agent-elements-tool-icon ${
+    state === 'granted'
+      ? 'text-nim-success'
+      : state === 'denied' || state === 'cancelled' || isDestructive
+        ? 'text-[var(--nim-error)]'
+        : 'text-nim-primary'
+  }`;
+
+  if (state === 'granted') {
+    return (
+      <span className={iconClassName}>
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full">
+          <path d="M13.5 4.5L6 12l-3.5-3.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+        </svg>
+      </span>
+    );
+  }
+
+  if (state === 'denied' || state === 'cancelled') {
+    return (
+      <span className={iconClassName}>
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full">
+          <path d="M12 4L4 12M4 4l8 8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+        </svg>
+      </span>
+    );
+  }
+
+  if (isDestructive) {
+    return (
+      <span className={iconClassName}>
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M8 5.5v3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+          <path d="M8 11h.01" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+          <path d="M6.86 2.573L1.21 12.15c-.478.813.119 1.85 1.07 1.85h11.44c.951 0 1.548-1.037 1.07-1.85L9.14 2.573c-.477-.812-1.663-.812-2.14 0z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+        </svg>
+      </span>
+    );
+  }
+
+  return (
+    <span className={iconClassName}>
+      <svg width="14" height="14" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M12.5 7H3.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+        <path d="M5.5 4L3.5 7l2 3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+        <rect x="1" y="2" width="14" height="12" rx="2" stroke="currentColor" strokeWidth="1.5"/>
+      </svg>
+    </span>
+  );
 }
 
 // ============================================================
@@ -270,6 +353,20 @@ export const ToolPermissionWidget: React.FC<CustomToolWidgetProps> = ({
   // Determine display state
   const displayResult = localResult || completedState;
   const displayCancelled = displayResult?.cancelled || false;
+  const approvalState = getApprovalState(displayResult, hasResponded);
+  const shellClassName = `tool-permission-widget agent-elements-tool-card agent-elements-permission-tool-card ${
+    isDestructive && approvalState === 'pending'
+      ? 'border-[var(--nim-error)] bg-[color-mix(in_srgb,var(--nim-error)_5%,var(--nim-bg-secondary))]'
+      : ''
+  } ${approvalState === 'pending' ? '' : 'opacity-85'}`;
+  const shellProps = {
+    'data-component': 'RichTranscriptAgentElementsToolPermission',
+    'data-agent-elements-shell': 'approval-card',
+    'data-approval-state': approvalState,
+    'data-approval-decision': displayResult?.decision ?? undefined,
+    'data-destructive': isDestructive ? 'true' : 'false',
+    'data-testid': 'tool-permission-widget',
+  };
 
   // Show completed state
   if (displayResult || hasResponded) {
@@ -295,48 +392,55 @@ export const ToolPermissionWidget: React.FC<CustomToolWidgetProps> = ({
 
     return (
       <div
-        data-testid="tool-permission-widget"
+        {...shellProps}
         data-state={displayResult?.decision === 'allow' ? 'granted' : 'denied'}
-        className="tool-permission-widget rounded-lg bg-nim-secondary border border-nim overflow-hidden opacity-85"
+        className={shellClassName}
       >
-        <div className="flex items-center gap-2 py-3 px-4 bg-nim-tertiary">
-          <span className={`w-5 h-5 shrink-0 ${statusColor}`}>
-            {displayResult?.decision === 'allow' ? (
-              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full">
-                <path d="M13.5 4.5L6 12l-3.5-3.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
-            ) : (
-              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full">
-                <path d="M12 4L4 12M4 4l8 8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
-            )}
+        <div className="agent-elements-tool-header">
+          <PermissionStatusIcon state={approvalState} isDestructive={isDestructive} />
+          <div className="agent-elements-tool-title-group">
+            <span className="agent-elements-tool-title">
+              {statusText}
+              {teammateName && (
+                <span className="ml-2 text-xs font-normal text-nim-muted">
+                  (from teammate: {teammateName})
+                </span>
+              )}
+            </span>
+            <span className="agent-elements-tool-subtitle">{patternDisplayName}</span>
+          </div>
+          <span className="agent-elements-tool-trailing">
+            <AgentStatusPill
+              className={statusColor}
+              tone={getApprovalTone(approvalState, isDestructive)}
+            >
+              <span data-testid="tool-permission-status">{getApprovalLabel(approvalState)}</span>
+            </AgentStatusPill>
           </span>
-          <span className="text-sm font-semibold text-nim flex-1">
-            {statusText}
-            {teammateName && (
-              <span className="ml-2 text-xs font-normal text-nim-muted">
-                (from teammate: {teammateName})
-              </span>
-            )}
-          </span>
+        </div>
+
+        <div className="agent-elements-tool-primary">
+          <div className="bg-nim-tertiary rounded p-2 max-h-[200px] overflow-x-auto">
+            <code
+              className="font-mono text-xs text-nim whitespace-pre-wrap break-all select-text"
+              data-testid="tool-permission-command"
+            >
+              {rawCommand || toolName}
+            </code>
+          </div>
+        </div>
+
+        <div className="agent-elements-tool-footer">
           <span
             data-testid={displayResult?.decision === 'allow' ? 'tool-permission-granted' : 'tool-permission-denied'}
-            className={`text-xs font-medium py-1 px-2 rounded-full ${
+            className={`agent-elements-status-pill ${
               displayResult?.decision === 'allow'
-                ? 'bg-[color-mix(in_srgb,var(--nim-success)_12%,transparent)] text-nim-success'
-                : 'bg-nim-tertiary text-nim-muted'
+                ? 'text-nim-success'
+                : 'text-nim-muted'
             }`}
           >
             {scopeText}
           </span>
-        </div>
-
-        <div className="p-3">
-          <div className="bg-nim-tertiary rounded p-2 max-h-[200px] overflow-x-auto">
-            <code className="font-mono text-xs text-nim whitespace-pre-wrap break-all">
-              {rawCommand || toolName}
-            </code>
-          </div>
         </div>
       </div>
     );
@@ -361,42 +465,28 @@ export const ToolPermissionWidget: React.FC<CustomToolWidgetProps> = ({
   // Show interactive UI for pending request
   return (
     <div
-      data-testid="tool-permission-widget"
+      {...shellProps}
       data-state="pending"
-      className={`tool-permission-widget rounded-lg overflow-hidden border ${
-        isDestructive
-          ? 'border-[var(--nim-error)] bg-[color-mix(in_srgb,var(--nim-error)_5%,var(--nim-bg-secondary))]'
-          : 'border-nim-primary bg-nim-secondary'
-      }`}
+      className={shellClassName}
     >
       {/* Header */}
-      <div className="flex items-center gap-2 py-3 px-4 border-b border-nim bg-nim-tertiary">
-        <span
-          className={`w-5 h-5 shrink-0 flex items-center justify-center ${
-            isDestructive ? 'text-[var(--nim-error)]' : 'text-nim-primary'
-          }`}
-        >
-          {isDestructive ? (
-            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M8 5.5v3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-              <path d="M8 11h.01" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-              <path d="M6.86 2.573L1.21 12.15c-.478.813.119 1.85 1.07 1.85h11.44c.951 0 1.548-1.037 1.07-1.85L9.14 2.573c-.477-.812-1.663-.812-2.14 0z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-            </svg>
-          ) : (
-            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M12.5 7H3.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-              <path d="M5.5 4L3.5 7l2 3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-              <rect x="1" y="2" width="14" height="12" rx="2" stroke="currentColor" strokeWidth="1.5"/>
-            </svg>
-          )}
-        </span>
-        <span className="text-sm font-semibold text-nim flex-1">
-          Allow this tool?
-          {teammateName && (
-            <span className="ml-2 text-xs font-normal text-nim-muted">
-              (from teammate: {teammateName})
-            </span>
-          )}
+      <div className="agent-elements-tool-header">
+        <PermissionStatusIcon state={approvalState} isDestructive={isDestructive} />
+        <div className="agent-elements-tool-title-group">
+          <span className="agent-elements-tool-title">
+            Allow this tool?
+            {teammateName && (
+              <span className="ml-2 text-xs font-normal text-nim-muted">
+                (from teammate: {teammateName})
+              </span>
+            )}
+          </span>
+          <span className="agent-elements-tool-subtitle">{patternDisplayName}</span>
+        </div>
+        <span className="agent-elements-tool-trailing">
+          <AgentStatusPill tone={getApprovalTone(approvalState, isDestructive)}>
+            <span data-testid="tool-permission-status">{getApprovalLabel(approvalState)}</span>
+          </AgentStatusPill>
         </span>
         <span
           className="relative flex items-center cursor-pointer text-nim-faint hover:text-nim-muted"
@@ -438,7 +528,7 @@ export const ToolPermissionWidget: React.FC<CustomToolWidgetProps> = ({
         </span>
       </div>
 
-      <div className="p-3 flex flex-col gap-2">
+      <div className="agent-elements-tool-primary flex flex-col gap-2">
         {/* Warnings */}
         {warnings.length > 0 && (
           <div className="flex flex-col gap-1.5">
@@ -485,7 +575,10 @@ export const ToolPermissionWidget: React.FC<CustomToolWidgetProps> = ({
 
         {/* Command display */}
         <div className="bg-nim-tertiary rounded p-2 max-h-[200px] overflow-x-auto">
-          <code className="font-mono text-xs text-nim whitespace-pre-wrap break-all">
+          <code
+            className="font-mono text-xs text-nim whitespace-pre-wrap break-all select-text"
+            data-testid="tool-permission-command"
+          >
             {rawCommand || toolName}
           </code>
         </div>

@@ -34,22 +34,51 @@ import { useCollabLocalOrigin } from '../../hooks/useCollabLocalOrigin';
 type TeamSyncStatus = 'disconnected' | 'connecting' | 'syncing' | 'connected' | 'error';
 
 const STATUS_CONFIG: Record<TeamSyncStatus, { label: string; dotClass: string }> = {
-  connected:    { label: 'Team synced',   dotClass: 'bg-green-500' },
-  syncing:      { label: 'Syncing...',    dotClass: 'bg-blue-500 animate-pulse' },
-  connecting:   { label: 'Connecting...', dotClass: 'bg-yellow-500 animate-pulse' },
-  disconnected: { label: 'Disconnected',  dotClass: 'bg-gray-500' },
-  error:        { label: 'Sync error',    dotClass: 'bg-red-500' },
+  connected:    { label: 'Team synced',   dotClass: 'bg-[var(--an-diff-added-text)]' },
+  syncing:      { label: 'Syncing...',    dotClass: 'bg-[var(--an-primary-color)] animate-pulse' },
+  connecting:   { label: 'Connecting...', dotClass: 'bg-[var(--an-primary-color)] animate-pulse' },
+  disconnected: { label: 'Disconnected',  dotClass: 'bg-[var(--an-foreground-subtle)]' },
+  error:        { label: 'Sync error',    dotClass: 'bg-[var(--an-diff-removed-text)]' },
 };
 
 const TeamSyncStatusLabel: React.FC<{ status: TeamSyncStatus }> = ({ status }) => {
   const { label, dotClass } = STATUS_CONFIG[status];
   return (
-    <span className="inline-flex items-center gap-1.5">
-      <span className={`inline-block w-1.5 h-1.5 rounded-full shrink-0 ${dotClass}`} />
+    <span
+      className="agent-elements-collab-sync-status inline-flex items-center gap-[var(--an-spacing-xs)] text-[11px] font-medium leading-none text-[var(--an-foreground-muted)]"
+      data-agent-elements-shell="collab-sync-status"
+      data-sync-status={status}
+      data-testid="agent-elements-collab-sync-status"
+    >
+      <span className={`inline-block h-1.5 w-1.5 shrink-0 rounded-full ${dotClass}`} />
       <span>{label}</span>
     </span>
   );
 };
+
+const sidebarActionClassName =
+  'workspace-action-button agent-elements-collab-header-action inline-flex h-7 w-7 items-center justify-center rounded-[var(--an-input-border-radius)] border border-transparent bg-transparent text-[var(--an-foreground-subtle)] transition-[background-color,border-color,color,box-shadow] duration-150 ease-out hover:border-[var(--an-border-color)] hover:bg-[var(--an-background-tertiary)] hover:text-[var(--an-foreground)] focus:outline-none focus:ring-2 focus:ring-[var(--an-input-focus-outline)]';
+
+const treeRowBaseClassName =
+  'agent-elements-collab-tree-row mx-1 flex min-h-8 w-full items-center gap-[var(--an-spacing-xs)] rounded-[var(--an-input-border-radius)] border border-transparent bg-transparent py-[var(--an-spacing-xs)] pr-[var(--an-spacing-sm)] text-left text-[13px] text-[var(--an-foreground-muted)] transition-[background-color,border-color,color,box-shadow] duration-150 ease-out hover:border-[var(--an-border-color)] hover:bg-[var(--an-background-tertiary)] hover:text-[var(--an-foreground)] focus:outline-none focus:ring-2 focus:ring-[var(--an-input-focus-outline)]';
+
+const treeRowActiveClassName =
+  'bg-[var(--an-background-tertiary)] text-[var(--an-foreground)] shadow-[inset_0_0_0_1px_var(--an-border-color)]';
+
+const treeRowDropTargetClassName =
+  'border-[var(--an-primary-color)] bg-[var(--an-background-tertiary)] text-[var(--an-foreground)] shadow-[inset_0_0_0_1px_var(--an-primary-color)]';
+
+const treeIconClassName =
+  'agent-elements-collab-tree-icon text-[var(--an-foreground-muted)] transition-colors duration-150 ease-out';
+
+const contextMenuClassName =
+  'agent-elements-collab-context-menu agent-elements-tool-card z-[10000] min-w-[176px] rounded-[var(--an-tool-border-radius)] border border-[var(--an-border-color)] bg-[var(--an-background)] p-1 text-[13px] text-[var(--an-foreground)] shadow-[0_12px_32px_color-mix(in_srgb,var(--an-foreground)_10%,transparent)]';
+
+const contextMenuItemClassName =
+  'agent-elements-collab-context-menu-item flex w-full items-center gap-2.5 rounded-[8px] border-none bg-transparent px-3 py-2 text-left text-[13px] text-[var(--an-foreground)] transition-colors duration-150 ease-out hover:bg-[var(--an-background-secondary)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--an-primary-color)]';
+
+const contextMenuDangerItemClassName =
+  'agent-elements-collab-context-menu-item flex w-full items-center gap-2.5 rounded-[8px] border-none bg-transparent px-3 py-2 text-left text-[13px] text-[var(--an-diff-removed-text)] transition-colors duration-150 ease-out hover:bg-[var(--an-background-secondary)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--an-primary-color)]';
 
 interface CollabSidebarProps {
   workspacePath: string;
@@ -111,6 +140,21 @@ export const CollabSidebar: React.FC<CollabSidebarProps> = ({
     [activeDocumentId, sharedDocuments]
   );
 
+  const contextMenuReference = useMemo(
+    () => contextMenu ? virtualElement(contextMenu.x, contextMenu.y) : null,
+    [contextMenu]
+  );
+  const contextMenuFloating = useFloatingMenu({
+    placement: 'right-start',
+    reference: contextMenuReference,
+    open: Boolean(contextMenu),
+    onOpenChange: (open) => {
+      if (!open) {
+        setContextMenu(null);
+      }
+    },
+  });
+
   const canMutateMetadata = useCallback((actionLabel: string) => {
     if (teamSyncStatus === 'connected') {
       return true;
@@ -121,19 +165,6 @@ export const CollabSidebar: React.FC<CollabSidebarProps> = ({
     );
     return false;
   }, [teamSyncStatus]);
-
-  const contextMenuReference = useMemo(
-    () => (contextMenu ? virtualElement(contextMenu.x, contextMenu.y) : null),
-    [contextMenu]
-  );
-  const contextMenuFloating = useFloatingMenu({
-    placement: 'right-start',
-    reference: contextMenuReference,
-    open: contextMenu !== null,
-    onOpenChange: (open) => {
-      if (!open) setContextMenu(null);
-    },
-  });
 
   useEffect(() => {
     setHasLoadedState(false);
@@ -438,8 +469,15 @@ export const CollabSidebar: React.FC<CollabSidebarProps> = ({
         return (
           <div key={node.id}>
             <button
-              className={`w-full flex items-center text-left file-tree-directory${isSelected ? ' selected' : ''}${isDropTarget ? ' drag-over' : ''}`}
+              className={`file-tree-directory ${treeRowBaseClassName}${isSelected ? ` selected ${treeRowActiveClassName}` : ''}${isDropTarget ? ` drag-over ${treeRowDropTargetClassName}` : ''}`}
               style={{ paddingLeft: indent }}
+              data-component="CollabSidebarTreeRow"
+              data-agent-elements-shell="collab-tree-row"
+              data-collab-node-type="folder"
+              data-collab-path={node.path}
+              data-expanded={isExpanded ? 'true' : 'false'}
+              data-selected={isSelected ? 'true' : 'false'}
+              data-drop-target={isDropTarget ? 'true' : 'false'}
               onClick={() => {
                 toggleFolder(node.path);
                 setSelectedFolderPath(node.path);
@@ -472,16 +510,16 @@ export const CollabSidebar: React.FC<CollabSidebarProps> = ({
               }}
               title={node.path}
             >
-              <span className="file-tree-chevron">
+              <span className="file-tree-chevron agent-elements-collab-tree-chevron text-[var(--an-foreground-subtle)]">
                 <MaterialSymbol
                   icon={isExpanded ? 'keyboard_arrow_down' : 'keyboard_arrow_right'}
                   size={16}
                 />
               </span>
-              <span className="file-tree-icon">
+              <span className={`file-tree-icon ${treeIconClassName}`}>
                 <MaterialSymbol icon={isExpanded ? 'folder_open' : 'folder'} size={18} />
               </span>
-              <span className="file-tree-name">{node.name}</span>
+              <span className="file-tree-name min-w-0 flex-1 truncate">{node.name}</span>
             </button>
             {isExpanded ? renderTree(node.children, depth + 1) : null}
           </div>
@@ -493,8 +531,14 @@ export const CollabSidebar: React.FC<CollabSidebarProps> = ({
       return (
         <button
           key={node.id}
-          className={`w-full flex items-center text-left file-tree-file${isActive ? ' active' : ''}`}
+          className={`file-tree-file ${treeRowBaseClassName}${isActive ? ` active ${treeRowActiveClassName}` : ''}`}
           style={{ paddingLeft: indent }}
+          data-component="CollabSidebarTreeRow"
+          data-agent-elements-shell="collab-tree-row"
+          data-collab-node-type="document"
+          data-collab-document-id={node.document.documentId}
+          data-collab-path={node.path}
+          data-active={isActive ? 'true' : 'false'}
           onClick={() => {
             setSelectedFolderPath(getCollabParentPath(node.path));
             onDocumentSelect(node.document);
@@ -516,11 +560,11 @@ export const CollabSidebar: React.FC<CollabSidebarProps> = ({
           }}
           title={node.path}
         >
-          <span className="file-tree-spacer" />
-          <span className="file-tree-icon">
+          <span className="file-tree-spacer w-4 shrink-0" />
+          <span className={`file-tree-icon ${treeIconClassName}`}>
             <MaterialSymbol icon="description" size={16} />
           </span>
-          <span className="file-tree-name">{node.name}</span>
+          <span className="file-tree-name min-w-0 flex-1 truncate">{node.name}</span>
         </button>
       );
     });
@@ -546,7 +590,9 @@ export const CollabSidebar: React.FC<CollabSidebarProps> = ({
 
   return (
     <div
-      className="collab-sidebar w-full h-full flex flex-col bg-nim-secondary border-r border-nim overflow-hidden"
+      className="collab-sidebar agent-elements-collab-sidebar h-full w-full flex flex-col overflow-hidden border-r border-[var(--an-border-color)] bg-[var(--an-background-secondary)] text-[var(--an-foreground)] [container-type:inline-size]"
+      data-component="CollabSidebar"
+      data-agent-elements-shell="collab-sidebar"
       data-testid="collab-sidebar"
     >
       {/* Header -- matches WorkspaceSummaryHeader used by EditorMode */}
@@ -558,8 +604,10 @@ export const CollabSidebar: React.FC<CollabSidebarProps> = ({
           <>
             <button
               type="button"
-              className="workspace-action-button bg-transparent border-none p-1.5 cursor-pointer rounded text-[var(--nim-text-faint)] flex items-center justify-center transition-all duration-200 relative hover:bg-[var(--nim-bg-hover)] hover:text-[var(--nim-text)]"
+              className={sidebarActionClassName}
               title="New document"
+              data-agent-elements-shell="collab-header-action"
+              data-testid="agent-elements-collab-new-document"
               onClick={() => {
                 setIsCreateDocumentOpen(true);
                 setContextMenu(null);
@@ -569,8 +617,10 @@ export const CollabSidebar: React.FC<CollabSidebarProps> = ({
             </button>
             <button
               type="button"
-              className="workspace-action-button bg-transparent border-none p-1.5 cursor-pointer rounded text-[var(--nim-text-faint)] flex items-center justify-center transition-all duration-200 relative hover:bg-[var(--nim-bg-hover)] hover:text-[var(--nim-text)]"
+              className={sidebarActionClassName}
               title="New folder"
+              data-agent-elements-shell="collab-header-action"
+              data-testid="agent-elements-collab-new-folder"
               onClick={() => {
                 setIsCreateFolderOpen(true);
                 setContextMenu(null);
@@ -584,7 +634,10 @@ export const CollabSidebar: React.FC<CollabSidebarProps> = ({
 
       {/* Document tree */}
       <div
-        className={`flex-1 overflow-y-auto px-1.5 py-2 transition-colors ${dropTargetPath === '__root__' ? 'bg-nim-hover' : ''}`}
+        className={`agent-elements-collab-doc-tree flex-1 overflow-y-auto px-[var(--an-spacing-sm)] py-[var(--an-spacing-sm)] transition-colors duration-150 ease-out ${dropTargetPath === '__root__' ? 'bg-[var(--an-background-tertiary)]' : ''}`}
+        data-agent-elements-shell="collab-document-tree"
+        data-testid="agent-elements-collab-doc-tree"
+        data-drop-target={dropTargetPath === '__root__' ? 'true' : 'false'}
         onDragOver={(event) => {
           if (!canDropDocument(null)) return;
           const target = event.target as HTMLElement;
@@ -615,17 +668,22 @@ export const CollabSidebar: React.FC<CollabSidebarProps> = ({
         }}
       >
         {tree.length === 0 ? (
-          <div className="px-2 py-4 text-center">
-            <MaterialSymbol icon="cloud_sync" size={32} className="text-nim-faint mb-2" />
-            <p className="text-xs text-nim-faint m-0">
+          <div
+            className="agent-elements-collab-empty-state px-[var(--an-spacing-xl)] py-[var(--an-spacing-xxl)] text-center text-[var(--an-foreground-subtle)]"
+            data-agent-elements-shell="collab-empty-state"
+          >
+            <MaterialSymbol icon="cloud_sync" size={32} className="mb-[var(--an-spacing-sm)]" />
+            <p className="m-0 text-xs">
               No shared documents yet.
             </p>
-            <p className="text-xs text-nim-faint mt-1 m-0">
+            <p className="m-0 mt-[var(--an-spacing-xs)] text-xs">
               Create one here or share a local file to collaborate.
             </p>
           </div>
         ) : (
-          <div>{renderTree(tree)}</div>
+          <div className="agent-elements-collab-tree-list" data-agent-elements-shell="collab-tree-list">
+            {renderTree(tree)}
+          </div>
         )}
       </div>
 
@@ -636,127 +694,167 @@ export const CollabSidebar: React.FC<CollabSidebarProps> = ({
             ref={contextMenuFloating.refs.setFloating}
             style={contextMenuFloating.floatingStyles}
             {...contextMenuFloating.getFloatingProps()}
-            className="min-w-[160px] rounded-md z-[10000] text-[13px] p-1 bg-nim-secondary border border-nim text-nim backdrop-blur-[10px] shadow-lg"
+            className={contextMenuClassName}
+            data-component="CollabSidebarContextMenu"
+            data-agent-elements-shell="collab-context-menu"
+            data-collab-node-type={contextMenu.node.type}
+            data-testid="agent-elements-collab-context-menu"
           >
-          {contextMenu.node.type === 'folder' ? (
-            <>
-              <button
-                type="button"
-                className="w-full flex items-center gap-2.5 px-3 py-1.5 rounded border-none bg-transparent cursor-pointer transition-colors text-left text-nim hover:bg-nim-hover"
-                onClick={() => setIsCreateDocumentOpen(true)}
-              >
-                <MaterialSymbol icon="note_add" size={18} />
-                <span>New Document</span>
-              </button>
-              <button
-                type="button"
-                className="w-full flex items-center gap-2.5 px-3 py-1.5 rounded border-none bg-transparent cursor-pointer transition-colors text-left text-nim hover:bg-nim-hover"
-                onClick={() => setIsCreateFolderOpen(true)}
-              >
-                <MaterialSymbol icon="create_new_folder" size={18} />
-                <span>New Folder</span>
-              </button>
-            </>
-          ) : (
-            <>
-              <button
-                type="button"
-                className="w-full flex items-center gap-2.5 px-3 py-1.5 rounded border-none bg-transparent cursor-pointer transition-colors text-left text-nim hover:bg-nim-hover"
-                onClick={() => {
-                  if (!contextDocument) return;
-                  onDocumentSelect(contextDocument);
-                  setContextMenu(null);
-                }}
-              >
-                <MaterialSymbol icon="open_in_new" size={18} />
-                <span>Open</span>
-              </button>
-              <button
-                type="button"
-                className="w-full flex items-center gap-2.5 px-3 py-1.5 rounded border-none bg-transparent cursor-pointer transition-colors text-left text-nim hover:bg-nim-hover disabled:opacity-50 disabled:cursor-not-allowed"
-                disabled={!teamOrgId}
-                title={teamOrgId ? undefined : 'No team is connected to this workspace'}
-                onClick={() => {
-                  if (!contextDocument) return;
-                  setContextMenu(null);
-                  void handleCopyLink(contextDocument);
-                }}
-              >
-                <MaterialSymbol icon="link" size={18} />
-                <span>Copy Link</span>
-              </button>
-              <button
-                type="button"
-                className="w-full flex items-center gap-2.5 px-3 py-1.5 rounded border-none bg-transparent cursor-pointer transition-colors text-left text-nim hover:bg-nim-hover"
-                onClick={() => {
-                  if (!contextDocument) return;
-                  setDocumentToRename(contextDocument);
-                  setContextMenu(null);
-                }}
-              >
-                <MaterialSymbol icon="edit" size={18} />
-                <span>Rename</span>
-              </button>
-              <button
-                type="button"
-                className="w-full flex items-center gap-2.5 px-3 py-1.5 rounded border-none bg-transparent cursor-pointer transition-colors text-left text-nim hover:bg-nim-hover disabled:opacity-50 disabled:cursor-not-allowed"
-                disabled={!contextLocalOrigin.hasResolvedBinding || contextLocalOrigin.busyAction !== null}
-                onClick={() => {
-                  setContextMenu(null);
-                  void contextLocalOrigin.openLocalSource();
-                }}
-              >
-                <MaterialSymbol icon="draft" size={18} />
-                <span>Open Local Source</span>
-              </button>
-              <button
-                type="button"
-                className="w-full flex items-center gap-2.5 px-3 py-1.5 rounded border-none bg-transparent cursor-pointer transition-colors text-left text-nim hover:bg-nim-hover disabled:opacity-50 disabled:cursor-not-allowed"
-                disabled={!contextLocalOrigin.binding || contextLocalOrigin.busyAction !== null}
-                onClick={() => {
-                  setContextMenu(null);
-                  void contextLocalOrigin.reuploadFromLocalSource();
-                }}
-              >
-                <MaterialSymbol icon="upload" size={18} />
-                <span>Re-upload From Local</span>
-              </button>
-              <button
-                type="button"
-                className="w-full flex items-center gap-2.5 px-3 py-1.5 rounded border-none bg-transparent cursor-pointer transition-colors text-left text-nim hover:bg-nim-hover disabled:opacity-50 disabled:cursor-not-allowed"
-                disabled={contextLocalOrigin.busyAction !== null}
-                onClick={() => {
-                  setContextMenu(null);
-                  void contextLocalOrigin.relinkLocalSource();
-                }}
-              >
-                <MaterialSymbol icon="link" size={18} />
-                <span>{contextLocalOrigin.binding ? 'Relink Local Source...' : 'Link Local Source...'}</span>
-              </button>
-              {contextLocalOrigin.binding && (
+            {contextMenu.node.type === 'folder' ? (
+              <>
                 <button
                   type="button"
-                  className="w-full flex items-center gap-2.5 px-3 py-1.5 rounded border-none bg-transparent cursor-pointer transition-colors text-left text-nim hover:bg-nim-hover disabled:opacity-50 disabled:cursor-not-allowed"
-                  disabled={contextLocalOrigin.busyAction !== null}
+                  className={contextMenuItemClassName}
+                  data-agent-elements-shell="collab-context-menu-item"
+                  data-collab-action="new-document"
+                  data-testid="agent-elements-collab-context-new-document"
                   onClick={() => {
+                    setIsCreateDocumentOpen(true);
                     setContextMenu(null);
-                    void contextLocalOrigin.clearLocalSource();
                   }}
                 >
-                  <MaterialSymbol icon="link_off" size={18} />
-                  <span>Clear Local Source</span>
+                  <MaterialSymbol icon="note_add" size={18} />
+                  <span>New Document</span>
                 </button>
-              )}
-              <button
-                type="button"
-                className="w-full flex items-center gap-2.5 px-3 py-1.5 rounded border-none bg-transparent cursor-pointer transition-colors text-left text-nim-error hover:bg-nim-hover"
-                onClick={handleDelete}
-              >
-                <MaterialSymbol icon="delete" size={18} />
-                <span>Delete</span>
-              </button>
-            </>
-          )}
+                <button
+                  type="button"
+                  className={contextMenuItemClassName}
+                  data-agent-elements-shell="collab-context-menu-item"
+                  data-collab-action="new-folder"
+                  data-testid="agent-elements-collab-context-new-folder"
+                  onClick={() => {
+                    setIsCreateFolderOpen(true);
+                    setContextMenu(null);
+                  }}
+                >
+                  <MaterialSymbol icon="create_new_folder" size={18} />
+                  <span>New Folder</span>
+                </button>
+              </>
+            ) : (
+              <>
+                <button
+                  type="button"
+                  className={contextMenuItemClassName}
+                  data-agent-elements-shell="collab-context-menu-item"
+                  data-collab-action="open"
+                  data-testid="agent-elements-collab-context-open"
+                  onClick={() => {
+                    if (!contextDocument) return;
+                    onDocumentSelect(contextDocument);
+                    setContextMenu(null);
+                  }}
+                >
+                  <MaterialSymbol icon="open_in_new" size={18} />
+                  <span>Open</span>
+                </button>
+                <button
+                  type="button"
+                  className={contextMenuItemClassName}
+                  disabled={!teamOrgId}
+                  title={teamOrgId ? undefined : 'No team is connected to this workspace'}
+                  data-agent-elements-shell="collab-context-menu-item"
+                  data-collab-action="copy-link"
+                  data-testid="agent-elements-collab-context-copy-link"
+                  onClick={() => {
+                    if (!contextDocument) return;
+                    setContextMenu(null);
+                    void handleCopyLink(contextDocument);
+                  }}
+                >
+                  <MaterialSymbol icon="link" size={18} />
+                  <span>Copy Link</span>
+                </button>
+                <button
+                  type="button"
+                  className={contextMenuItemClassName}
+                  data-agent-elements-shell="collab-context-menu-item"
+                  data-collab-action="rename"
+                  data-testid="agent-elements-collab-context-rename"
+                  onClick={() => {
+                    if (!contextDocument) return;
+                    setDocumentToRename(contextDocument);
+                    setContextMenu(null);
+                  }}
+                >
+                  <MaterialSymbol icon="edit" size={18} />
+                  <span>Rename</span>
+                </button>
+                <button
+                  type="button"
+                  className={contextMenuItemClassName}
+                  disabled={!contextLocalOrigin.hasResolvedBinding || contextLocalOrigin.busyAction !== null}
+                  data-agent-elements-shell="collab-context-menu-item"
+                  data-collab-action="open-local-source"
+                  data-testid="agent-elements-collab-context-open-local-source"
+                  onClick={() => {
+                    setContextMenu(null);
+                    void contextLocalOrigin.openLocalSource();
+                  }}
+                >
+                  <MaterialSymbol icon="draft" size={18} />
+                  <span>Open Local Source</span>
+                </button>
+                <button
+                  type="button"
+                  className={contextMenuItemClassName}
+                  disabled={!contextLocalOrigin.binding || contextLocalOrigin.busyAction !== null}
+                  data-agent-elements-shell="collab-context-menu-item"
+                  data-collab-action="reupload-from-local"
+                  data-testid="agent-elements-collab-context-reupload-from-local"
+                  onClick={() => {
+                    setContextMenu(null);
+                    void contextLocalOrigin.reuploadFromLocalSource();
+                  }}
+                >
+                  <MaterialSymbol icon="upload" size={18} />
+                  <span>Re-upload From Local</span>
+                </button>
+                <button
+                  type="button"
+                  className={contextMenuItemClassName}
+                  disabled={contextLocalOrigin.busyAction !== null}
+                  data-agent-elements-shell="collab-context-menu-item"
+                  data-collab-action={contextLocalOrigin.binding ? 'relink-local-source' : 'link-local-source'}
+                  data-testid="agent-elements-collab-context-link-local-source"
+                  onClick={() => {
+                    setContextMenu(null);
+                    void contextLocalOrigin.relinkLocalSource();
+                  }}
+                >
+                  <MaterialSymbol icon="link" size={18} />
+                  <span>{contextLocalOrigin.binding ? 'Relink Local Source...' : 'Link Local Source...'}</span>
+                </button>
+                {contextLocalOrigin.binding && (
+                  <button
+                    type="button"
+                    className={contextMenuItemClassName}
+                    disabled={contextLocalOrigin.busyAction !== null}
+                    data-agent-elements-shell="collab-context-menu-item"
+                    data-collab-action="clear-local-source"
+                    data-testid="agent-elements-collab-context-clear-local-source"
+                    onClick={() => {
+                      setContextMenu(null);
+                      void contextLocalOrigin.clearLocalSource();
+                    }}
+                  >
+                    <MaterialSymbol icon="link_off" size={18} />
+                    <span>Clear Local Source</span>
+                  </button>
+                )}
+                <button
+                  type="button"
+                  className={contextMenuDangerItemClassName}
+                  data-agent-elements-shell="collab-context-menu-item"
+                  data-collab-action="delete"
+                  data-testid="agent-elements-collab-context-delete"
+                  onClick={handleDelete}
+                >
+                  <MaterialSymbol icon="delete" size={18} />
+                  <span>Delete</span>
+                </button>
+              </>
+            )}
           </div>
         </FloatingPortal>
       )}

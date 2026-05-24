@@ -111,8 +111,16 @@ export const SharedLinksPanel: React.FC = () => {
     typeof share.sessionId === 'string' && share.sessionId.startsWith('file:') ? 'File' : 'Session';
 
   return (
-    <div className="provider-panel max-w-2xl">
-      <div className="provider-panel-header flex items-center justify-between mb-4">
+    <div
+      className="provider-panel shared-links-panel agent-elements-settings-panel max-w-2xl"
+      data-agent-elements-shell="shared-links-panel"
+      data-component="SharedLinksPanel"
+      data-testid="agent-elements-shared-links-panel"
+    >
+      <div
+        className="provider-panel-header shared-links-panel-header agent-elements-settings-panel-header flex items-center justify-between mb-4"
+        data-testid="agent-elements-shared-links-header"
+      >
         <div>
           <h3 className="text-lg font-semibold text-[var(--nim-text)] m-0">Shared Links</h3>
           <p className="text-[0.8125rem] text-[var(--nim-text-muted)] mt-1 mb-0">
@@ -123,6 +131,7 @@ export const SharedLinksPanel: React.FC = () => {
           <button
             className="flex items-center gap-1.5 px-3 py-1.5 text-[0.8125rem] text-[var(--nim-text-muted)] bg-transparent border border-[var(--nim-border)] rounded-md cursor-pointer transition-colors duration-150 hover:bg-[var(--nim-bg-hover)] hover:text-[var(--nim-text)]"
             onClick={fetchShares}
+            data-testid="agent-elements-shared-links-refresh"
           >
             <MaterialSymbol icon="refresh" size={14} />
             Refresh
@@ -132,7 +141,10 @@ export const SharedLinksPanel: React.FC = () => {
 
       {/* Loading state */}
       {state === 'loading' && (
-        <div className="flex items-center justify-center py-12 text-[var(--nim-text-muted)]">
+        <div
+          className="shared-links-loading agent-elements-tool-card flex items-center justify-center py-12 text-[var(--nim-text-muted)] rounded-lg border border-[var(--nim-border)] bg-[var(--nim-bg-secondary)]"
+          data-testid="agent-elements-shared-links-loading"
+        >
           <MaterialSymbol icon="progress_activity" size={20} className="animate-spin mr-2" />
           Loading shared links...
         </div>
@@ -140,7 +152,10 @@ export const SharedLinksPanel: React.FC = () => {
 
       {/* Unauthenticated state */}
       {state === 'unauthenticated' && (
-        <div className="flex flex-col items-center justify-center py-12 text-center">
+        <div
+          className="shared-links-unauthenticated agent-elements-tool-card flex flex-col items-center justify-center py-12 text-center rounded-lg border border-[var(--nim-border)] bg-[var(--nim-bg-secondary)]"
+          data-testid="agent-elements-shared-links-unauthenticated"
+        >
           <MaterialSymbol icon="account_circle" size={32} className="text-[var(--nim-text-faint)] mb-3" />
           <p className="text-[0.8125rem] text-[var(--nim-text-muted)] mb-2">
             Sign in to share files and sessions.
@@ -153,7 +168,10 @@ export const SharedLinksPanel: React.FC = () => {
 
       {/* Error state */}
       {state === 'error' && (
-        <div className="flex flex-col items-center justify-center py-12 text-center">
+        <div
+          className="shared-links-error agent-elements-tool-card flex flex-col items-center justify-center py-12 text-center rounded-lg border border-[var(--nim-border)] bg-[var(--nim-bg-secondary)]"
+          data-testid="agent-elements-shared-links-error"
+        >
           <MaterialSymbol icon="error" size={32} className="text-[var(--nim-error)] mb-3" />
           <p className="text-[0.8125rem] text-[var(--nim-text-muted)] mb-2">
             {errorMessage}
@@ -170,7 +188,10 @@ export const SharedLinksPanel: React.FC = () => {
 
       {/* Empty state */}
       {state === 'loaded' && shares.length === 0 && (
-        <div className="flex flex-col items-center justify-center py-12 text-center">
+        <div
+          className="shared-links-empty agent-elements-tool-card flex flex-col items-center justify-center py-12 text-center rounded-lg border border-[var(--nim-border)] bg-[var(--nim-bg-secondary)]"
+          data-testid="agent-elements-shared-links-empty"
+        >
           <MaterialSymbol icon="link" size={32} className="text-[var(--nim-text-faint)] mb-3" />
           <p className="text-[0.8125rem] text-[var(--nim-text-muted)] mb-1">
             No shared links yet.
@@ -183,11 +204,16 @@ export const SharedLinksPanel: React.FC = () => {
 
       {/* Shares list */}
       {state === 'loaded' && shares.length > 0 && (
-        <div className="flex flex-col gap-0 border border-[var(--nim-border)] rounded-lg overflow-hidden">
+        <div
+          className="shared-links-list flex flex-col gap-0 border border-[var(--nim-border)] rounded-lg overflow-hidden"
+          data-section="shared-links-list"
+          data-testid="agent-elements-shared-links-list"
+        >
           {shares.map((share, index) => (
             <div
               key={share.shareId}
-              className={`flex items-start gap-3 px-4 py-3 bg-[var(--nim-bg)] ${index < shares.length - 1 ? 'border-b border-[var(--nim-border)]' : ''}`}
+              className={`shared-link-row agent-elements-tool-card flex !flex-row items-start gap-3 px-4 py-3 bg-[var(--nim-bg)] ${index < shares.length - 1 ? 'border-b border-[var(--nim-border)]' : ''}`}
+              data-testid={`agent-elements-shared-link-row-${share.shareId}`}
             >
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-1">
@@ -217,6 +243,7 @@ export const SharedLinksPanel: React.FC = () => {
                   className="flex items-center justify-center w-7 h-7 rounded-md bg-transparent border-none text-[var(--nim-text-faint)] cursor-pointer transition-colors duration-150 hover:text-[var(--nim-text)] hover:bg-[var(--nim-bg-hover)]"
                   title="Copy link"
                   onClick={() => handleCopyLink(share)}
+                  data-testid={`agent-elements-shared-link-copy-${share.shareId}`}
                 >
                   <MaterialSymbol icon={copiedId === share.shareId ? 'check' : 'content_copy'} size={14} />
                 </button>
@@ -225,6 +252,7 @@ export const SharedLinksPanel: React.FC = () => {
                   title="Delete shared link"
                   onClick={() => handleDelete(share)}
                   disabled={deletingId === share.shareId}
+                  data-testid={`agent-elements-shared-link-delete-${share.shareId}`}
                 >
                   <MaterialSymbol
                     icon={deletingId === share.shareId ? 'progress_activity' : 'delete'}

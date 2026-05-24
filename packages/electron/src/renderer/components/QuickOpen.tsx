@@ -72,6 +72,7 @@ export const QuickOpen: React.FC<QuickOpenProps> = ({
 
   // Combined list of files to display
   const displayFiles = searchQuery ? searchResults : recentFileItems;
+  const mode = startInContentSearchMode ? 'content' : 'file';
 
   // Search for files in the workspace (name search only)
   const searchFiles = useCallback(async (query: string) => {
@@ -452,42 +453,55 @@ export const QuickOpen: React.FC<QuickOpenProps> = ({
   return (
     <>
       <div
-        className="quick-open-backdrop fixed inset-0 z-[99998] nim-animate-fade-in bg-black/50"
+        className="quick-open-backdrop agent-elements-quick-open-backdrop fixed inset-0 z-[99998] nim-animate-fade-in bg-[color-mix(in_srgb,var(--nim-text)_36%,transparent)]"
         onClick={onClose}
+        data-testid="agent-elements-quick-open-backdrop"
+        data-agent-elements-shell="quick-open-backdrop"
       />
       <div
-        className="quick-open-modal fixed top-[20%] left-1/2 -translate-x-1/2 w-[90%] max-w-[600px] max-h-[60vh] flex flex-col overflow-hidden rounded-lg z-[99999] bg-nim border border-nim shadow-[0_20px_60px_rgba(0,0,0,0.3)]"
+        className="quick-open-modal agent-elements-quick-open agent-elements-tool-card fixed top-[18%] left-1/2 -translate-x-1/2 w-[90vw] max-w-[640px] max-h-[62vh] !gap-0 !p-0 flex flex-col overflow-hidden rounded-[var(--an-border-radius)] z-[99999] bg-[var(--an-background)] border border-[var(--an-border-color)] shadow-[0_20px_60px_color-mix(in_srgb,var(--nim-text)_18%,transparent)]"
+        data-testid="agent-elements-quick-open"
+        data-component="QuickOpen"
+        data-agent-elements-shell="quick-open"
+        data-mode={mode}
       >
         <div
-          className="quick-open-header p-3 border-b border-nim"
+          className="quick-open-header agent-elements-quick-open-header p-[var(--an-spacing-lg)] border-b border-[var(--an-border-color)]"
+          data-testid="agent-elements-quick-open-header"
+          data-agent-elements-shell="quick-open-header"
         >
-          <div className="text-[11px] font-medium text-nim-faint uppercase tracking-wide mb-2">
+          <div className="quick-open-title agent-elements-quick-open-title text-[12px] font-medium text-[var(--an-foreground-muted)] mb-2">
             {startInContentSearchMode ? 'Search in Files' : 'Open File'}
           </div>
           <div className="relative">
             <input
               ref={searchInputRef}
               type="text"
-              className="quick-open-search nim-input text-base"
+              className="quick-open-search agent-elements-quick-open-input nim-input text-sm rounded-[var(--an-input-border-radius)] border-[var(--an-input-border-color)] bg-[var(--an-input-background)] text-[var(--an-input-color)] placeholder:text-[var(--an-input-placeholder-color)] focus:outline-none focus:ring-2 focus:ring-[var(--an-input-focus-outline)]"
               placeholder={startInContentSearchMode ? "Search in file contents..." : "Search files..."}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
+              data-testid="agent-elements-quick-open-input"
+              data-agent-elements-shell="quick-open-input"
             />
             {isSearching && (
               <div
-                className="quick-open-searching absolute right-3 top-1/2 -translate-y-1/2 text-xs text-nim-faint"
+                className="quick-open-searching agent-elements-quick-open-searching absolute right-3 top-1/2 -translate-y-1/2 text-xs text-[var(--an-foreground-subtle)]"
+                data-agent-elements-shell="quick-open-searching"
               >
                 {contentSearchTriggered ? 'Searching file contents...' : 'Searching...'}
               </div>
             )}
             {!isSearching && searchQuery && !contentSearchTriggered && !startInContentSearchMode && (
               <button
-                className="quick-open-content-search-hint absolute right-3 top-1/2 -translate-y-1/2 text-xs flex items-center gap-1 px-2 py-1 rounded cursor-pointer border-none transition-colors duration-150 bg-transparent text-nim-faint hover:bg-[var(--nim-accent-subtle)] hover:text-nim-primary"
+                className="quick-open-content-search-hint agent-elements-quick-open-content-search absolute right-3 top-1/2 -translate-y-1/2 text-xs flex items-center gap-1 px-2 py-1 rounded-[6px] cursor-pointer border border-transparent transition-colors duration-150 bg-transparent text-[var(--an-foreground-muted)] hover:bg-[var(--an-background-tertiary)] hover:text-[var(--an-primary-color)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--an-input-focus-outline)]"
                 onClick={() => searchFileContents()}
                 title="Search in file contents"
+                data-testid="agent-elements-quick-open-content-search"
+                data-agent-elements-shell="quick-open-content-search"
             >
               <kbd
-                className="px-1.5 py-0.5 rounded font-mono text-[10px] bg-nim border border-nim text-nim"
+                className="agent-elements-quick-open-kbd px-1.5 py-0.5 rounded-[5px] font-mono text-[10px] bg-[var(--an-background)] border border-[var(--an-border-color)] text-[var(--an-foreground)]"
               >
                 Tab
               </kbd>
@@ -497,10 +511,16 @@ export const QuickOpen: React.FC<QuickOpenProps> = ({
           </div>
         </div>
 
-        <div className="quick-open-results flex-1 overflow-y-auto min-h-[200px]">
+        <div
+          className="quick-open-results agent-elements-quick-open-results flex-1 overflow-y-auto min-h-[200px] py-1"
+          data-testid="agent-elements-quick-open-results"
+          data-agent-elements-shell="quick-open-results"
+        >
           {displayFiles.length === 0 ? (
             <div
-              className="quick-open-empty p-10 text-center text-nim-faint"
+              className="quick-open-empty agent-elements-quick-open-empty p-10 text-center text-[var(--an-foreground-subtle)]"
+              data-testid="agent-elements-quick-open-empty"
+              data-agent-elements-shell="quick-open-empty"
             >
               {searchQuery ? 'No files found' : 'No recent files'}
             </div>
@@ -512,8 +532,8 @@ export const QuickOpen: React.FC<QuickOpenProps> = ({
               {displayFiles.map((file, index) => (
                 <li
                   key={`${file.path}-${index}`}
-                  className={`quick-open-item relative group px-4 py-2.5 cursor-pointer border-l-[3px] transition-all duration-100 ${
-                    index === selectedIndex ? 'selected bg-nim-selected border-l-nim-primary' : 'border-transparent hover:bg-nim-hover'
+                  className={`quick-open-item agent-elements-quick-open-item relative group mx-2 my-1 px-3 py-2.5 cursor-pointer rounded-[var(--an-tool-border-radius)] border transition-[background-color,border-color,box-shadow] duration-150 ease-out ${
+                    index === selectedIndex ? 'selected bg-[var(--an-background-tertiary)] border-[var(--an-tool-border-color)] shadow-[inset_0_0_0_1px_color-mix(in_srgb,var(--an-primary-color)_16%,transparent)]' : 'border-transparent hover:bg-[var(--an-background-tertiary)] hover:border-[var(--an-tool-border-color)]'
                   } ${file.isContentMatch ? 'content-match' : ''} ${file.isFileNameMatch ? 'name-match' : ''}`}
                   onClick={() => handleItemSelect(file.path, file.type)}
                   onMouseEnter={() => {
@@ -521,10 +541,17 @@ export const QuickOpen: React.FC<QuickOpenProps> = ({
                       setSelectedIndex(index);
                     }
                   }}
+                  data-testid={`agent-elements-quick-open-item-${index}`}
+                  data-agent-elements-shell="quick-open-result"
+                  data-selected={index === selectedIndex ? 'true' : 'false'}
+                  data-file-type={file.type ?? 'file'}
+                  data-recent={file.isRecent ? 'true' : 'false'}
+                  data-name-match={file.isFileNameMatch ? 'true' : 'false'}
+                  data-content-match={file.isContentMatch ? 'true' : 'false'}
                 >
                   {onShowFileSessions && (
                     <button
-                      className={`quick-open-show-sessions absolute right-3 top-2.5 p-1 rounded transition-all duration-100 border-none cursor-pointer bg-transparent text-[var(--nim-text-faint)] hover:text-[var(--nim-primary)] hover:bg-[var(--nim-accent-subtle)] ${
+                      className={`quick-open-show-sessions agent-elements-quick-open-show-sessions absolute right-3 top-2.5 p-1 rounded-[6px] transition-all duration-100 border border-transparent cursor-pointer bg-transparent text-[var(--an-foreground-subtle)] hover:text-[var(--an-primary-color)] hover:bg-[var(--an-background-tertiary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--an-input-focus-outline)] ${
                         index === selectedIndex ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
                       }`}
                       onClick={(e) => {
@@ -535,47 +562,54 @@ export const QuickOpen: React.FC<QuickOpenProps> = ({
                         onShowFileSessions(relativePath);
                       }}
                       title="Show sessions that edited this file"
+                      data-testid={`agent-elements-quick-open-show-sessions-${index}`}
+                      data-agent-elements-shell="quick-open-show-sessions"
                     >
                       <MaterialSymbol icon="history" size={16} />
                     </button>
                   )}
                   <div
-                    className={`quick-open-item-name text-sm font-medium flex items-center gap-2 text-nim ${file.isContentMatch ? 'mb-1' : ''}`}
+                    className={`quick-open-item-name agent-elements-quick-open-item-name text-sm font-medium flex items-center gap-2 text-[var(--an-foreground)] ${file.isContentMatch ? 'mb-1' : ''}`}
+                    data-testid={`agent-elements-quick-open-item-name-${index}`}
+                    data-agent-elements-shell="quick-open-item-name"
                   >
                     {file.type === 'directory' && (
-                      <MaterialSymbol icon="folder" size={16} className="text-nim-faint shrink-0" />
+                      <MaterialSymbol icon="folder" size={16} className="text-[var(--an-foreground-subtle)] shrink-0" />
                     )}
                     {file.type === 'directory' ? file.name + '/' : file.name}
                     {file.isRecent && !searchQuery && (
-                      <span className="quick-open-badge nim-badge-primary text-[10px]">Recent</span>
+                      <span className="quick-open-badge agent-elements-status-pill text-[10px]" data-agent-elements-shell="quick-open-badge">Recent</span>
                     )}
                     {/*{file.isFileNameMatch && (*/}
                     {/*  <span className="quick-open-badge name-badge nim-badge-success text-[10px]">Name</span>*/}
                     {/*)}*/}
                     {file.matches && file.matches.length > 0 && (
                       <span
-                        className="quick-open-badge content-badge text-[10px] px-1.5 py-0.5 rounded text-white font-semibold uppercase bg-[var(--nim-accent-purple)]"
+                        className="quick-open-badge content-badge agent-elements-status-pill text-[10px] px-1.5 py-0.5 rounded-[6px] text-[var(--nim-bg)] font-semibold bg-[var(--an-primary-color)]"
+                        data-agent-elements-shell="quick-open-match-badge"
                       >
                         {file.matches.length} match{file.matches.length > 1 ? 'es' : ''}
                       </span>
                     )}
                   </div>
                   <div
-                    className="quick-open-item-path text-xs mt-0.5 overflow-hidden text-ellipsis whitespace-nowrap text-nim-faint"
+                    className="quick-open-item-path agent-elements-quick-open-item-path text-xs mt-0.5 overflow-hidden text-ellipsis whitespace-nowrap text-[var(--an-foreground-subtle)]"
+                    data-agent-elements-shell="quick-open-item-path"
                   >
                     {getRelativeDir(file.path, workspacePath)}
                   </div>
                   {file.matches && file.matches.length > 0 && (
                     <div
-                      className="quick-open-item-matches mt-2 pl-2 border-l-2 border-nim"
+                      className="quick-open-item-matches agent-elements-quick-open-matches mt-2 rounded-[var(--an-tool-border-radius)] border border-[var(--an-tool-border-color)] bg-[var(--an-background-secondary)] p-2"
+                      data-agent-elements-shell="quick-open-matches"
                     >
                       {file.matches.slice(0, 2).map((match, i) => (
                         <div
                           key={i}
-                          className="quick-open-match text-xs leading-snug mb-1 block overflow-hidden text-ellipsis whitespace-nowrap text-nim-muted"
+                          className="quick-open-match text-xs leading-snug mb-1 block overflow-hidden text-ellipsis whitespace-nowrap text-[var(--an-foreground-muted)]"
                         >
                           <span
-                            className="quick-open-line-number mr-2 font-medium text-nim-faint"
+                            className="quick-open-line-number mr-2 font-medium text-[var(--an-foreground-subtle)]"
                           >
                             Line {match.line}:
                           </span>
@@ -592,7 +626,7 @@ export const QuickOpen: React.FC<QuickOpenProps> = ({
                       ))}
                       {file.matches.length > 2 && (
                         <div
-                          className="quick-open-more-matches text-[11px] italic mt-1 text-nim-faint"
+                          className="quick-open-more-matches text-[11px] italic mt-1 text-[var(--an-foreground-subtle)]"
                         >
                           ...and {file.matches.length - 2} more match{file.matches.length - 2 > 1 ? 'es' : ''}
                         </div>
@@ -606,24 +640,26 @@ export const QuickOpen: React.FC<QuickOpenProps> = ({
         </div>
 
         <div
-          className="quick-open-footer px-4 py-2 flex justify-between border-t border-nim bg-nim-secondary"
+          className="quick-open-footer agent-elements-quick-open-footer px-4 py-2 flex justify-between border-t border-[var(--an-border-color)] bg-[var(--an-background-secondary)]"
+          data-testid="agent-elements-quick-open-footer"
+          data-agent-elements-shell="quick-open-footer"
         >
           <div className="flex gap-4">
             <span
-              className="quick-open-hint text-[11px] flex items-center gap-1 text-nim-faint"
+              className="quick-open-hint agent-elements-quick-open-hint text-[11px] flex items-center gap-1 text-[var(--an-foreground-subtle)]"
             >
               <kbd
-                className="px-1.5 py-0.5 rounded font-mono text-[10px] bg-nim border border-nim text-nim"
+                className="agent-elements-quick-open-kbd px-1.5 py-0.5 rounded-[5px] font-mono text-[10px] bg-[var(--an-background)] border border-[var(--an-border-color)] text-[var(--an-foreground)]"
               >
                 ↑↓
               </kbd>
               Navigate
             </span>
             <span
-              className="quick-open-hint text-[11px] flex items-center gap-1 text-nim-faint"
+              className="quick-open-hint agent-elements-quick-open-hint text-[11px] flex items-center gap-1 text-[var(--an-foreground-subtle)]"
             >
               <kbd
-                className="px-1.5 py-0.5 rounded font-mono text-[10px] bg-nim border border-nim text-nim"
+                className="agent-elements-quick-open-kbd px-1.5 py-0.5 rounded-[5px] font-mono text-[10px] bg-[var(--an-background)] border border-[var(--an-border-color)] text-[var(--an-foreground)]"
               >
                 Enter
               </kbd>
@@ -631,10 +667,10 @@ export const QuickOpen: React.FC<QuickOpenProps> = ({
             </span>
             {searchQuery && !contentSearchTriggered && !startInContentSearchMode && (
               <span
-                className="quick-open-hint text-[11px] flex items-center gap-1 text-nim-faint"
+                className="quick-open-hint agent-elements-quick-open-hint text-[11px] flex items-center gap-1 text-[var(--an-foreground-subtle)]"
               >
                 <kbd
-                  className="px-1.5 py-0.5 rounded font-mono text-[10px] bg-nim border border-nim text-nim"
+                  className="agent-elements-quick-open-kbd px-1.5 py-0.5 rounded-[5px] font-mono text-[10px] bg-[var(--an-background)] border border-[var(--an-border-color)] text-[var(--an-foreground)]"
                 >
                   Tab
                 </kbd>
@@ -642,10 +678,10 @@ export const QuickOpen: React.FC<QuickOpenProps> = ({
               </span>
             )}
             <span
-              className="quick-open-hint text-[11px] flex items-center gap-1 text-nim-faint"
+              className="quick-open-hint agent-elements-quick-open-hint text-[11px] flex items-center gap-1 text-[var(--an-foreground-subtle)]"
             >
               <kbd
-                className="px-1.5 py-0.5 rounded font-mono text-[10px] bg-nim border border-nim text-nim"
+                className="agent-elements-quick-open-kbd px-1.5 py-0.5 rounded-[5px] font-mono text-[10px] bg-[var(--an-background)] border border-[var(--an-border-color)] text-[var(--an-foreground)]"
               >
                 Esc
               </kbd>
@@ -654,10 +690,10 @@ export const QuickOpen: React.FC<QuickOpenProps> = ({
           </div>
           {!startInContentSearchMode && (
             <span
-              className="quick-open-hint text-[11px] flex items-center gap-1 text-nim-faint"
+              className="quick-open-hint agent-elements-quick-open-hint text-[11px] flex items-center gap-1 text-[var(--an-foreground-subtle)]"
             >
               <kbd
-                className="px-1.5 py-0.5 rounded font-mono text-[10px] bg-nim border border-nim text-nim"
+                className="agent-elements-quick-open-kbd px-1.5 py-0.5 rounded-[5px] font-mono text-[10px] bg-[var(--an-background)] border border-[var(--an-border-color)] text-[var(--an-foreground)]"
               >
                 {getShortcutDisplay(KeyboardShortcuts.window.contentSearch)}
               </kbd>

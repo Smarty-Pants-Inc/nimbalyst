@@ -32,7 +32,7 @@
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useAtomValue } from 'jotai';
-import { MarkdownEditor, DocumentPathProvider } from '@nimbalyst/runtime';
+import { MarkdownEditor, DocumentPathProvider, MaterialSymbol } from '@nimbalyst/runtime';
 import { FixedTabHeaderContainer, FixedTabHeaderRegistry } from '@nimbalyst/runtime/plugins/shared/fixedTabHeader';
 import { LexicalDiffHeaderAdapter } from '../UnifiedDiffHeader';
 import { DocumentSyncProvider } from '@nimbalyst/runtime/sync';
@@ -99,7 +99,10 @@ const CollabAvatars: React.FC<{ filePath: string }> = ({ filePath }) => {
   if (users.size === 0) return null;
 
   return (
-    <div className="flex items-center -space-x-1.5">
+    <div
+      className="agent-elements-collab-avatars flex items-center -space-x-1.5"
+      data-testid="agent-elements-collab-avatars"
+    >
       {[...users.entries()].map(([userId, user]) => {
         const initials = user.name
           .split(/\s+/)
@@ -110,12 +113,11 @@ const CollabAvatars: React.FC<{ filePath: string }> = ({ filePath }) => {
         return (
           <div
             key={userId}
-            className="w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-medium"
+            className="agent-elements-collab-avatar flex h-5 w-5 items-center justify-center rounded-full border-[1.5px] border-[var(--nim-bg-secondary)] text-[9px] font-medium text-[var(--nim-bg)]"
             style={{
               backgroundColor: user.color,
-              color: '#fff',
-              border: '1.5px solid var(--nim-bg-secondary)',
             }}
+            data-testid="agent-elements-collab-avatar"
             title={user.name}
           >
             {initials}
@@ -137,16 +139,16 @@ const CollabStatusBar: React.FC<{
   const status = useAtomValue(collabConnectionStatusAtom(filePath));
 
   const statusDot = status === 'connected'
-    ? 'bg-green-500'
+    ? 'bg-[var(--nim-success)]'
     : status === 'replaying'
-      ? 'bg-blue-500'
+      ? 'bg-[var(--nim-info)]'
       : status === 'offline-unsynced'
-        ? 'bg-orange-500'
+        ? 'bg-[var(--nim-warning)]'
     : status === 'error'
-      ? 'bg-red-500'
+      ? 'bg-[var(--nim-error)]'
     : status === 'connecting' || status === 'syncing'
-      ? 'bg-yellow-500'
-      : 'bg-gray-500';
+      ? 'bg-[var(--nim-warning)]'
+      : 'bg-[var(--nim-text-faint)]';
 
   const statusLabel = status === 'connected'
     ? 'Connected'
@@ -164,19 +166,22 @@ const CollabStatusBar: React.FC<{
 
   return (
     <div
-      className="flex items-center gap-2 px-3 py-1 text-xs"
-      style={{
-        borderBottom: '1px solid var(--nim-border)',
-        color: 'var(--nim-text-muted)',
-        backgroundColor: 'var(--nim-bg-secondary)',
-      }}
+      className="agent-elements-collab-status-bar flex min-h-8 items-center gap-2 border-b border-[var(--nim-border)] bg-[var(--nim-bg-secondary)] px-3 py-1 text-xs text-[var(--nim-text-muted)]"
+      data-agent-elements-shell="collab-status-bar"
+      data-testid="agent-elements-collab-status-bar"
     >
-      <div className={`w-2 h-2 rounded-full ${statusDot}`} />
-      <span>{statusLabel}</span>
+      <div
+        className={`agent-elements-collab-status-dot h-2 w-2 shrink-0 rounded-full ${statusDot}`}
+        data-status={status}
+        data-testid="agent-elements-collab-status-dot"
+      />
+      <span className="truncate">{statusLabel}</span>
       <CollabAvatars filePath={filePath} />
-      <span className="mx-1">|</span>
-      <span className="material-symbols-outlined" style={{ fontSize: '14px' }}>group</span>
-      <span>{fileName}</span>
+      <span aria-hidden="true" className="h-3 w-px shrink-0 bg-[var(--nim-border)]" />
+      <span className="agent-elements-collab-document flex min-w-0 items-center gap-1.5 text-[var(--nim-text-faint)]" data-testid="agent-elements-collab-document">
+        <MaterialSymbol icon="group" size={14} className="shrink-0" />
+        <span className="truncate">{fileName}</span>
+      </span>
     </div>
   );
 };

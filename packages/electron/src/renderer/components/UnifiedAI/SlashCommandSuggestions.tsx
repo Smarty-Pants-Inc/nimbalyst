@@ -10,6 +10,61 @@ interface ExtensionPluginCommand {
   description: string;
 }
 
+const suggestionsClass = [
+  'slash-command-suggestions',
+  'agent-elements-slash-command-suggestions',
+  'flex w-full max-w-4xl flex-col items-start gap-[var(--an-spacing-xs)]',
+  'px-[var(--an-spacing-md)] py-[var(--an-spacing-sm)] mx-auto',
+].join(' ');
+
+const labelClass = [
+  'slash-command-suggestions-label',
+  'text-[11px] font-medium leading-none text-[var(--an-foreground-subtle)]',
+].join(' ');
+
+const pillsClass = [
+  'slash-command-suggestions-pills',
+  'flex w-full flex-wrap justify-start gap-[var(--an-spacing-xs)]',
+].join(' ');
+
+const chipClass = [
+  'slash-command-pill',
+  'agent-elements-slash-command-chip',
+  'inline-flex cursor-pointer items-center gap-[var(--an-spacing-xxs)]',
+  'rounded-[var(--an-input-border-radius)] border border-[var(--an-border-color)]',
+  'bg-[var(--an-background-secondary)] px-[var(--an-spacing-sm)] py-[var(--an-spacing-xxs)]',
+  'text-[13px] font-medium text-[var(--an-foreground-muted)] outline-none',
+  'transition-[background-color,border-color,color] duration-150 ease-out',
+  'hover:border-[var(--an-border-color-strong)] hover:bg-[var(--an-background-tertiary)] hover:text-[var(--an-foreground)]',
+  'focus-visible:ring-2 focus-visible:ring-[var(--an-focus-ring)]',
+].join(' ');
+
+const expandClass = [
+  'slash-command-pill',
+  'slash-command-expand-pill',
+  'agent-elements-slash-command-expand',
+  'inline-flex cursor-pointer items-center gap-[var(--an-spacing-xxs)]',
+  'rounded-[var(--an-input-border-radius)] border border-[var(--an-border-color)]',
+  'bg-[var(--an-background)] px-[var(--an-spacing-sm)] py-[var(--an-spacing-xxs)]',
+  'text-[13px] font-medium text-[var(--an-foreground-subtle)] outline-none',
+  'transition-[background-color,border-color,color] duration-150 ease-out',
+  'hover:border-[var(--an-border-color-strong)] hover:bg-[var(--an-background-tertiary)] hover:text-[var(--an-foreground)]',
+  'focus-visible:ring-2 focus-visible:ring-[var(--an-focus-ring)]',
+].join(' ');
+
+const tooltipClass = [
+  'slash-command-tooltip',
+  'agent-elements-slash-command-tooltip',
+  'absolute bottom-[calc(100%+var(--an-spacing-xs))] left-1/2 z-[100]',
+  'min-w-[200px] max-w-[320px] -translate-x-1/2 whitespace-normal text-center',
+  'rounded-[var(--an-tool-border-radius)] border border-[var(--an-border-color)]',
+  'bg-[var(--an-background)] px-[var(--an-spacing-sm)] py-[var(--an-spacing-xs)]',
+  'text-xs font-normal leading-relaxed text-[var(--an-foreground-muted)]',
+  'pointer-events-none invisible opacity-0',
+  'transition-[opacity,visibility,background-color,border-color,color] duration-150 ease-out',
+  'group-hover:visible group-hover:opacity-100',
+].join(' ');
+
 export interface SlashCommandSuggestionsProps {
   /** Session provider - only shows for claude-code */
   provider: string;
@@ -143,24 +198,34 @@ export const SlashCommandSuggestions: React.FC<SlashCommandSuggestionsProps> = (
   }
 
   return (
-    <div className="slash-command-suggestions flex flex-col items-center gap-2 px-3 py-2 max-w-4xl mx-auto">
-      <div className="slash-command-suggestions-label text-xs font-medium text-[var(--nim-text-faint)]">
+    <div
+      className={suggestionsClass}
+      data-testid="agent-elements-slash-command-suggestions"
+      data-agent-elements-shell="slash-command-suggestions"
+      data-component="UnifiedAISlashCommandSuggestions"
+    >
+      <div className={labelClass}>
         Try a command:
       </div>
-      <div className="slash-command-suggestions-pills flex flex-wrap justify-center gap-2">
+      <div className={pillsClass}>
         {displayCommands.map((cmd) => (
           <div key={cmd.name} className="slash-command-pill-wrapper group relative inline-flex">
             <button
-              className="slash-command-pill inline-flex items-center gap-1 px-3 py-1.5 text-[13px] font-medium cursor-pointer rounded-2xl border transition-all duration-150 bg-[var(--nim-bg)] border-[var(--nim-border)] text-[var(--nim-text-muted)] hover:bg-[var(--nim-bg-hover)] hover:border-[var(--nim-primary)] hover:text-[var(--nim-text)] active:scale-[0.97]"
+              type="button"
+              className={chipClass}
+              data-testid="agent-elements-slash-command-chip"
+              data-agent-elements-shell="slash-command-chip"
+              data-command-name={cmd.name}
               onClick={() => handleCommandClick(cmd)}
             >
-              <span className="slash-command-pill-icon font-semibold opacity-80 text-[var(--nim-primary)] group-hover:opacity-100">/</span>
+              <span className="slash-command-pill-icon font-semibold text-[var(--an-primary-color)]">/</span>
               <span className="slash-command-pill-name whitespace-nowrap">{cmd.name}</span>
             </button>
             {cmd.description && (
               <div
-                className="slash-command-tooltip absolute bottom-[calc(100%+8px)] left-1/2 -translate-x-1/2 px-3 py-2 text-xs font-normal leading-relaxed text-center whitespace-normal min-w-[200px] max-w-[320px] rounded-lg border z-[100] pointer-events-none opacity-0 invisible transition-[opacity,visibility] duration-150 group-hover:opacity-100 group-hover:visible bg-[var(--nim-bg)] border-[var(--nim-border)] text-[var(--nim-text-muted)] shadow-[0_8px_24px_rgba(0,0,0,0.3)]"
+                className={tooltipClass}
                 role="tooltip"
+                data-agent-elements-shell="slash-command-tooltip"
               >
                 {cmd.description}
               </div>
@@ -169,7 +234,10 @@ export const SlashCommandSuggestions: React.FC<SlashCommandSuggestionsProps> = (
         ))}
         {!isExpanded && hiddenCount > 0 && (
           <button
-            className="slash-command-pill slash-command-expand-pill inline-flex items-center gap-1 px-3 py-1.5 text-[13px] font-semibold cursor-pointer rounded-2xl border transition-all duration-150 bg-[var(--nim-bg)] border-[var(--nim-border)] text-[var(--nim-text-faint)] hover:bg-[var(--nim-bg-hover)] hover:border-[var(--nim-primary)] hover:text-[var(--nim-text)] active:scale-[0.97]"
+            type="button"
+            className={expandClass}
+            data-testid="agent-elements-slash-command-expand"
+            data-agent-elements-shell="slash-command-expand"
             onClick={handleExpandClick}
           >
             <span className="slash-command-pill-name whitespace-nowrap">+{hiddenCount}</span>

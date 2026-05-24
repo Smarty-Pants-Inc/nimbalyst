@@ -29,25 +29,29 @@ export function TerminalContextMenu({
   };
 
   const menuItemClasses =
-    'flex items-center gap-2.5 px-3 py-1.5 rounded cursor-pointer transition-colors text-[var(--nim-text)] hover:bg-[var(--nim-bg-hover)]';
+    'terminal-context-menu-item agent-elements-terminal-context-menu-item flex w-full items-center gap-2.5 rounded-[8px] border-none bg-transparent px-3 py-2 text-left text-[13px] text-[var(--an-foreground)] transition-colors duration-150 hover:bg-[var(--an-background-secondary)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--an-primary-color)]';
 
   return (
     <FloatingPortal>
       <div
         ref={menu.refs.setFloating}
-        style={{
-          ...menu.floatingStyles,
-          background: 'var(--nim-bg)',
-          border: '1px solid var(--nim-border)',
-        }}
+        style={menu.floatingStyles}
         {...menu.getFloatingProps()}
-        className="p-1 min-w-[140px] rounded-md z-[10000] text-[13px] backdrop-blur-[10px] shadow-[0_4px_12px_rgba(0,0,0,0.15)] dark:shadow-[0_4px_20px_rgba(0,0,0,0.5)]"
+        className="terminal-context-menu agent-elements-terminal-context-menu agent-elements-tool-card z-[10000] min-w-[148px] rounded-[10px] border border-[var(--an-border-color)] bg-[var(--an-background)] p-1 text-[13px] text-[var(--an-foreground)] shadow-[0_12px_32px_color-mix(in_srgb,var(--an-foreground)_10%,transparent)]"
+        data-component="TerminalContextMenu"
+        data-agent-elements-shell="terminal-context-menu"
         data-testid="terminal-context-menu"
       >
-        <div className={menuItemClasses} onClick={handleClear}>
+        <button
+          type="button"
+          className={menuItemClasses}
+          onClick={handleClear}
+          data-agent-elements-shell="terminal-context-menu-item"
+          data-testid="agent-elements-terminal-context-menu-clear"
+        >
           <MaterialSymbol icon="backspace" size={18} />
-          <span>Clear</span>
-        </div>
+          <span className="agent-elements-terminal-context-menu-label" data-command="clear">Clear</span>
+        </button>
       </div>
     </FloatingPortal>
   );

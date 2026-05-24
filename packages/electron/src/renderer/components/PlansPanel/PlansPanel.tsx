@@ -159,9 +159,17 @@ export function PlansPanel({ currentFilePath, onPlanSelect }: PlansPanelProps): 
 
   if (loading) {
     return (
-      <div className="plans-panel flex flex-col h-full bg-nim">
-        <div className="plans-loading flex flex-col items-center justify-center py-10 px-5 text-nim-muted gap-3">
-          <div className="spinner w-6 h-6 border-[3px] border-nim-secondary border-t-nim-accent rounded-full animate-spin"></div>
+      <div
+        className="plans-panel agent-elements-plans-panel flex h-full flex-col bg-[var(--an-background)] text-[var(--an-foreground)]"
+        data-component="PlansPanel"
+        data-agent-elements-shell="plans-panel"
+        data-testid="agent-elements-plans-panel"
+      >
+        <div
+          className="plans-loading agent-elements-plans-loading flex flex-col items-center justify-center gap-[var(--an-spacing-lg)] px-5 py-10 text-[var(--an-foreground-muted)]"
+          data-agent-elements-shell="plans-loading"
+        >
+          <div className="agent-elements-plans-loading-spinner h-6 w-6 rounded-full border-[3px] border-[var(--an-border-color)] border-t-[var(--an-primary-color)] animate-spin" />
           <span>Loading plans...</span>
         </div>
       </div>
@@ -170,8 +178,16 @@ export function PlansPanel({ currentFilePath, onPlanSelect }: PlansPanelProps): 
 
   if (error) {
     return (
-      <div className="plans-panel flex flex-col h-full bg-nim">
-        <div className="plans-error flex flex-col items-center justify-center py-10 px-5 text-nim-error gap-3">
+      <div
+        className="plans-panel agent-elements-plans-panel flex h-full flex-col bg-[var(--an-background)] text-[var(--an-foreground)]"
+        data-component="PlansPanel"
+        data-agent-elements-shell="plans-panel"
+        data-testid="agent-elements-plans-panel"
+      >
+        <div
+          className="plans-error agent-elements-plans-error flex flex-col items-center justify-center gap-[var(--an-spacing-lg)] px-5 py-10 text-[var(--an-diff-removed-text)]"
+          data-agent-elements-shell="plans-error"
+        >
           <span>{error}</span>
         </div>
       </div>
@@ -179,7 +195,12 @@ export function PlansPanel({ currentFilePath, onPlanSelect }: PlansPanelProps): 
   }
 
   return (
-    <div className="plans-panel flex flex-col h-full bg-nim">
+    <div
+      className="plans-panel agent-elements-plans-panel flex h-full flex-col bg-[var(--an-background)] text-[var(--an-foreground)]"
+      data-component="PlansPanel"
+      data-agent-elements-shell="plans-panel"
+      data-testid="agent-elements-plans-panel"
+    >
       <PlanFilters
         searchTerm={searchTerm}
         onSearchChange={setSearchTerm}
@@ -191,11 +212,17 @@ export function PlansPanel({ currentFilePath, onPlanSelect }: PlansPanelProps): 
         onHideCompletedChange={setHideCompleted}
       />
 
-      <div className="plans-list flex-1 overflow-y-auto overflow-x-hidden scrollbar-thin scrollbar-track-transparent scrollbar-thumb-nim-scrollbar hover:scrollbar-thumb-nim-scrollbar-hover">
+      <div
+        className="plans-list agent-elements-plans-list flex-1 overflow-y-auto overflow-x-hidden scrollbar-thin scrollbar-track-transparent scrollbar-thumb-nim-scrollbar hover:scrollbar-thumb-nim-scrollbar-hover"
+        data-agent-elements-shell="plans-list"
+      >
         {filteredPlans.length === 0 ? (
-          <div className="plans-empty flex flex-col items-center justify-center py-[60px] px-5 text-nim-faint text-center">
-            <span className="material-symbols-outlined text-5xl mb-3 opacity-50">description</span>
-            <div className="plans-empty-text text-[13px] leading-normal">
+          <div
+            className="plans-empty agent-elements-plans-empty flex flex-col items-center justify-center px-5 py-[60px] text-center text-[var(--an-foreground-subtle)]"
+            data-agent-elements-shell="plans-empty"
+          >
+            <span className="material-symbols-outlined mb-[var(--an-spacing-lg)] text-5xl opacity-50">description</span>
+            <div className="plans-empty-text agent-elements-plans-empty-text text-[13px] leading-normal">
               {searchTerm || statusFilter !== 'all' || priorityFilter !== 'all' || hideCompleted
                 ? 'No plans match your filters'
                 : 'No plan documents found'}

@@ -1,0 +1,322 @@
+/*
+ * Derived from Agent Elements by 21st.dev generic-tool, error-message,
+ * tool-group, spiral-loader, and text-shimmer primitives (MIT).
+ */
+
+.agent-elements-progress-card,
+.agent-elements-state-snapshot-card,
+.agent-elements-lifecycle-card,
+.agent-elements-turn-summary-card,
+.agent-elements-error-card {
+  text-align: left;
+}
+
+.agent-elements-progress-shell,
+.agent-elements-state-shell,
+.agent-elements-lifecycle-shell,
+.agent-elements-turn-summary-shell,
+.agent-elements-error-shell {
+  display: flex;
+  flex-direction: column;
+  max-width: 100%;
+  overflow: hidden;
+  background: var(--an-background);
+  border: 1px solid var(--an-tool-border-color);
+  border-radius: var(--an-tool-border-radius);
+}
+
+.agent-elements-stream-heading,
+.agent-elements-state-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: var(--an-spacing-xs);
+  min-width: 0;
+  min-height: 28px;
+  padding: 0 var(--an-spacing-md);
+  color: var(--an-tool-color);
+  background: var(--an-tool-background);
+  border: 0;
+  border-radius: 0;
+  font-size: 12px;
+  font-weight: 450;
+  line-height: 16px;
+  text-align: left;
+  user-select: none;
+}
+
+.agent-elements-stream-heading > span:first-child,
+.agent-elements-state-toggle > span:first-child {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.agent-elements-state-toggle {
+  width: 100%;
+  cursor: pointer;
+}
+
+.agent-elements-state-toggle:disabled {
+  cursor: default;
+}
+
+.agent-elements-state-toggle:focus-visible,
+.agent-elements-error-action:focus-visible {
+  outline: 2px solid var(--an-input-focus-outline, var(--nim-border-focus));
+  outline-offset: -2px;
+}
+
+.agent-elements-progress-updates,
+.agent-elements-lifecycle-events,
+.agent-elements-turn-summary-warnings,
+.agent-elements-error-actions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--an-spacing-xs);
+  padding: var(--an-spacing-sm);
+  user-select: none;
+}
+
+.agent-elements-progress-update,
+.agent-elements-lifecycle-event {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: start;
+  gap: var(--an-spacing-xs);
+  min-height: 28px;
+  padding: var(--an-spacing-xs) var(--an-spacing-sm);
+  color: var(--an-tool-color);
+  background: var(--an-background-secondary);
+  border: 1px solid var(--an-tool-border-color);
+  border-radius: calc(var(--an-tool-border-radius) - 4px);
+  animation: agent-elements-stream-row-in 180ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation-delay: calc(var(--agent-elements-stream-index, 0) * 60ms);
+  transition: background-color 150ms cubic-bezier(0.16, 1, 0.3, 1),
+    border-color 150ms cubic-bezier(0.16, 1, 0.3, 1),
+    transform 150ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.agent-elements-progress-update:hover,
+.agent-elements-lifecycle-event:hover {
+  background: var(--an-background-tertiary);
+}
+
+.agent-elements-progress-update-dot {
+  width: 8px;
+  height: 8px;
+  margin-top: 4px;
+  background: var(--an-tool-color-muted);
+  border-radius: 999px;
+}
+
+.agent-elements-progress-update[data-tone="running"] .agent-elements-progress-update-dot {
+  background: var(--an-primary-color);
+}
+
+.agent-elements-progress-update[data-tone="success"] .agent-elements-progress-update-dot,
+.agent-elements-lifecycle-event[data-lifecycle-status="completed"]::before {
+  background: var(--an-diff-added-text);
+}
+
+.agent-elements-progress-update[data-tone="warning"] .agent-elements-progress-update-dot,
+.agent-elements-lifecycle-event[data-lifecycle-status="interrupted"]::before,
+.agent-elements-lifecycle-event[data-lifecycle-status="cancelled"]::before {
+  background: var(--nim-warning);
+}
+
+.agent-elements-progress-update[data-tone="error"] .agent-elements-progress-update-dot,
+.agent-elements-lifecycle-event[data-lifecycle-status="failed"]::before {
+  background: var(--an-diff-removed-text);
+}
+
+.agent-elements-progress-update-label,
+.agent-elements-lifecycle-event > span {
+  min-width: 0;
+  color: var(--an-tool-color);
+  font-size: 13px;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+  user-select: text;
+}
+
+.agent-elements-progress-update small,
+.agent-elements-progress-update time,
+.agent-elements-lifecycle-event small,
+.agent-elements-lifecycle-event time,
+.agent-elements-stream-elapsed,
+.agent-elements-lifecycle-resume {
+  min-width: 0;
+  color: var(--an-tool-color-muted);
+  font-size: 12px;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+  user-select: text;
+}
+
+.agent-elements-progress-empty {
+  padding: var(--an-spacing-sm) var(--an-spacing-md);
+  color: var(--an-tool-color-muted);
+  font-size: 13px;
+  line-height: 1.4;
+  user-select: none;
+}
+
+.agent-elements-state-key-list,
+.agent-elements-turn-summary-metrics {
+  display: grid;
+  gap: var(--an-spacing-xs);
+  margin: 0;
+  padding: var(--an-spacing-sm);
+}
+
+.agent-elements-state-key-row {
+  display: grid;
+  grid-template-columns: minmax(84px, max-content) minmax(0, 1fr);
+  gap: var(--an-spacing-sm);
+  min-height: 28px;
+  padding: var(--an-spacing-xs) var(--an-spacing-sm);
+  color: var(--an-tool-color-muted);
+  background: var(--an-background-secondary);
+  border: 1px solid var(--an-tool-border-color);
+  border-radius: calc(var(--an-tool-border-radius) - 4px);
+  transition: background-color 150ms cubic-bezier(0.16, 1, 0.3, 1),
+    border-color 150ms cubic-bezier(0.16, 1, 0.3, 1),
+    transform 150ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.agent-elements-state-key-row dt,
+.agent-elements-turn-summary-metrics dt {
+  min-width: 0;
+  color: var(--an-foreground-subtle);
+  font-size: 12px;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+  user-select: none;
+}
+
+.agent-elements-state-key-row dd,
+.agent-elements-turn-summary-metrics dd {
+  display: flex;
+  flex-direction: column;
+  gap: var(--an-spacing-xxs);
+  min-width: 0;
+  margin: 0;
+  color: var(--an-tool-color);
+  font-size: 13px;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+  user-select: text;
+}
+
+.agent-elements-state-delta {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: var(--an-spacing-xs);
+}
+
+.agent-elements-state-delta span {
+  padding: var(--an-spacing-xxs) var(--an-spacing-xs);
+  background: var(--an-background-tertiary);
+  border-radius: var(--an-spacing-xs);
+}
+
+.agent-elements-lifecycle-event::before {
+  content: "";
+  width: 8px;
+  height: 8px;
+  margin-top: 5px;
+  background: var(--an-primary-color);
+  border-radius: 999px;
+}
+
+.agent-elements-turn-summary-metrics {
+  grid-template-columns: repeat(auto-fit, minmax(84px, 1fr));
+}
+
+.agent-elements-turn-summary-metrics div {
+  min-width: 0;
+  padding: var(--an-spacing-xs) var(--an-spacing-sm);
+  background: var(--an-background-secondary);
+  border: 1px solid var(--an-tool-border-color);
+  border-radius: calc(var(--an-tool-border-radius) - 4px);
+}
+
+.agent-elements-turn-summary-warning {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--an-spacing-xs);
+  color: var(--nim-warning);
+  font-size: 13px;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+  user-select: text;
+}
+
+.agent-elements-error-message,
+.agent-elements-error-detail {
+  padding: var(--an-spacing-sm) var(--an-spacing-md);
+  color: var(--an-diff-removed-text);
+  font-size: 14px;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+  user-select: text;
+}
+
+.agent-elements-error-detail {
+  padding-top: 0;
+  color: var(--an-tool-color-muted);
+  font-size: 13px;
+}
+
+.agent-elements-error-actions {
+  flex-direction: row;
+  flex-wrap: wrap;
+  border-top: 1px solid var(--an-tool-border-color);
+  user-select: none;
+}
+
+.agent-elements-error-action {
+  min-height: 24px;
+  padding: var(--an-spacing-xxs) var(--an-spacing-sm);
+  color: var(--an-send-button-color);
+  background: var(--an-primary-color);
+  border: 0;
+  border-radius: var(--an-spacing-xs);
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 16px;
+  transition: background-color 150ms cubic-bezier(0.16, 1, 0.3, 1),
+    color 150ms cubic-bezier(0.16, 1, 0.3, 1),
+    transform 150ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.agent-elements-error-action:active {
+  transform: scale(0.98);
+}
+
+@keyframes agent-elements-stream-row-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .agent-elements-progress-update,
+  .agent-elements-lifecycle-event,
+  .agent-elements-state-key-row,
+  .agent-elements-error-action {
+    animation: none;
+    transition: none;
+    transform: none;
+  }
+}

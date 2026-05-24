@@ -22,6 +22,7 @@ import * as rtl from '@testing-library/react';
 import { createStore, Provider as JotaiProvider } from 'jotai';
 import type { TranscriptViewMessage } from '../../../../ai/server/transcript/TranscriptProjector';
 import type { CustomToolWidgetProps } from '../CustomToolWidgets/index';
+import type { InteractiveWidgetHost } from '../CustomToolWidgets/InteractiveWidgetHost';
 
 const { render, screen, fireEvent } = rtl;
 
@@ -453,6 +454,38 @@ describe('BashWidget', () => {
     expect(container.querySelector('[aria-label="Copy command"]')).not.toBeNull();
   });
 
+  it('marks the expanded Bash widget with the Agent Elements shell while preserving terminal behavior', () => {
+    const message = makeToolMessage(
+      'Bash',
+      { command: 'npm test', description: 'Run tests' },
+      'tests passed'
+    );
+    const { container } = render(
+      <Wrapper>
+        <BashWidget
+          message={message}
+          isExpanded={true}
+          onToggle={() => {}}
+          sessionId="s1"
+        />
+      </Wrapper>
+    );
+
+    const shell = screen.getByTestId('rich-transcript-agent-elements-bash-shell');
+    expect(shell.getAttribute('data-component')).toBe('RichTranscriptAgentElementsBashShell');
+    expect(shell.getAttribute('data-agent-elements-shell')).toBe('tool-card');
+    expect(shell.classList.contains('bash-widget')).toBe(true);
+    expect(shell.classList.contains('agent-elements-bash-tool-card')).toBe(true);
+    expect(shell.classList.contains('agent-elements-tool-card')).toBe(false);
+    expect(shell.getAttribute('data-bash-state')).toBe('expanded');
+    expect(shell.getAttribute('data-bash-status')).toBe('success');
+    expect(container.querySelector('.agent-elements-bash-tool-title-row')).not.toBeNull();
+    expect(screen.getByText('Terminal')).toBeDefined();
+    expect(screen.getByText('npm test')).toBeDefined();
+    expect(screen.getByText('tests passed')).toBeDefined();
+    expect(container.querySelector('[aria-label="Copy command"]')).not.toBeNull();
+  });
+
   it('renders error state with error styling', () => {
     const message = makeToolMessage(
       'Bash',
@@ -602,8 +635,15 @@ describe('ToolPermissionWidget', () => {
         />
       </Wrapper>
     );
-    expect(screen.getByTestId('tool-permission-widget')).toBeDefined();
-    expect(screen.getByTestId('tool-permission-widget').dataset.state).toBe('pending');
+    const widget = screen.getByTestId('tool-permission-widget');
+    expect(widget).toBeDefined();
+    expect(widget.dataset.state).toBe('pending');
+    expect(widget.getAttribute('data-component')).toBe('RichTranscriptAgentElementsToolPermission');
+    expect(widget.getAttribute('data-agent-elements-shell')).toBe('approval-card');
+    expect(widget.getAttribute('data-approval-state')).toBe('pending');
+    expect(widget.classList.contains('agent-elements-tool-card')).toBe(true);
+    expect(screen.getByTestId('tool-permission-status').textContent).toContain('awaiting approval');
+    expect(screen.getByTestId('tool-permission-command').classList.contains('select-text')).toBe(true);
     expect(screen.getByTestId('tool-permission-host-reconnecting')).toBeDefined();
     expect(screen.getByTestId('tool-permission-deny')).toBeDefined();
     expect(screen.getByTestId('tool-permission-allow-once')).toBeDefined();
@@ -632,6 +672,11 @@ describe('ToolPermissionWidget', () => {
     );
     const widget = screen.getByTestId('tool-permission-widget');
     expect(widget.dataset.state).toBe('granted');
+    expect(widget.getAttribute('data-component')).toBe('RichTranscriptAgentElementsToolPermission');
+    expect(widget.getAttribute('data-agent-elements-shell')).toBe('approval-card');
+    expect(widget.getAttribute('data-approval-state')).toBe('granted');
+    expect(screen.getByTestId('tool-permission-status').textContent).toContain('granted');
+    expect(screen.getByTestId('tool-permission-command').classList.contains('select-text')).toBe(true);
     expect(screen.getByText('Permission Granted')).toBeDefined();
     expect(screen.getByText('This Session')).toBeDefined();
   });
@@ -750,8 +795,15 @@ describe('AskUserQuestionWidget', () => {
         />
       </Wrapper>
     );
-    expect(screen.getByTestId('ask-user-question-widget')).toBeDefined();
-    expect(screen.getByTestId('ask-user-question-widget').dataset.state).toBe('pending');
+    const widget = screen.getByTestId('ask-user-question-widget');
+    expect(widget).toBeDefined();
+    expect(widget.dataset.state).toBe('pending');
+    expect(widget.getAttribute('data-component')).toBe('RichTranscriptAgentElementsAskUserQuestion');
+    expect(widget.getAttribute('data-agent-elements-shell')).toBe('question-card');
+    expect(widget.getAttribute('data-question-state')).toBe('pending');
+    expect(widget.classList.contains('agent-elements-tool-card')).toBe(true);
+    expect(widget.classList.contains('agent-elements-question-card')).toBe(true);
+    expect(screen.getByTestId('ask-user-question-status').textContent).toContain('awaiting answer');
     expect(screen.getByText('Waiting...')).toBeDefined();
   });
 
@@ -783,6 +835,11 @@ describe('AskUserQuestionWidget', () => {
         />
       </Wrapper>
     );
+    const widget = screen.getByTestId('ask-user-question-widget');
+    expect(widget.getAttribute('data-component')).toBe('RichTranscriptAgentElementsAskUserQuestion');
+    expect(widget.getAttribute('data-agent-elements-shell')).toBe('question-card');
+    expect(widget.getAttribute('data-question-state')).toBe('answered');
+    expect(screen.getByTestId('ask-user-question-status').textContent).toContain('answered');
     expect(screen.getByText('Questions Answered')).toBeDefined();
     expect(screen.getByText('Submitted')).toBeDefined();
   });
@@ -812,6 +869,9 @@ describe('AskUserQuestionWidget', () => {
         />
       </Wrapper>
     );
+    const widget = screen.getByTestId('ask-user-question-widget');
+    expect(widget.getAttribute('data-question-state')).toBe('cancelled');
+    expect(screen.getByTestId('ask-user-question-status').textContent).toContain('cancelled');
     expect(screen.getByText('Question Cancelled')).toBeDefined();
     expect(screen.getByText('Cancelled')).toBeDefined();
   });
@@ -932,6 +992,7 @@ describe('AskUserQuestionWidget', () => {
     const first = renderWidget();
     const reactOption = first.getByText('React').closest('button');
     expect(reactOption).not.toBeNull();
+    expect(reactOption!.classList.contains('agent-elements-question-option')).toBe(true);
     fireEvent.click(reactOption!);
     expect(reactOption!.dataset.selected).toBe('true');
 
@@ -950,6 +1011,100 @@ describe('AskUserQuestionWidget', () => {
 
     second.unmount();
     clearAskUserQuestionDraft(toolCallId);
+  });
+
+  it('keeps the Other answer shell block-like while option buttons use the Agent Elements option class', async () => {
+    const { interactiveWidgetHostAtom } = await import('../../../../store/atoms/interactiveWidgetHost');
+
+    const toolCallId = 'other-shell-test-tool-id';
+    const message = makeToolMessage(
+      'AskUserQuestion',
+      {
+        questions: [
+          {
+            question: 'Which framework?',
+            header: 'Framework',
+            options: [
+              { label: 'React', description: 'Component library' },
+            ],
+            multiSelect: false,
+          },
+        ],
+      },
+      undefined,
+      {
+        toolCall: {
+          toolName: 'AskUserQuestion',
+          toolDisplayName: 'AskUserQuestion',
+          status: 'running',
+          description: null,
+          arguments: {
+            questions: [
+              {
+                question: 'Which framework?',
+                header: 'Framework',
+                options: [
+                  { label: 'React', description: 'Component library' },
+                ],
+                multiSelect: false,
+              },
+            ],
+          },
+          targetFilePath: null,
+          mcpServer: null,
+          mcpTool: null,
+          providerToolCallId: toolCallId,
+          progress: [],
+          result: undefined,
+        },
+      }
+    );
+
+    const testStore = createStore();
+    testStore.set(interactiveWidgetHostAtom('other-shell-session'), {
+      sessionId: 'other-shell-session',
+      workspacePath: '/',
+      worktreeId: null,
+      askUserQuestionSubmit: vi.fn().mockResolvedValue(undefined),
+      askUserQuestionCancel: vi.fn().mockResolvedValue(undefined),
+      requestUserInputSubmit: vi.fn().mockResolvedValue(undefined),
+      requestUserInputCancel: vi.fn().mockResolvedValue(undefined),
+      exitPlanModeApprove: vi.fn().mockResolvedValue(undefined),
+      exitPlanModeStartNewSession: vi.fn().mockResolvedValue(undefined),
+      exitPlanModeDeny: vi.fn().mockResolvedValue(undefined),
+      exitPlanModeCancel: vi.fn().mockResolvedValue(undefined),
+      toolPermissionSubmit: vi.fn().mockResolvedValue(undefined),
+      toolPermissionCancel: vi.fn().mockResolvedValue(undefined),
+      autoCommitEnabled: false,
+      setAutoCommitEnabled: vi.fn(),
+      gitCommit: vi.fn().mockResolvedValue({ success: true }),
+      gitCommitCancel: vi.fn().mockResolvedValue(undefined),
+      superLoopBlockedFeedback: vi.fn().mockResolvedValue({ success: true }),
+      openFile: vi.fn().mockResolvedValue(undefined),
+      trackEvent: vi.fn(),
+    });
+
+    render(
+      <JotaiProvider store={testStore}>
+        <AskUserQuestionWidget
+          message={message}
+          isExpanded={false}
+          onToggle={() => {}}
+          sessionId="other-shell-session"
+        />
+      </JotaiProvider>
+    );
+
+    const regularOption = screen.getByText('React').closest('button');
+    expect(regularOption).not.toBeNull();
+    expect(regularOption!.classList.contains('agent-elements-question-option')).toBe(true);
+
+    const otherShell = screen.getByTestId('ask-user-question-other');
+    expect(otherShell.classList.contains('agent-elements-question-other-shell')).toBe(true);
+    expect(otherShell.classList.contains('agent-elements-question-option')).toBe(false);
+
+    fireEvent.click(screen.getByText('Other'));
+    expect(screen.getByTestId('ask-user-question-other-input').classList.contains('agent-elements-question-textarea')).toBe(true);
   });
 
   it('returns null and warns when providerToolCallId is missing', async () => {
@@ -985,6 +1140,511 @@ describe('AskUserQuestionWidget', () => {
 });
 
 // ============================================================================
+// RequestUserInputWidget Tests
+// ============================================================================
+
+describe('RequestUserInputWidget', () => {
+  let RequestUserInputWidget: React.FC<CustomToolWidgetProps>;
+
+  beforeEach(async () => {
+    const mod = await import('../CustomToolWidgets/RequestUserInputWidget');
+    RequestUserInputWidget = mod.RequestUserInputWidget;
+  });
+
+  async function renderRequestUserInputWithHost(
+    message: TranscriptViewMessage,
+    sessionId: string,
+    hostOverrides: Partial<InteractiveWidgetHost> = {},
+  ) {
+    const { interactiveWidgetHostAtom } = await import('../../../../store/atoms/interactiveWidgetHost');
+    const testStore = createStore();
+    const host: InteractiveWidgetHost = {
+      sessionId,
+      workspacePath: '/',
+      worktreeId: null,
+      askUserQuestionSubmit: vi.fn().mockResolvedValue(undefined),
+      askUserQuestionCancel: vi.fn().mockResolvedValue(undefined),
+      requestUserInputSubmit: vi.fn().mockResolvedValue(undefined),
+      requestUserInputCancel: vi.fn().mockResolvedValue(undefined),
+      exitPlanModeApprove: vi.fn().mockResolvedValue(undefined),
+      exitPlanModeStartNewSession: vi.fn().mockResolvedValue(undefined),
+      exitPlanModeDeny: vi.fn().mockResolvedValue(undefined),
+      exitPlanModeCancel: vi.fn().mockResolvedValue(undefined),
+      toolPermissionSubmit: vi.fn().mockResolvedValue(undefined),
+      toolPermissionCancel: vi.fn().mockResolvedValue(undefined),
+      autoCommitEnabled: false,
+      setAutoCommitEnabled: vi.fn(),
+      gitCommit: vi.fn().mockResolvedValue({ success: true }),
+      gitCommitCancel: vi.fn().mockResolvedValue(undefined),
+      superLoopBlockedFeedback: vi.fn().mockResolvedValue({ success: true }),
+      openFile: vi.fn().mockResolvedValue(undefined),
+      trackEvent: vi.fn(),
+      ...hostOverrides,
+    };
+    testStore.set(interactiveWidgetHostAtom(sessionId), host);
+
+    render(
+      <JotaiProvider store={testStore}>
+        <RequestUserInputWidget
+          message={message}
+          isExpanded={false}
+          onToggle={() => {}}
+          sessionId={sessionId}
+        />
+      </JotaiProvider>
+    );
+
+    return { testStore, host };
+  }
+
+  it('renders pending structured input with the Agent Elements question shell', async () => {
+    const { interactiveWidgetHostAtom } = await import('../../../../store/atoms/interactiveWidgetHost');
+
+    const message = makeToolMessage('PromptForUserInput', {
+      title: 'Choose implementation details',
+      intro: 'Select the safest path.',
+      fields: [
+        {
+          id: 'framework',
+          type: 'singleSelect',
+          label: 'Framework',
+          description: 'Pick the renderer foundation.',
+          allowOther: true,
+          options: [
+            { id: 'react', label: 'React', description: 'Use the current app framework.' },
+          ],
+        },
+        {
+          id: 'checks',
+          type: 'multiSelect',
+          label: 'Checks',
+          items: [
+            { id: 'unit', title: 'Unit tests', subtitle: 'Fast regression coverage' },
+          ],
+        },
+      ],
+    });
+    message.toolCall!.providerToolCallId = 'request-user-input-shell-call';
+
+    const testStore = createStore();
+    testStore.set(interactiveWidgetHostAtom('request-shell-session'), {
+      sessionId: 'request-shell-session',
+      workspacePath: '/',
+      worktreeId: null,
+      askUserQuestionSubmit: vi.fn().mockResolvedValue(undefined),
+      askUserQuestionCancel: vi.fn().mockResolvedValue(undefined),
+      requestUserInputSubmit: vi.fn().mockResolvedValue(undefined),
+      requestUserInputCancel: vi.fn().mockResolvedValue(undefined),
+      exitPlanModeApprove: vi.fn().mockResolvedValue(undefined),
+      exitPlanModeStartNewSession: vi.fn().mockResolvedValue(undefined),
+      exitPlanModeDeny: vi.fn().mockResolvedValue(undefined),
+      exitPlanModeCancel: vi.fn().mockResolvedValue(undefined),
+      toolPermissionSubmit: vi.fn().mockResolvedValue(undefined),
+      toolPermissionCancel: vi.fn().mockResolvedValue(undefined),
+      autoCommitEnabled: false,
+      setAutoCommitEnabled: vi.fn(),
+      gitCommit: vi.fn().mockResolvedValue({ success: true }),
+      gitCommitCancel: vi.fn().mockResolvedValue(undefined),
+      superLoopBlockedFeedback: vi.fn().mockResolvedValue({ success: true }),
+      openFile: vi.fn().mockResolvedValue(undefined),
+      trackEvent: vi.fn(),
+    });
+
+    render(
+      <JotaiProvider store={testStore}>
+        <RequestUserInputWidget
+          message={message}
+          isExpanded={false}
+          onToggle={() => {}}
+          sessionId="request-shell-session"
+        />
+      </JotaiProvider>
+    );
+
+    const widget = screen.getByTestId('request-user-input-widget');
+    expect(widget.dataset.state).toBe('pending');
+    expect(widget.getAttribute('data-component')).toBe('RichTranscriptAgentElementsRequestUserInput');
+    expect(widget.getAttribute('data-agent-elements-shell')).toBe('input-card');
+    expect(widget.getAttribute('data-request-user-input-state')).toBe('pending');
+    expect(widget.classList.contains('agent-elements-tool-card')).toBe(true);
+    expect(widget.classList.contains('agent-elements-question-card')).toBe(true);
+    expect(widget.classList.contains('agent-elements-request-user-input-card')).toBe(true);
+    expect(screen.getByTestId('request-user-input-status').textContent).toContain('awaiting input');
+
+    const option = await screen.findByText('React');
+    expect(option.closest('.agent-elements-question-option')).not.toBeNull();
+
+    const otherShell = screen.getByTestId('request-user-input-singleselect-other');
+    expect(otherShell.classList.contains('agent-elements-question-other-shell')).toBe(true);
+    expect(screen.getAllByText('Framework')[0].closest('.agent-elements-request-user-input-field-card')).not.toBeNull();
+    expect(screen.getByTestId('request-user-input-cancel')).toBeDefined();
+    expect(screen.getByTestId('request-user-input-submit')).toBeDefined();
+    expect(screen.getByTestId('request-user-input-submit').closest('.agent-elements-question-actions')).not.toBeNull();
+  });
+
+  it('renders host-null pending state without interactive actions', () => {
+    const message = makeToolMessage('PromptForUserInput', {
+      title: 'Choose renderer',
+      fields: [
+        {
+          id: 'framework',
+          type: 'singleSelect',
+          label: 'Framework',
+          options: [
+            { id: 'react', label: 'React' },
+          ],
+        },
+      ],
+    });
+    message.toolCall!.providerToolCallId = 'request-user-input-host-null-call';
+
+    render(
+      <Wrapper>
+        <RequestUserInputWidget
+          message={message}
+          isExpanded={false}
+          onToggle={() => {}}
+          sessionId="request-host-null-session"
+        />
+      </Wrapper>
+    );
+
+    const widget = screen.getByTestId('request-user-input-widget');
+    expect(widget.getAttribute('data-component')).toBe('RichTranscriptAgentElementsRequestUserInput');
+    expect(widget.getAttribute('data-agent-elements-shell')).toBe('input-card');
+    expect(widget.getAttribute('data-request-user-input-state')).toBe('pending');
+    expect(screen.getByTestId('request-user-input-status').textContent).toContain('awaiting input');
+    expect(screen.getByTestId('request-user-input-pending').textContent).toContain('Waiting');
+    expect(screen.queryByTestId('request-user-input-submit')).toBeNull();
+    expect(screen.queryByTestId('request-user-input-cancel')).toBeNull();
+  });
+
+  it('preserves validation, seeded draft defaults, broad answer conversion, draft cleanup, voice hint, and editText/reorder behavior', async () => {
+    const { requestUserInputDraftAtom } = await import('../../../../store/atoms/requestUserInputDraft');
+    const longText = 'Initial paragraph '.repeat(16).trim();
+    const message = makeToolMessage('PromptForUserInput', {
+      title: 'Configure implementation',
+      submitLabel: 'Apply',
+      cancelLabel: 'Abort',
+      fields: [
+        {
+          id: 'checks',
+          type: 'multiSelect',
+          label: 'Checks',
+          minSelected: 2,
+          maxSelected: 2,
+          items: [
+            { id: 'unit', title: 'Unit tests', defaultChecked: true },
+            { id: 'e2e', title: 'E2E tests' },
+          ],
+        },
+        {
+          id: 'framework',
+          type: 'singleSelect',
+          label: 'Framework',
+          allowOther: true,
+          options: [
+            { id: 'react', label: 'React' },
+          ],
+        },
+        {
+          id: 'order',
+          type: 'reorder',
+          label: 'Priority',
+          minItems: 1,
+          items: [
+            { id: 'first', title: 'First task' },
+            { id: 'second', title: 'Second task', removable: true },
+          ],
+        },
+        {
+          id: 'body',
+          type: 'editText',
+          label: 'Body',
+          format: 'plain',
+          initialText: longText,
+          minLength: 5,
+        },
+        {
+          id: 'confirm',
+          type: 'confirm',
+          label: 'Proceed',
+          defaultValue: false,
+        },
+      ],
+    });
+    message.toolCall!.providerToolCallId = 'request-user-input-complex-call';
+
+    const requestUserInputSubmit = vi.fn().mockResolvedValue(undefined);
+    const { testStore } = await renderRequestUserInputWithHost(
+      message,
+      'request-complex-session',
+      { requestUserInputSubmit },
+    );
+
+    const submit = screen.getByTestId('request-user-input-submit') as HTMLButtonElement;
+    expect(submit.disabled).toBe(true);
+    expect(screen.getByText(/Voice will defer/).textContent).toContain('text too long');
+
+    const unitOption = screen.getByText('Unit tests').closest('button')!;
+    expect(unitOption.dataset.selected).toBe('true');
+
+    const editTextContent = screen.getByTestId('request-user-input-edittext-content');
+    await rtl.waitFor(() => {
+      expect(editTextContent.textContent).toContain(longText);
+    });
+    expect(editTextContent.closest('.agent-elements-question-textarea')).not.toBeNull();
+
+    fireEvent.click(screen.getByText('E2E tests').closest('button')!);
+    expect(submit.disabled).toBe(true);
+
+    fireEvent.click(screen.getByText('Other'));
+    expect(submit.disabled).toBe(true);
+    fireEvent.change(screen.getByTestId('request-user-input-singleselect-other-input'), {
+      target: { value: 'Svelte' },
+    });
+
+    fireEvent.click(screen.getByTestId('request-user-input-reorder-remove'));
+    fireEvent.click(screen.getByTestId('request-user-input-confirm-confirm'));
+    expect(submit.disabled).toBe(false);
+    fireEvent.click(submit);
+
+    await rtl.waitFor(() => {
+      expect(requestUserInputSubmit).toHaveBeenCalledWith('request-user-input-complex-call', {
+        checks: { type: 'multiSelect', selectedIds: ['unit', 'e2e'] },
+        framework: { type: 'singleSelect', selectedId: '__other__', otherText: 'Svelte' },
+        order: { type: 'reorder', orderedIds: ['first'], removedIds: ['second'] },
+        body: { type: 'editText', text: longText, edited: false },
+        confirm: { type: 'confirm', value: true },
+      });
+    });
+
+    expect(testStore.get(requestUserInputDraftAtom('request-user-input-complex-call')).primed).toBe(false);
+  });
+
+  it('preserves submit host calls from the Agent Elements structured input shell', async () => {
+    const { interactiveWidgetHostAtom } = await import('../../../../store/atoms/interactiveWidgetHost');
+
+    const message = makeToolMessage('PromptForUserInput', {
+      title: 'Choose renderer',
+      fields: [
+        {
+          id: 'framework',
+          type: 'singleSelect',
+          label: 'Framework',
+          allowOther: false,
+          options: [
+            { id: 'react', label: 'React', description: 'Use the current app framework.' },
+          ],
+        },
+      ],
+    });
+    message.toolCall!.providerToolCallId = 'request-user-input-submit-call';
+
+    const requestUserInputSubmit = vi.fn().mockResolvedValue(undefined);
+    const testStore = createStore();
+    testStore.set(interactiveWidgetHostAtom('request-submit-session'), {
+      sessionId: 'request-submit-session',
+      workspacePath: '/',
+      worktreeId: null,
+      askUserQuestionSubmit: vi.fn().mockResolvedValue(undefined),
+      askUserQuestionCancel: vi.fn().mockResolvedValue(undefined),
+      requestUserInputSubmit,
+      requestUserInputCancel: vi.fn().mockResolvedValue(undefined),
+      exitPlanModeApprove: vi.fn().mockResolvedValue(undefined),
+      exitPlanModeStartNewSession: vi.fn().mockResolvedValue(undefined),
+      exitPlanModeDeny: vi.fn().mockResolvedValue(undefined),
+      exitPlanModeCancel: vi.fn().mockResolvedValue(undefined),
+      toolPermissionSubmit: vi.fn().mockResolvedValue(undefined),
+      toolPermissionCancel: vi.fn().mockResolvedValue(undefined),
+      autoCommitEnabled: false,
+      setAutoCommitEnabled: vi.fn(),
+      gitCommit: vi.fn().mockResolvedValue({ success: true }),
+      gitCommitCancel: vi.fn().mockResolvedValue(undefined),
+      superLoopBlockedFeedback: vi.fn().mockResolvedValue({ success: true }),
+      openFile: vi.fn().mockResolvedValue(undefined),
+      trackEvent: vi.fn(),
+    });
+
+    render(
+      <JotaiProvider store={testStore}>
+        <RequestUserInputWidget
+          message={message}
+          isExpanded={false}
+          onToggle={() => {}}
+          sessionId="request-submit-session"
+        />
+      </JotaiProvider>
+    );
+
+    const reactOption = await screen.findByText('React');
+    fireEvent.click(reactOption.closest('button')!);
+    fireEvent.click(screen.getByTestId('request-user-input-submit'));
+
+    await rtl.waitFor(() => {
+      expect(requestUserInputSubmit).toHaveBeenCalledWith('request-user-input-submit-call', {
+        framework: { type: 'singleSelect', selectedId: 'react' },
+      });
+    });
+  });
+
+  it('preserves cancel host calls from the Agent Elements structured input shell', async () => {
+    const { interactiveWidgetHostAtom } = await import('../../../../store/atoms/interactiveWidgetHost');
+
+    const message = makeToolMessage('PromptForUserInput', {
+      title: 'Choose renderer',
+      fields: [
+        {
+          id: 'framework',
+          type: 'singleSelect',
+          label: 'Framework',
+          options: [
+            { id: 'react', label: 'React', description: 'Use the current app framework.' },
+          ],
+        },
+      ],
+    });
+    message.toolCall!.providerToolCallId = 'request-user-input-cancel-call';
+
+    const requestUserInputCancel = vi.fn().mockResolvedValue(undefined);
+    const testStore = createStore();
+    testStore.set(interactiveWidgetHostAtom('request-cancel-session'), {
+      sessionId: 'request-cancel-session',
+      workspacePath: '/',
+      worktreeId: null,
+      askUserQuestionSubmit: vi.fn().mockResolvedValue(undefined),
+      askUserQuestionCancel: vi.fn().mockResolvedValue(undefined),
+      requestUserInputSubmit: vi.fn().mockResolvedValue(undefined),
+      requestUserInputCancel,
+      exitPlanModeApprove: vi.fn().mockResolvedValue(undefined),
+      exitPlanModeStartNewSession: vi.fn().mockResolvedValue(undefined),
+      exitPlanModeDeny: vi.fn().mockResolvedValue(undefined),
+      exitPlanModeCancel: vi.fn().mockResolvedValue(undefined),
+      toolPermissionSubmit: vi.fn().mockResolvedValue(undefined),
+      toolPermissionCancel: vi.fn().mockResolvedValue(undefined),
+      autoCommitEnabled: false,
+      setAutoCommitEnabled: vi.fn(),
+      gitCommit: vi.fn().mockResolvedValue({ success: true }),
+      gitCommitCancel: vi.fn().mockResolvedValue(undefined),
+      superLoopBlockedFeedback: vi.fn().mockResolvedValue({ success: true }),
+      openFile: vi.fn().mockResolvedValue(undefined),
+      trackEvent: vi.fn(),
+    });
+
+    render(
+      <JotaiProvider store={testStore}>
+        <RequestUserInputWidget
+          message={message}
+          isExpanded={false}
+          onToggle={() => {}}
+          sessionId="request-cancel-session"
+        />
+      </JotaiProvider>
+    );
+
+    fireEvent.click(screen.getByTestId('request-user-input-cancel'));
+
+    await rtl.waitFor(() => {
+      expect(requestUserInputCancel).toHaveBeenCalledWith('request-user-input-cancel-call');
+    });
+  });
+
+  it('returns null and warns when providerToolCallId is missing', () => {
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const message = makeToolMessage('PromptForUserInput', {
+      fields: [
+        {
+          id: 'confirm',
+          type: 'confirm',
+          label: 'Proceed',
+        },
+      ],
+    });
+    message.toolCall!.providerToolCallId = '';
+
+    const { container } = render(
+      <Wrapper>
+        <RequestUserInputWidget
+          message={message}
+          isExpanded={false}
+          onToggle={() => {}}
+          sessionId="request-missing-id-session"
+        />
+      </Wrapper>
+    );
+
+    expect(container.innerHTML).toBe('');
+    expect(warnSpy).toHaveBeenCalledWith('[RequestUserInputWidget] missing providerToolCallId; skipping render');
+    warnSpy.mockRestore();
+  });
+
+  it('renders submitted and cancelled states with Agent Elements status markers', () => {
+    const submitted = makeToolMessage(
+      'PromptForUserInput',
+      {
+        title: 'Confirm details',
+        fields: [
+          {
+            id: 'confirm',
+            type: 'confirm',
+            label: 'Proceed',
+          },
+        ],
+      },
+      { answers: { confirm: { type: 'confirm', value: true } } }
+    );
+    const { unmount } = render(
+      <Wrapper>
+        <RequestUserInputWidget
+          message={submitted}
+          isExpanded={false}
+          onToggle={() => {}}
+          sessionId="request-submitted"
+        />
+      </Wrapper>
+    );
+    let widget = screen.getByTestId('request-user-input-widget');
+    expect(widget.getAttribute('data-component')).toBe('RichTranscriptAgentElementsRequestUserInput');
+    expect(widget.getAttribute('data-request-user-input-state')).toBe('submitted');
+    expect(screen.getByTestId('request-user-input-status').textContent).toContain('submitted');
+    expect(screen.getByTestId('request-user-input-completed')).toBeDefined();
+    expect(screen.getByText('Proceed').closest('.agent-elements-request-user-input-field-card')).not.toBeNull();
+
+    unmount();
+
+    const cancelled = makeToolMessage(
+      'PromptForUserInput',
+      {
+        title: 'Confirm details',
+        fields: [
+          {
+            id: 'confirm',
+            type: 'confirm',
+            label: 'Proceed',
+          },
+        ],
+      },
+      { cancelled: true, answers: {} }
+    );
+    render(
+      <Wrapper>
+        <RequestUserInputWidget
+          message={cancelled}
+          isExpanded={false}
+          onToggle={() => {}}
+          sessionId="request-cancelled"
+        />
+      </Wrapper>
+    );
+    widget = screen.getByTestId('request-user-input-widget');
+    expect(widget.getAttribute('data-component')).toBe('RichTranscriptAgentElementsRequestUserInput');
+    expect(widget.getAttribute('data-request-user-input-state')).toBe('cancelled');
+    expect(screen.getByTestId('request-user-input-status').textContent).toContain('cancelled');
+    expect(screen.getByTestId('request-user-input-cancelled')).toBeDefined();
+  });
+});
+
+// ============================================================================
 // GitCommitConfirmationWidget Tests
 // ============================================================================
 
@@ -1016,16 +1676,147 @@ describe('GitCommitConfirmationWidget', () => {
     );
     const widget = screen.getByTestId('git-commit-widget');
     expect(widget.dataset.state).toBe('pending');
+    expect(widget.getAttribute('data-component')).toBe('RichTranscriptAgentElementsGitCommitConfirmation');
+    expect(widget.getAttribute('data-agent-elements-shell')).toBe('commit-card');
+    expect(widget.getAttribute('data-git-commit-state')).toBe('pending');
+    expect(widget.classList.contains('agent-elements-tool-card')).toBe(true);
+    expect(widget.classList.contains('agent-elements-git-commit-card')).toBe(true);
+    expect(screen.getByTestId('git-commit-status').textContent).toContain('awaiting confirmation');
     expect(screen.getByText('Commit Proposal')).toBeDefined();
     // Commit message should be in textarea
     const textarea = screen.getByTestId('git-commit-message-input') as HTMLTextAreaElement;
     expect(textarea.value).toBe('fix: resolve null check\n\nAdded guard clause');
+    expect(textarea.classList.contains('agent-elements-question-textarea')).toBe(true);
     // Files should be listed
     expect(screen.getByText('app.ts')).toBeDefined();
     expect(screen.getByText('utils.ts')).toBeDefined();
+    const fileRow = screen.getByText('app.ts').closest('.git-commit-widget__file');
+    expect(fileRow?.classList.contains('agent-elements-git-commit-file-row')).toBe(true);
     // Confirm and Cancel buttons
     expect(screen.getByTestId('git-commit-confirm')).toBeDefined();
     expect(screen.getByTestId('git-commit-cancel')).toBeDefined();
+  });
+
+  it('preserves commit host calls from the Agent Elements commit shell', async () => {
+    const { interactiveWidgetHostAtom } = await import('../../../../store/atoms/interactiveWidgetHost');
+
+    const message = makeToolMessage('git_commit_proposal', {
+      commitMessage: 'fix: initial message',
+      filesToStage: ['src/app.ts'],
+    });
+    message.toolCall!.providerToolCallId = 'git-commit-call';
+
+    const gitCommit = vi.fn().mockResolvedValue({
+      success: true,
+      commitHash: 'abc1234567890',
+      commitDate: '2026-05-23T21:13:41Z',
+    });
+    const trackEvent = vi.fn();
+    const testStore = createStore();
+    testStore.set(interactiveWidgetHostAtom('commit-action-session'), {
+      sessionId: 'commit-action-session',
+      workspacePath: '/',
+      worktreeId: null,
+      askUserQuestionSubmit: vi.fn().mockResolvedValue(undefined),
+      askUserQuestionCancel: vi.fn().mockResolvedValue(undefined),
+      requestUserInputSubmit: vi.fn().mockResolvedValue(undefined),
+      requestUserInputCancel: vi.fn().mockResolvedValue(undefined),
+      exitPlanModeApprove: vi.fn().mockResolvedValue(undefined),
+      exitPlanModeStartNewSession: vi.fn().mockResolvedValue(undefined),
+      exitPlanModeDeny: vi.fn().mockResolvedValue(undefined),
+      exitPlanModeCancel: vi.fn().mockResolvedValue(undefined),
+      toolPermissionSubmit: vi.fn().mockResolvedValue(undefined),
+      toolPermissionCancel: vi.fn().mockResolvedValue(undefined),
+      autoCommitEnabled: false,
+      setAutoCommitEnabled: vi.fn(),
+      gitCommit,
+      gitCommitCancel: vi.fn().mockResolvedValue(undefined),
+      superLoopBlockedFeedback: vi.fn().mockResolvedValue({ success: true }),
+      openFile: vi.fn().mockResolvedValue(undefined),
+      trackEvent,
+    });
+
+    render(
+      <JotaiProvider store={testStore}>
+        <GitCommitConfirmationWidget
+          message={message}
+          isExpanded={false}
+          onToggle={() => {}}
+          sessionId="commit-action-session"
+        />
+      </JotaiProvider>
+    );
+
+    fireEvent.change(screen.getByTestId('git-commit-message-input'), {
+      target: { value: 'fix: edited message' },
+    });
+    fireEvent.click(screen.getByTestId('git-commit-confirm'));
+
+    await rtl.waitFor(() => {
+      expect(gitCommit).toHaveBeenCalledWith('git-commit-call', ['src/app.ts'], 'fix: edited message');
+    });
+    expect(trackEvent).toHaveBeenCalledWith('git_commit_proposal_response', expect.objectContaining({
+      action: 'committed',
+      success: true,
+      auto_commit: false,
+    }));
+  });
+
+  it('preserves cancel host calls from the Agent Elements commit shell', async () => {
+    const { interactiveWidgetHostAtom } = await import('../../../../store/atoms/interactiveWidgetHost');
+
+    const message = makeToolMessage('git_commit_proposal', {
+      commitMessage: 'fix: cancel me',
+      filesToStage: ['src/app.ts', 'src/utils.ts'],
+    });
+    message.toolCall!.providerToolCallId = 'git-cancel-call';
+
+    const gitCommitCancel = vi.fn().mockResolvedValue(undefined);
+    const trackEvent = vi.fn();
+    const testStore = createStore();
+    testStore.set(interactiveWidgetHostAtom('commit-cancel-session'), {
+      sessionId: 'commit-cancel-session',
+      workspacePath: '/',
+      worktreeId: null,
+      askUserQuestionSubmit: vi.fn().mockResolvedValue(undefined),
+      askUserQuestionCancel: vi.fn().mockResolvedValue(undefined),
+      requestUserInputSubmit: vi.fn().mockResolvedValue(undefined),
+      requestUserInputCancel: vi.fn().mockResolvedValue(undefined),
+      exitPlanModeApprove: vi.fn().mockResolvedValue(undefined),
+      exitPlanModeStartNewSession: vi.fn().mockResolvedValue(undefined),
+      exitPlanModeDeny: vi.fn().mockResolvedValue(undefined),
+      exitPlanModeCancel: vi.fn().mockResolvedValue(undefined),
+      toolPermissionSubmit: vi.fn().mockResolvedValue(undefined),
+      toolPermissionCancel: vi.fn().mockResolvedValue(undefined),
+      autoCommitEnabled: false,
+      setAutoCommitEnabled: vi.fn(),
+      gitCommit: vi.fn().mockResolvedValue({ success: true }),
+      gitCommitCancel,
+      superLoopBlockedFeedback: vi.fn().mockResolvedValue({ success: true }),
+      openFile: vi.fn().mockResolvedValue(undefined),
+      trackEvent,
+    });
+
+    render(
+      <JotaiProvider store={testStore}>
+        <GitCommitConfirmationWidget
+          message={message}
+          isExpanded={false}
+          onToggle={() => {}}
+          sessionId="commit-cancel-session"
+        />
+      </JotaiProvider>
+    );
+
+    fireEvent.click(screen.getByTestId('git-commit-cancel'));
+
+    await rtl.waitFor(() => {
+      expect(gitCommitCancel).toHaveBeenCalledWith('git-cancel-call');
+    });
+    expect(trackEvent).toHaveBeenCalledWith('git_commit_proposal_response', expect.objectContaining({
+      action: 'cancelled',
+      file_count: '1-5',
+    }));
   });
 
   it('renders committed state from tool result', () => {
@@ -1049,6 +1840,10 @@ describe('GitCommitConfirmationWidget', () => {
     );
     const widget = screen.getByTestId('git-commit-widget');
     expect(widget.dataset.state).toBe('committed');
+    expect(widget.getAttribute('data-component')).toBe('RichTranscriptAgentElementsGitCommitConfirmation');
+    expect(widget.getAttribute('data-agent-elements-shell')).toBe('commit-card');
+    expect(widget.getAttribute('data-git-commit-state')).toBe('committed');
+    expect(screen.getByTestId('git-commit-status').textContent).toContain('committed');
     expect(screen.getByText('Changes Committed')).toBeDefined();
     // Should show short hash
     expect(screen.getByText('abc1234')).toBeDefined();
@@ -1075,6 +1870,10 @@ describe('GitCommitConfirmationWidget', () => {
     );
     const widget = screen.getByTestId('git-commit-widget');
     expect(widget.dataset.state).toBe('cancelled');
+    expect(widget.getAttribute('data-component')).toBe('RichTranscriptAgentElementsGitCommitConfirmation');
+    expect(widget.getAttribute('data-agent-elements-shell')).toBe('commit-card');
+    expect(widget.getAttribute('data-git-commit-state')).toBe('cancelled');
+    expect(screen.getByTestId('git-commit-status').textContent).toContain('cancelled');
     expect(screen.getByTestId('git-commit-cancelled')).toBeDefined();
   });
 
@@ -1099,6 +1898,10 @@ describe('GitCommitConfirmationWidget', () => {
     );
     const widget = screen.getByTestId('git-commit-widget');
     expect(widget.dataset.state).toBe('error');
+    expect(widget.getAttribute('data-component')).toBe('RichTranscriptAgentElementsGitCommitConfirmation');
+    expect(widget.getAttribute('data-agent-elements-shell')).toBe('commit-card');
+    expect(widget.getAttribute('data-git-commit-state')).toBe('error');
+    expect(screen.getByTestId('git-commit-status').textContent).toContain('failed');
     expect(screen.getByText('Commit Failed')).toBeDefined();
     expect(screen.getByTestId('git-commit-error').textContent).toContain('HOOK_DETAIL: lint failed');
   });
@@ -1196,6 +1999,12 @@ describe('ExitPlanModeWidget', () => {
     );
     const widget = screen.getByTestId('exit-plan-mode-widget');
     expect(widget.dataset.state).toBe('pending');
+    expect(widget.getAttribute('data-component')).toBe('RichTranscriptAgentElementsExitPlanMode');
+    expect(widget.getAttribute('data-agent-elements-shell')).toBe('plan-approval-card');
+    expect(widget.getAttribute('data-exit-plan-state')).toBe('pending');
+    expect(widget.classList.contains('agent-elements-tool-card')).toBe(true);
+    expect(widget.classList.contains('agent-elements-exit-plan-mode-card')).toBe(true);
+    expect(screen.getByTestId('exit-plan-mode-status').textContent).toContain('awaiting approval');
     expect(screen.getByText('Ready to exit planning mode?')).toBeDefined();
     expect(screen.getByText('Waiting...')).toBeDefined();
   });
@@ -1218,6 +2027,10 @@ describe('ExitPlanModeWidget', () => {
     );
     const widget = screen.getByTestId('exit-plan-mode-widget');
     expect(widget.dataset.state).toBe('approved');
+    expect(widget.getAttribute('data-component')).toBe('RichTranscriptAgentElementsExitPlanMode');
+    expect(widget.getAttribute('data-agent-elements-shell')).toBe('plan-approval-card');
+    expect(widget.getAttribute('data-exit-plan-state')).toBe('approved');
+    expect(screen.getByTestId('exit-plan-mode-status').textContent).toContain('approved');
     expect(screen.getByText('Exited Planning Mode')).toBeDefined();
     expect(screen.getByTestId('exit-plan-mode-approved')).toBeDefined();
   });
@@ -1240,6 +2053,10 @@ describe('ExitPlanModeWidget', () => {
     );
     const widget = screen.getByTestId('exit-plan-mode-widget');
     expect(widget.dataset.state).toBe('denied');
+    expect(widget.getAttribute('data-component')).toBe('RichTranscriptAgentElementsExitPlanMode');
+    expect(widget.getAttribute('data-agent-elements-shell')).toBe('plan-approval-card');
+    expect(widget.getAttribute('data-exit-plan-state')).toBe('denied');
+    expect(screen.getByTestId('exit-plan-mode-status').textContent).toContain('denied');
     expect(screen.getByText('Continued Planning')).toBeDefined();
   });
 
@@ -1260,7 +2077,9 @@ describe('ExitPlanModeWidget', () => {
         />
       </Wrapper>
     );
-    expect(screen.getByText('docs/plan.md')).toBeDefined();
+    const planLink = screen.getByText('docs/plan.md');
+    expect(planLink).toBeDefined();
+    expect(planLink.classList.contains('agent-elements-exit-plan-file-link')).toBe(true);
   });
 });
 

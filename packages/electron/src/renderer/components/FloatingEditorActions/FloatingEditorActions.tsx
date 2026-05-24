@@ -17,6 +17,7 @@
  */
 
 import React from 'react';
+import { MaterialSymbol } from '@nimbalyst/runtime';
 import { FloatingPortal, useFloatingMenu } from '../../hooks/useFloatingMenu';
 
 interface FloatingEditorActionsProps {
@@ -31,7 +32,11 @@ export const FloatingEditorActions: React.FC<FloatingEditorActionsProps> = ({
   children,
 }) => {
   return (
-    <div className="floating-editor-actions absolute top-1.5 right-3 flex gap-2 z-[100] pointer-events-none">
+    <div
+      className="floating-editor-actions agent-elements-floating-editor-actions pointer-events-none absolute right-3 top-1.5 z-[100] flex gap-2"
+      data-agent-elements-shell="floating-editor-actions"
+      data-component="FloatingEditorActions"
+    >
       {children}
     </div>
   );
@@ -63,14 +68,18 @@ export const FloatingEditorButton: React.FC<FloatingEditorButtonProps> = ({
 }) => {
   return (
     <button
-      className={`floating-editor-button pointer-events-auto w-9 h-9 rounded-md border border-[var(--nim-border)] bg-[var(--nim-bg)] cursor-pointer flex items-center justify-center transition-all duration-200 p-0 text-[var(--nim-text)] hover:bg-[var(--nim-bg-hover)] hover:border-[var(--nim-primary)] active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed ${isActive ? 'active bg-[var(--nim-primary)] text-white border-[var(--nim-primary)]' : ''}`}
+      className={`floating-editor-button agent-elements-floating-editor-button pointer-events-auto flex h-9 w-9 cursor-pointer items-center justify-center rounded-[8px] border border-[var(--an-border-color)] bg-[var(--an-background)] p-0 text-[var(--an-foreground-muted)] shadow-[0_10px_24px_color-mix(in_srgb,var(--an-foreground)_8%,transparent)] transition-colors duration-150 hover:border-[var(--an-primary-color)] hover:bg-[var(--an-background-secondary)] hover:text-[var(--an-foreground)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--an-primary-color)] disabled:cursor-not-allowed disabled:opacity-50 ${isActive ? 'active border-[var(--an-primary-color)] bg-[color-mix(in_srgb,var(--an-primary-color)_12%,var(--an-background))] text-[var(--an-primary-color)]' : ''}`}
       onClick={onClick}
       disabled={disabled}
       title={label}
       aria-label={label}
+      aria-pressed={isActive}
+      data-agent-elements-shell="floating-editor-button"
+      data-active={isActive ? 'true' : 'false'}
+      data-component="FloatingEditorButton"
     >
       {typeof icon === 'string' ? (
-        <span className="material-symbols-outlined text-xl opacity-80 group-hover:opacity-100">{icon}</span>
+        <MaterialSymbol icon={icon} size={18} />
       ) : (
         icon
       )}
@@ -85,7 +94,7 @@ interface FloatingEditorMenuProps {
   children: React.ReactNode;
   isOpen: boolean;
   onClose: () => void;
-  anchorRef: React.RefObject<HTMLElement>;
+  anchorRef?: React.RefObject<HTMLElement>;
 }
 
 export const FloatingEditorMenu: React.FC<FloatingEditorMenuProps> = ({
@@ -103,7 +112,7 @@ export const FloatingEditorMenu: React.FC<FloatingEditorMenuProps> = ({
         onClose();
       }
     },
-    reference: anchorRef.current,
+    reference: anchorRef?.current ?? null,
   });
 
   if (!isOpen) return null;
@@ -111,10 +120,18 @@ export const FloatingEditorMenu: React.FC<FloatingEditorMenuProps> = ({
   return (
     <FloatingPortal>
       <div
+        className="floating-editor-menu-backdrop agent-elements-floating-editor-menu-backdrop fixed inset-0 z-[99]"
+        data-agent-elements-shell="floating-editor-menu-backdrop"
+        onClick={onClose}
+      />
+      <div
         ref={menu.refs.setFloating}
-        className="floating-editor-menu min-w-[180px] bg-[var(--nim-bg)] border border-[var(--nim-border)] rounded-md shadow-[0_4px_12px_rgba(0,0,0,0.15)] z-[1000] pointer-events-auto py-1"
+        className="floating-editor-menu agent-elements-floating-editor-menu agent-elements-tool-card pointer-events-auto z-[1000] min-w-[180px] rounded-[10px] border border-[var(--an-border-color)] bg-[var(--an-background)] p-1 text-[13px] text-[var(--an-foreground)] shadow-[0_12px_32px_color-mix(in_srgb,var(--an-foreground)_10%,transparent)]"
         style={menu.floatingStyles}
         {...menu.getFloatingProps()}
+        data-agent-elements-shell="floating-editor-menu"
+        data-component="FloatingEditorMenu"
+        role="menu"
       >
         {children}
       </div>
@@ -137,12 +154,20 @@ export const FloatingEditorMenuItem: React.FC<FloatingEditorMenuItemProps> = ({
 }) => {
   return (
     <button
-      className={`floating-editor-menu-item w-full px-4 py-2.5 border-none bg-transparent text-[var(--nim-text)] text-sm text-left cursor-pointer transition-colors duration-150 flex items-center gap-2.5 hover:bg-[var(--nim-bg-hover)] active:bg-[var(--nim-bg-secondary)] ${isActive ? 'active text-[var(--nim-primary)]' : ''}`}
+      className={`floating-editor-menu-item agent-elements-floating-editor-menu-item flex w-full cursor-pointer items-center gap-2.5 rounded-[8px] border-none bg-transparent px-3 py-2 text-left text-[13px] text-[var(--an-foreground)] transition-colors duration-150 hover:bg-[var(--an-background-secondary)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--an-primary-color)] ${isActive ? 'active text-[var(--an-primary-color)]' : ''}`}
       onClick={onClick}
+      aria-current={isActive ? 'true' : undefined}
+      data-active={isActive ? 'true' : 'false'}
+      data-agent-elements-shell="floating-editor-menu-item"
+      role="menuitem"
     >
-      {icon && <span className="material-symbols-outlined text-lg opacity-80">{icon}</span>}
-      <span>{label}</span>
-      {isActive && <span className="checkmark ml-auto text-[var(--nim-primary)]">✓</span>}
+      {icon && <MaterialSymbol icon={icon} size={18} />}
+      <span className="agent-elements-floating-editor-menu-label">{label}</span>
+      {isActive && (
+        <span className="checkmark agent-elements-floating-editor-menu-check ml-auto text-[var(--an-primary-color)]" aria-hidden="true">
+          <MaterialSymbol icon="check" size={16} />
+        </span>
+      )}
     </button>
   );
 };

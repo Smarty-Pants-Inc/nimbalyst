@@ -141,8 +141,15 @@ export function OpenAICodexPanel({
   const planLabel = authStatus?.planType ? ` • ${authStatus.planType}` : '';
 
   return (
-    <div className="provider-panel flex flex-col">
-      <div className="provider-panel-header mb-6 pb-4 border-b border-[var(--nim-border)]">
+    <div
+      className="provider-panel openai-codex-panel agent-elements-settings-panel agent-elements-openai-codex-panel flex flex-col"
+      data-agent-elements-shell="openai-codex-panel"
+      data-testid="agent-elements-openai-codex-panel"
+    >
+      <div
+        className="provider-panel-header openai-codex-panel-header agent-elements-settings-panel-header mb-6 pb-4 border-b border-[var(--nim-border)]"
+        data-testid="agent-elements-openai-codex-header"
+      >
         <h3 className="provider-panel-title text-xl font-semibold leading-tight mb-2 text-[var(--nim-text)]">OpenAI Codex</h3>
         <p className="provider-panel-description text-sm leading-relaxed text-[var(--nim-text-muted)]">
           Advanced code generation and completion powered by OpenAI Codex models.
@@ -155,6 +162,7 @@ export function OpenAICodexPanel({
         name="Enable OpenAI Codex"
         checked={config.enabled || false}
         onChange={onToggle}
+        testId="agent-elements-openai-codex-enable-toggle"
       />
 
       <SettingsToggle
@@ -163,10 +171,15 @@ export function OpenAICodexPanel({
         description="Display Codex usage limits in the navigation gutter"
         checked={usageIndicatorEnabled}
         onChange={setUsageIndicatorEnabled}
+        testId="agent-elements-openai-codex-usage-toggle"
       />
 
       {acpEnabled && (
-        <div className="provider-panel-section py-4 mb-4 border-b border-[var(--nim-border)]">
+        <div
+          className="provider-panel-section openai-codex-acp-section agent-elements-settings-section py-4 mb-4 border-b border-[var(--nim-border)]"
+          data-section="legacy-acp-transport"
+          data-testid="agent-elements-openai-codex-acp-section"
+        >
           <h4 className="provider-panel-section-title text-base font-semibold mb-3 text-[var(--nim-text)]">
             ACP Transport <span className="text-xs font-normal text-[var(--nim-text-muted)]">(legacy)</span>
           </h4>
@@ -180,16 +193,25 @@ export function OpenAICodexPanel({
             description="Keeps the separate 'OpenAI Codex (ACP)' legacy provider available"
             checked={acpEnabled}
             onChange={handleAcpToggle}
+            testId="agent-elements-openai-codex-acp-toggle"
           />
         </div>
       )}
 
       {config.enabled && (
-        <div data-testid="codex-auth-section" className="codex-auth-section provider-panel-section py-4 mb-4 border-b border-[var(--nim-border)] last:border-b-0 last:mb-0 last:pb-0">
+        <div
+          data-agent-elements-shell="openai-codex-auth-section"
+          data-section="sign-in"
+          data-testid="codex-auth-section"
+          className="codex-auth-section openai-codex-auth-section agent-elements-settings-section provider-panel-section py-4 mb-4 border-b border-[var(--nim-border)] last:border-b-0 last:mb-0 last:pb-0"
+        >
           <h4 className="provider-panel-section-title text-base font-semibold mb-3 text-[var(--nim-text)]">Sign In</h4>
 
           {isLoggedIn ? (
-            <div className="status-box-success mb-4 py-3.5 px-4 rounded-lg text-[13px] flex items-center gap-3 justify-between bg-[rgba(16,185,129,0.08)] border border-[rgba(16,185,129,0.2)]">
+            <div
+              className="status-box-success openai-codex-signed-in-card agent-elements-tool-card mb-4 py-3.5 px-4 rounded-lg text-[13px] flex items-center gap-3 justify-between bg-[rgba(16,185,129,0.08)] border border-[rgba(16,185,129,0.2)]"
+              data-testid="agent-elements-openai-codex-signed-in-card"
+            >
               <div className="flex items-center gap-3 flex-1">
                 <span className="status-box-icon text-xl leading-none shrink-0 text-[var(--nim-success)]">✓</span>
                 <div className="status-box-content flex flex-col gap-1 flex-1">
@@ -249,7 +271,10 @@ export function OpenAICodexPanel({
               </div>
 
               {selectedAuthMethod === 'chatgpt' && (
-                <div className="mb-4 p-4 bg-[var(--nim-bg-secondary)] border border-[var(--nim-border)] rounded-lg">
+                <div
+                  className="openai-codex-chatgpt-card agent-elements-tool-card mb-4 p-4 bg-[var(--nim-bg-secondary)] border border-[var(--nim-border)] rounded-lg"
+                  data-testid="agent-elements-openai-codex-chatgpt-card"
+                >
                   <p className="text-xs leading-relaxed text-[var(--nim-text-muted)] mb-3">
                     Authenticate with your ChatGPT Pro, Plus, or Team subscription. No API credits needed.
                   </p>
@@ -277,7 +302,10 @@ export function OpenAICodexPanel({
               )}
 
               {selectedAuthMethod === 'api-key' && (
-                <div className="mb-4 p-4 bg-[var(--nim-bg-secondary)] border border-[var(--nim-border)] rounded-lg">
+                <div
+                  className="openai-codex-apikey-card agent-elements-tool-card mb-4 p-4 bg-[var(--nim-bg-secondary)] border border-[var(--nim-border)] rounded-lg"
+                  data-testid="agent-elements-openai-codex-apikey-card"
+                >
                   <p className="text-xs leading-relaxed text-[var(--nim-text-muted)] mb-3">
                     Use an OpenAI API key. Pay-per-use with API credits — more expensive than the ChatGPT subscription path.
                   </p>
@@ -309,7 +337,7 @@ export function OpenAICodexPanel({
           )}
 
           {authError && (
-            <p className="text-xs text-[var(--nim-error)] mt-2" data-testid="codex-auth-error">{authError}</p>
+            <p className="openai-codex-auth-error agent-elements-tool-card text-xs text-[var(--nim-error)] mt-2" data-testid="codex-auth-error">{authError}</p>
           )}
         </div>
       )}

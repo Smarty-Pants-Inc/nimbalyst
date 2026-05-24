@@ -23,30 +23,30 @@ interface PlanListItemProps {
   onClick: (plan: PlanData) => void;
 }
 
-function getStatusColor(status: string): string {
-  const statusColors: Record<string, string> = {
-    'completed': '#22c55e',
-    'in-progress': '#eab308',
-    'in-development': '#eab308',
-    'active': '#22c55e',
-    'cancelled': '#ef4444',
-    'blocked': '#ef4444',
-    'draft': '#6b7280',
-    'ready-for-development': '#3b82f6',
-    'in-review': '#8b5cf6',
-    'rejected': '#dc2626',
+function getStatusTone(status: string): string {
+  const statusTones: Record<string, string> = {
+    'completed': 'success',
+    'in-progress': 'warning',
+    'in-development': 'warning',
+    'active': 'success',
+    'cancelled': 'error',
+    'blocked': 'error',
+    'draft': 'muted',
+    'ready-for-development': 'info',
+    'in-review': 'info',
+    'rejected': 'error',
   };
-  return statusColors[status.toLowerCase()] || '#6b7280';
+  return statusTones[status.toLowerCase()] || 'muted';
 }
 
-function getPriorityColor(priority: string): string {
-  const priorityColors: Record<string, string> = {
-    'critical': '#dc2626',
-    'high': '#ef4444',
-    'medium': '#f59e0b',
-    'low': '#6b7280',
+function getPriorityTone(priority: string): string {
+  const priorityTones: Record<string, string> = {
+    'critical': 'error',
+    'high': 'error',
+    'medium': 'warning',
+    'low': 'muted',
   };
-  return priorityColors[priority.toLowerCase()] || '#6b7280';
+  return priorityTones[priority.toLowerCase()] || 'muted';
 }
 
 function getPlanTypeIcon(planType?: string): string {
@@ -75,56 +75,77 @@ function formatDate(date: Date): string {
 }
 
 export function PlanListItem({ plan, isActive, onClick }: PlanListItemProps): JSX.Element {
-  const statusColor = getStatusColor(plan.status);
-  const priorityColor = getPriorityColor(plan.priority);
+  const statusTone = getStatusTone(plan.status);
+  const priorityTone = getPriorityTone(plan.priority);
   const planTypeIcon = getPlanTypeIcon(plan.planType);
+  const safeProgress = Math.max(0, Math.min(100, plan.progress));
 
   return (
-    <div
-      className={`plan-list-item px-3 py-2 border-b border-nim cursor-pointer transition-colors duration-150 hover:bg-nim-hover ${isActive ? 'active bg-nim-secondary border-l-[3px] border-l-nim-accent pl-[9px]' : ''}`}
+    <button
+      type="button"
+      className={`plan-list-item agent-elements-plan-list-item w-full border-b border-[var(--an-border-color)] bg-transparent px-[var(--an-spacing-lg)] py-[var(--an-spacing-sm)] text-left transition-[background-color,border-color,color,box-shadow] duration-150 ease-out hover:bg-[var(--an-background-tertiary)] focus:outline-none focus:ring-2 focus:ring-[var(--an-input-focus-outline)] ${isActive ? 'active bg-[var(--an-background-tertiary)] shadow-[inset_0_0_0_1px_var(--an-border-color)]' : ''}`}
+      data-component="PlanListItem"
+      data-agent-elements-shell="plan-list-item"
+      data-plan-status={plan.status}
+      data-plan-priority={plan.priority}
+      data-plan-type={plan.planType || 'plan'}
       onClick={() => onClick(plan)}
     >
-      <div className="plan-list-item-header flex items-start gap-1.5 mb-1.5">
+      <div className="plan-list-item-header agent-elements-plan-list-item-header mb-[var(--an-spacing-xs)] flex items-start gap-[var(--an-spacing-xs)]">
         <span
-          className="plan-priority-indicator text-[11px] font-bold tracking-tighter shrink-0 min-w-4"
-          style={{ color: priorityColor }}
+          className="plan-priority-indicator agent-elements-plan-priority-indicator min-w-4 shrink-0 text-[11px] font-semibold leading-5 text-[var(--an-foreground-subtle)]"
           title={`Priority: ${plan.priority}`}
+          data-agent-elements-shell="plan-priority"
+          data-plan-priority={plan.priority}
+          data-priority-tone={priorityTone}
         >
           {plan.priority === 'critical' && '!!!'}
           {plan.priority === 'high' && '!!'}
           {plan.priority === 'medium' && '!'}
         </span>
-        <span className="material-symbols-outlined plan-type-icon text-base text-nim-faint shrink-0 mt-px" title={plan.planType || 'plan'}>
+        <span
+          className="material-symbols-outlined plan-type-icon agent-elements-plan-type-icon mt-px shrink-0 text-base leading-5 text-[var(--an-foreground-subtle)]"
+          title={plan.planType || 'plan'}
+          data-agent-elements-shell="plan-type-icon"
+        >
           {planTypeIcon}
         </span>
-        <div className="plan-list-item-title flex-1 text-[13px] font-medium text-nim-primary leading-snug overflow-hidden text-ellipsis line-clamp-2">{plan.title}</div>
+        <div className="plan-list-item-title agent-elements-plan-title line-clamp-2 flex-1 overflow-hidden text-ellipsis text-[13px] font-medium leading-snug text-[var(--an-foreground)]">
+          {plan.title}
+        </div>
       </div>
 
       {plan.progress > 0 && (
-        <div className="plan-progress-bar h-[3px] bg-nim-secondary rounded-sm overflow-hidden mb-1.5">
+        <div
+          className="plan-progress-bar agent-elements-plan-progress mb-[var(--an-spacing-xs)] h-1 overflow-hidden rounded-[var(--an-input-border-radius)] bg-[var(--an-background-tertiary)]"
+          data-testid="agent-elements-plan-progress"
+          role="progressbar"
+          aria-label={`${plan.title} progress`}
+          aria-valuemin={0}
+          aria-valuemax={100}
+          aria-valuenow={safeProgress}
+        >
           <div
-            className="plan-progress-fill h-full transition-[width] duration-300 ease-in-out"
-            style={{
-              width: `${plan.progress}%`,
-              backgroundColor: plan.progress === 100 ? '#22c55e' : '#60a5fa'
-            }}
+            className="plan-progress-fill h-full bg-[var(--an-primary-color)] transition-[width] duration-200 ease-out"
+            style={{ width: `${safeProgress}%` }}
           />
         </div>
       )}
 
-      <div className="plan-list-item-footer flex items-center justify-between gap-2">
-        <span className="plan-updated-time text-[11px] text-nim-faint">{formatDate(plan.lastUpdated)}</span>
+      <div className="plan-list-item-footer agent-elements-plan-footer flex items-center justify-between gap-[var(--an-spacing-sm)]">
+        <span className="plan-updated-time agent-elements-plan-updated-time text-[11px] text-[var(--an-foreground-subtle)]">
+          {formatDate(plan.lastUpdated)}
+        </span>
         <span
-          className="plan-status-badge text-[10px] px-1.5 py-0.5 rounded-sm border capitalize font-medium whitespace-nowrap"
-          style={{
-            backgroundColor: `${statusColor}20`,
-            color: statusColor,
-            borderColor: statusColor
-          }}
+          className="plan-status-badge agent-elements-plan-status-badge whitespace-nowrap rounded-[var(--an-input-border-radius)] border border-[var(--an-border-color)] bg-[var(--an-background)] px-[var(--an-spacing-xs)] py-0.5 text-[10px] font-medium capitalize text-[var(--an-foreground-muted)]"
+          data-testid="agent-elements-plan-status-badge"
+          data-agent-elements-shell="plan-status-badge"
+          data-plan-status={plan.status}
+          data-status-tone={statusTone}
         >
           {plan.status.replace('-', ' ')}
         </span>
       </div>
-    </div>
+    </button>
   );
 }

@@ -147,20 +147,22 @@ export const TextSelectionIndicator: React.FC<TextSelectionIndicatorProps> = ({
 
   // Use native title attribute for tooltip - browser handles escaping automatically
   const tooltipText = `Selected text will be included: "${previewText}"`;
+  const chipClass = [
+    'text-selection-indicator',
+    'agent-elements-context-chip',
+    'agent-elements-text-selection-indicator',
+    'mb-[var(--an-spacing-xs)] flex items-center gap-[var(--an-spacing-xs)]',
+    'rounded-[calc(var(--an-tool-border-radius)_-_4px)] border border-[var(--an-border-color)]',
+    'bg-[var(--an-background-secondary)] px-[var(--an-spacing-sm)] py-[var(--an-spacing-xs)]',
+    'text-xs text-[var(--an-foreground-muted)]',
+  ].join(' ');
 
   return (
     <div
-      className="text-selection-indicator"
+      className={chipClass}
       title={tooltipText}
-      style={{
-        padding: '4px 8px',
-        marginBottom: '4px',
-        fontSize: '12px',
-        color: 'var(--nim-text-muted)',
-        display: 'flex',
-        alignItems: 'center',
-        gap: '4px'
-      }}
+      data-agent-elements-shell="text-selection-context-chip"
+      data-component="UnifiedAITextSelectionIndicator"
     >
       <span>+ selection</span>
     </div>

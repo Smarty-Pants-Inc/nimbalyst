@@ -141,22 +141,7 @@ export class CodexRawParser implements IRawMessageParser {
       if (item && typeof item === 'object' && !Array.isArray(item)) {
         const itemRecord = item as Record<string, unknown>;
         if (itemRecord.type === 'todo_list' && Array.isArray(itemRecord.items)) {
-          const todoItems = (itemRecord.items as Array<Record<string, unknown>>)
-            .filter((t): t is Record<string, unknown> => t != null && typeof t === 'object')
-            .map(t => ({
-              text: typeof t.text === 'string' ? t.text : String(t.text ?? ''),
-              completed: !!t.completed,
-            }));
-          if (todoItems.length > 0) {
-            const todoText = todoItems
-              .map(t => `- [${t.completed ? 'x' : ' '}] ${t.text}`)
-              .join('\n');
-            descriptors.push({
-              type: 'assistant_message',
-              text: todoText,
-              createdAt: msg.createdAt,
-            });
-          }
+          descriptors.push(...await this.parseTodoListItem(msg, itemRecord, context));
           return descriptors;
         }
       }
@@ -235,6 +220,62 @@ export class CodexRawParser implements IRawMessageParser {
     }
 
     return descriptors;
+  }
+
+  private async parseTodoListItem(
+    msg: RawMessage,
+    item: Record<string, unknown>,
+    context: ParseContext,
+  ): Promise<CanonicalEventDescriptor[]> {
+    const rawItems = item.items;
+    if (!Array.isArray(rawItems) || rawItems.length === 0) return [];
+
+    const items = rawItems
+      .filter((todo): todo is Record<string, unknown> => todo != null && typeof todo === 'object' && !Array.isArray(todo))
+      .map((todo, index) => ({
+        id: typeof todo.id === 'string' && todo.id.length > 0 ? todo.id : `todo-${index}`,
+        content: typeof todo.text === 'string'
+          ? todo.text
+          : typeof todo.content === 'string'
+            ? todo.content
+            : String(todo.text ?? todo.content ?? ''),
+        status: this.todoStatus(todo),
+      }))
+      .filter((todo) => todo.content.length > 0);
+
+    if (items.length === 0) return [];
+
+    const rawItemId = typeof item.id === 'string' && item.id.length > 0 ? item.id : `todo_list-${msg.id}`;
+    const editGroupId = await this.resolveEditGroupId(msg, rawItemId, context);
+
+    return [
+      {
+        type: 'tool_call_started',
+        toolName: 'todo_list',
+        toolDisplayName: 'Todo list',
+        arguments: { items },
+        targetFilePath: null,
+        mcpServer: null,
+        mcpTool: null,
+        providerToolCallId: editGroupId,
+        createdAt: msg.createdAt,
+      },
+      {
+        type: 'tool_call_completed',
+        providerToolCallId: editGroupId,
+        status: 'completed',
+        result: 'Todo list updated.',
+        isError: false,
+      },
+    ];
+  }
+
+  private todoStatus(todo: Record<string, unknown>): string {
+    const status = typeof todo.status === 'string' ? todo.status.toLowerCase() : '';
+    if (todo.completed === true || status === 'completed' || status === 'done') return 'completed';
+    if (status === 'in_progress' || status === 'in-progress' || status === 'active' || status === 'running') return 'in_progress';
+    if (status === 'cancelled' || status === 'canceled') return 'cancelled';
+    return 'pending';
   }
 
   // ---------------------------------------------------------------------------

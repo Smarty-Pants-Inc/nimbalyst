@@ -1,6 +1,7 @@
 import React, { useCallback } from 'react';
 import { useAtom } from 'jotai';
 import { usePostHog } from 'posthog-js/react';
+import { MaterialSymbol } from '@nimbalyst/runtime';
 import { UpdateAvailableToast } from './UpdateAvailableToast';
 import { ReleaseNotesDialog } from './ReleaseNotesDialog';
 import { DownloadProgressToast } from './DownloadProgressToast';
@@ -114,48 +115,68 @@ export function UpdateToast(): React.ReactElement | null {
     return null;
   }
 
+  const toastCardClass =
+    'update-toast agent-elements-update-toast agent-elements-tool-card relative max-w-[calc(100vw-32px)] overflow-hidden rounded-[var(--an-tool-border-radius)] border border-[var(--an-border-color)] bg-[var(--an-background)] p-[var(--an-spacing-xl)] text-[var(--an-foreground)] shadow-[0_14px_42px_color-mix(in_srgb,var(--nim-text)_16%,transparent)]';
+  const dismissButtonClass =
+    'update-toast-dismiss agent-elements-update-toast-dismiss absolute right-3 top-3 inline-flex h-8 w-8 cursor-pointer items-center justify-center rounded-[var(--an-input-border-radius)] border border-transparent bg-transparent p-0 text-[var(--an-foreground-muted)] transition-[background-color,border-color,color] duration-150 ease-out hover:border-[var(--an-border-color)] hover:bg-[var(--an-background-tertiary)] hover:text-[var(--an-foreground)] focus:outline-none focus:ring-2 focus:ring-[var(--an-input-focus-outline)]';
+  const secondaryButtonClass =
+    'update-toast-btn update-toast-btn-secondary inline-flex items-center justify-center rounded-[var(--an-input-border-radius)] border border-[var(--an-border-color)] bg-[var(--an-background)] px-3 py-2 text-sm font-medium text-[var(--an-foreground-muted)] transition-[background-color,border-color,color] duration-150 ease-out hover:bg-[var(--an-background-tertiary)] hover:text-[var(--an-foreground)] focus:outline-none focus:ring-2 focus:ring-[var(--an-input-focus-outline)]';
+
   return (
     <>
-      {/* Toast container for all toast states */}
       {(state === 'checking' || state === 'up-to-date' || state === 'available' || state === 'downloading' || state === 'ready' || state === 'waiting-for-sessions' || state === 'error') && (
         <div
-          className="update-toast-container fixed bottom-5 right-5 z-[10000] animate-[slideUp_0.3s_ease-out]"
+          className="update-toast-container agent-elements-update-toast-container fixed bottom-5 right-5 z-[10000] nim-animate-slide-up"
           data-testid="update-toast-container"
           data-state={state}
+          data-agent-elements-shell="update-toast-container"
         >
           {state === 'checking' && (
             <div
-              className="update-toast update-toast-checking flex items-center gap-3 w-auto min-w-[220px] relative rounded-xl p-4 px-5 border border-[var(--nim-border)] bg-[var(--nim-bg-secondary)] shadow-[0_10px_25px_-5px_rgba(0,0,0,0.3),0_4px_10px_-2px_rgba(0,0,0,0.2)]"
+              className={`${toastCardClass} update-toast-checking flex w-auto min-w-[240px] items-center gap-3`}
               data-testid="update-checking-toast"
+              data-component="UpdateToastChecking"
+              data-agent-elements-shell="update-checking-toast"
             >
-              <div className="update-toast-spinner w-5 h-5 border-2 border-[var(--nim-bg-tertiary)] border-t-[var(--nim-primary)] rounded-full animate-spin shrink-0" />
-              <div className="update-toast-title text-sm font-semibold text-[var(--nim-text)] mb-0 pr-0">Checking for updates...</div>
+              <span
+                className="update-toast-icon agent-elements-update-toast-icon inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-[var(--an-tool-border-radius)] border border-[var(--an-border-color)] bg-[var(--an-background-secondary)] text-[var(--an-primary-color)]"
+                data-testid="agent-elements-update-toast-icon"
+                data-agent-elements-shell="update-toast-icon"
+                aria-hidden="true"
+              >
+                <MaterialSymbol icon="progress_activity" size={18} className="animate-spin" />
+              </span>
+              <div className="update-toast-title m-0 text-sm font-medium text-[var(--an-foreground)]">Checking for updates...</div>
             </div>
           )}
 
           {state === 'up-to-date' && (
             <div
-              className="update-toast update-toast-up-to-date flex flex-col items-start w-auto min-w-[280px] relative rounded-xl p-4 px-5 border border-[var(--nim-border)] bg-[var(--nim-bg-secondary)] shadow-[0_10px_25px_-5px_rgba(0,0,0,0.3),0_4px_10px_-2px_rgba(0,0,0,0.2)]"
+              className={`${toastCardClass} update-toast-up-to-date flex w-[340px] flex-col items-start`}
               data-testid="update-up-to-date-toast"
+              data-component="UpdateToastUpToDate"
+              data-agent-elements-shell="update-up-to-date-toast"
             >
               <button
-                className="update-toast-dismiss absolute top-3 right-3 w-6 h-6 border-none bg-transparent cursor-pointer rounded flex items-center justify-center p-0 text-[var(--nim-text-faint)] transition-colors duration-200 hover:bg-[var(--nim-bg-hover)] hover:text-[var(--nim-text-muted)] [&>svg]:w-3.5 [&>svg]:h-3.5"
+                className={dismissButtonClass}
                 onClick={handleDismiss}
                 title="Dismiss"
                 aria-label="Dismiss"
                 data-testid="update-toast-dismiss"
+                data-agent-elements-shell="update-toast-dismiss"
               >
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M18 6L6 18M6 6l12 12" />
-                </svg>
+                <MaterialSymbol icon="close" size={18} />
               </button>
-              <div className="update-toast-check-icon w-8 h-8 rounded-full bg-[var(--nim-success)] flex items-center justify-center mb-3 [&>svg]:w-[18px] [&>svg]:h-[18px] [&>svg]:text-white">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M20 6L9 17l-5-5" />
-                </svg>
-              </div>
-              <div className="update-toast-title text-sm font-semibold text-[var(--nim-text)] mb-1 pr-7">You're up to date!</div>
-              <div className="update-toast-subtitle text-xs text-[var(--nim-text-muted)] leading-normal mb-0">Nimbalyst {currentVersion} is the latest version.</div>
+              <span
+                className="update-toast-check-icon agent-elements-status-pill agent-elements-update-toast-icon mb-3 inline-flex h-8 w-8 items-center justify-center rounded-[var(--an-tool-border-radius)] border border-[color-mix(in_srgb,var(--nim-success)_28%,var(--an-border-color))] bg-[color-mix(in_srgb,var(--nim-success)_10%,var(--an-background))] text-[var(--nim-success)]"
+                data-testid="agent-elements-update-toast-icon"
+                data-agent-elements-shell="update-toast-icon"
+                aria-hidden="true"
+              >
+                <MaterialSymbol icon="check" size={18} />
+              </span>
+              <div className="update-toast-title m-0 pr-7 text-sm font-medium text-[var(--an-foreground)]">You're up to date</div>
+              <div className="update-toast-subtitle mt-1 text-xs leading-relaxed text-[var(--an-foreground-muted)]">Nimbalyst {currentVersion} is the latest version.</div>
             </div>
           )}
 
@@ -190,34 +211,47 @@ export function UpdateToast(): React.ReactElement | null {
 
           {state === 'error' && (
             <div
-              className="update-toast update-toast-error relative w-[380px] rounded-xl p-4 px-5 border border-[var(--nim-error)] bg-[var(--nim-bg-secondary)] shadow-[0_10px_25px_-5px_rgba(0,0,0,0.3),0_4px_10px_-2px_rgba(0,0,0,0.2)]"
+              className={`${toastCardClass} update-toast-error w-[380px] border-[color-mix(in_srgb,var(--nim-error)_38%,var(--an-border-color))]`}
               data-testid="update-error-toast"
+              data-component="UpdateToastError"
+              data-agent-elements-shell="update-error-toast"
             >
               <button
-                className="update-toast-dismiss absolute top-3 right-3 w-6 h-6 border-none bg-transparent cursor-pointer rounded flex items-center justify-center p-0 text-[var(--nim-text-faint)] transition-colors duration-200 hover:bg-[var(--nim-bg-hover)] hover:text-[var(--nim-text-muted)] [&>svg]:w-3.5 [&>svg]:h-3.5"
+                className={dismissButtonClass}
                 onClick={handleDismiss}
                 title="Dismiss"
                 aria-label="Dismiss"
                 data-testid="update-toast-dismiss"
+                data-agent-elements-shell="update-toast-dismiss"
               >
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M18 6L6 18M6 6l12 12" />
-                </svg>
+                <MaterialSymbol icon="close" size={18} />
               </button>
-              <div className="update-toast-title text-sm font-semibold text-[var(--nim-error)] mb-1 pr-7">Update Error</div>
-              <div className="update-toast-subtitle text-xs text-[var(--nim-text-muted)] leading-normal mb-1" data-testid="error-message">{errorMessage}</div>
-              <div className="text-xs text-[var(--nim-text-muted)] leading-normal mb-4">
+              <div className="update-toast-header agent-elements-update-toast-header flex items-start gap-3 pr-8" data-agent-elements-shell="update-toast-header">
+                <span
+                  className="update-toast-icon agent-elements-update-toast-icon inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-[var(--an-tool-border-radius)] border border-[color-mix(in_srgb,var(--nim-error)_28%,var(--an-border-color))] bg-[color-mix(in_srgb,var(--nim-error)_10%,var(--an-background))] text-[var(--nim-error)]"
+                  data-testid="agent-elements-update-toast-icon"
+                  data-agent-elements-shell="update-toast-icon"
+                  aria-hidden="true"
+                >
+                  <MaterialSymbol icon="error" size={19} />
+                </span>
+                <div className="min-w-0">
+                  <div className="update-toast-title m-0 text-sm font-medium text-[var(--nim-error)]">Update Error</div>
+                  <div className="update-toast-subtitle select-text mt-1 text-xs leading-relaxed text-[var(--an-foreground-muted)]" data-testid="error-message">{errorMessage}</div>
+                </div>
+              </div>
+              <div className="mt-[var(--an-spacing-md)] text-xs leading-relaxed text-[var(--an-foreground-muted)]">
                 You can <a
                   href="https://nimbalyst.com/download"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-[var(--nim-primary)] hover:underline cursor-pointer"
+                  className="cursor-pointer rounded-[var(--an-input-border-radius)] text-[var(--an-primary-color)] underline-offset-2 hover:underline focus:outline-none focus:ring-2 focus:ring-[var(--an-input-focus-outline)]"
                   data-testid="manual-download-link"
                 >download the latest version manually</a>.
               </div>
-              <div className="update-toast-actions flex gap-2 flex-wrap">
+              <div className="update-toast-actions agent-elements-update-toast-actions mt-[var(--an-spacing-xl)] flex flex-wrap gap-2" data-agent-elements-shell="update-toast-actions">
                 <button
-                  className="update-toast-btn update-toast-btn-secondary py-2 px-3.5 border border-[var(--nim-border)] rounded-md text-[13px] font-medium cursor-pointer transition-all duration-200 font-[inherit] whitespace-nowrap bg-[var(--nim-bg-tertiary)] text-[var(--nim-text)] hover:bg-[var(--nim-bg-hover)]"
+                  className={secondaryButtonClass}
                   onClick={handleDismiss}
                   data-testid="error-dismiss-btn"
                 >
@@ -229,7 +263,6 @@ export function UpdateToast(): React.ReactElement | null {
         </div>
       )}
 
-      {/* Release notes dialog (modal) */}
       {state === 'viewing-notes' && updateInfo && (
         <ReleaseNotesDialog
           currentVersion={currentVersion}

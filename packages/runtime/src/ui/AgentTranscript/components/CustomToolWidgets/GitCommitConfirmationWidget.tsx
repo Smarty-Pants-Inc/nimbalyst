@@ -22,6 +22,8 @@ import type { CustomToolWidgetProps } from './index';
 import { buildCodexToolLookupId } from '../../../../ai/server/toolLookupIds';
 import { interactiveWidgetHostAtom } from '../../../../store/atoms/interactiveWidgetHost';
 import { useDiffPeek } from '../../../git/useDiffPeek';
+import { AgentStatusPill, type AgentStatusTone } from '../../../AgentElements/AgentElementsPrimitives';
+import '../../../AgentElements/AgentElementsFrameworkEvents.css';
 
 // ============================================================
 // File Status Types
@@ -201,6 +203,45 @@ interface StructuredCommitResult {
   error?: string;
   success?: boolean;
   status?: string;
+}
+
+type GitCommitVisualState = 'pending' | 'committed' | 'cancelled' | 'error';
+
+function getGitCommitTone(state: GitCommitVisualState): AgentStatusTone {
+  if (state === 'pending') return 'running';
+  if (state === 'committed') return 'success';
+  if (state === 'error') return 'error';
+  return 'neutral';
+}
+
+function getGitCommitStatusLabel(state: GitCommitVisualState): string {
+  if (state === 'pending') return 'awaiting confirmation';
+  if (state === 'committed') return 'committed';
+  if (state === 'error') return 'failed';
+  return 'cancelled';
+}
+
+function GitCommitStatusIcon({ state }: { state: GitCommitVisualState }) {
+  const icon = state === 'pending'
+    ? 'commit'
+    : state === 'committed'
+      ? 'check_circle'
+      : state === 'error'
+        ? 'error'
+        : 'close';
+  const toneClass = state === 'committed'
+    ? 'text-[var(--nim-success)]'
+    : state === 'error'
+      ? 'text-[var(--nim-error)]'
+      : state === 'pending'
+        ? 'text-[var(--nim-primary)]'
+        : 'text-[var(--nim-text-muted)]';
+
+  return (
+    <span className={`agent-elements-tool-icon ${toneClass}`}>
+      <MaterialSymbol icon={icon} size={16} />
+    </span>
+  );
 }
 
 /**
@@ -624,6 +665,24 @@ export const GitCommitConfirmationWidget: React.FC<CustomToolWidgetProps> = ({
     error: completedState.type === 'cancelled' ? 'Cancelled' :
            completedState.type === 'error' ? completedState.error : undefined,
   } : localResult;
+  const commitVisualState: GitCommitVisualState = (displayResult || hasResponded)
+    ? (displayResult?.error === 'Cancelled'
+        ? 'cancelled'
+        : displayResult?.success
+          ? 'committed'
+          : 'error')
+    : (host?.autoCommitEnabled || wasAutoCommitted) && !isCommitting
+      ? 'committed'
+      : 'pending';
+  const shellClassName = `git-commit-widget agent-elements-tool-card agent-elements-git-commit-card ${
+    commitVisualState === 'pending' ? '' : 'opacity-85'
+  }`;
+  const shellProps = {
+    'data-component': 'RichTranscriptAgentElementsGitCommitConfirmation',
+    'data-agent-elements-shell': 'commit-card',
+    'data-git-commit-state': commitVisualState,
+    'data-testid': 'git-commit-widget',
+  };
 
   const toggleFile = useCallback((filePath: string) => {
     setFilesToStage((prev) => {
@@ -706,7 +765,7 @@ export const GitCommitConfirmationWidget: React.FC<CustomToolWidgetProps> = ({
       <div
         key={filePath}
         ref={(el) => registerRowEl(filePath, el)}
-        className={`git-commit-widget__file group w-full flex items-center gap-1 text-left px-2 py-0.5 rounded border transition-all ${
+        className={`git-commit-widget__file agent-elements-git-commit-file-row group w-full flex items-center gap-1 text-left px-2 py-0.5 rounded border transition-all ${
           isPinned
             ? 'bg-[var(--nim-bg-hover)] border-[var(--nim-primary)]'
             : 'border-transparent bg-transparent hover:bg-[var(--nim-bg-hover)] hover:border-[var(--nim-border)]'
@@ -924,16 +983,26 @@ export const GitCommitConfirmationWidget: React.FC<CustomToolWidgetProps> = ({
     if (result.error === 'Cancelled') {
       return (
         <div
-          data-testid="git-commit-widget"
+          {...shellProps}
           data-state="cancelled"
-          className="git-commit-widget rounded-lg bg-[var(--nim-bg-secondary)] border border-[var(--nim-border)] overflow-hidden opacity-70"
+          className={`${shellClassName} opacity-70`}
         >
-          <div className="git-commit-widget__header flex items-center gap-2 p-2 border-b border-[var(--nim-border)] bg-[var(--nim-bg-secondary)]">
-            <MaterialSymbol icon="close" size={16} className="text-[var(--nim-text-muted)]" />
-            <span className="text-sm font-semibold text-[var(--nim-text)] flex-1">Commit Proposal</span>
+          <div className="git-commit-widget__header agent-elements-tool-header">
+            <GitCommitStatusIcon state="cancelled" />
+            <div className="agent-elements-tool-title-group">
+              <span className="agent-elements-tool-title">Commit Proposal</span>
+              <span className="agent-elements-tool-subtitle">{initialFilesToStage.length} file{initialFilesToStage.length !== 1 ? 's' : ''}</span>
+            </div>
+            <span className="agent-elements-tool-trailing">
+              <AgentStatusPill tone="neutral">
+                <span data-testid="git-commit-status">cancelled</span>
+              </AgentStatusPill>
+            </span>
+          </div>
+          <div className="agent-elements-tool-footer">
             <span
               data-testid="git-commit-cancelled"
-              className="flex items-center gap-1 text-xs font-medium text-[var(--nim-text-muted)] py-1 px-2 bg-[var(--nim-bg-tertiary)] rounded-full"
+              className="agent-elements-status-pill text-nim-muted"
             >
               Cancelled
             </span>
@@ -955,30 +1024,36 @@ export const GitCommitConfirmationWidget: React.FC<CustomToolWidgetProps> = ({
 
     return (
       <div
-        data-testid="git-commit-widget"
+        {...shellProps}
         data-state={result.success ? 'committed' : 'error'}
-        className={`git-commit-widget rounded-lg bg-[var(--nim-bg-secondary)] border overflow-hidden ${result.success ? 'border-[var(--nim-success)]' : 'border-[var(--nim-error)]'}`}
+        className={`${shellClassName} ${result.success ? 'border-[var(--nim-success)]' : 'border-[var(--nim-error)]'}`}
       >
-        <div className="git-commit-widget__header flex items-center gap-2 p-2 border-b border-[var(--nim-border)] bg-[var(--nim-bg-secondary)]">
-          <MaterialSymbol
-            icon={result.success ? 'check_circle' : 'error'}
-            size={16}
-            className={result.success ? 'text-[var(--nim-success)]' : 'text-[var(--nim-error)]'}
-          />
-          <span className="text-sm font-semibold text-[var(--nim-text)] flex-1">
-            {result.success ? 'Changes Committed' : 'Commit Failed'}
-          </span>
+        <div className="git-commit-widget__header agent-elements-tool-header">
+          <GitCommitStatusIcon state={result.success ? 'committed' : 'error'} />
+          <div className="agent-elements-tool-title-group">
+            <span className="agent-elements-tool-title">
+              {result.success ? 'Changes Committed' : 'Commit Failed'}
+            </span>
+            <span className="agent-elements-tool-subtitle">
+              {filesToStage.size} file{filesToStage.size !== 1 ? 's' : ''}
+            </span>
+          </div>
           {result.success && result.commitHash && (
             <span
               data-testid="git-commit-committed"
-              className="font-mono text-[0.6875rem] font-semibold text-[var(--nim-success)] bg-[color-mix(in_srgb,var(--nim-success)_12%,transparent)] py-0.5 px-2 rounded-full"
+              className="agent-elements-status-pill font-mono text-[var(--nim-success)] bg-[color-mix(in_srgb,var(--nim-success)_12%,transparent)]"
             >
               {result.commitHash.slice(0, 7)}
             </span>
           )}
+          <span className="agent-elements-tool-trailing">
+            <AgentStatusPill tone={result.success ? 'success' : 'error'}>
+              <span data-testid="git-commit-status">{result.success ? 'committed' : 'failed'}</span>
+            </AgentStatusPill>
+          </span>
         </div>
         {result.success ? (
-          <div className="git-commit-widget__success-content p-2 bg-[color-mix(in_srgb,var(--nim-success)_8%,var(--nim-bg))] flex flex-col gap-2">
+          <div className="git-commit-widget__success-content agent-elements-tool-primary bg-[color-mix(in_srgb,var(--nim-success)_8%,var(--nim-bg))] flex flex-col gap-2 rounded-[calc(var(--an-tool-border-radius)_-_4px)] p-2">
             {commitTimestamp && <div className="text-[0.6875rem] text-[var(--nim-text-faint)]">{commitTimestamp}</div>}
             <div className="text-[0.8125rem] font-medium text-[var(--nim-text)] leading-normal whitespace-pre-wrap font-mono">{commitMessage}</div>
             <div className="mt-1 pt-2 border-t border-[var(--nim-border)]">
@@ -1016,7 +1091,7 @@ export const GitCommitConfirmationWidget: React.FC<CustomToolWidgetProps> = ({
         ) : (
           <div
             data-testid="git-commit-error"
-            className="git-commit-widget__error-content p-2 bg-[color-mix(in_srgb,var(--nim-error)_8%,var(--nim-bg))] text-[var(--nim-error)] text-[0.8125rem]"
+            className="git-commit-widget__error-content agent-elements-tool-primary select-text p-2 bg-[color-mix(in_srgb,var(--nim-error)_8%,var(--nim-bg))] text-[var(--nim-error)] text-[0.8125rem] rounded-[calc(var(--an-tool-border-radius)_-_4px)]"
           >
             {result.error}
           </div>
@@ -1040,15 +1115,23 @@ export const GitCommitConfirmationWidget: React.FC<CustomToolWidgetProps> = ({
   if ((host?.autoCommitEnabled || wasAutoCommitted) && !isCommitting) {
     return (
       <div
-        data-testid="git-commit-widget"
+        {...shellProps}
         data-state="committed"
-        className="git-commit-widget rounded-lg bg-[var(--nim-bg-secondary)] border border-[var(--nim-success)] overflow-hidden"
+        className={`${shellClassName} border-[var(--nim-success)]`}
       >
-        <div className="git-commit-widget__header flex items-center gap-2 p-2 border-b border-[var(--nim-border)] bg-[var(--nim-bg-secondary)]">
-          <MaterialSymbol icon="check_circle" size={16} className="text-[var(--nim-success)]" />
-          <span className="text-sm font-semibold text-[var(--nim-text)] flex-1">Changes Committed</span>
+        <div className="git-commit-widget__header agent-elements-tool-header">
+          <GitCommitStatusIcon state="committed" />
+          <div className="agent-elements-tool-title-group">
+            <span className="agent-elements-tool-title">Changes Committed</span>
+            <span className="agent-elements-tool-subtitle">Auto-approved commit</span>
+          </div>
+          <span className="agent-elements-tool-trailing">
+            <AgentStatusPill tone="success">
+              <span data-testid="git-commit-status">committed</span>
+            </AgentStatusPill>
+          </span>
         </div>
-        <div className="git-commit-widget__success-content p-2 bg-[color-mix(in_srgb,var(--nim-success)_8%,var(--nim-bg))] flex flex-col gap-2">
+        <div className="git-commit-widget__success-content agent-elements-tool-primary bg-[color-mix(in_srgb,var(--nim-success)_8%,var(--nim-bg))] flex flex-col gap-2 rounded-[calc(var(--an-tool-border-radius)_-_4px)] p-2">
           <div className="text-[0.8125rem] font-medium text-[var(--nim-text)] leading-normal whitespace-pre-wrap font-mono">{initialCommitMessage}</div>
           <div className="mt-1 pt-2 border-t border-[var(--nim-border)]">
             <div className="text-[0.6875rem] font-semibold uppercase tracking-wide text-[var(--nim-text-muted)] mb-1.5">
@@ -1093,22 +1176,34 @@ export const GitCommitConfirmationWidget: React.FC<CustomToolWidgetProps> = ({
   // Show interactive UI for pending proposals
   return (
     <div
-      data-testid="git-commit-widget"
+      {...shellProps}
       data-state="pending"
-      className="git-commit-widget flex flex-col rounded-lg bg-[var(--nim-bg-secondary)] border border-[var(--nim-border)] overflow-hidden"
+      className={shellClassName}
     >
       {/* Header matching FileEditsSidebar controls bar */}
-      <div className="git-commit-widget__header flex items-center gap-2 p-2 border-b border-[var(--nim-border)] bg-[var(--nim-bg-secondary)]">
-        <MaterialSymbol icon="commit" size={16} className="text-[var(--nim-primary)]" />
-        <span className="text-sm font-semibold text-[var(--nim-text)] flex-1">Commit Proposal</span>
+      <div className="git-commit-widget__header agent-elements-tool-header">
+        <GitCommitStatusIcon state="pending" />
+        <div className="agent-elements-tool-title-group">
+          <span className="agent-elements-tool-title">Commit Proposal</span>
+          <span className="agent-elements-tool-subtitle">
+            {initialFilesToStage.length} file{initialFilesToStage.length !== 1 ? 's' : ''}
+          </span>
+        </div>
+        <span className="agent-elements-tool-trailing">
+          <AgentStatusPill tone={getGitCommitTone('pending')}>
+            <span data-testid="git-commit-status">{getGitCommitStatusLabel('pending')}</span>
+          </AgentStatusPill>
+        </span>
       </div>
 
-      <div className="git-commit-widget__content p-2 flex flex-col gap-3">
+      <div className="git-commit-widget__content agent-elements-tool-primary flex flex-col gap-3">
         {/* Reasoning */}
         {reasoning && (
-          <div className="git-commit-widget__reasoning flex flex-col gap-1.5">
-            <div className="text-[0.6875rem] font-semibold uppercase tracking-wide text-[var(--nim-text-muted)]">Analysis</div>
-            <div className="p-2 bg-[var(--nim-bg)] border border-[var(--nim-border)] rounded text-[0.8125rem] text-[var(--nim-text-muted)] leading-normal">{reasoning}</div>
+          <div className="git-commit-widget__reasoning agent-elements-question-shell">
+            <div className="agent-elements-question-copy">
+              <div className="text-[0.6875rem] font-semibold uppercase tracking-wide text-[var(--nim-text-muted)]">Analysis</div>
+              <div className="agent-elements-question-description select-text">{reasoning}</div>
+            </div>
           </div>
         )}
 
@@ -1117,7 +1212,7 @@ export const GitCommitConfirmationWidget: React.FC<CustomToolWidgetProps> = ({
           <div className="text-[0.6875rem] font-semibold uppercase tracking-wide text-[var(--nim-text-muted)]">
             Files to Stage ({filesToStage.size}/{initialFilesToStage.length})
           </div>
-          <div className="git-commit-widget__files-list flex flex-col max-h-[200px] overflow-y-auto p-1">
+          <div className="git-commit-widget__files-list agent-elements-git-commit-file-list flex flex-col max-h-[200px] overflow-y-auto p-1 border border-[var(--an-tool-border-color)] rounded-[calc(var(--an-tool-border-radius)_-_4px)] bg-[var(--an-background)]">
             {renderDirectoryNode(directoryTree)}
           </div>
         </div>
@@ -1127,7 +1222,7 @@ export const GitCommitConfirmationWidget: React.FC<CustomToolWidgetProps> = ({
           <div className="text-[0.6875rem] font-semibold uppercase tracking-wide text-[var(--nim-text-muted)]">Commit Message</div>
           <textarea
             data-testid="git-commit-message-input"
-            className="w-full p-2 border border-[var(--nim-border)] rounded bg-[var(--nim-bg)] text-[var(--nim-text)] text-[0.8125rem] font-mono resize-y leading-snug focus:outline-none focus:border-[var(--nim-border-focus)] placeholder:text-[var(--nim-text-faint)]"
+            className="agent-elements-question-textarea w-full font-mono resize-y placeholder:text-[var(--nim-text-faint)]"
             value={commitMessage}
             onChange={(e) => setCommitMessage(e.target.value)}
             rows={6}
@@ -1136,7 +1231,7 @@ export const GitCommitConfirmationWidget: React.FC<CustomToolWidgetProps> = ({
         </div>
 
         {/* Actions */}
-        <div className="git-commit-widget__actions flex items-center gap-2 pt-2 border-t border-[var(--nim-border)]">
+        <div className="git-commit-widget__actions agent-elements-question-actions flex items-center gap-2 pt-2 border-t border-[var(--nim-border)]">
           <label className="flex items-center gap-1.5 cursor-pointer flex-1 min-w-0">
             <input
               type="checkbox"

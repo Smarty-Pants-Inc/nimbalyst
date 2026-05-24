@@ -1,4 +1,5 @@
 import React from 'react';
+import { MaterialSymbol } from '@nimbalyst/runtime';
 
 interface DownloadProgress {
   bytesPerSecond: number;
@@ -45,38 +46,53 @@ export function DownloadProgressToast({
   progress,
   onCancel,
 }: DownloadProgressToastProps): React.ReactElement {
-  // Handle initial state before first progress event
   const remaining = progress ? progress.total - progress.transferred : 0;
   const timeRemaining = progress ? estimateTimeRemaining(progress.bytesPerSecond, remaining) : 'Starting download...';
   const percent = progress ? Math.round(progress.percent) : 0;
+  const secondaryButton =
+    'update-toast-btn update-toast-btn-secondary inline-flex items-center justify-center gap-2 rounded-[var(--an-input-border-radius)] border border-[var(--an-border-color)] bg-[var(--an-background)] px-3 py-2 text-sm font-medium text-[var(--an-foreground-muted)] transition-[background-color,border-color,color] duration-150 ease-out hover:bg-[var(--an-background-tertiary)] hover:text-[var(--an-foreground)] focus:outline-none focus:ring-2 focus:ring-[var(--an-input-focus-outline)]';
 
   return (
     <div
-      className="update-toast update-toast-download relative w-[340px] rounded-xl p-4 px-5 border border-[var(--nim-border)] bg-[var(--nim-bg-secondary)] shadow-[0_10px_25px_-5px_rgba(0,0,0,0.3),0_4px_10px_-2px_rgba(0,0,0,0.2)]"
+      className="update-toast update-toast-download agent-elements-update-toast agent-elements-tool-card relative w-[360px] max-w-[calc(100vw-32px)] overflow-hidden rounded-[var(--an-tool-border-radius)] border border-[var(--an-border-color)] bg-[var(--an-background)] p-[var(--an-spacing-xl)] text-[var(--an-foreground)] shadow-[0_14px_42px_color-mix(in_srgb,var(--nim-text)_16%,transparent)]"
       data-testid="download-progress-toast"
+      data-component="DownloadProgressToast"
+      data-agent-elements-shell="download-progress-toast"
     >
-      {/* Header */}
-      <div className="update-toast-title text-sm font-semibold text-[var(--nim-text)] mb-3 pr-7">
-        Downloading Nimbalyst {version}...
+      <div
+        className="update-toast-header agent-elements-update-toast-header mb-[var(--an-spacing-xl)] flex items-start gap-3"
+        data-agent-elements-shell="update-toast-header"
+      >
+        <span
+          className="update-toast-icon agent-elements-update-toast-icon inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-[var(--an-tool-border-radius)] border border-[var(--an-border-color)] bg-[var(--an-background-secondary)] text-[var(--an-primary-color)]"
+          data-testid="agent-elements-update-toast-icon"
+          data-agent-elements-shell="update-toast-icon"
+          aria-hidden="true"
+        >
+          <MaterialSymbol icon="downloading" size={19} />
+        </span>
+        <div className="min-w-0">
+          <div className="update-toast-title m-0 text-sm font-medium leading-snug text-[var(--an-foreground)]">
+            Downloading Nimbalyst {version}
+          </div>
+          <div className="update-toast-subtitle mt-1 text-xs leading-relaxed text-[var(--an-foreground-muted)]">
+            The update will be ready after the download completes.
+          </div>
+        </div>
       </div>
 
-      {/* Progress section */}
-      <div className="update-toast-progress-section flex items-center gap-3 mb-2">
-        {/* App icon placeholder */}
-        <div className="update-toast-app-icon w-10 h-10 rounded-lg bg-gradient-to-br from-[var(--nim-primary)] to-[#6366f1] flex items-center justify-center shrink-0 [&>svg]:w-6 [&>svg]:h-6 [&>svg]:text-white">
-          <svg viewBox="0 0 24 24" fill="currentColor">
-            <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
-          </svg>
-        </div>
-
-        {/* Progress details */}
-        <div className="update-toast-progress-details flex-1">
-          <div className="update-toast-progress-text text-xs text-[var(--nim-text)] mb-1.5" data-testid="download-progress-text">
+      <div
+        className="update-toast-progress-section agent-elements-update-toast-progress"
+        data-testid="agent-elements-update-toast-progress"
+        data-agent-elements-shell="update-toast-progress"
+      >
+        <div className="update-toast-progress-details">
+          <div className="update-toast-progress-text mb-2 text-xs text-[var(--an-foreground)]" data-testid="download-progress-text">
             {progress ? `${formatBytes(progress.transferred)} of ${formatBytes(progress.total)}` : 'Preparing...'}
           </div>
-          <div className="update-toast-progress-bar h-1.5 bg-[var(--nim-bg-tertiary)] rounded-sm overflow-hidden">
+          <div className="update-toast-progress-bar h-1.5 overflow-hidden rounded-full bg-[var(--an-background-tertiary)]">
             <div
-              className="update-toast-progress-fill h-full bg-[var(--nim-primary)] rounded-sm transition-[width] duration-300 ease-out"
+              className="update-toast-progress-fill h-full rounded-full bg-[var(--an-primary-color)] transition-[width] duration-300 ease-out"
               style={{ width: `${percent}%` }}
               data-testid="download-progress-fill"
               data-percent={percent}
@@ -85,15 +101,16 @@ export function DownloadProgressToast({
         </div>
       </div>
 
-      {/* Time remaining */}
-      <div className="update-toast-time-remaining text-[11px] text-[var(--nim-text-faint)] mb-3" data-testid="download-time-remaining">
+      <div className="update-toast-time-remaining mt-2 text-xs text-[var(--an-foreground-subtle)]" data-testid="download-time-remaining">
         {timeRemaining}
       </div>
 
-      {/* Action buttons */}
-      <div className="update-toast-actions flex gap-2 flex-wrap">
+      <div
+        className="update-toast-actions agent-elements-update-toast-actions mt-[var(--an-spacing-xl)] flex flex-wrap gap-2"
+        data-agent-elements-shell="update-toast-actions"
+      >
         <button
-          className="update-toast-btn update-toast-btn-secondary py-2 px-3.5 border border-[var(--nim-border)] rounded-md text-[13px] font-medium cursor-pointer transition-all duration-200 font-[inherit] whitespace-nowrap bg-[var(--nim-bg-tertiary)] text-[var(--nim-text)] hover:bg-[var(--nim-bg-hover)]"
+          className={secondaryButton}
           onClick={onCancel}
           data-testid="download-cancel-btn"
         >

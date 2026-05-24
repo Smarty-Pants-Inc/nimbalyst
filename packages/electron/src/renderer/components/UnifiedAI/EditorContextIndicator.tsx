@@ -41,19 +41,22 @@ export const EditorContextIndicator: React.FC<EditorContextIndicatorProps> = ({
 
   if (!shouldShow()) return null;
 
+  const chipClass = [
+    'editor-context-indicator',
+    'agent-elements-context-chip',
+    'agent-elements-editor-context-indicator',
+    'mb-[var(--an-spacing-xs)] flex items-center gap-[var(--an-spacing-xs)]',
+    'rounded-[calc(var(--an-tool-border-radius)_-_4px)] border border-[var(--an-border-color)]',
+    'bg-[var(--an-background-secondary)] px-[var(--an-spacing-sm)] py-[var(--an-spacing-xs)]',
+    'text-xs text-[var(--an-foreground-muted)]',
+  ].join(' ');
+
   return (
     <div
-      className="editor-context-indicator"
+      className={chipClass}
       title={entry!.context.description}
-      style={{
-        padding: '4px 8px',
-        marginBottom: '4px',
-        fontSize: '12px',
-        color: 'var(--nim-text-muted)',
-        display: 'flex',
-        alignItems: 'center',
-        gap: '4px',
-      }}
+      data-agent-elements-shell="editor-context-chip"
+      data-component="UnifiedAIEditorContextIndicator"
     >
       <span>+ {entry!.context.label}</span>
     </div>

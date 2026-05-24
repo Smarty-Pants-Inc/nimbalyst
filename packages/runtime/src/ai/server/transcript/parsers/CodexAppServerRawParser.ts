@@ -61,6 +61,7 @@ interface AppServerItem {
   command?: string;
   aggregated_output?: string;
   exit_code?: number;
+  items?: Array<Record<string, unknown>>;
   content?: Array<{ type: string; text?: string }>;
   prompt?: string | null;
   senderThreadId?: string;
@@ -68,7 +69,6 @@ interface AppServerItem {
   model?: string | null;
   reasoningEffort?: string | null;
   agentsStates?: Record<string, { status?: string; message?: string | null }>;
-  items?: Array<Record<string, unknown>>;
 }
 
 export class CodexAppServerRawParser implements IRawMessageParser {
@@ -258,7 +258,7 @@ export class CodexAppServerRawParser implements IRawMessageParser {
       }
       case 'todoList':
       case 'todo_list': {
-        descriptors.push(...this.parseTodoListItem(msg, item));
+        descriptors.push(...await this.parseTodoListItem(msg, item, context));
         break;
       }
       default: {
@@ -318,19 +318,24 @@ export class CodexAppServerRawParser implements IRawMessageParser {
     if (!item.id || !item.tool) return [];
 
     const rawItemId = item.id;
+    const startedAlreadyEmitted = this.inFlightSyntheticIds.has(rawItemId);
     const editGroupId = await this.resolveEditGroupId(msg, rawItemId, context);
     const toolName = item.tool;
-    const descriptors: CanonicalEventDescriptor[] = [{
-      type: 'tool_call_started',
-      toolName,
-      toolDisplayName: toolName,
-      arguments: this.buildCollabAgentToolArguments(item),
-      targetFilePath: null,
-      mcpServer: null,
-      mcpTool: null,
-      providerToolCallId: editGroupId,
-      createdAt: msg.createdAt,
-    }];
+    const descriptors: CanonicalEventDescriptor[] = [];
+
+    if (!startedAlreadyEmitted) {
+      descriptors.push({
+        type: 'tool_call_started',
+        toolName,
+        toolDisplayName: toolName,
+        arguments: this.buildCollabAgentToolArguments(item),
+        targetFilePath: null,
+        mcpServer: null,
+        mcpTool: null,
+        providerToolCallId: editGroupId,
+        createdAt: msg.createdAt,
+      });
+    }
 
     if (item.status === 'completed' || item.status === 'failed') {
       const isError = item.status !== 'completed';
@@ -345,6 +350,62 @@ export class CodexAppServerRawParser implements IRawMessageParser {
     }
 
     return descriptors;
+  }
+
+  private async parseTodoListItem(
+    msg: RawMessage,
+    item: AppServerItem,
+    context: ParseContext,
+  ): Promise<CanonicalEventDescriptor[]> {
+    if (!item.id || !Array.isArray(item.items) || item.items.length === 0) return [];
+
+    const items = item.items
+      .map((todo, index) => ({
+        id: typeof todo.id === 'string' && todo.id.length > 0 ? todo.id : `todo-${index}`,
+        content: typeof todo.text === 'string'
+          ? todo.text
+          : typeof todo.content === 'string'
+            ? todo.content
+            : String(todo.text ?? todo.content ?? ''),
+        status: this.todoStatus(todo),
+      }))
+      .filter((todo) => todo.content.length > 0);
+    if (items.length === 0) return [];
+
+    const editGroupId = await this.resolveEditGroupId(msg, item.id, context);
+    const isError = item.status === 'failed';
+    const descriptors: CanonicalEventDescriptor[] = [{
+      type: 'tool_call_started',
+      toolName: 'todo_list',
+      toolDisplayName: 'Todo list',
+      arguments: { items },
+      targetFilePath: null,
+      mcpServer: null,
+      mcpTool: null,
+      providerToolCallId: editGroupId,
+      createdAt: msg.createdAt,
+    }];
+
+    if (item.status === 'completed' || item.status === 'failed') {
+      descriptors.push({
+        type: 'tool_call_completed',
+        providerToolCallId: editGroupId,
+        status: isError ? 'error' : 'completed',
+        result: isError ? item.error?.message ?? 'Todo list update failed.' : 'Todo list updated.',
+        isError,
+      });
+      this.inFlightSyntheticIds.delete(item.id);
+    }
+
+    return descriptors;
+  }
+
+  private todoStatus(todo: Record<string, unknown>): string {
+    const status = typeof todo.status === 'string' ? todo.status.toLowerCase() : '';
+    if (todo.completed === true || status === 'completed' || status === 'done') return 'completed';
+    if (status === 'in_progress' || status === 'in-progress' || status === 'active' || status === 'running') return 'in_progress';
+    if (status === 'cancelled' || status === 'canceled') return 'cancelled';
+    return 'pending';
   }
 
   private async parseGenericToolLikeItem(
@@ -515,29 +576,6 @@ export class CodexAppServerRawParser implements IRawMessageParser {
       this.inFlightSyntheticIds.delete(rawItemId);
     }
     return descriptors;
-  }
-
-  private parseTodoListItem(
-    msg: RawMessage,
-    item: AppServerItem,
-  ): CanonicalEventDescriptor[] {
-    if (!Array.isArray(item.items) || item.items.length === 0) return [];
-
-    const todoText = item.items
-      .filter((entry): entry is Record<string, unknown> => !!entry && typeof entry === 'object')
-      .map((entry) => {
-        const text = typeof entry.text === 'string' ? entry.text : String(entry.text ?? '');
-        return `- [${entry.completed ? 'x' : ' '}] ${text}`;
-      })
-      .join('\n');
-
-    if (!todoText) return [];
-
-    return [{
-      type: 'assistant_message',
-      text: todoText,
-      createdAt: msg.createdAt,
-    }];
   }
 
   private parseTurnCompleted(msg: RawMessage, params: NonNullable<AppServerEnvelope['params']>): CanonicalEventDescriptor[] {

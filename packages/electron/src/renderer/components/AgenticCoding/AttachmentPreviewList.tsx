@@ -1,7 +1,6 @@
 import React from 'react';
 import type { ChatAttachment } from '@nimbalyst/runtime';
 import { AttachmentPreview, ProcessingAttachmentPreview } from './AttachmentPreview';
-// import './AttachmentPreview.css';
 
 export interface ProcessingAttachment {
   id: string;
@@ -15,21 +14,31 @@ interface AttachmentPreviewListProps {
   processingAttachments?: ProcessingAttachment[];
 }
 
-export function AttachmentPreviewList({ attachments, onRemove, onConvertToText, processingAttachments = [] }: AttachmentPreviewListProps) {
+export function AttachmentPreviewList({
+  attachments,
+  onRemove,
+  onConvertToText,
+  processingAttachments = [],
+}: AttachmentPreviewListProps) {
   if (attachments.length === 0 && processingAttachments.length === 0) {
     return null;
   }
 
   return (
-    <div className="attachment-preview-list">
-      {/* Show processing attachments first */}
+    <div
+      className="attachment-preview-list agent-elements-attachment-preview-list flex flex-wrap gap-[var(--an-spacing-sm)]"
+      data-testid="agent-elements-attachment-preview-list"
+      data-component="AttachmentPreviewList"
+      data-agent-elements-shell="attachment-preview-list"
+      data-attachment-count={attachments.length}
+      data-processing-count={processingAttachments.length}
+    >
       {processingAttachments.map(processing => (
         <ProcessingAttachmentPreview
           key={processing.id}
           filename={processing.filename}
         />
       ))}
-      {/* Then show completed attachments */}
       {attachments.map(attachment => (
         <AttachmentPreview
           key={attachment.id}

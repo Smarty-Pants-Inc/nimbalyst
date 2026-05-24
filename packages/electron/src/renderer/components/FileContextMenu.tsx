@@ -120,20 +120,64 @@ export function FileContextMenu({
 
   const hasMultipleSelected = selectedPaths && selectedPaths.size > 1;
 
+  const menuShellClasses = "file-context-menu agent-elements-file-context-menu agent-elements-tool-card min-w-[200px] max-h-[calc(100vh-20px)] overflow-y-auto rounded-[10px] border border-nim bg-nim-secondary p-1 text-[13px] shadow-[0_12px_32px_color-mix(in_srgb,var(--nim-text)_10%,transparent)] z-[10000]";
+  const renameMenuShellClasses = "file-context-menu file-context-menu-rename agent-elements-file-context-menu-rename agent-elements-tool-card min-w-[250px] rounded-[10px] border border-nim bg-nim-secondary p-2 shadow-[0_12px_32px_color-mix(in_srgb,var(--nim-text)_10%,transparent)] z-[10000]";
+  const menuItemClasses = "file-context-menu-item agent-elements-file-context-menu-item flex w-full items-center gap-2.5 rounded-[8px] border-0 bg-transparent px-3 py-2 text-left text-[13px] leading-5 text-nim transition-[background-color,color] duration-150 cursor-pointer select-none hover:bg-nim-hover focus-visible:outline-2 focus-visible:outline-[var(--nim-primary)] focus-visible:outline-offset-2";
+  const dangerItemClasses = "file-context-menu-item file-context-menu-item-danger agent-elements-file-context-menu-item agent-elements-file-context-menu-item-danger flex w-full items-center gap-2.5 rounded-[8px] border-0 bg-transparent px-3 py-2 text-left text-[13px] leading-5 text-[var(--nim-error)] transition-[background-color,color] duration-150 cursor-pointer select-none hover:bg-[var(--nim-error-subtle)] focus-visible:outline-2 focus-visible:outline-[var(--nim-error)] focus-visible:outline-offset-2";
+  const separatorClasses = "context-menu-separator agent-elements-file-context-menu-separator h-px my-1 mx-2 bg-[var(--nim-border)]";
+
+  const renderSeparator = (id: string) => (
+    <div
+      className={separatorClasses}
+      data-testid={`agent-elements-file-context-menu-separator-${id}`}
+      data-agent-elements-shell="file-context-menu-separator"
+    />
+  );
+
+  const renderMenuItem = ({
+    id,
+    itemKey,
+    icon,
+    label,
+    onClick,
+    danger = false,
+  }: {
+    id: string;
+    itemKey?: string;
+    icon: string;
+    label: string;
+    onClick: () => void;
+    danger?: boolean;
+  }) => (
+    <button
+      key={itemKey ?? id}
+      type="button"
+      className={danger ? dangerItemClasses : menuItemClasses}
+      onClick={onClick}
+      role="menuitem"
+      data-testid={`agent-elements-file-context-menu-${id}`}
+      data-agent-elements-shell={danger ? 'file-context-menu-danger-item' : 'file-context-menu-item'}
+      data-file-context-action={id}
+    >
+      <span className="agent-elements-file-context-menu-icon flex h-5 w-5 shrink-0 items-center justify-center text-current">
+        <MaterialSymbol icon={icon} size={18} />
+      </span>
+      <span className="agent-elements-file-context-menu-label min-w-0 truncate">{label}</span>
+    </button>
+  );
+
   if (isRenaming) {
     return (
       <FloatingPortal>
         <div
           ref={menu.refs.setFloating}
-          style={{
-            ...menu.floatingStyles,
-            background: 'var(--nim-bg)',
-            border: '1px solid var(--nim-border)',
-          }}
+          style={menu.floatingStyles}
           {...menu.getFloatingProps()}
-          className="file-context-menu file-context-menu-rename p-2 min-w-[250px] rounded-md z-[10000] backdrop-blur-[10px] shadow-[0_4px_12px_rgba(0,0,0,0.15)] dark:shadow-[0_4px_20px_rgba(0,0,0,0.5)]"
+          className={renameMenuShellClasses}
+          data-testid="agent-elements-file-context-menu-rename"
+          data-agent-elements-shell="file-context-menu-rename"
         >
-          <div className="rename-input-container flex items-center">
+          <div className="rename-input-container agent-elements-file-context-menu-rename-container flex items-center">
             <input
               ref={inputRef}
               type="text"
@@ -141,12 +185,8 @@ export function FileContextMenu({
               onChange={(e) => setNewName(e.target.value)}
               onKeyDown={handleRenameKeyDown}
               onBlur={handleRenameSubmit}
-              className="rename-input w-full px-2 py-1.5 rounded text-[13px] outline-none transition-colors"
-              style={{
-                background: 'var(--nim-bg-secondary)',
-                border: '1px solid var(--nim-primary)',
-                color: 'var(--nim-text)',
-              }}
+              className="rename-input agent-elements-file-context-menu-rename-input w-full rounded-[8px] border border-[var(--nim-primary)] bg-nim px-2.5 py-2 text-[13px] leading-5 text-nim outline-none transition-[border-color,box-shadow] duration-150 focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--nim-primary)_25%,transparent)]"
+              data-testid="agent-elements-file-context-menu-rename-input"
             />
           </div>
         </div>
@@ -160,92 +200,92 @@ export function FileContextMenu({
       <FloatingPortal>
         <div
           ref={menu.refs.setFloating}
-          style={{
-            ...menu.floatingStyles,
-            background: 'var(--nim-bg)',
-            border: '1px solid var(--nim-border)',
-          }}
+          style={menu.floatingStyles}
           {...menu.getFloatingProps()}
-          className="file-context-menu p-1 min-w-[200px] max-h-[calc(100vh-20px)] overflow-y-auto rounded-md z-[10000] text-[13px] backdrop-blur-[10px] shadow-[0_4px_12px_rgba(0,0,0,0.15)] dark:shadow-[0_4px_20px_rgba(0,0,0,0.5)]"
+          className={menuShellClasses}
+          data-testid="agent-elements-file-context-menu"
+          data-agent-elements-shell="file-context-menu"
         >
-          <div
-            className="file-context-menu-item file-context-menu-item-danger flex items-center gap-2.5 px-3 py-1.5 rounded cursor-pointer transition-colors text-[var(--nim-error)] hover:bg-[var(--nim-error-subtle)]"
-            onClick={handleDelete}
-          >
-            <MaterialSymbol icon="delete" size={18} />
-            <span>Delete {selectedPaths.size} Items</span>
-          </div>
+          {renderMenuItem({
+            id: 'delete-multiple',
+            icon: 'delete',
+            label: `Delete ${selectedPaths.size} Items`,
+            onClick: handleDelete,
+            danger: true,
+          })}
         </div>
       </FloatingPortal>
     );
   }
 
-  const menuItemClasses = "file-context-menu-item flex items-center gap-2.5 px-3 py-1.5 rounded cursor-pointer transition-colors text-[var(--nim-text)] hover:bg-[var(--nim-bg-hover)]";
-  const dangerItemClasses = "file-context-menu-item file-context-menu-item-danger flex items-center gap-2.5 px-3 py-1.5 rounded cursor-pointer transition-colors text-[var(--nim-error)] hover:bg-[var(--nim-error-subtle)]";
-  const separatorClasses = "context-menu-separator h-px my-1 mx-2 bg-[var(--nim-border)]";
-
   return (
     <FloatingPortal>
       <div
         ref={menu.refs.setFloating}
-        style={{
-          ...menu.floatingStyles,
-          background: 'var(--nim-bg)',
-          border: '1px solid var(--nim-border)',
-        }}
+        style={menu.floatingStyles}
         {...menu.getFloatingProps()}
-        className="file-context-menu p-1 min-w-[200px] max-h-[calc(100vh-20px)] overflow-y-auto rounded-md z-[10000] text-[13px] backdrop-blur-[10px] shadow-[0_4px_12px_rgba(0,0,0,0.15)] dark:shadow-[0_4px_20px_rgba(0,0,0,0.5)]"
-        data-testid="file-context-menu"
+        className={menuShellClasses}
+        data-testid="agent-elements-file-context-menu"
+        data-agent-elements-shell="file-context-menu"
       >
         {fileType === 'directory' && (
           <>
             {onNewFile && (
               <>
-                <div className={menuItemClasses} onClick={() => { onNewFile(filePath, 'markdown'); onClose(); }}>
-                  <MaterialSymbol icon="description" size={18} />
-                  <span>New Markdown File</span>
-                </div>
-                <div className={menuItemClasses} onClick={() => { onNewFile(filePath, 'mockup'); onClose(); }}>
-                  <MaterialSymbol icon="web" size={18} />
-                  <span>New Mockup</span>
-                </div>
-                {extensionFileTypes.map((extType) => (
-                  <div
-                    key={extType.extension}
-                    className={menuItemClasses}
-                    onClick={() => { onNewFile(filePath, `ext:${extType.extension}`); onClose(); }}
-                  >
-                    <MaterialSymbol icon={extType.icon} size={18} />
-                    <span>New {extType.displayName}</span>
-                  </div>
-                ))}
-                <div className={menuItemClasses} onClick={() => { onNewFile(filePath, 'any'); onClose(); }}>
-                  <MaterialSymbol icon="note_add" size={18} />
-                  <span>New File...</span>
-                </div>
+                {renderMenuItem({
+                  id: 'new-markdown',
+                  icon: 'description',
+                  label: 'New Markdown File',
+                  onClick: () => { onNewFile(filePath, 'markdown'); onClose(); },
+                })}
+                {renderMenuItem({
+                  id: 'new-mockup',
+                  icon: 'web',
+                  label: 'New Mockup',
+                  onClick: () => { onNewFile(filePath, 'mockup'); onClose(); },
+                })}
+                {extensionFileTypes.map((extType) => renderMenuItem({
+                  id: `new-ext-${extType.extension}`,
+                  itemKey: extType.extension,
+                  icon: extType.icon,
+                  label: `New ${extType.displayName}`,
+                  onClick: () => { onNewFile(filePath, `ext:${extType.extension}`); onClose(); },
+                }))}
+                {renderMenuItem({
+                  id: 'new-any',
+                  icon: 'note_add',
+                  label: 'New File...',
+                  onClick: () => { onNewFile(filePath, 'any'); onClose(); },
+                })}
               </>
             )}
             {onNewFolder && (
-              <div className={menuItemClasses} onClick={() => { onNewFolder(filePath); onClose(); }}>
-                <MaterialSymbol icon="create_new_folder" size={18} />
-                <span>New Folder</span>
-              </div>
+              renderMenuItem({
+                id: 'new-folder',
+                icon: 'create_new_folder',
+                label: 'New Folder',
+                onClick: () => { onNewFolder(filePath); onClose(); },
+              })
             )}
-            {(onNewFile || onNewFolder) && <div className={separatorClasses} />}
+            {(onNewFile || onNewFolder) && renderSeparator('new')}
             {onViewWorkspaceHistory && (
-              <div className={menuItemClasses} onClick={() => { onViewWorkspaceHistory(filePath); onClose(); }}>
-                <MaterialSymbol icon="history" size={18} />
-                <span>View Folder History...</span>
-              </div>
+              renderMenuItem({
+                id: 'history',
+                icon: 'history',
+                label: 'View Folder History...',
+                onClick: () => { onViewWorkspaceHistory(filePath); onClose(); },
+              })
             )}
           </>
         )}
 
         {fileType === 'file' && (
-          <div className={menuItemClasses} onClick={() => { openHistoryDialog(filePath); onClose(); }}>
-            <MaterialSymbol icon="history" size={18} />
-            <span>View History...</span>
-          </div>
+          renderMenuItem({
+            id: 'history',
+            icon: 'history',
+            label: 'View History...',
+            onClick: () => { openHistoryDialog(filePath); onClose(); },
+          })
         )}
 
         {/* Common file actions (Open in Default App, External Editor, Finder, Copy Path, Share) */}
@@ -255,25 +295,27 @@ export function FileContextMenu({
           onClose={onClose}
           menuItemClass={menuItemClasses}
           separatorClass={separatorClasses}
+          useButtons
         />
 
-        <div className={separatorClasses} />
+        {renderSeparator('common')}
 
-        <div className={menuItemClasses} onClick={handleRenameClick}>
-          <MaterialSymbol icon="edit" size={18} />
-          <span>Rename</span>
-        </div>
+        {renderMenuItem({
+          id: 'rename-action',
+          icon: 'edit',
+          label: 'Rename',
+          onClick: handleRenameClick,
+        })}
 
-        <div className={separatorClasses} />
+        {renderSeparator('rename')}
 
-        <div
-          className={dangerItemClasses}
-          data-testid="context-menu-delete"
-          onClick={handleDelete}
-        >
-          <MaterialSymbol icon="delete" size={18} />
-          <span>Delete</span>
-        </div>
+        {renderMenuItem({
+          id: 'delete',
+          icon: 'delete',
+          label: 'Delete',
+          onClick: handleDelete,
+          danger: true,
+        })}
       </div>
     </FloatingPortal>
   );

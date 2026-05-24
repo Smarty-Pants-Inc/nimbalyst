@@ -20,6 +20,8 @@
  * - Tailwind: bg-nim, text-nim, border-nim, etc.
  */
 
+@import './AgentElementsThemeAliases.css';
+
 /* ===== DEFAULT VALUES (Light Theme Fallbacks) ===== */
 :root {
   /* Backgrounds */

@@ -35,6 +35,24 @@ function SidebarTypeCount({ type }: { type: TrackerItemType }) {
   return <>{count}</>;
 }
 
+const viewToggleButtonClass =
+  'agent-elements-tracker-view-button inline-flex h-7 w-8 items-center justify-center rounded-[var(--an-input-border-radius)] transition-[background-color,color,box-shadow] duration-150 ease-out focus:outline-none focus:ring-2 focus:ring-[var(--an-input-focus-outline)]';
+
+const activeViewToggleClass =
+  'bg-[var(--an-background-tertiary)] text-[var(--an-foreground)] shadow-[inset_0_0_0_1px_var(--an-border-color)]';
+
+const inactiveViewToggleClass =
+  'text-[var(--an-foreground-muted)] hover:bg-[var(--an-background-secondary)] hover:text-[var(--an-foreground)]';
+
+const trackerTypeRowBaseClass =
+  'agent-elements-tracker-type-row w-full flex items-center gap-[var(--an-spacing-sm)] rounded-[var(--an-input-border-radius)] px-[var(--an-spacing-sm)] py-[var(--an-spacing-sm)] text-sm transition-[background-color,color,box-shadow] duration-150 ease-out focus:outline-none focus:ring-2 focus:ring-[var(--an-input-focus-outline)]';
+
+const trackerTypeRowActiveClass =
+  'bg-[var(--an-background-tertiary)] text-[var(--an-foreground)] shadow-[inset_0_0_0_1px_var(--an-border-color)]';
+
+const trackerTypeRowInactiveClass =
+  'text-[var(--an-foreground-muted)] hover:bg-[var(--an-background-tertiary)] hover:text-[var(--an-foreground)]';
+
 export const TrackerSidebar: React.FC<TrackerSidebarProps> = ({
   workspacePath,
   workspaceName,
@@ -47,77 +65,91 @@ export const TrackerSidebar: React.FC<TrackerSidebarProps> = ({
   onViewModeChange,
 }) => {
   return (
-    <div className="tracker-sidebar w-full h-full flex flex-col bg-nim-secondary overflow-hidden" data-testid="tracker-sidebar">
+    <div
+      className="tracker-sidebar agent-elements-tracker-sidebar h-full w-full flex flex-col overflow-hidden border-r border-[var(--an-border-color)] bg-[var(--an-background-secondary)] text-[var(--an-foreground)] [container-type:inline-size]"
+      data-component="TrackerSidebar"
+      data-agent-elements-shell="tracker-sidebar"
+      data-testid="tracker-sidebar"
+    >
       {workspacePath && (
         <WorkspaceSummaryHeader
           workspacePath={workspacePath}
           workspaceName={workspaceName}
           actions={
-            <>
-              <div className="flex items-center rounded border border-nim overflow-hidden">
-                  <button
-                    className={`flex items-center justify-center w-7 h-6 transition-colors ${
-                      viewMode === 'list'
-                        ? 'bg-nim-active text-nim'
-                        : 'bg-nim-secondary text-nim-muted hover:text-nim'
-                    }`}
-                    onClick={() => onViewModeChange('list')}
-                    title="List view"
-                    data-testid="tracker-view-mode-list"
-                  >
-                    <MaterialSymbol icon="view_list" size={16} />
-                  </button>
-                  <button
-                    className={`flex items-center justify-center w-7 h-6 border-l border-nim transition-colors ${
-                      viewMode === 'table'
-                        ? 'bg-nim-active text-nim'
-                        : 'bg-nim-secondary text-nim-muted hover:text-nim'
-                    }`}
-                    onClick={() => onViewModeChange('table')}
-                    title="Table view"
-                    data-testid="tracker-view-mode-table"
-                  >
-                    <MaterialSymbol icon="table_chart" size={16} />
-                  </button>
-                  <button
-                    className={`relative flex items-center justify-center w-7 h-6 border-l border-nim transition-colors ${
-                      viewMode === 'kanban'
-                        ? 'bg-nim-active text-nim'
-                        : 'bg-nim-secondary text-nim-muted hover:text-nim'
-                    }`}
-                    onClick={() => onViewModeChange('kanban')}
-                    title="Kanban view (alpha)"
-                    data-testid="tracker-view-mode-kanban"
-                  >
-                    <MaterialSymbol icon="view_kanban" size={16} />
-                    <AlphaBadge size="dot" className="absolute -top-1 -right-1 pointer-events-none" />
-                  </button>
-                </div>
-            </>
+            <div
+              className="agent-elements-tracker-sidebar-view-toggle inline-flex items-center gap-0.5 rounded-[var(--an-input-border-radius)] border border-[var(--an-border-color)] bg-[var(--an-background)] p-0.5"
+              data-agent-elements-shell="tracker-sidebar-view-toggle"
+              data-testid="agent-elements-tracker-sidebar-view-toggle"
+            >
+              <button
+                type="button"
+                className={`${viewToggleButtonClass} ${
+                  viewMode === 'list' ? activeViewToggleClass : inactiveViewToggleClass
+                }`}
+                onClick={() => onViewModeChange('list')}
+                title="List view"
+                data-agent-elements-shell="tracker-sidebar-view-list"
+                data-testid="tracker-view-mode-list"
+              >
+                <MaterialSymbol icon="view_list" size={16} />
+              </button>
+              <button
+                type="button"
+                className={`${viewToggleButtonClass} ${
+                  viewMode === 'table' ? activeViewToggleClass : inactiveViewToggleClass
+                }`}
+                onClick={() => onViewModeChange('table')}
+                title="Table view"
+                data-agent-elements-shell="tracker-sidebar-view-table"
+                data-testid="tracker-view-mode-table"
+              >
+                <MaterialSymbol icon="table_rows" size={16} />
+              </button>
+              <button
+                type="button"
+                className={`${viewToggleButtonClass} relative ${
+                  viewMode === 'kanban' ? activeViewToggleClass : inactiveViewToggleClass
+                }`}
+                onClick={() => onViewModeChange('kanban')}
+                title="Kanban view (alpha)"
+                data-agent-elements-shell="tracker-sidebar-view-kanban"
+                data-testid="tracker-view-mode-kanban"
+              >
+                <MaterialSymbol icon="view_kanban" size={16} />
+                <AlphaBadge size="dot" className="absolute -top-1 -right-1 pointer-events-none" />
+              </button>
+            </div>
           }
         />
       )}
-      <div className="px-3 py-1.5 border-b border-nim text-[11px] font-semibold text-nim-muted uppercase tracking-wider">
+      <div
+        className="agent-elements-tracker-sidebar-header border-b border-[var(--an-border-color)] px-[var(--an-spacing-lg)] py-[var(--an-spacing-sm)] text-[11px] font-medium leading-none text-[var(--an-foreground-muted)]"
+        data-agent-elements-shell="tracker-sidebar-header"
+        data-testid="agent-elements-tracker-sidebar-header"
+      >
         Trackers
       </div>
 
       <div className="flex-1 overflow-y-auto">
-        {/* Filter chips (multi-select) */}
-        <div className="px-2 pt-2 pb-1">
-          <div className="text-[10px] font-semibold text-nim-faint uppercase tracking-wider px-1 mb-1.5">
+        <div
+          className="agent-elements-tracker-filter-section border-b border-[var(--an-border-color)] px-[var(--an-spacing-md)] py-[var(--an-spacing-md)]"
+          data-agent-elements-shell="tracker-filter-section"
+        >
+          <div className="mb-[var(--an-spacing-xs)] px-[var(--an-spacing-xxs)] text-[11px] font-medium leading-none text-[var(--an-foreground-subtle)]">
             Filters
           </div>
-          <div className="flex flex-wrap gap-1">
+          <div className="flex flex-wrap gap-[var(--an-spacing-xs)]">
             {FILTER_CHIPS.map((chip) => {
               const isActive = activeFilters.includes(chip.id);
               return (
                 <button
                   key={chip.id}
                   data-testid={`tracker-filter-${chip.id}`}
-                  className={`flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-medium transition-colors ${
+                  data-agent-elements-shell="tracker-filter-chip"
+                  className={`agent-elements-tracker-filter-chip inline-flex h-7 items-center gap-[var(--an-spacing-xxs)] rounded-[var(--an-input-border-radius)] border px-2.5 text-[11px] font-medium transition-[background-color,border-color,color] duration-150 ease-out focus:outline-none focus:ring-2 focus:ring-[var(--an-input-focus-outline)] ${
                     isActive
-                      ? 'bg-[var(--nim-primary)] text-white'
-                      : 'bg-nim-tertiary text-nim-muted hover:bg-nim-active hover:text-nim'
+                      ? 'border-[var(--an-primary-color)] bg-[var(--an-primary-color)] text-[var(--an-send-button-color)]'
+                      : 'border-[var(--an-border-color)] bg-[var(--an-background)] text-[var(--an-foreground-muted)] hover:bg-[var(--an-background-tertiary)] hover:text-[var(--an-foreground)]'
                   }`}
                   onClick={() => onToggleFilter(chip.id)}
                 >
@@ -129,43 +161,51 @@ export const TrackerSidebar: React.FC<TrackerSidebarProps> = ({
           </div>
           {activeFilters.length > 0 && (
             <button
-              className="mt-1 px-1 text-[10px] text-nim-faint hover:text-nim-muted transition-colors"
+              type="button"
+              className="agent-elements-tracker-clear-filters mt-[var(--an-spacing-sm)] rounded-[var(--an-input-border-radius)] px-[var(--an-spacing-xs)] py-[var(--an-spacing-xxs)] text-[11px] font-medium text-[var(--an-foreground-subtle)] transition-colors duration-150 ease-out hover:bg-[var(--an-background-tertiary)] hover:text-[var(--an-foreground)] focus:outline-none focus:ring-2 focus:ring-[var(--an-input-focus-outline)]"
               onClick={() => activeFilters.forEach(f => onToggleFilter(f))}
+              data-agent-elements-shell="tracker-clear-filters"
+              data-testid="agent-elements-tracker-clear-filters"
             >
               Clear filters
             </button>
           )}
         </div>
 
-        {/* Types Section */}
-        <div className="px-1.5 py-2 border-t border-nim mt-1">
-          <div className="text-[10px] font-semibold text-nim-faint uppercase tracking-wider px-2 mb-1">
+        <div
+          className="agent-elements-tracker-types-section px-[var(--an-spacing-md)] py-[var(--an-spacing-md)]"
+          data-agent-elements-shell="tracker-types-section"
+        >
+          <div className="mb-[var(--an-spacing-xs)] px-[var(--an-spacing-xxs)] text-[11px] font-medium leading-none text-[var(--an-foreground-subtle)]">
             Types
           </div>
 
-          {/* All */}
           <button
-            className={`w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-sm transition-colors ${
+            type="button"
+            className={`${trackerTypeRowBaseClass} ${
               selectedType === 'all'
-                ? 'bg-nim-active text-nim'
-                : 'text-nim-muted hover:bg-nim-tertiary hover:text-nim'
+                ? trackerTypeRowActiveClass
+                : trackerTypeRowInactiveClass
             }`}
             onClick={() => onSelectType('all')}
+            data-agent-elements-shell="tracker-type-row"
+            data-testid="agent-elements-tracker-type-all"
           >
             <MaterialSymbol icon="checklist" size={16} />
             <span className="flex-1 text-left truncate">All</span>
           </button>
 
-          {/* Individual types */}
           {trackerTypes.map((tracker) => (
             <button
               key={tracker.type}
+              type="button"
               data-testid="tracker-type-button"
               data-tracker-type={tracker.type}
-              className={`w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-sm transition-colors ${
+              data-agent-elements-shell="tracker-type-row"
+              className={`${trackerTypeRowBaseClass} ${
                 selectedType === tracker.type
-                  ? 'bg-nim-active text-nim'
-                  : 'text-nim-muted hover:bg-nim-tertiary hover:text-nim'
+                  ? trackerTypeRowActiveClass
+                  : trackerTypeRowInactiveClass
               }`}
               onClick={() => onSelectType(tracker.type)}
             >
@@ -173,7 +213,11 @@ export const TrackerSidebar: React.FC<TrackerSidebarProps> = ({
                 <MaterialSymbol icon={tracker.icon} size={16} />
               </span>
               <span className="flex-1 text-left truncate">{tracker.displayNamePlural}</span>
-              <span className="text-[10px] font-semibold text-nim-faint min-w-[20px] text-right">
+              <span
+                className="min-w-[20px] text-right text-[11px] font-medium text-[var(--an-foreground-subtle)]"
+                data-agent-elements-shell="tracker-type-count"
+                data-testid="agent-elements-tracker-type-count"
+              >
                 <SidebarTypeCount type={tracker.type as TrackerItemType} />
               </span>
             </button>

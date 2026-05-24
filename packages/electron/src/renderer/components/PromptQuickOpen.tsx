@@ -39,29 +39,52 @@ interface PromptRowProps {
 const PromptRow = memo<PromptRowProps>(({ prompt, index, isSelected, onSelect, onHover }) => {
   return (
     <li
-      className={`prompt-quick-open-item py-3 px-4 cursor-pointer border-l-[3px] border-transparent transition-all duration-100 flex items-start gap-3 hover:bg-[var(--nim-bg-hover)] ${
-        isSelected ? 'selected bg-[rgba(0,122,255,0.1)] !border-l-[#007aff]' : ''
+      className={`prompt-quick-open-item agent-elements-prompt-quick-open-item mx-2 my-1 py-3 px-3 cursor-pointer rounded-[var(--an-tool-border-radius)] border transition-[background-color,border-color,box-shadow] duration-150 ease-out flex items-start gap-3 ${
+        isSelected
+          ? 'selected bg-[var(--an-background-tertiary)] border-[var(--an-tool-border-color)] shadow-[inset_0_0_0_1px_color-mix(in_srgb,var(--an-primary-color)_16%,transparent)]'
+          : 'border-transparent hover:bg-[var(--an-background-tertiary)] hover:border-[var(--an-tool-border-color)]'
       }`}
       onClick={() => onSelect(index)}
       onMouseEnter={() => onHover(index)}
+      data-testid={`agent-elements-prompt-quick-open-item-${index}`}
+      data-agent-elements-shell="prompt-quick-open-result"
+      data-selected={isSelected ? 'true' : 'false'}
+      data-provider={prompt.provider || 'claude'}
+      data-workstream={prompt.parentSessionId ? 'true' : 'false'}
     >
-      <div className="prompt-quick-open-item-content flex-1 min-w-0">
-        <div className="prompt-quick-open-item-text text-sm text-[var(--nim-text)] leading-[1.4] mb-1 overflow-hidden text-ellipsis line-clamp-2">
+      <div className="prompt-quick-open-item-content agent-elements-prompt-quick-open-item-content flex-1 min-w-0">
+        <div
+          className="prompt-quick-open-item-text agent-elements-prompt-quick-open-item-text text-sm text-[var(--an-foreground)] leading-[1.4] mb-1 overflow-hidden text-ellipsis line-clamp-2"
+          data-testid={`agent-elements-prompt-quick-open-item-text-${index}`}
+          data-agent-elements-shell="prompt-quick-open-item-text"
+        >
           {truncatePrompt(prompt.content)}
         </div>
-        <div className="prompt-quick-open-item-meta text-xs text-[var(--nim-text-faint)] flex items-center gap-2">
-          <span className="prompt-quick-open-session-title flex items-center gap-1.5 overflow-hidden text-ellipsis whitespace-nowrap">
-            <span className="prompt-quick-open-item-icon shrink-0 inline-flex items-center justify-center text-[var(--nim-text-muted)]">
+        <div
+          className="prompt-quick-open-item-meta agent-elements-prompt-quick-open-item-meta text-xs text-[var(--an-foreground-subtle)] flex items-center gap-2"
+          data-agent-elements-shell="prompt-quick-open-item-meta"
+        >
+          <span className="prompt-quick-open-session-title agent-elements-prompt-quick-open-session-title flex items-center gap-1.5 overflow-hidden text-ellipsis whitespace-nowrap">
+            <span
+              className="prompt-quick-open-item-icon agent-elements-prompt-quick-open-item-icon shrink-0 inline-flex items-center justify-center w-5 h-5 rounded-[6px] border border-[var(--an-tool-border-color)] bg-[var(--an-background-secondary)] text-[var(--an-foreground-muted)]"
+              data-agent-elements-shell="prompt-quick-open-provider-icon"
+            >
               <ProviderIcon provider={prompt.provider || 'claude'} size={12} />
             </span>
             {prompt.sessionTitle}
             {prompt.parentSessionId && (
-              <span className="prompt-quick-open-badge workstream-badge shrink-0 text-[10px] py-0.5 px-1.5 bg-[var(--nim-primary)] text-white rounded font-semibold">
+              <span
+                className="prompt-quick-open-badge workstream-badge agent-elements-status-pill shrink-0 text-[10px]"
+                data-agent-elements-shell="prompt-quick-open-workstream-badge"
+              >
                 In Workstream
               </span>
             )}
           </span>
-          <span className="prompt-quick-open-time shrink-0 ml-auto">
+          <span
+            className="prompt-quick-open-time agent-elements-prompt-quick-open-time shrink-0 ml-auto"
+            data-agent-elements-shell="prompt-quick-open-time"
+          >
             {getRelativeTimeString(prompt.createdAt)}
           </span>
         </div>
@@ -274,33 +297,62 @@ export const PromptQuickOpen: React.FC<PromptQuickOpenProps> = ({
   return (
     <>
       <div
-        className="prompt-quick-open-backdrop nim-overlay z-[99998]"
+        className="prompt-quick-open-backdrop agent-elements-prompt-quick-open-backdrop fixed inset-0 z-[99998] nim-animate-fade-in bg-[color-mix(in_srgb,var(--nim-text)_36%,transparent)]"
         onClick={onClose}
+        data-testid="agent-elements-prompt-quick-open-backdrop"
+        data-agent-elements-shell="prompt-quick-open-backdrop"
       />
-      <div className="prompt-quick-open-modal fixed top-[20%] left-1/2 -translate-x-1/2 w-[90%] max-w-[700px] max-h-[60vh] flex flex-col overflow-hidden rounded-lg z-[99999] bg-[var(--nim-bg)] border border-[var(--nim-border)] shadow-[0_20px_60px_rgba(0,0,0,0.3)]">
+      <div
+        className="prompt-quick-open-modal agent-elements-prompt-quick-open agent-elements-tool-card fixed top-[18%] left-1/2 -translate-x-1/2 w-[90vw] max-w-[700px] max-h-[62vh] !gap-0 !p-0 flex flex-col overflow-hidden rounded-[var(--an-border-radius)] z-[99999] bg-[var(--an-background)] border border-[var(--an-border-color)] shadow-[0_20px_60px_color-mix(in_srgb,var(--nim-text)_18%,transparent)]"
+        data-testid="agent-elements-prompt-quick-open"
+        data-component="PromptQuickOpen"
+        data-agent-elements-shell="prompt-quick-open"
+      >
         {copiedPromptId && (
           <div
-            className="prompt-quick-open-copied-toast absolute top-2 left-1/2 -translate-x-1/2 z-10 py-1 px-3 rounded-full text-[11px] font-medium bg-[var(--nim-success)] text-white shadow"
+            className="prompt-quick-open-copied-toast agent-elements-prompt-quick-open-copied-toast absolute top-2 left-1/2 -translate-x-1/2 z-10"
             data-testid="prompt-quick-open-copied-toast"
+            data-agent-elements-shell="prompt-quick-open-copied-toast"
           >
-            Copied to clipboard
+            <span
+              className="agent-elements-status-pill"
+              data-testid="agent-elements-prompt-quick-open-copied-toast"
+            >
+              Copied to clipboard
+            </span>
           </div>
         )}
-        <div className="prompt-quick-open-header p-3 border-b border-[var(--nim-border)]">
-          <div className="text-[11px] font-medium text-[var(--nim-text-faint)] uppercase tracking-wide mb-2">Prompts</div>
+        <div
+          className="prompt-quick-open-header agent-elements-prompt-quick-open-header p-[var(--an-spacing-lg)] border-b border-[var(--an-border-color)]"
+          data-testid="agent-elements-prompt-quick-open-header"
+          data-agent-elements-shell="prompt-quick-open-header"
+        >
+          <div className="prompt-quick-open-title agent-elements-prompt-quick-open-title text-[12px] font-medium text-[var(--an-foreground-muted)] mb-2">
+            Prompts
+          </div>
           <input
             ref={searchInputRef}
             type="text"
-            className="prompt-quick-open-search nim-input w-full text-base"
+            className="prompt-quick-open-search agent-elements-prompt-quick-open-input w-full py-2 px-3 text-sm rounded-[var(--an-input-border-radius)] outline-none box-border bg-[var(--an-input-background)] border border-[var(--an-input-border-color)] text-[var(--an-input-color)] placeholder:text-[var(--an-input-placeholder-color)] focus:border-[var(--an-input-focus-outline)] focus:ring-2 focus:ring-[var(--an-input-focus-outline)]"
             placeholder="Search your prompts..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
+            data-testid="agent-elements-prompt-quick-open-input"
+            data-agent-elements-shell="prompt-quick-open-input"
           />
         </div>
 
-        <div className="prompt-quick-open-results flex-1 overflow-y-auto min-h-[200px]">
+        <div
+          className="prompt-quick-open-results agent-elements-prompt-quick-open-results flex-1 overflow-y-auto min-h-[200px] py-1"
+          data-testid="agent-elements-prompt-quick-open-results"
+          data-agent-elements-shell="prompt-quick-open-results"
+        >
           {displayPrompts.length === 0 ? (
-            <div className="prompt-quick-open-empty p-10 text-center text-[var(--nim-text-faint)]">
+            <div
+              className="prompt-quick-open-empty agent-elements-prompt-quick-open-empty p-10 text-center text-[var(--an-foreground-subtle)]"
+              data-testid="agent-elements-prompt-quick-open-empty"
+              data-agent-elements-shell="prompt-quick-open-empty"
+            >
               {isLoading
                 ? 'Loading…'
                 : searchQuery
@@ -309,8 +361,9 @@ export const PromptQuickOpen: React.FC<PromptQuickOpenProps> = ({
             </div>
           ) : (
             <ul
-              className={`prompt-quick-open-list list-none m-0 p-0 ${mouseHasMoved ? '' : 'pointer-events-none'}`}
+              className={`prompt-quick-open-list agent-elements-prompt-quick-open-list list-none m-0 p-0 ${mouseHasMoved ? '' : 'pointer-events-none'}`}
               ref={resultsListRef}
+              data-agent-elements-shell="prompt-quick-open-list"
             >
               {displayPrompts.map((prompt, index) => (
                 <PromptRow
@@ -326,19 +379,23 @@ export const PromptQuickOpen: React.FC<PromptQuickOpenProps> = ({
           )}
         </div>
 
-        <div className="prompt-quick-open-footer py-2 px-4 border-t border-[var(--nim-border)] flex gap-4 bg-[var(--nim-bg-secondary)]">
-          <span className="prompt-quick-open-hint text-[11px] text-[var(--nim-text-faint)] flex items-center gap-1">
-            <kbd className="py-0.5 px-1.5 bg-[var(--nim-bg)] border border-[var(--nim-border)] rounded font-mono text-[10px] text-[var(--nim-text)]">Up/Down</kbd> Navigate
+        <div
+          className="prompt-quick-open-footer agent-elements-prompt-quick-open-footer py-2 px-4 border-t border-[var(--an-border-color)] flex gap-4 bg-[var(--an-background-secondary)]"
+          data-testid="agent-elements-prompt-quick-open-footer"
+          data-agent-elements-shell="prompt-quick-open-footer"
+        >
+          <span className="prompt-quick-open-hint agent-elements-prompt-quick-open-hint text-[11px] text-[var(--an-foreground-subtle)] flex items-center gap-1">
+            <kbd className="agent-elements-prompt-quick-open-kbd py-0.5 px-1.5 rounded-[5px] font-mono text-[10px] bg-[var(--an-background)] border border-[var(--an-border-color)] text-[var(--an-foreground)]">Up/Down</kbd> Navigate
           </span>
-          <span className="prompt-quick-open-hint text-[11px] text-[var(--nim-text-faint)] flex items-center gap-1">
-            <kbd className="py-0.5 px-1.5 bg-[var(--nim-bg)] border border-[var(--nim-border)] rounded font-mono text-[10px] text-[var(--nim-text)]">Enter</kbd> Open
+          <span className="prompt-quick-open-hint agent-elements-prompt-quick-open-hint text-[11px] text-[var(--an-foreground-subtle)] flex items-center gap-1">
+            <kbd className="agent-elements-prompt-quick-open-kbd py-0.5 px-1.5 rounded-[5px] font-mono text-[10px] bg-[var(--an-background)] border border-[var(--an-border-color)] text-[var(--an-foreground)]">Enter</kbd> Open
           </span>
-          <span className="prompt-quick-open-hint text-[11px] text-[var(--nim-text-faint)] flex items-center gap-1">
-            <kbd className="py-0.5 px-1.5 bg-[var(--nim-bg)] border border-[var(--nim-border)] rounded font-mono text-[10px] text-[var(--nim-text)]">{isMac ? '⌘' : 'Ctrl'}</kbd>
-            <kbd className="py-0.5 px-1.5 bg-[var(--nim-bg)] border border-[var(--nim-border)] rounded font-mono text-[10px] text-[var(--nim-text)]">Enter</kbd> Copy
+          <span className="prompt-quick-open-hint agent-elements-prompt-quick-open-hint text-[11px] text-[var(--an-foreground-subtle)] flex items-center gap-1">
+            <kbd className="agent-elements-prompt-quick-open-kbd py-0.5 px-1.5 rounded-[5px] font-mono text-[10px] bg-[var(--an-background)] border border-[var(--an-border-color)] text-[var(--an-foreground)]">{isMac ? '⌘' : 'Ctrl'}</kbd>
+            <kbd className="agent-elements-prompt-quick-open-kbd py-0.5 px-1.5 rounded-[5px] font-mono text-[10px] bg-[var(--an-background)] border border-[var(--an-border-color)] text-[var(--an-foreground)]">Enter</kbd> Copy
           </span>
-          <span className="prompt-quick-open-hint text-[11px] text-[var(--nim-text-faint)] flex items-center gap-1">
-            <kbd className="py-0.5 px-1.5 bg-[var(--nim-bg)] border border-[var(--nim-border)] rounded font-mono text-[10px] text-[var(--nim-text)]">Esc</kbd> Close
+          <span className="prompt-quick-open-hint agent-elements-prompt-quick-open-hint text-[11px] text-[var(--an-foreground-subtle)] flex items-center gap-1">
+            <kbd className="agent-elements-prompt-quick-open-kbd py-0.5 px-1.5 rounded-[5px] font-mono text-[10px] bg-[var(--an-background)] border border-[var(--an-border-color)] text-[var(--an-foreground)]">Esc</kbd> Close
           </span>
         </div>
       </div>

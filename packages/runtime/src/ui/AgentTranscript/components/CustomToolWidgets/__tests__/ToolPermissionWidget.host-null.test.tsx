@@ -80,6 +80,10 @@ describe('ToolPermissionWidget — host-null regression (#276)', () => {
     // Before the fix, the widget short-circuited to a Waiting-only shell.
     // The fix means we should see all four interactive buttons even
     // without a host installed.
+    const widget = screen.getByTestId('tool-permission-widget');
+    expect(widget.getAttribute('data-component')).toBe('RichTranscriptAgentElementsToolPermission');
+    expect(widget.getAttribute('data-agent-elements-shell')).toBe('approval-card');
+    expect(widget.getAttribute('data-approval-state')).toBe('pending');
     expect(screen.getByTestId('tool-permission-deny')).toBeTruthy();
     expect(screen.getByTestId('tool-permission-allow-once')).toBeTruthy();
     expect(screen.getByTestId('tool-permission-allow-session')).toBeTruthy();
