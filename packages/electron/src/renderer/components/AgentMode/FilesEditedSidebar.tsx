@@ -38,14 +38,12 @@ import {
   setWorkstreamStagedFilesAtom,
 } from '../../store/atoms/workstreamState';
 import {
-  sessionFileEditsAtom,
-  workstreamFileEditsAtom,
-  sessionGitStatusAtom,
-  workstreamGitStatusAtom,
-  sessionPendingReviewFilesAtom,
-  workstreamPendingReviewFilesAtom,
+  workstreamFileEditsWithActiveSessionAtom,
+  workstreamGitStatusWithActiveSessionAtom,
+  workstreamPendingReviewFilesWithActiveSessionAtom,
   workspaceUncommittedFilesAtom,
   worktreeChangedFilesAtom,
+  workstreamSessionScopeKey,
   type FileEditWithSession,
 } from '../../store/atoms/sessionFiles';
 import { registerSessionWorkspace, registerWorktreePath, loadInitialSessionFileState } from '../../store/listeners/fileStateListeners';
@@ -75,6 +73,13 @@ interface FilesEditedSidebarProps {
   isGitRepo?: boolean;
 }
 
+interface GitDiscardChangesResult {
+  success: boolean;
+  discarded?: Array<{ filePath: string; absolutePath: string; kind?: 'tracked' | 'untracked' }>;
+  skipped?: Array<{ filePath: string; absolutePath: string; reason?: string }>;
+  errors?: Array<{ filePath: string; absolutePath: string; error?: string }>;
+  error?: string;
+}
 
 export const FilesEditedSidebar: React.FC<FilesEditedSidebarProps> = React.memo(({
   workstreamId,
@@ -91,14 +96,33 @@ export const FilesEditedSidebar: React.FC<FilesEditedSidebarProps> = React.memo(
   const effectiveWorkspacePath = worktreePath || workspacePath;
   // Get all session IDs in this workstream (must be declared before useEffects that use it)
   const workstreamSessions = useAtomValue(workstreamSessionsAtom(workstreamId));
-  const hasMultipleSessions = workstreamSessions.length > 1;
+  const scopedFileSessionIds = useMemo(() => {
+    const sessionIds = new Set<string>(workstreamSessions);
+    if (sessionIds.size === 0) {
+      sessionIds.add(workstreamId);
+    }
+    if (activeSessionId) {
+      sessionIds.add(activeSessionId);
+    }
+    return Array.from(sessionIds);
+  }, [activeSessionId, workstreamId, workstreamSessions]);
+  const sessionIdsForFileState = useMemo(() => {
+    const sessionIds = new Set<string>([workstreamId]);
+    scopedFileSessionIds.forEach(sessionId => sessionIds.add(sessionId));
+    return Array.from(sessionIds);
+  }, [workstreamId, scopedFileSessionIds]);
+  const hasMultipleSessions = scopedFileSessionIds.length > 1;
 
   // Read all file/git data from atoms (NO local state, NO IPC subscriptions)
   // Use workstream atoms which combine ALL data from all child sessions
   // The filtering logic will filter down to specific sessions based on user selection
-  const allFileEdits = useAtomValue(workstreamFileEditsAtom(workstreamId));
-  const sessionFilesGitStatus = useAtomValue(workstreamGitStatusAtom(workstreamId));
-  const pendingReviewFiles = useAtomValue(workstreamPendingReviewFilesAtom(workstreamId));
+  const workstreamFileScopeKey = useMemo(
+    () => workstreamSessionScopeKey(workstreamId, activeSessionId),
+    [workstreamId, activeSessionId],
+  );
+  const allFileEdits = useAtomValue(workstreamFileEditsWithActiveSessionAtom(workstreamFileScopeKey));
+  const sessionFilesGitStatus = useAtomValue(workstreamGitStatusWithActiveSessionAtom(workstreamFileScopeKey));
+  const pendingReviewFiles = useAtomValue(workstreamPendingReviewFilesWithActiveSessionAtom(workstreamFileScopeKey));
   // For worktrees, use worktreePath; otherwise use main workspacePath
   const uncommittedFilesPath = worktreePath || workspacePath;
   const allUncommittedFiles = useAtomValue(workspaceUncommittedFilesAtom(uncommittedFilesPath));
@@ -110,6 +134,8 @@ export const FilesEditedSidebar: React.FC<FilesEditedSidebarProps> = React.memo(
   // UI state (keep in local state - this is fine)
   const [filterToCurrentSession, setFilterToCurrentSession] = useState(false);
   const [isClearing, setIsClearing] = useState(false);
+  const [isReverting, setIsReverting] = useState(false);
+  const [revertStatus, setRevertStatus] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
 
   // Register this session/worktree with central listener for state updates
   useEffect(() => {
@@ -124,16 +150,10 @@ export const FilesEditedSidebar: React.FC<FilesEditedSidebarProps> = React.memo(
     // Debug logging - uncomment if needed
     // console.log('[FilesEditedSidebar] Loading file state for workstream', workstreamId, 'with', workstreamSessions.length, 'child sessions');
 
-    // Load file state for the workstream itself (parent)
-    loadInitialSessionFileState(workstreamId, effectiveWorkspacePath);
-
-    // Also load file state for all child sessions
-    workstreamSessions.forEach(sessionId => {
-      if (sessionId !== workstreamId) {
-        loadInitialSessionFileState(sessionId, effectiveWorkspacePath);
-      }
+    sessionIdsForFileState.forEach(sessionId => {
+      loadInitialSessionFileState(sessionId, effectiveWorkspacePath);
     });
-  }, [workstreamId, effectiveWorkspacePath, workstreamSessions]);
+  }, [workstreamId, effectiveWorkspacePath, sessionIdsForFileState]);
 
   // Group by directory state from Jotai
   const [groupByDirectory] = useAtom(diffTreeGroupByDirectoryAtom);
@@ -293,6 +313,21 @@ export const FilesEditedSidebar: React.FC<FilesEditedSidebarProps> = React.memo(
     }
   }, [allFileEdits, filterToCurrentSession, activeSessionId, fileScopeMode, isFileUncommitted, allUncommittedFiles, worktreeId, worktreePath, worktreeChangedFiles]);
 
+  const sessionOwnedUncommittedFiles = useMemo(() => {
+    const seen = new Set<string>();
+    const files: string[] = [];
+    for (const edit of fileEdits) {
+      if (!edit.sessionId || !isFileUncommitted(edit.filePath)) {
+        continue;
+      }
+      if (!seen.has(edit.filePath)) {
+        seen.add(edit.filePath);
+        files.push(edit.filePath);
+      }
+    }
+    return files;
+  }, [fileEdits, isFileUncommitted]);
+
   // Memoize editedFiles array for GitOperationsPanel to prevent unnecessary re-renders
   const editedFilePaths = useMemo(() => {
     if (worktreeId) {
@@ -317,6 +352,10 @@ export const FilesEditedSidebar: React.FC<FilesEditedSidebarProps> = React.memo(
     // Return absolute paths so they match the selectedFiles expected by FileEditsSidebarComponent
     return new Set(worktreeChangedFiles.filter(f => f.staged).map(f => `${worktreePath}/${f.path}`));
   }, [worktreeId, worktreePath, worktreeChangedFiles]);
+
+  const selectedSessionOwnedUncommittedFiles = useMemo(() => {
+    return sessionOwnedUncommittedFiles.filter(filePath => stagedFiles.has(filePath) || worktreeStagedFiles.has(filePath));
+  }, [sessionOwnedUncommittedFiles, stagedFiles, worktreeStagedFiles]);
 
 
   // Handle worktree file staging toggle
@@ -431,14 +470,14 @@ export const FilesEditedSidebar: React.FC<FilesEditedSidebarProps> = React.memo(
 
   // Handle "Keep All" button click - clear pending for all sessions in workstream
   const handleKeepAll = useCallback(async () => {
-    if (!workspacePath || isClearing || workstreamSessions.length === 0) return;
+    if (!workspacePath || isClearing || sessionIdsForFileState.length === 0) return;
 
     setIsClearing(true);
     try {
       if (typeof window !== 'undefined' && (window as any).electronAPI) {
         // Clear pending for all sessions in the workstream
         await Promise.all(
-          workstreamSessions.map(async (sessionId) => {
+          sessionIdsForFileState.map(async (sessionId) => {
             await (window as any).electronAPI.history.clearPendingForSession(workspacePath, sessionId);
           })
         );
@@ -449,7 +488,75 @@ export const FilesEditedSidebar: React.FC<FilesEditedSidebarProps> = React.memo(
     } finally {
       setIsClearing(false);
     }
-  }, [workspacePath, workstreamSessions, isClearing]);
+  }, [workspacePath, sessionIdsForFileState, isClearing]);
+
+  const handleRevertSelected = useCallback(async () => {
+    const gitWorkspacePath = worktreePath || workspacePath;
+    if (!gitWorkspacePath || selectedSessionOwnedUncommittedFiles.length === 0 || isReverting) {
+      return;
+    }
+
+    const confirmed = window.confirm(
+      [
+        `Revert ${selectedSessionOwnedUncommittedFiles.length} selected agent-owned file${selectedSessionOwnedUncommittedFiles.length === 1 ? '' : 's'}?`,
+        'Tracked changes will be restored from git. Untracked files will be removed.',
+      ].join('\n\n')
+    );
+    if (!confirmed) {
+      return;
+    }
+
+    setIsReverting(true);
+    setRevertStatus(null);
+    try {
+      const result = await window.electronAPI.invoke(
+        'git:discard-changes',
+        gitWorkspacePath,
+        selectedSessionOwnedUncommittedFiles,
+      ) as GitDiscardChangesResult;
+
+      if (result.success) {
+        const discardedFiles = new Set((result.discarded ?? []).map(file => file.absolutePath));
+        if (!worktreeId && discardedFiles.size > 0) {
+          setStagedFilesAction({
+            workstreamId,
+            files: stagedFilesArr.filter(file => !discardedFiles.has(file)),
+          });
+        }
+        const discardedCount = result.discarded?.length ?? 0;
+        const skippedCount = result.skipped?.length ?? 0;
+        setRevertStatus({
+          type: 'success',
+          message: skippedCount > 0
+            ? `Reverted ${discardedCount}; skipped ${skippedCount} unchanged.`
+            : `Reverted ${discardedCount} file${discardedCount === 1 ? '' : 's'}.`,
+        });
+      } else {
+        const firstError = result.error || result.errors?.[0]?.error || 'Unknown git discard failure';
+        setRevertStatus({
+          type: 'error',
+          message: `Revert failed: ${firstError}`,
+        });
+      }
+    } catch (error) {
+      console.error('[FilesEditedSidebar] Failed to revert selected files:', error);
+      setRevertStatus({
+        type: 'error',
+        message: `Revert failed: ${error instanceof Error ? error.message : String(error)}`,
+      });
+    } finally {
+      setIsReverting(false);
+    }
+  }, [
+    isReverting,
+    selectedSessionOwnedUncommittedFiles,
+    setStagedFilesAction,
+    stagedFilesArr,
+    workstreamId,
+    workspacePath,
+    worktreeId,
+    worktreePath,
+  ]);
 
   // Context menu handlers
   const handleOpenInFiles = useCallback((filePath: string) => {
@@ -509,13 +616,26 @@ export const FilesEditedSidebar: React.FC<FilesEditedSidebarProps> = React.memo(
           groupByDirectory={groupByDirectory}
           onGroupByDirectoryChange={setGroupByDirectory}
           isWorktree={!!worktreeId}
-          workstreamSessionCount={workstreamSessions.length}
+          workstreamSessionCount={scopedFileSessionIds.length}
           worktreeName={worktreePath ? getWorktreeNameFromPath(worktreePath) : undefined}
         />
         {/* Spacer to push controls to the right */}
         <div className="flex-1" />
         {/* Expand/Collapse controls */}
         <div className="files-edited-sidebar__controls flex gap-1 shrink-0">
+          <button
+            onClick={handleRevertSelected}
+            disabled={isReverting || selectedSessionOwnedUncommittedFiles.length === 0}
+            data-testid="files-edited-revert-selected"
+            className="files-edited-sidebar__control-btn flex items-center justify-center w-6 h-6 border-none rounded bg-transparent text-[var(--nim-text-muted)] cursor-pointer hover:enabled:bg-[var(--nim-bg-tertiary)] hover:enabled:text-[var(--nim-danger)] disabled:text-[var(--nim-text-disabled)] disabled:cursor-default disabled:opacity-50"
+            title={
+              selectedSessionOwnedUncommittedFiles.length > 0
+                ? `Revert ${selectedSessionOwnedUncommittedFiles.length} selected agent-owned file${selectedSessionOwnedUncommittedFiles.length === 1 ? '' : 's'}`
+                : 'Select agent-owned uncommitted files to revert'
+            }
+          >
+            <MaterialSymbol icon={isReverting ? 'progress_activity' : 'undo'} size={16} />
+          </button>
           <button
             onClick={() => {
               window.dispatchEvent(new CustomEvent('file-edits-sidebar:expand-all'));
@@ -558,6 +678,19 @@ export const FilesEditedSidebar: React.FC<FilesEditedSidebarProps> = React.memo(
             <MaterialSymbol icon="check_circle" size={14} />
             {isClearing ? 'Keeping...' : 'Keep All'}
           </button>
+        </div>
+      )}
+
+      {revertStatus && (
+        <div
+          data-testid="files-edited-revert-status"
+          className={`files-edited-sidebar__revert-status px-3 py-2 border-b text-[11px] shrink-0 ${
+            revertStatus.type === 'success'
+              ? 'bg-[color-mix(in_srgb,var(--nim-success)_10%,var(--nim-bg))] border-[color-mix(in_srgb,var(--nim-success)_30%,transparent)] text-[var(--nim-success)]'
+              : 'bg-[color-mix(in_srgb,var(--nim-danger)_10%,var(--nim-bg))] border-[color-mix(in_srgb,var(--nim-danger)_30%,transparent)] text-[var(--nim-danger)]'
+          }`}
+        >
+          {revertStatus.message}
         </div>
       )}
 

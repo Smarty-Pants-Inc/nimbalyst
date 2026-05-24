@@ -180,11 +180,26 @@ const root = ReactDOM.createRoot(rootElement);
 // console.log('[RENDERER] React root created at', new Date().toISOString());
 
 const analyticsId = await window.electronAPI.analytics?.getDistinctId() ?? '';
-const analyticsAllowed = await window.electronAPI.analytics?.allowedToSendAnalytics() ?? false;
+const analyticsConsentAllowed = await window.electronAPI.analytics?.allowedToSendAnalytics() ?? false;
 const nimbalystVersion = await window.electronAPI.getAppVersion?.() ?? '';
 const isDevInstallation = process.env.NODE_ENV?.toLowerCase() === 'development';
 const isDevMode = process.env.IS_DEV_MODE === 'true';
 const isOfficialBuild = process.env.OFFICIAL_BUILD === 'true';
+const analyticsAllowed = isOfficialBuild && analyticsConsentAllowed === true;
+const noopPostHogClient = {
+  capture: () => undefined,
+  get_distinct_id: () => analyticsId,
+  get_session_id: () => '',
+  identify: () => undefined,
+  onSessionId: () => undefined,
+  opt_in_capturing: () => undefined,
+  opt_out_capturing: () => undefined,
+  people: {
+    set: () => undefined,
+    set_once: () => undefined,
+  },
+  register: () => undefined,
+};
 
 // Add dev mode indicator to body for styling (only for npm run dev, not packaged builds or Playwright)
 if (isDevMode && !(window as any).PLAYWRIGHT) {
@@ -193,37 +208,41 @@ if (isDevMode && !(window as any).PLAYWRIGHT) {
   document.body.style.setProperty('--dev-mode-label', `'${devLabel}'`);
 }
 
-const posthogClient = posthog.init(
-  'phc_s3lQIILexwlGHvxrMBqti355xUgkRocjMXW4LjV0ATw',
-  {
-    bootstrap: {
-      distinctID: analyticsId,
-    },
-    autocapture: false,
-    capture_heatmaps: false,
-    disable_session_recording: true,
-    capture_exceptions: false,
-    session_idle_timeout_seconds: 30 * 60, // 30 minutes
-    loaded: (posthog) => {
-      console.log(`[RENDERER] PostHog loaded (analytics ID: ${posthog.get_distinct_id()}, session: ${posthog.get_session_id()}, official build: ${isOfficialBuild})`);
+const posthogClient = analyticsAllowed
+  ? posthog.init(
+    'phc_s3lQIILexwlGHvxrMBqti355xUgkRocjMXW4LjV0ATw',
+    {
+      bootstrap: {
+        distinctID: analyticsId,
+      },
+      autocapture: false,
+      capture_heatmaps: false,
+      disable_session_recording: true,
+      capture_exceptions: false,
+      session_idle_timeout_seconds: 30 * 60, // 30 minutes
+      loaded: (posthog) => {
+        console.log(`[RENDERER] PostHog loaded (analytics ID: ${posthog.get_distinct_id()}, session: ${posthog.get_session_id()}, official build: ${isOfficialBuild})`);
 
-      posthog.register({ nimbalyst_version: nimbalystVersion });
+        posthog.register({ nimbalyst_version: nimbalystVersion });
 
-      // Mark users as dev users if they've ever used a non-official build
-      // This property persists across all future events for this user
-      if (!isOfficialBuild) {
-        posthog.people.set_once({ is_dev_user: true });
-      }
-    },
-    before_send: (event) => process.env.PLAYWRIGHT_TEST ? null : event,
-    debug: isDevInstallation
-  }
-)
+        // Mark users as dev users if they've ever used a non-official build
+        // This property persists across all future events for this user
+        if (!isOfficialBuild) {
+          posthog.people.set_once({ is_dev_user: true });
+        }
+      },
+      before_send: (event) => ((window as any).PLAYWRIGHT || process.env.PLAYWRIGHT_TEST) ? null : event,
+      debug: isDevInstallation
+    }
+  )
+  : noopPostHogClient as any;
 
 // syncs the session ID from posthog-js to the electron-side analytics service
-posthog.onSessionId(async (sessionId: string, windowId, changeReason) => {
-  window.electronAPI.analytics?.setSessionId(sessionId);
-})
+if (analyticsAllowed) {
+  posthog.onSessionId(async (sessionId: string, windowId, changeReason) => {
+    window.electronAPI.analytics?.setSessionId(sessionId);
+  })
+}
 
 // IPC listeners (including ai:promptClaimed) live in store/listeners/* and
 // are initialized inside App.tsx once React mounts.

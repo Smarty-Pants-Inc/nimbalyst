@@ -116,6 +116,6 @@ export const removeSessionShareAtom = atom(null, (get, set, sessionId: string) =
  * Build the full share URL for a session, including the encryption key fragment if available.
  */
 export function buildShareUrl(shareId: string, encryptionKey?: string): string {
-  const baseUrl = `https://share.nimbalyst.com/share/${shareId}`;
+  const baseUrl = `https://sync-dev.smartypants.ai/share/${shareId}`;
   return encryptionKey ? `${baseUrl}#key=${encryptionKey}` : baseUrl;
 }

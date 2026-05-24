@@ -76,37 +76,49 @@ export function setupSessionFileHandlers(): void {
   safeHandle('session-files:get-by-session', async (event, sessionId: string, linkType?: string) => {
     try {
       const cacheKey = getCacheKey(sessionId, linkType);
+      // Edited/all-file views are event-driven and mutate mid-stream. Serving a
+      // cached or in-flight empty result after `session-files:updated` hides the
+      // Files Edited rows until a later remount, so keep those reads fresh.
+      const canUseCache = Boolean(linkType) && linkType !== 'edited';
 
-      // Return cached result if still fresh
-      const cached = sessionFilesCache.get(cacheKey);
-      if (cached && Date.now() - cached.timestamp < SESSION_FILES_CACHE_TTL_MS) {
-        return { success: true, files: cached.files };
-      }
+      if (canUseCache) {
+        // Return cached result if still fresh
+        const cached = sessionFilesCache.get(cacheKey);
+        if (cached && Date.now() - cached.timestamp < SESSION_FILES_CACHE_TTL_MS) {
+          return { success: true, files: cached.files };
+        }
 
-      // If a query is already in flight for this key, wait for it instead of starting another
-      const inFlight = sessionFilesInFlight.get(cacheKey);
-      if (inFlight) {
-        const files = await inFlight;
-        return { success: true, files };
+        // If a query is already in flight for this key, wait for it instead of starting another
+        const inFlight = sessionFilesInFlight.get(cacheKey);
+        if (inFlight) {
+          const files = await inFlight;
+          return { success: true, files };
+        }
       }
 
       // Start a new query and track it as in-flight
       const queryPromise = SessionFilesRepository.getFilesBySession(sessionId, linkType as any);
-      sessionFilesInFlight.set(cacheKey, queryPromise);
+      if (canUseCache) {
+        sessionFilesInFlight.set(cacheKey, queryPromise);
+      }
 
       try {
         const files = await queryPromise;
 
-        // Cache the result
-        sessionFilesCache.set(cacheKey, {
-          files,
-          timestamp: Date.now()
-        });
+        if (canUseCache) {
+          // Cache the result
+          sessionFilesCache.set(cacheKey, {
+            files,
+            timestamp: Date.now()
+          });
+        }
 
         return { success: true, files };
       } finally {
         // Remove from in-flight map when done
-        sessionFilesInFlight.delete(cacheKey);
+        if (canUseCache) {
+          sessionFilesInFlight.delete(cacheKey);
+        }
       }
     } catch (error) {
       logger.main.error('[SessionFileHandlers] Failed to get files by session:', error);

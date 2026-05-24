@@ -8,7 +8,7 @@
 import type { AgentMessage } from '../ai/server/types';
 
 export interface SyncConfig {
-  /** WebSocket server URL (e.g., ws://localhost:8787 or wss://sync.nimbalyst.com) */
+  /** WebSocket server URL (e.g., ws://localhost:8787 or wss://sync-dev.smartypants.ai) */
   serverUrl: string;
 
   /**

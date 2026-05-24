@@ -551,8 +551,20 @@ const WorkstreamHeader: React.FC<{
     }
   }, [workstreamId, onArchiveStatusChange, updateSessionStore]);
 
+  const contextPath = worktreePath || workspacePath;
+  const contextLabel = worktreePath
+    ? `worktree ${getWorktreeNameFromPath(worktreePath)}`
+    : `repo ${getWorktreeNameFromPath(workspacePath, 'workspace')}`;
+
   return (
-    <div className="workstream-header shrink-0 h-14 px-4 border-b border-[var(--nim-border)] bg-[var(--nim-bg)]">
+    <div
+      className="workstream-header shrink-0 h-14 px-4 border-b border-[var(--nim-border)] bg-[var(--nim-bg)]"
+      data-testid="workstream-execution-context"
+      data-session-id={workstreamId}
+      data-workspace-path={workspacePath}
+      data-worktree-id={worktreeId || ''}
+      data-worktree-path={worktreePath || ''}
+    >
       <div className="workstream-header-main flex items-center gap-3 h-full">
         <div className="workstream-header-icon shrink-0 text-[var(--nim-text-muted)]">
           {hasChildren ? (
@@ -574,13 +586,22 @@ const WorkstreamHeader: React.FC<{
               onKeyDown={handleKeyDown}
             />
           ) : (
-            <h2
-              className="workstream-header-title max-w-full m-0 text-sm font-semibold text-[var(--nim-text)] whitespace-nowrap overflow-hidden text-ellipsis leading-tight cursor-pointer py-0.5 px-1 rounded transition-colors duration-150 hover:bg-[var(--nim-bg-hover)]"
-              onClick={handleTitleClick}
-              title="Click to rename"
-            >
-              {title}
-            </h2>
+            <div className="workstream-header-title-row flex items-baseline gap-2 min-w-0 max-w-full">
+              <h2
+                className="workstream-header-title min-w-0 m-0 text-sm font-semibold text-[var(--nim-text)] whitespace-nowrap overflow-hidden text-ellipsis leading-tight cursor-pointer py-0.5 px-1 rounded transition-colors duration-150 hover:bg-[var(--nim-bg-hover)]"
+                onClick={handleTitleClick}
+                title="Click to rename"
+              >
+                {title}
+              </h2>
+              <span
+                className="workstream-header-context text-[10px] leading-tight text-[var(--nim-text-muted)] opacity-70 whitespace-nowrap"
+                title={contextPath}
+                data-testid="workstream-context-label"
+              >
+                {contextLabel}
+              </span>
+            </div>
           )}
           <WorkstreamHeaderTagsRow workstreamId={workstreamId} />
         </div>

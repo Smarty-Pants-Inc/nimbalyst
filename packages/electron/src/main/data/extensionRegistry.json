@@ -27,7 +27,7 @@
         "filesystem"
       ],
       "minimumAppVersion": "1.0.0",
-      "downloadUrl": "https://extensions.nimbalyst.com/dl/com.developer.nimbalyst-mindmap/1.0.0",
+      "downloadUrl": "",
       "checksum": "85e5a87e0a5b4aea9cc0ab5715ddecb4f91236ba067b6f0f594a49e605e49608",
       "repositoryUrl": "",
       "changelog": "",
@@ -67,7 +67,7 @@
         "filesystem"
       ],
       "minimumAppVersion": "1.0.0",
-      "downloadUrl": "https://extensions.nimbalyst.com/dl/com.developer.nimbalyst-slides/1.0.0",
+      "downloadUrl": "",
       "checksum": "93c8941d689f4a8baf1f553a94c59a12922e434c3fc9370440bf67637988bec5",
       "repositoryUrl": "",
       "changelog": "",
@@ -108,7 +108,7 @@
         "network"
       ],
       "minimumAppVersion": "1.0.0",
-      "downloadUrl": "https://extensions.nimbalyst.com/dl/com.nimbalyst.astro/0.2.0",
+      "downloadUrl": "",
       "checksum": "587646aba0215e39e7dcb88b6f60b8fe73eafb8fae914f65f725494ac24ab500",
       "repositoryUrl": "",
       "changelog": "",
@@ -142,7 +142,7 @@
         "ai"
       ],
       "minimumAppVersion": "1.0.0",
-      "downloadUrl": "https://extensions.nimbalyst.com/dl/com.nimbalyst.automations/1.0.0",
+      "downloadUrl": "",
       "checksum": "cf908719058e169afa2ebd8d95b7db2005f29067c155e9e1c5935a699d930d2d",
       "repositoryUrl": "",
       "changelog": "",
@@ -169,20 +169,14 @@
         "formula"
       ],
       "icon": "table_chart",
-      "screenshots": [
-        {
-          "src": "https://extensions.nimbalyst.com/screenshots/com.nimbalyst.csv-spreadsheet/com.nimbalyst.csv-spreadsheet-0-dark.png",
-          "alt": "CSV spreadsheet editor with revenue data",
-          "srcLight": "https://extensions.nimbalyst.com/screenshots/com.nimbalyst.csv-spreadsheet/com.nimbalyst.csv-spreadsheet-0-light.png"
-        }
-      ],
+      "screenshots": [],
       "downloads": 0,
       "featured": true,
       "permissions": [
         "filesystem"
       ],
       "minimumAppVersion": "1.0.0",
-      "downloadUrl": "https://extensions.nimbalyst.com/dl/com.nimbalyst.csv-spreadsheet/1.0.0",
+      "downloadUrl": "",
       "checksum": "8b6626ade806092de0315125c2686df399cdded2f84875fa4c9b39852795d96a",
       "repositoryUrl": "",
       "changelog": "",
@@ -217,13 +211,7 @@
         "data-model"
       ],
       "icon": "database",
-      "screenshots": [
-        {
-          "src": "https://extensions.nimbalyst.com/screenshots/com.nimbalyst.datamodellm/com.nimbalyst.datamodellm-0-dark.png",
-          "alt": "Visual entity-relationship diagram with User, Post, Comment, Tag, and Category models",
-          "srcLight": "https://extensions.nimbalyst.com/screenshots/com.nimbalyst.datamodellm/com.nimbalyst.datamodellm-0-light.png"
-        }
-      ],
+      "screenshots": [],
       "downloads": 0,
       "featured": true,
       "permissions": [
@@ -231,7 +219,7 @@
         "ai"
       ],
       "minimumAppVersion": "1.0.0",
-      "downloadUrl": "https://extensions.nimbalyst.com/dl/com.nimbalyst.datamodellm/1.0.0",
+      "downloadUrl": "",
       "checksum": "f8b6d7d0d67def3476a42a0323f1393e2060369a1668f85e7946907ef7ad4891",
       "repositoryUrl": "",
       "changelog": "",
@@ -266,7 +254,7 @@
         "ai"
       ],
       "minimumAppVersion": "1.0.0",
-      "downloadUrl": "https://extensions.nimbalyst.com/dl/com.nimbalyst.developer/1.0.0",
+      "downloadUrl": "",
       "checksum": "d545db39b181c10bb8865751d2eec6c1589311ae4ba93a1adde9f46b347a2d32",
       "repositoryUrl": "",
       "changelog": "",
@@ -293,13 +281,7 @@
         "whiteboard"
       ],
       "icon": "brush",
-      "screenshots": [
-        {
-          "src": "https://extensions.nimbalyst.com/screenshots/com.nimbalyst.excalidraw/com.nimbalyst.excalidraw-0-dark.png",
-          "alt": "Architecture diagram with client, API server, cache, and database",
-          "srcLight": "https://extensions.nimbalyst.com/screenshots/com.nimbalyst.excalidraw/com.nimbalyst.excalidraw-0-light.png"
-        }
-      ],
+      "screenshots": [],
       "downloads": 0,
       "featured": true,
       "permissions": [
@@ -307,7 +289,7 @@
         "ai"
       ],
       "minimumAppVersion": "1.0.0",
-      "downloadUrl": "https://extensions.nimbalyst.com/dl/com.nimbalyst.excalidraw/1.0.0",
+      "downloadUrl": "",
       "checksum": "022b07a9a3f8afae545c978416b11f3dafa6bca4c264e680b93eb1d0c6359f59",
       "repositoryUrl": "",
       "changelog": "",
@@ -341,20 +323,14 @@
         "diff"
       ],
       "icon": "call_split",
-      "screenshots": [
-        {
-          "src": "https://extensions.nimbalyst.com/screenshots/com.nimbalyst.git/com.nimbalyst.git-0-dark.png",
-          "alt": "Git log panel showing commit history with diffs and branch management",
-          "srcLight": "https://extensions.nimbalyst.com/screenshots/com.nimbalyst.git/com.nimbalyst.git-0-light.png"
-        }
-      ],
+      "screenshots": [],
       "downloads": 0,
       "featured": false,
       "permissions": [
         "filesystem"
       ],
       "minimumAppVersion": "1.0.0",
-      "downloadUrl": "https://extensions.nimbalyst.com/dl/com.nimbalyst.git/1.0.0",
+      "downloadUrl": "",
       "checksum": "8519a3bb9f0b4f83638a37e4675cfa5bbad0b1fa659c2bb48afcc3a3ea3ae208",
       "repositoryUrl": "",
       "changelog": "",
@@ -386,13 +362,7 @@
         "diagram"
       ],
       "icon": "image",
-      "screenshots": [
-        {
-          "src": "https://extensions.nimbalyst.com/screenshots/com.nimbalyst.image-generation/com.nimbalyst.image-generation-0-dark.png",
-          "alt": "Image generation project with AI-generated sketches and style options",
-          "srcLight": "https://extensions.nimbalyst.com/screenshots/com.nimbalyst.image-generation/com.nimbalyst.image-generation-0-light.png"
-        }
-      ],
+      "screenshots": [],
       "downloads": 0,
       "featured": false,
       "permissions": [
@@ -401,7 +371,7 @@
         "network"
       ],
       "minimumAppVersion": "1.0.0",
-      "downloadUrl": "https://extensions.nimbalyst.com/dl/com.nimbalyst.image-generation/1.0.0",
+      "downloadUrl": "",
       "checksum": "1d106a9d4e1228ad0deba574b1e735e632672f8f4851a5fbb49b73044cacbacb",
       "repositoryUrl": "",
       "changelog": "",
@@ -436,7 +406,7 @@
         "ai"
       ],
       "minimumAppVersion": "1.0.0",
-      "downloadUrl": "https://extensions.nimbalyst.com/dl/com.nimbalyst.ios-dev/0.1.0",
+      "downloadUrl": "",
       "checksum": "39d8fc0a8473686e07ffead1d43caf2c81e4286138426fd34f4d490ce2e84509",
       "repositoryUrl": "",
       "changelog": "",
@@ -470,7 +440,7 @@
         "filesystem"
       ],
       "minimumAppVersion": "1.0.0",
-      "downloadUrl": "https://extensions.nimbalyst.com/dl/com.nimbalyst.mindmap/1.0.1",
+      "downloadUrl": "",
       "checksum": "450c16cda3545416bbae9b6cea35c072f66e233ccc0a5d3618c2080813686fd4",
       "repositoryUrl": "",
       "changelog": "",
@@ -504,13 +474,7 @@
         "html"
       ],
       "icon": "palette",
-      "screenshots": [
-        {
-          "src": "https://extensions.nimbalyst.com/screenshots/com.nimbalyst.mockuplm/com.nimbalyst.mockuplm-0-dark.png",
-          "alt": "Team dashboard mockup with stats cards and deployment table",
-          "srcLight": "https://extensions.nimbalyst.com/screenshots/com.nimbalyst.mockuplm/com.nimbalyst.mockuplm-0-light.png"
-        }
-      ],
+      "screenshots": [],
       "downloads": 0,
       "featured": true,
       "permissions": [
@@ -518,7 +482,7 @@
         "ai"
       ],
       "minimumAppVersion": "1.0.0",
-      "downloadUrl": "https://extensions.nimbalyst.com/dl/com.nimbalyst.mockuplm/1.0.0",
+      "downloadUrl": "",
       "checksum": "aa6ff20128dfa0e1cc2ef736c1391278ae98abdc25b5051a2e4fc4d39753bb8f",
       "repositoryUrl": "",
       "changelog": "",
@@ -562,7 +526,7 @@
         "network"
       ],
       "minimumAppVersion": "1.0.0",
-      "downloadUrl": "https://extensions.nimbalyst.com/dl/com.nimbalyst.namenym/0.1.0",
+      "downloadUrl": "",
       "checksum": "2c1e0e6c0fa88f09ea5b4fe9d3560fbbcf9a98193560613e12630dcf500384b2",
       "repositoryUrl": "",
       "changelog": "",
@@ -593,20 +557,14 @@
         "reader"
       ],
       "icon": "picture_as_pdf",
-      "screenshots": [
-        {
-          "src": "https://extensions.nimbalyst.com/screenshots/com.nimbalyst.pdf-viewer/com.nimbalyst.pdf-viewer-0-dark.png",
-          "alt": "PDF document viewer showing a multi-page document with page navigation",
-          "srcLight": "https://extensions.nimbalyst.com/screenshots/com.nimbalyst.pdf-viewer/com.nimbalyst.pdf-viewer-0-light.png"
-        }
-      ],
+      "screenshots": [],
       "downloads": 0,
       "featured": false,
       "permissions": [
         "filesystem"
       ],
       "minimumAppVersion": "1.0.0",
-      "downloadUrl": "https://extensions.nimbalyst.com/dl/com.nimbalyst.pdf-viewer/1.0.0",
+      "downloadUrl": "",
       "checksum": "30590618a48a6c2fb81d9ef218331aa0c9aae54680f59cef59a747c001609df9",
       "repositoryUrl": "",
       "changelog": "",
@@ -640,7 +598,7 @@
         "ai"
       ],
       "minimumAppVersion": "1.0.0",
-      "downloadUrl": "https://extensions.nimbalyst.com/dl/com.nimbalyst.planning/1.0.0",
+      "downloadUrl": "",
       "checksum": "8ff482436e283fcb312d6349b75ef306c58bb42de83dcd8a89317af5f4e30be6",
       "repositoryUrl": "",
       "changelog": "",
@@ -668,7 +626,7 @@
         "ai"
       ],
       "minimumAppVersion": "1.0.0",
-      "downloadUrl": "https://extensions.nimbalyst.com/dl/com.nimbalyst.playwright/0.1.0",
+      "downloadUrl": "",
       "checksum": "44de1a0cb540c8a496f3cbd603bc612f6da75dfff2b355fcb2400baf0ddf5d4e",
       "repositoryUrl": "",
       "changelog": "",
@@ -695,13 +653,7 @@
         "db"
       ],
       "icon": "table_chart",
-      "screenshots": [
-        {
-          "src": "https://extensions.nimbalyst.com/screenshots/com.nimbalyst.sqlite-browser/com.nimbalyst.sqlite-browser-0-dark.png",
-          "alt": "SQLite database browser showing tables, schema, and query results",
-          "srcLight": "https://extensions.nimbalyst.com/screenshots/com.nimbalyst.sqlite-browser/com.nimbalyst.sqlite-browser-0-light.png"
-        }
-      ],
+      "screenshots": [],
       "downloads": 0,
       "featured": false,
       "permissions": [
@@ -709,7 +661,7 @@
         "ai"
       ],
       "minimumAppVersion": "1.0.0",
-      "downloadUrl": "https://extensions.nimbalyst.com/dl/com.nimbalyst.sqlite-browser/1.0.0",
+      "downloadUrl": "",
       "checksum": "6e55121e3432f5babb66af7dace7b3bd46aec5c2586670c1253a1fc6fe3249b9",
       "repositoryUrl": "",
       "changelog": "",
@@ -755,7 +707,7 @@
         "ai"
       ],
       "minimumAppVersion": "1.0.0",
-      "downloadUrl": "https://extensions.nimbalyst.com/dl/com.nimbalyst.three-d-editor/1.0.0",
+      "downloadUrl": "",
       "checksum": "d8db83d1a53eb197c487651e4f228ebbb3a0ce14691ef03488912ea79037c707",
       "repositoryUrl": "",
       "changelog": "",

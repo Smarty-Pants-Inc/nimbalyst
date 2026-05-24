@@ -19,7 +19,7 @@ public final class AnalyticsManager: Sendable {
     private var initialized = false
 
     /// Whether analytics is currently enabled.
-    public private(set) var isEnabled: Bool = true
+    public private(set) var isEnabled: Bool = false
 
     private init() {}
 
@@ -36,8 +36,8 @@ public final class AnalyticsManager: Sendable {
             distinctId = newId
         }
 
-        // Load opt-out preference
-        isEnabled = UserDefaults.standard.object(forKey: Self.analyticsEnabledKey) as? Bool ?? true
+        // Load opt-in preference. Missing preference means disabled.
+        isEnabled = UserDefaults.standard.object(forKey: Self.analyticsEnabledKey) as? Bool ?? false
 
         // Configure PostHog with privacy settings
         // sessionReplay defaults to false and is iOS-only, so no need to set it
@@ -47,18 +47,18 @@ public final class AnalyticsManager: Sendable {
 
         PostHogSDK.shared.setup(config)
 
-        // Set the distinct ID
-        if let id = distinctId {
-            PostHogSDK.shared.identify(id)
-        }
-
-        // Mark dev users
-        #if DEBUG
-        PostHogSDK.shared.capture("$set", properties: ["$set_once": ["is_dev_user": true]])
-        #endif
-
         if !isEnabled {
             PostHogSDK.shared.optOut()
+        } else {
+            // Set the distinct ID only after explicit opt-in.
+            if let id = distinctId {
+                PostHogSDK.shared.identify(id)
+            }
+
+            // Mark dev users only after explicit opt-in.
+            #if DEBUG
+            PostHogSDK.shared.capture("$set", properties: ["$set_once": ["is_dev_user": true]])
+            #endif
         }
 
         initialized = true
@@ -73,13 +73,13 @@ public final class AnalyticsManager: Sendable {
     public func setDistinctIdFromPairing(_ analyticsId: String?) {
         guard let analyticsId, !analyticsId.isEmpty else { return }
 
-        if initialized {
+        if initialized, isEnabled {
             // Alias merges the current mobile identity with the desktop identity
             PostHogSDK.shared.alias(analyticsId)
         }
 
         try? KeychainManager.storeAnalyticsId(analyticsId)
-        if initialized {
+        if initialized, isEnabled {
             PostHogSDK.shared.identify(analyticsId)
         }
     }
@@ -87,7 +87,7 @@ public final class AnalyticsManager: Sendable {
     /// Called after Stytch login to set email on PostHog profile.
     /// This provides secondary correlation between devices.
     public func setEmail(_ email: String) {
-        guard !email.isEmpty, initialized else { return }
+        guard !email.isEmpty, initialized, isEnabled else { return }
         PostHogSDK.shared.capture("$set", properties: ["$set": ["email": email]])
     }
 

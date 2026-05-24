@@ -87,6 +87,20 @@ describe('matchesAllowPattern (issue #152)', () => {
     });
   });
 
+  describe('file-scoped LangGraph permission patterns', () => {
+    it('requires exact matches for path-scoped Write and Edit approvals', () => {
+      expect(matchesAllowPattern('Write(src/a.ts)', 'Write(src/a.ts)')).toBe(true);
+      expect(matchesAllowPattern('Edit(src/a.ts)', 'Edit(src/a.ts)')).toBe(true);
+      expect(matchesAllowPattern('Write(src/b.ts)', 'Write(src/a.ts)')).toBe(false);
+      expect(matchesAllowPattern('Edit(src/b.ts)', 'Edit(src/a.ts)')).toBe(false);
+    });
+
+    it('does not apply Bash prefix semantics to filenames with spaces', () => {
+      expect(matchesAllowPattern('Write(src/foo bar.ts)', 'Write(src/foo)')).toBe(false);
+      expect(matchesAllowPattern('Edit(src/foo bar.ts)', 'Edit(src/foo)')).toBe(false);
+    });
+  });
+
   describe('malformed and edge inputs', () => {
     it('returns false for empty allow entries', () => {
       expect(matchesAllowPattern('Bash(git:*)', '')).toBe(false);

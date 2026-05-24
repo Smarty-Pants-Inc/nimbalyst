@@ -262,7 +262,7 @@ export const MessageSegment: React.FC<MessageSegmentProps> = ({
     }
     const explicitSuccess = resultDetails && 'success' in resultDetails ? resultDetails.success !== false : undefined;
     const derivedErrorMessage = (message.isError && message.text) || (resultDetails && typeof resultDetails.error === 'string' ? (resultDetails.error as string) : undefined);
-    const didFail = message.isError || tool.isError || explicitSuccess === false || !!derivedErrorMessage;
+    const didFail = message.isError || tool.isError || (typeof tool.exitCode === 'number' && tool.exitCode !== 0) || explicitSuccess === false || !!derivedErrorMessage;
     const statusLabel = didFail ? 'Failed' : 'Succeeded';
     const statusColor = didFail ? 'var(--nim-error)' : 'var(--nim-success)';
     const statusBackground = didFail ? 'rgba(239, 68, 68, 0.12)' : 'rgba(16, 185, 129, 0.12)';
@@ -310,6 +310,14 @@ export const MessageSegment: React.FC<MessageSegmentProps> = ({
 
             <div className="mt-2">
               <div className="text-nim-faint mb-1">Result:</div>
+              {typeof tool.exitCode === 'number' && (
+                <div
+                  className={`rich-transcript-tool-exit-code mb-2 font-mono ${tool.exitCode === 0 ? 'text-nim-success' : 'text-nim-error'}`}
+                  data-exit-code={tool.exitCode}
+                >
+                  Exit code: {tool.exitCode}
+                </div>
+              )}
               {hasResult ? (
                 typeof toolResult === 'string' ? (
                   <pre className="text-xs text-nim font-mono overflow-x-auto bg-nim-secondary p-2 rounded max-h-64 overflow-y-auto">

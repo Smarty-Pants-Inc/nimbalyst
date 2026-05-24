@@ -60,6 +60,12 @@ export interface AssistantMessageDescriptor {
   mode?: 'agent' | 'planning';
   createdAt?: Date;
   /**
+   * Stable provider/run identity for streaming coalescing. Providers that can
+   * have concurrent assistant streams must set this so chunks from different
+   * runs do not merge into the same canonical message.
+   */
+  coalesceKey?: string;
+  /**
    * Extended-thinking output emitted by Claude Code (and other providers)
    * alongside the regular `text` content. Stored on the assistant_message
    * payload so we don't have to add a new event_type and migrate the

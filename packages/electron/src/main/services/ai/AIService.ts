@@ -17,7 +17,6 @@ import {
   isSlashCommandCatalogProvider,
   ClaudeCodeProvider,
   OpenAICodexProvider,
-  DeepAgentsACPProvider,
 } from '@nimbalyst/runtime/ai/server';
 import { getSessionStateManager } from '@nimbalyst/runtime/ai/server/SessionStateManager';
 import { parseContextUsageMessage } from '@nimbalyst/runtime/ai/server/utils/contextUsage';
@@ -37,6 +36,7 @@ import {
   type AIModel,
   type SessionData,
   type SessionType,
+  type StreamChunk,
 } from '@nimbalyst/runtime/ai/server/types';
 // MCP imports removed - no longer using MCP HTTP server
 import { ToolExecutor, toolRegistry, BUILT_IN_TOOLS } from './tools';
@@ -68,8 +68,9 @@ import {
 } from '../../utils/store';
 import { mergeAISettings, getAIProviderOverridesWithWorktreeFallback } from '../../utils/aiSettingsMerge';
 import { DocumentContextService, type RawDocumentContext, type PreparedDocumentContext } from '@nimbalyst/runtime';
+import { DEFAULT_MODELS } from '@nimbalyst/runtime/ai/modelConstants';
 import { getMessageSyncHandler, getSyncProvider, isDesktopTrulyAway } from '../SyncManager';
-import { normalizeCodexProviderConfig, omitModelsField, stripTransientProviderFields } from '@nimbalyst/runtime/ai/server/utils/modelConfigUtils';
+import { normalizeCodexProviderConfig, normalizeDefaultProvider, omitModelsField, stripTransientProviderFields, stripUnknownProviderConfigs } from '@nimbalyst/runtime/ai/server/utils/modelConfigUtils';
 import { isFileInWorkspaceOrWorktree, resolveProjectPath } from '../../utils/workspaceDetection';
 import { SessionFilesRepository } from '@nimbalyst/runtime';
 import * as fs from 'fs';
@@ -101,8 +102,31 @@ import {
 import { MessageStreamingHandler } from './MessageStreamingHandler';
 import { HooklessAgentFileWatcher } from './HooklessAgentFileWatcher';
 import { getAgentWorkflowService } from '../AgentWorkflowService';
+import { buildProviderRuntimeConfig, normalizeSmartyServerBaseUrl } from './providerRuntimeConfig';
 
 const execFileAsync = promisify(execFile);
+const SMARTY_SERVER_DEFAULT_MODEL = DEFAULT_MODELS['smarty-server'];
+
+function smartyServerRecoveryMessage(baseUrl: string, health?: any, cause?: string): string {
+  const serverRecovery = health?.recovery?.smartyServer || 'Start or restart only the local smarty-server process, then test the connection again.';
+  const cliProxyRecovery = health?.recovery?.cliProxy || 'Smarty Code never starts or stops CLIProxyAPI; start CLIProxyAPI separately and make SMARTY_SERVER_CLI_PROXY_API_KEY available to smarty-server.';
+  const healthError = health?.cliProxy?.error || health?.error || cause;
+  return [
+    healthError ? `Runtime health issue: ${healthError}` : `Smarty Server is unavailable at ${baseUrl}.`,
+    serverRecovery,
+    cliProxyRecovery,
+  ].join(' ');
+}
+
+function smartyServerWarnings(health: any): string[] {
+  if (!health || !Array.isArray(health.optionalCapabilities)) {
+    return [];
+  }
+  return health.optionalCapabilities
+    .filter((capability: any) => capability?.requiredForLocalMvp === false && capability?.status !== 'ready')
+    .map((capability: any) => capability?.label)
+    .filter((label: unknown): label is string => typeof label === 'string' && label.length > 0);
+}
 
 export class AIService {
   private sessionManager: SessionManager;
@@ -143,6 +167,7 @@ export class AIService {
 
   // Owns the streaming send-message lifecycle (extracted from setupIpcHandlers).
   private streamingHandler: MessageStreamingHandler;
+  private destroyed = false;
 
   constructor(sessionStore: SessionStore) {
     logger.main.info('[AIService] Constructor called');
@@ -391,7 +416,7 @@ export class AIService {
         schema: {
           defaultProvider: {
             type: 'string',
-            default: 'claude-code'
+            default: 'smarty-server'
           },
           apiKeys: {
             type: 'object',
@@ -405,7 +430,7 @@ export class AIService {
                 testStatus: "idle",
               },
               'claude-code': {
-                enabled: true,
+                enabled: false,
                 testStatus: "idle",
                 installStatus: "not-installed",
                 models: ["claude-code:opus", "claude-code:opus-4-6", "claude-code:sonnet", "claude-code:haiku"]
@@ -424,11 +449,6 @@ export class AIService {
                 testStatus: "idle",
                 installStatus: "not-installed",
               },
-              'deepagents-acp': {
-                enabled: false,
-                testStatus: "idle",
-                baseUrl: "http://127.0.0.1:8317/v1",
-              },
               opencode: {
                 enabled: false,
                 testStatus: "idle",
@@ -438,6 +458,12 @@ export class AIService {
                 enabled: false,
                 testStatus: "idle",
                 installStatus: "not-installed",
+              },
+              'smarty-server': {
+                enabled: true,
+                testStatus: "idle",
+                baseUrl: "http://127.0.0.1:8788",
+                defaultModel: "smarty-server:smarty_coding_agent",
               },
               lmstudio: {
                 enabled: false,
@@ -461,8 +487,33 @@ export class AIService {
         }
       });
       this.migrateClaudeCodeModelList();
+      this.migrateRetiredDeepAgentsACPSettings();
     }
     return this.settingsStore;
+  }
+
+  private migrateRetiredDeepAgentsACPSettings(): void {
+    const providerSettings = this.settingsStore!.get('providerSettings', {}) as Record<string, unknown>;
+    const normalizedProviderSettings = this.normalizeProviderSettings(providerSettings);
+    if (normalizedProviderSettings !== providerSettings) {
+      this.settingsStore!.set('providerSettings', normalizedProviderSettings);
+    }
+
+    const apiKeys = this.settingsStore!.get('apiKeys', {}) as Record<string, unknown>;
+    if ('deepagents-acp' in apiKeys || 'deepagents_cli_proxy_base_url' in apiKeys) {
+      const {
+        'deepagents-acp': _retiredDeepAgentsToken,
+        deepagents_cli_proxy_base_url: _retiredDeepAgentsBaseUrl,
+        ...remainingApiKeys
+      } = apiKeys;
+      this.settingsStore!.set('apiKeys', remainingApiKeys);
+    }
+
+    const defaultProvider = this.settingsStore!.get('defaultProvider', 'smarty-server') as string;
+    const normalizedDefaultProvider = normalizeDefaultProvider(defaultProvider);
+    if (normalizedDefaultProvider !== defaultProvider) {
+      this.settingsStore!.set('defaultProvider', normalizedDefaultProvider);
+    }
   }
 
   /**
@@ -470,8 +521,9 @@ export class AIService {
    * Project-specific API keys take precedence over global keys.
    */
   private getApiKeyForProvider(provider: string, workspacePath?: string): string | undefined {
-    const globalApiKeys = this.getSettingsStore().get('apiKeys', {}) as Record<string, string>;
-    const providerSettings = this.getNormalizedProviderSettings() as any;
+    const effective = this.getEffectiveAISettings(workspacePath);
+    const providerSettings = effective.providerSettings as any;
+    const apiKeys = effective.apiKeys || {};
 
     // Claude Code must never use implicit keys.
     // It only uses its dedicated key when API-key auth is explicitly selected.
@@ -482,13 +534,13 @@ export class AIService {
       }
     }
 
-    // Check for project-level API key override
-    if (workspacePath) {
-      const overrides = getAIProviderOverrides(workspacePath);
-      const overrideKey = overrides?.providers?.[provider]?.apiKey;
-      if (overrideKey) {
-        return overrideKey;
-      }
+    if (provider === 'lmstudio') {
+      return 'not-required';
+    }
+
+    const projectKey = apiKeys[`${provider}_project`];
+    if (projectKey) {
+      return projectKey;
     }
 
     // Return the explicitly-configured global API key.
@@ -497,19 +549,17 @@ export class AIService {
     // account because Nimbalyst silently picked up ANTHROPIC_API_KEY from a .env file.
     switch (provider) {
       case 'claude':
-        return globalApiKeys['anthropic'];
+        return apiKeys['anthropic'];
       case 'claude-code':
-        return globalApiKeys['claude-code'];
+        return apiKeys['claude-code'];
       case 'openai':
-        return globalApiKeys['openai'];
+        return apiKeys['openai'];
       case 'openai-codex':
-        return globalApiKeys['openai-codex'];
-      case 'deepagents-acp':
-        return globalApiKeys['deepagents-acp'];
-      case 'lmstudio':
-        return 'not-required';
+        return apiKeys['openai-codex'];
+      case 'smarty-server':
+        return apiKeys['smarty-server'];
       default:
-        return globalApiKeys[provider];
+        return apiKeys[provider];
     }
   }
 
@@ -559,22 +609,9 @@ export class AIService {
    * Check if a provider is enabled for a workspace, considering project-level overrides.
    */
   private isProviderEnabledForWorkspace(provider: string, workspacePath?: string): boolean {
-    const providerSettings = this.getSettingsStore().get('providerSettings', {}) as any;
+    const providerSettings = this.getEffectiveProviderSettings(provider, workspacePath);
 
-    // Claude Code is enabled by default (undefined means enabled).
-    // This matches the logic in ai:getModels which uses `claudeCodeSettings.enabled !== false`.
-    // Other providers require explicit enabling (undefined means disabled).
-    const globalEnabled = provider === 'claude-code'
-      ? providerSettings[provider]?.enabled !== false
-      : providerSettings[provider]?.enabled ?? false;
-
-    // Check for project-level override
-    if (workspacePath) {
-      const overrides = getAIProviderOverrides(workspacePath);
-      if (overrides?.providers?.[provider]?.enabled !== undefined) {
-        return overrides.providers[provider].enabled;
-      }
-    }
+    const globalEnabled = providerSettings.enabled ?? false;
 
     return globalEnabled;
   }
@@ -1026,8 +1063,8 @@ export class AIService {
 
             // Create the session using the SessionManager
             // Use mobile's provider/model selection if provided, otherwise fall back to desktop defaults
-            const resolvedProvider = (request.provider || 'claude-code') as import('@nimbalyst/runtime/ai/server/types').AIProviderType;
-            const resolvedModel = request.model || getDefaultAIModel() || 'claude-code:opus-1m';
+            const resolvedProvider = (request.provider || 'smarty-server') as import('@nimbalyst/runtime/ai/server/types').AIProviderType;
+            const resolvedModel = request.model || getDefaultAIModel() || SMARTY_SERVER_DEFAULT_MODEL;
             const resolvedSessionType = (request.sessionType || 'session') as import('@nimbalyst/runtime/ai/server/types').SessionType;
             const session = await this.sessionManager.createSession(
               resolvedProvider,        // provider - from mobile or default
@@ -1185,13 +1222,13 @@ export class AIService {
             // Step 2: Create session with worktreeId (same as AgentMode + sessions:create)
             const { AISessionsRepository } = await import('@nimbalyst/runtime/storage/repositories/AISessionsRepository');
             const { randomUUID } = await import('crypto');
-            const defaultModel = getDefaultAIModel() || 'claude-code:opus-1m';
+            const defaultModel = getDefaultAIModel() || SMARTY_SERVER_DEFAULT_MODEL;
             const sessionId = randomUUID();
             const sessionTitle = `Worktree: ${worktree.name}`;
 
             await AISessionsRepository.create({
               id: sessionId,
-              provider: 'claude-code',
+              provider: 'smarty-server',
               model: defaultModel,
               title: sessionTitle,
               workspaceId: request.projectId,
@@ -1218,7 +1255,7 @@ export class AIService {
               syncProvider.syncSessionsToIndex([{
                 id: sessionId,
                 title: sessionTitle,
-                provider: 'claude-code',
+                provider: 'smarty-server',
                 model: defaultModel,
                 mode: 'agent',
                 workspaceId: request.projectId,
@@ -1262,6 +1299,48 @@ export class AIService {
           const { getQueuedPromptsStore } = await import('../RepositoryManager');
           const { rolledBack } = await getQueuedPromptsStore().sweepExecutingForSession(sessionId);
           return rolledBack;
+        },
+        handleResumedProviderChunks: async (sessionId, workspacePath, chunks) => {
+          const win = findWindowByWorkspace(workspacePath);
+          if (!win || win.webContents.isDestroyed()) {
+            throw new Error(`No live workspace window is available for resumed mobile approval chunks: ${sessionId}`);
+          }
+          const event = {
+            sender: win.webContents,
+          } as Electron.IpcMainInvokeEvent;
+          await this.streamingHandler.handleResumedProviderChunks(
+            event,
+            sessionId,
+            workspacePath,
+            chunks,
+          );
+        },
+        canHandleResumedProviderChunks: (_sessionId, workspacePath) => {
+          const win = findWindowByWorkspace(workspacePath);
+          return !!win && !win.webContents.isDestroyed();
+        },
+        getOrCreateProviderForSession: async (session, providerType) => {
+          const existingProvider = ProviderFactory.getProvider(providerType, session.id);
+          if (existingProvider) {
+            return existingProvider;
+          }
+          if (providerType !== 'smarty-server') {
+            return null;
+          }
+          const effectiveWorkspacePath = session.worktreePath || session.workspacePath || undefined;
+          if (!effectiveWorkspacePath) {
+            logger.main.warn(`[AIService] Cannot recreate Smarty Server provider for mobile response without workspace path: ${session.id}`);
+            return null;
+          }
+          const provider = ProviderFactory.createProvider(providerType, session.id);
+          const apiKey = this.getApiKeyForProvider('smarty-server', effectiveWorkspacePath);
+          const providerSettings = this.getEffectiveProviderSettings('smarty-server', effectiveWorkspacePath);
+          await provider.initialize(await buildProviderRuntimeConfig({
+            session,
+            apiKey,
+            providerSettings,
+          }));
+          return provider;
         },
       });
     } catch (error) {
@@ -1475,8 +1554,9 @@ export class AIService {
       const apiKeys = this.getSettingsStore().get('apiKeys', {}) as Record<string, string>;
       const providerSettings = this.getNormalizedProviderSettings() as any;
 
-      // Claude Code uses its own auth (SSO) - always available if enabled
-      const claudeCodeEnabled = providerSettings['claude-code']?.enabled !== false;
+      // Claude Code is only available when explicitly enabled. It must not
+      // spawn a hidden CLI during Smarty Server local-first startup.
+      const claudeCodeEnabled = providerSettings['claude-code']?.enabled === true;
       if (claudeCodeEnabled) return true;
 
       // Claude Chat needs an Anthropic API key and enabled models
@@ -1498,6 +1578,9 @@ export class AIService {
       // Check OpenAI Codex (uses its own auth, doesn't need API key in settings)
       const hasCodex = providerSettings['openai-codex']?.enabled === true;
       if (hasCodex) return true;
+
+      const hasSmartyServer = providerSettings['smarty-server']?.enabled === true;
+      if (hasSmartyServer) return true;
 
       // Check LM Studio (doesn't need API key but needs enabled models)
       const hasLMStudio = providerSettings['lmstudio']?.enabled === true &&
@@ -1594,14 +1677,14 @@ export class AIService {
         case 'openai-codex':
           // Codex SDK uses its own auth (codex auth login), API key is optional
           break;
-        case 'deepagents-acp':
-          // DeepAgents ACP uses explicit CLIProxyAPI settings; token is optional for local dev proxies.
-          break;
         case 'opencode':
           // OpenCode uses its own config, API key is optional
           break;
         case 'copilot-cli':
           // Copilot uses its own CLI auth (copilot auth login), no API key needed
+          break;
+        case 'smarty-server':
+          // Smarty Server is a local LangGraph server; API key is optional and explicit-only
           break;
         case 'lmstudio':
           // LMStudio doesn't need an API key, just the base URL
@@ -1613,14 +1696,20 @@ export class AIService {
       // Get model details if specified
       let model = modelId;
       if (!model) {
+        const configuredDefaultModel = this.getProviderSetting(provider, 'defaultModel', workspacePath);
+        if (typeof configuredDefaultModel === 'string' && configuredDefaultModel.trim()) {
+          model = configuredDefaultModel.trim();
+        }
+      }
+      if (!model) {
         // Use provider defaults when no explicit model is supplied
         model = await ModelRegistry.getDefaultModel(provider);
       }
 
       // For claude-code, don't pass a model at all - let it handle its own selection
       const providerConfig: any = {
-        maxTokens: this.getProviderSetting(provider, 'maxTokens'),
-        temperature: this.getProviderSetting(provider, 'temperature')
+        maxTokens: this.getProviderSetting(provider, 'maxTokens', workspacePath),
+        temperature: this.getProviderSetting(provider, 'temperature', workspacePath)
       };
 
       // Only add model to config if we have one and it's not claude-code
@@ -1641,7 +1730,7 @@ export class AIService {
         }
       } else if (provider !== 'claude-code') {
         // For other providers, fall back to settings
-        const settingsModel = this.getProviderSetting(provider, 'model');
+        const settingsModel = this.getProviderSetting(provider, 'model', workspacePath);
         if (settingsModel) {
           const modelForProvider = extractModelForProvider(settingsModel, provider);
           if (modelForProvider !== null) {
@@ -1745,9 +1834,9 @@ export class AIService {
         initConfig.baseUrl = lmstudioSettings.baseUrl || storedApiKeys['lmstudio_url'] || 'http://127.0.0.1:8234';
       }
 
-      if (provider === 'deepagents-acp') {
-        const providerSettings = this.getSettingsStore().get('providerSettings', {}) as any;
-        initConfig.baseUrl = providerSettings['deepagents-acp']?.baseUrl || 'http://127.0.0.1:8317/v1';
+      if (provider === 'smarty-server') {
+        const providerSettings = this.getEffectiveProviderSettings('smarty-server', workspacePath);
+        initConfig.baseUrl = normalizeSmartyServerBaseUrl(providerSettings.baseUrl);
       }
 
       // Pass through allowedTools and effort level settings for Claude Code
@@ -1812,14 +1901,20 @@ export class AIService {
     // to avoid queuing redundant heavy DB queries in PGLite's single-threaded worker
     const loadSessionInFlight = new Map<string, Promise<any>>();
     safeHandle('ai:loadSession', async (event, sessionId: string, workspacePath?: string, trackAsResume?: boolean) => {
+      if (this.destroyed || !this.sessionManager) {
+        logger.main.info('[AIService] Ignoring ai:loadSession during shutdown', { sessionId, workspacePath });
+        return null;
+      }
+
       const existing = loadSessionInFlight.get(sessionId);
       if (existing && !trackAsResume) {
         return existing;
       }
 
+      const sessionManager = this.sessionManager;
       const loadPromise = (async () => {
       const loadStart = performance.now();
-      const session = await this.sessionManager.loadSession(sessionId, workspacePath);
+      const session = await sessionManager.loadSession(sessionId, workspacePath);
       const loadTime = performance.now() - loadStart;
       if (!session) {
         console.log(`[SESSION] Session not found: ${sessionId} (this is normal if the session was deleted)`);
@@ -2481,16 +2576,69 @@ export class AIService {
         return { success: false, error: 'Session not found' };
       }
 
-      const provider = ProviderFactory.getProvider(session.provider as AIProviderType, sessionId);
+      const providerType = session.provider as AIProviderType;
+      const windowState = windowStates.get(event.sender.id);
+      const effectiveWorkspacePath =
+        session.worktreePath ||
+        session.workspacePath ||
+        windowState?.workspacePath ||
+        undefined;
+      const permissionsPath = session.worktreeProjectPath || effectiveWorkspacePath;
+
+      let provider = ProviderFactory.getProvider(providerType, sessionId);
+      if (!provider && providerType === 'smarty-server') {
+        if (!effectiveWorkspacePath) {
+          logger.main.warn(`[AIService] Cannot recreate Smarty Server provider without workspace path: ${sessionId}`);
+          return { success: false, error: 'Workspace path not found' };
+        }
+        provider = ProviderFactory.createProvider(providerType, sessionId);
+        const apiKey = this.getApiKeyForProvider('smarty-server', effectiveWorkspacePath);
+        const providerSettings = this.getEffectiveProviderSettings('smarty-server', effectiveWorkspacePath);
+        await provider.initialize(await buildProviderRuntimeConfig({
+          session,
+          apiKey,
+          providerSettings,
+        }));
+      }
+
       if (!provider) {
         logger.main.warn(`[AIService] Provider not found for tool permission: ${sessionId}`);
         return { success: false, error: 'Provider not found' };
       }
 
+      if (providerType === 'smarty-server' && session.providerSessionId && (provider as any).setProviderSessionData) {
+        (provider as any).setProviderSessionData(session.id, {
+          providerSessionId: session.providerSessionId,
+          claudeSessionId: session.providerSessionId,
+          codexThreadId: session.providerSessionId,
+        });
+      }
+
       // Check if this is a ClaudeCodeProvider with the resolve method
       if (typeof (provider as any).resolveToolPermission === 'function') {
         // Pass sessionId for response message persistence
-        (provider as any).resolveToolPermission(requestId, response, sessionId, 'desktop');
+        const resumedChunks = await Promise.resolve((provider as any).resolveToolPermission(
+          requestId,
+          response,
+          sessionId,
+          'desktop',
+          providerType === 'smarty-server' && effectiveWorkspacePath
+            ? { workspacePath: effectiveWorkspacePath, permissionsPath }
+            : undefined,
+        ));
+        if (
+          providerType === 'smarty-server' &&
+          effectiveWorkspacePath &&
+          Array.isArray(resumedChunks) &&
+          resumedChunks.length > 0
+        ) {
+          await this.streamingHandler.handleResumedProviderChunks(
+            event,
+            sessionId,
+            effectiveWorkspacePath,
+            resumedChunks as StreamChunk[],
+          );
+        }
         return { success: true };
       } else {
         logger.main.warn(`[AIService] Provider does not support tool permission: ${session.provider}`);
@@ -2593,7 +2741,17 @@ export class AIService {
           logger.main.error('[AIService] cancelRequest: sweepExecutingForSession failed:', sweepErr);
         }
 
-        provider.abort();
+        if (session.provider === 'smarty-server') {
+          try {
+            await provider.interruptCurrentTurn();
+          } catch (interruptError) {
+            logger.main.warn('[AIService] Smarty Server graceful cancel failed; falling back to abort:', interruptError);
+            provider.abort();
+          }
+        } else {
+          provider.abort();
+        }
+        await getSessionStateManager().interruptSession(sessionId);
         // console.log(`[AIService] Cancelled request for session ${sessionId}`);
         this.analytics.sendEvent('cancel_ai_request', {provider: providerType})
         return { success: true };
@@ -2673,7 +2831,7 @@ export class AIService {
         | null;
 
       return {
-        defaultProvider: this.getSettingsStore().get('defaultProvider', 'claude-code'),
+        defaultProvider: this.getSettingsStore().get('defaultProvider', 'smarty-server'),
         apiKeys: this.maskApiKeys(apiKeys),
         providerSettings,
         showToolCalls,
@@ -2691,7 +2849,7 @@ export class AIService {
 
     safeHandle('ai:saveSettings', async (event, settings: any) => {
       if (settings.defaultProvider !== undefined) {
-        this.getSettingsStore().set('defaultProvider', settings.defaultProvider);
+        this.getSettingsStore().set('defaultProvider', normalizeDefaultProvider(settings.defaultProvider));
       }
 
       if (settings.apiKeys) {
@@ -2744,13 +2902,13 @@ export class AIService {
           }
         }
 
-        // Save DeepAgents CLIProxyAPI token
-        if (settings.apiKeys['deepagents-acp'] !== undefined) {
-          const key = settings.apiKeys['deepagents-acp'];
+        // Save optional Smarty Server key. Most local runs do not need this.
+        if (settings.apiKeys['smarty-server'] !== undefined) {
+          const key = settings.apiKeys['smarty-server'];
           if (!key) {
-            delete currentKeys['deepagents-acp'];
-          } else if (key !== this.maskApiKey(currentKeys['deepagents-acp'] || '')) {
-            currentKeys['deepagents-acp'] = key as string;
+            delete currentKeys['smarty-server'];
+          } else if (key !== this.maskApiKey(currentKeys['smarty-server'] || '')) {
+            currentKeys['smarty-server'] = key as string;
           }
         }
 
@@ -2841,41 +2999,44 @@ export class AIService {
 
     // Test connection
     safeHandle('ai:testConnection', async (event, provider: string, workspacePath?: string) => {
-      const apiKeys = this.getSettingsStore().get('apiKeys', {}) as Record<string, string>;
+      const windowState = windowStates.get(event.sender.id);
+      const effectiveWorkspacePath =
+        workspacePath || windowState?.workspacePath || undefined;
 
       // Get the appropriate API key based on provider
       let apiKey: string | undefined;
       switch (provider) {
         case 'claude':
-          apiKey = apiKeys['anthropic'];
+          apiKey = this.getApiKeyForProvider('claude', effectiveWorkspacePath);
           if (!apiKey) {
             return { success: false, error: 'Anthropic API key not configured' };
           }
           break;
         case 'claude-code':
           // Claude Code: API key is optional, uses SSO login if not provided
-          apiKey = apiKeys['claude-code'];
+          apiKey = this.getApiKeyForProvider('claude-code', effectiveWorkspacePath);
           // No error if missing - will use SSO login
           break;
         case 'openai':
-          apiKey = apiKeys['openai'];
+          apiKey = this.getApiKeyForProvider('openai', effectiveWorkspacePath);
           if (!apiKey) {
             return { success: false, error: 'OpenAI API key not configured' };
           }
           break;
         case 'openai-codex':
-          apiKey = apiKeys['openai-codex'];
-          break;
-        case 'deepagents-acp':
-          apiKey = apiKeys['deepagents-acp'];
+          apiKey = this.getApiKeyForProvider('openai-codex', effectiveWorkspacePath);
           break;
         case 'opencode':
           // OpenCode: API key is optional, uses its own config
-          apiKey = apiKeys['opencode'] || 'not-required';
+          apiKey = this.getApiKeyForProvider('opencode', effectiveWorkspacePath) || 'not-required';
           break;
         case 'copilot-cli':
           // Copilot uses its own CLI auth, no API key needed
           apiKey = 'not-required';
+          break;
+        case 'smarty-server':
+          // Explicit key is optional; health probing must not read env fallbacks.
+          apiKey = this.getApiKeyForProvider('smarty-server', effectiveWorkspacePath);
           break;
         case 'lmstudio':
           // LMStudio doesn't need an API key, just test the connection
@@ -2896,9 +3057,6 @@ export class AIService {
         if (provider === 'openai-codex') {
           const defaultModel = await ModelRegistry.getDefaultModel('openai-codex');
           const testProvider = new OpenAICodexProvider(apiKey ? { apiKey } : undefined);
-          const windowState = windowStates.get(event.sender.id);
-          const effectiveWorkspacePath =
-            workspacePath || windowState?.workspacePath;
 
           if (!effectiveWorkspacePath) {
             return {
@@ -2974,6 +3132,59 @@ export class AIService {
           }
         }
 
+        if (provider === 'smarty-server') {
+          const providerSettings = this.getEffectiveProviderSettings('smarty-server', effectiveWorkspacePath);
+          const baseUrl = normalizeSmartyServerBaseUrl(providerSettings.baseUrl);
+          const headers: Record<string, string> = {};
+          if (apiKey) {
+            headers.authorization = `Bearer ${apiKey}`;
+          }
+          let response: Response;
+          try {
+            response = await fetch(`${baseUrl}/custom/smarty/health`, { headers });
+          } catch (error: any) {
+            return {
+              success: false,
+              provider,
+              baseUrl,
+              error: smartyServerRecoveryMessage(baseUrl, undefined, error?.message || 'fetch failed'),
+              recovery: smartyServerRecoveryMessage(baseUrl, undefined, error?.message || 'fetch failed'),
+            };
+          }
+          const body = await response.json().catch(() => null) as any;
+          if (!response.ok) {
+            const recovery = smartyServerRecoveryMessage(baseUrl, body, `HTTP ${response.status}`);
+            return {
+              success: false,
+              provider,
+              baseUrl,
+              health: body,
+              error: recovery,
+              recovery,
+            };
+          }
+          if (body?.ok !== true || body?.ready !== true) {
+            const recovery = smartyServerRecoveryMessage(baseUrl, body);
+            return {
+              success: false,
+              provider,
+              baseUrl,
+              health: body,
+              error: recovery,
+              recovery,
+              warnings: smartyServerWarnings(body),
+            };
+          }
+          return {
+            success: true,
+            provider,
+            baseUrl,
+            health: body,
+            warnings: smartyServerWarnings(body),
+            recovery: body?.recovery?.smartyServer,
+          };
+        }
+
         // For Claude providers, test the API connection
         if (provider === 'claude') {
           console.log('[AIService] testConnection - Testing provider:', provider);
@@ -3032,8 +3243,8 @@ export class AIService {
 
         // For LMStudio, test the endpoint
         if (provider === 'lmstudio') {
-          const providerSettings = this.getSettingsStore().get('providerSettings', {}) as any;
-          const baseUrl = providerSettings['lmstudio']?.baseUrl || 'http://127.0.0.1:8234';
+          const providerSettings = this.getEffectiveProviderSettings('lmstudio', effectiveWorkspacePath);
+          const baseUrl = providerSettings.baseUrl || 'http://127.0.0.1:8234';
           const response = await fetch(`${baseUrl}/v1/models`);
           if (!response.ok) {
             throw new Error(`LMStudio server not responding at ${baseUrl}`);
@@ -3057,16 +3268,15 @@ export class AIService {
       // Only fetch from providers that are enabled (skip LMStudio network call when disabled)
       const enabledSet = new Set<AIProviderType>();
       if (providerSettings['claude']?.enabled === true && !!apiKeys['anthropic']) enabledSet.add('claude');
-      if (providerSettings['claude-code']?.enabled !== false) enabledSet.add('claude-code');
+      if (providerSettings['claude-code']?.enabled === true) enabledSet.add('claude-code');
       if (providerSettings['openai']?.enabled === true && !!apiKeys['openai']) enabledSet.add('openai');
       if (providerSettings['openai-codex']?.enabled === true) enabledSet.add('openai-codex');
-      if (providerSettings['deepagents-acp']?.enabled === true) enabledSet.add('deepagents-acp');
       if (providerSettings['opencode']?.enabled === true) enabledSet.add('opencode');
+      if (providerSettings['smarty-server']?.enabled === true) enabledSet.add('smarty-server');
       if (providerSettings['lmstudio']?.enabled === true) enabledSet.add('lmstudio');
 
       const modelsConfig = {
         ...apiKeys,
-        deepagents_cli_proxy_base_url: providerSettings['deepagents-acp']?.baseUrl || 'http://127.0.0.1:8317/v1',
         lmstudio_url: providerSettings['lmstudio']?.baseUrl || 'http://127.0.0.1:8234'
       };
       const allModels = await ModelRegistry.getAllModels(modelsConfig, enabledSet);
@@ -3170,8 +3380,9 @@ export class AIService {
           models: providerSettings['claude']?.models
         },
         'claude-code': {
-          // Respect the user's toggle but don't require an API key—Claude Code uses CLI auth
-          enabled: claudeCodeSettings.enabled !== false,
+          // Respect the user's toggle but don't require an API key. Claude Code
+          // is explicit opt-in so model discovery does not spawn its CLI by default.
+          enabled: claudeCodeSettings.enabled === true,
           models: claudeCodeSettings.models
         },
         'openai': {
@@ -3186,9 +3397,6 @@ export class AIService {
           // Codex ACP uses the codex-acp binary directly; API key is optional
           enabled: providerSettings['openai-codex-acp']?.enabled === true,
         },
-        'deepagents-acp': {
-          enabled: providerSettings['deepagents-acp']?.enabled === true,
-        },
         'opencode': {
           // OpenCode uses its own config, API key is optional
           enabled: providerSettings['opencode']?.enabled === true,
@@ -3196,6 +3404,10 @@ export class AIService {
         'copilot-cli': {
           // Copilot uses its own CLI auth (copilot auth login), no API key needed
           enabled: providerSettings['copilot-cli']?.enabled === true,
+        },
+        'smarty-server': {
+          // Smarty Server is an already-running local LangGraph server; optional explicit key only
+          enabled: providerSettings['smarty-server']?.enabled === true,
         },
         'lmstudio': {
           enabled: providerSettings['lmstudio']?.enabled === true,
@@ -3211,7 +3423,6 @@ export class AIService {
       );
       const modelsConfig = {
         ...apiKeys,
-        deepagents_cli_proxy_base_url: providerSettings['deepagents-acp']?.baseUrl || 'http://127.0.0.1:8317/v1',
         lmstudio_url: providerSettings['lmstudio']?.baseUrl || 'http://127.0.0.1:8234'
       };
       const allModels = await ModelRegistry.getAllModels(modelsConfig, enabledProviderSet);
@@ -3344,7 +3555,7 @@ export class AIService {
       const chatShowToolCalls = this.getSettingsStore().get('chatShowToolCalls', true) as boolean;
       const aiDebugLogging = this.getSettingsStore().get('aiDebugLogging', false) as boolean;
       const showPromptAdditions = this.getSettingsStore().get('showPromptAdditions', false) as boolean;
-      const defaultProvider = this.getSettingsStore().get('defaultProvider', 'claude-code') as string;
+      const defaultProvider = this.getSettingsStore().get('defaultProvider', 'smarty-server') as string;
 
       const globalSettings = {
         defaultProvider,
@@ -3382,7 +3593,7 @@ export class AIService {
       options: { prompt: string; sessionName?: string; provider?: string; model?: string }
     ) => {
       const { prompt, sessionName } = options;
-      const provider = (options.provider || 'claude-code') as AIProviderType;
+      const provider = (options.provider || 'smarty-server') as AIProviderType;
       if (!prompt) {
         throw new Error('prompt is required');
       }
@@ -3406,8 +3617,8 @@ export class AIService {
         throw new Error(`Provider ${provider} is not enabled for this workspace`);
       }
 
-      // Check API key (claude-code uses SSO, so key is optional)
-      if (provider !== 'claude-code') {
+      // Check API key (agent providers can use their own local/auth runtime)
+      if (provider !== 'claude-code' && provider !== 'openai-codex' && provider !== 'opencode' && provider !== 'copilot-cli' && provider !== 'smarty-server') {
         const apiKey = this.getApiKeyForProvider(provider, workspacePath);
         if (!apiKey) {
           throw new Error(`API key not configured for provider ${provider}. Configure it in Settings > AI.`);
@@ -3417,8 +3628,8 @@ export class AIService {
       // Use explicitly requested model, or fall back to provider default
       const model = options.model || await ModelRegistry.getDefaultModel(provider);
       const providerConfig: any = {
-        maxTokens: this.getProviderSetting(provider, 'maxTokens'),
-        temperature: this.getProviderSetting(provider, 'temperature'),
+        maxTokens: this.getProviderSetting(provider, 'maxTokens', workspacePath),
+        temperature: this.getProviderSetting(provider, 'temperature', workspacePath),
       };
 
       // For non-claude-code providers, set the model in provider config
@@ -3427,6 +3638,11 @@ export class AIService {
         if (modelForProvider !== null) {
           providerConfig.model = modelForProvider;
         }
+      }
+
+      if (provider === 'smarty-server') {
+        const providerSettings = this.getEffectiveProviderSettings('smarty-server', workspacePath);
+        providerConfig.baseUrl = normalizeSmartyServerBaseUrl(providerSettings.baseUrl);
       }
 
       const session = await this.sessionManager.createSession(
@@ -3654,14 +3870,43 @@ export class AIService {
   }
 
   private normalizeProviderSettings(providerSettings: Record<string, any>): Record<string, any> {
-    return normalizeCodexProviderConfig(
-      stripTransientProviderFields(providerSettings)
+    return stripUnknownProviderConfigs(
+      normalizeCodexProviderConfig(
+        stripTransientProviderFields(providerSettings)
+      )
     );
   }
 
-  private getProviderSetting(provider: string, key: string): any {
-    const providerSettings = this.getNormalizedProviderSettings() as any;
-    return providerSettings[provider]?.[key];
+  private getGlobalAISettingsForMerge(): {
+    defaultProvider: string;
+    apiKeys: Record<string, string>;
+    providerSettings: Record<string, any>;
+    showToolCalls: boolean;
+    aiDebugLogging: boolean;
+    showPromptAdditions: boolean;
+    customClaudeCodePath?: string;
+  } {
+    return {
+      defaultProvider: this.getSettingsStore().get('defaultProvider', 'smarty-server') as string,
+      apiKeys: this.getSettingsStore().get('apiKeys', {}) as Record<string, string>,
+      providerSettings: this.getNormalizedProviderSettings(),
+      showToolCalls: this.getSettingsStore().get('showToolCalls', false) as boolean,
+      aiDebugLogging: this.getSettingsStore().get('aiDebugLogging', false) as boolean,
+      showPromptAdditions: this.getSettingsStore().get('showPromptAdditions', false) as boolean,
+      customClaudeCodePath: this.getSettingsStore().get('customClaudeCodePath', '') as string,
+    };
+  }
+
+  private getEffectiveAISettings(workspacePath?: string): ReturnType<typeof mergeAISettings> {
+    return mergeAISettings(this.getGlobalAISettingsForMerge(), workspacePath);
+  }
+
+  private getEffectiveProviderSettings(provider: string, workspacePath?: string): Record<string, any> {
+    return this.getEffectiveAISettings(workspacePath).providerSettings[provider] || {};
+  }
+
+  private getProviderSetting(provider: string, key: string, workspacePath?: string): any {
+    return this.getEffectiveProviderSettings(provider, workspacePath)?.[key];
   }
 
   private maskApiKey(key: string): string {
@@ -3747,6 +3992,8 @@ export class AIService {
   }
 
   public destroy() {
+    this.destroyed = true;
+
     try {
       // Clean up all providers with error handling
       ProviderFactory.destroyAll();

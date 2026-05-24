@@ -61,6 +61,7 @@ export async function processDescriptor(
       return writer.appendAssistantMessage(sessionId, desc.text, {
         mode: desc.mode,
         createdAt: desc.createdAt,
+        coalesceKey: desc.coalesceKey,
         thinking: desc.thinking,
         thinkingSignature: desc.thinkingSignature,
         model: desc.model,
@@ -189,14 +190,44 @@ export async function processDescriptor(
     }
 
     case 'interactive_prompt_created': {
-      return writer.createInteractivePrompt(sessionId, desc.payload, {
+      if (desc.payload.requestId) {
+        const existingId = toolEventIds.get(desc.payload.requestId);
+        if (existingId !== undefined) {
+          const existing = await store.getEventById(existingId);
+          if (existing?.eventType === 'interactive_prompt') return null;
+        } else {
+          const existing = await store.findByProviderToolCallId(desc.payload.requestId, sessionId);
+          if (existing?.eventType === 'interactive_prompt') {
+            toolEventIds.set(desc.payload.requestId, existing.id);
+            return null;
+          }
+        }
+      }
+
+      const event = await writer.createInteractivePrompt(sessionId, desc.payload, {
         subagentId: desc.subagentId,
+        providerToolCallId: desc.payload.requestId,
         createdAt: desc.createdAt,
       });
+      if (desc.payload.requestId) {
+        toolEventIds.set(desc.payload.requestId, event.id);
+      }
+      return event;
     }
 
     case 'interactive_prompt_updated': {
-      return null;
+      let eventId = toolEventIds.get(desc.requestId);
+      if (!eventId) {
+        const existing = await store.findByProviderToolCallId(desc.requestId, sessionId);
+        if (existing?.eventType === 'interactive_prompt') {
+          eventId = existing.id;
+          toolEventIds.set(desc.requestId, eventId);
+        }
+      }
+      if (!eventId) return null;
+
+      await writer.updateInteractivePrompt(eventId, desc.update);
+      return store.getEventById(eventId);
     }
 
     case 'turn_ended': {
@@ -216,18 +247,21 @@ export async function processDescriptor(
 
 export function selectRawParser(
   provider: string,
-): 'codex' | 'codex-acp' | 'copilot' | 'claude-code' | 'opencode' {
+): 'codex' | 'codex-acp' | 'copilot' | 'claude-code' | 'opencode' | 'smarty-server' {
   if (provider === 'copilot-cli') {
     return 'copilot';
   }
   if (provider === 'openai-codex') {
     return 'codex';
   }
-  if (provider === 'openai-codex-acp' || provider === 'deepagents-acp') {
+  if (provider === 'openai-codex-acp') {
     return 'codex-acp';
   }
   if (provider === 'opencode') {
     return 'opencode';
+  }
+  if (provider === 'smarty-server') {
+    return 'smarty-server';
   }
   return 'claude-code';
 }

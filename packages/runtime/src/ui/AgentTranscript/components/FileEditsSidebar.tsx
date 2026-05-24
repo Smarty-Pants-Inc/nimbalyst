@@ -620,6 +620,8 @@ export const FileEditsSidebar: React.FC<FileEditsSidebarProps> = ({
       <div
         key={filePath}
         ref={(el) => registerRowEl(filePath, el)}
+        data-testid="files-edited-file-row"
+        data-file-path={relativePath}
         draggable
         onDragStart={handleDragStart}
         onContextMenu={(e) => handleContextMenu(e, filePath)}
@@ -651,6 +653,7 @@ export const FileEditsSidebar: React.FC<FileEditsSidebarProps> = ({
               // Checkbox for uncommitted files
               <div
                 onClick={handleCheckboxClick}
+                data-testid="files-edited-file-checkbox"
                 className={`file-edits-sidebar__checkbox w-4 h-4 shrink-0 rounded-[3px] border-[1.5px] cursor-pointer flex items-center justify-center transition-all ${
                   isSelected
                     ? 'bg-[var(--nim-file-edited)] border-[var(--nim-file-edited)]'
@@ -857,6 +860,7 @@ export const FileEditsSidebar: React.FC<FileEditsSidebarProps> = ({
           <div className="file-edits-sidebar__root-checkbox flex items-center gap-2 px-2 py-1.5 mb-1 border-b border-[var(--nim-border)]">
             <div
               onClick={() => onSelectAll?.(rootSelectionInfo.state !== 'all')}
+              data-testid="files-edited-select-all"
               className={`w-4 h-4 shrink-0 rounded-[3px] border-[1.5px] cursor-pointer flex items-center justify-center transition-all ${
                 rootSelectionInfo.state === 'all'
                   ? 'bg-[var(--nim-file-edited)] border-[var(--nim-file-edited)]'

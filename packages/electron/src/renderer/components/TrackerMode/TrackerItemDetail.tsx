@@ -14,6 +14,7 @@ import type { EditorConfig } from '@nimbalyst/runtime/editor';
 import { $convertFromEnhancedMarkdownString, getEditorTransformers } from '@nimbalyst/runtime/editor';
 import { $getRoot } from 'lexical';
 import type { TrackerRecord } from '@nimbalyst/runtime/core/TrackerRecord';
+import type { TranscriptViewMessage } from '@nimbalyst/runtime/ai/server/types';
 import { globalRegistry } from '@nimbalyst/runtime/plugins/TrackerPlugin/models';
 import type { FieldDefinition } from '@nimbalyst/runtime/plugins/TrackerPlugin/models/TrackerDataModel';
 import { getRecordTitle, getRecordStatus, getRecordPriority, getRecordField } from '@nimbalyst/runtime/plugins/TrackerPlugin/trackerRecordAccessors';
@@ -21,8 +22,17 @@ import { TrackerFieldEditor, type TeamMemberOption } from '@nimbalyst/runtime/pl
 import { UserAvatar } from '@nimbalyst/runtime/plugins/TrackerPlugin/components/UserAvatar';
 import { trackerItemByIdAtom } from '@nimbalyst/runtime/plugins/TrackerPlugin/trackerDataAtoms';
 import { refreshSessionListAtom, sessionRegistryAtom, type SessionMeta } from '../../store/atoms/sessions';
+import { transcriptEventSignalAtom } from '../../store/atoms/sessionTranscript';
 import { getRelativeTimeString } from '../../utils/dateFormatting';
 import { useTrackerContentCollab } from '../../hooks/useTrackerContentCollab';
+import {
+  buildLatestApprovalSummary,
+  buildLatestValidationSummary,
+  formatLatestApprovalSummary,
+  formatLatestValidationSummary,
+  type LatestApprovalSummary,
+  type LatestValidationSummary,
+} from './validationSummary';
 
 interface TrackerItemDetailProps {
   itemId: string;
@@ -165,6 +175,83 @@ const TypeTagsEditor: React.FC<{
         </div>
       )}
     </div>
+  );
+};
+
+const LinkedSessionValidation: React.FC<{ sessionId: string }> = ({ sessionId }) => {
+  const transcriptSignal = useAtomValue(transcriptEventSignalAtom(sessionId));
+  const [summary, setSummary] = useState<{
+    approval: LatestApprovalSummary | null;
+    validation: LatestValidationSummary | null;
+  }>({ approval: null, validation: null });
+  const [loaded, setLoaded] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    setLoaded(false);
+    window.electronAPI.ai
+      .getTailMessages(sessionId, 100)
+      .then((messages: TranscriptViewMessage[]) => {
+        if (cancelled) return;
+        setSummary({
+          approval: buildLatestApprovalSummary(messages),
+          validation: buildLatestValidationSummary(messages),
+        });
+        setLoaded(true);
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setSummary({ approval: null, validation: null });
+        setLoaded(true);
+      });
+    return () => { cancelled = true; };
+  }, [sessionId, transcriptSignal]);
+
+  if (!loaded) return null;
+
+  if (!summary.approval && !summary.validation) {
+    return (
+      <span
+        className="text-[10px] text-nim-faint truncate"
+        data-testid="tracker-linked-session-validation"
+        data-validation-status="none"
+      >
+        No validation yet
+      </span>
+    );
+  }
+
+  const approval = summary.approval;
+  const validation = summary.validation;
+  const validationStatusClass = validation?.status === 'passed'
+    ? 'text-[#22c55e]'
+    : validation?.status === 'stale'
+      ? 'text-[#f59e0b]'
+      : 'text-[#ef4444]';
+  const approvalStatusClass = approval?.state === 'pending'
+    ? 'text-[#f59e0b]'
+    : approval?.state === 'allowed'
+      ? 'text-[#22c55e]'
+      : 'text-[#ef4444]';
+  const approvalText = approval ? formatLatestApprovalSummary(approval) : null;
+  const validationText = validation ? formatLatestValidationSummary(validation) : null;
+  const title = [approvalText, validation?.command || validationText].filter(Boolean).join(' | ');
+  return (
+    <span
+      className="flex min-w-0 items-center gap-1 text-[10px] truncate"
+      data-testid="tracker-linked-session-validation"
+      data-approval-status={approval?.state ?? 'none'}
+      data-validation-status={validation?.status ?? 'none'}
+      title={title}
+    >
+      {approvalText && (
+        <span className={`truncate ${approvalStatusClass}`}>{approvalText}</span>
+      )}
+      {approvalText && validationText && <span className="text-nim-faint">|</span>}
+      {validationText && (
+        <span className={`truncate ${validationStatusClass}`}>{validationText}</span>
+      )}
+    </span>
   );
 };
 
@@ -1046,6 +1133,7 @@ export const TrackerItemDetail: React.FC<TrackerItemDetailProps> = ({
                       setIsLinkingExistingSession((prev) => !prev);
                     }}
                     title="Link an existing AI session to this item"
+                    data-testid="tracker-link-existing-session-button"
                   >
                     <MaterialSymbol icon="link" size={14} />
                     {isLinkingExistingSession ? 'Cancel' : 'Link Existing'}
@@ -1056,6 +1144,7 @@ export const TrackerItemDetail: React.FC<TrackerItemDetailProps> = ({
                     className="flex items-center gap-1 px-1.5 py-0.5 text-[11px] font-medium rounded text-nim-muted hover:text-nim hover:bg-nim-tertiary transition-colors"
                     onClick={() => onLaunchSession(item.id)}
                     title="Launch a new AI session for this item"
+                    data-testid="tracker-launch-session-button"
                   >
                     <MaterialSymbol icon="add" size={14} />
                     Launch Session
@@ -1114,10 +1203,24 @@ export const TrackerItemDetail: React.FC<TrackerItemDetailProps> = ({
                     className="w-full flex items-center gap-2 px-2 py-1.5 rounded text-left hover:bg-nim-tertiary transition-colors group"
                     onClick={() => onSwitchToAgentMode?.(session.id)}
                     title={`Open session: ${session.title}`}
+                    data-testid="tracker-linked-session-row"
+                    data-session-id={session.id}
+                    data-workspace-path={session.workspaceId}
+                    data-worktree-id={session.worktreeId || ''}
                   >
                     <ProviderIcon provider={session.provider || 'claude'} size={14} />
-                    <span className="flex-1 text-xs text-nim truncate">
-                      {session.title || 'Untitled session'}
+                    <span className="flex-1 min-w-0 flex flex-col gap-0.5">
+                      <span className="text-xs text-nim truncate">
+                        {session.title || 'Untitled session'}
+                      </span>
+                      <span
+                        className="text-[10px] text-nim-faint truncate"
+                        data-testid="tracker-linked-session-context"
+                        title={session.workspaceId}
+                      >
+                        {session.worktreeId ? `worktree ${session.worktreeId}` : 'repo session'} · {session.workspaceId}
+                      </span>
+                      <LinkedSessionValidation sessionId={session.id} />
                     </span>
                     <span className="text-[10px] text-nim-faint shrink-0">
                       {getRelativeTimeString(session.updatedAt)}

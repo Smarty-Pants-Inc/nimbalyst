@@ -34,9 +34,6 @@ type IconConfig =
   | { type: 'simple-icons'; slug: string }
   | { type: 'material-symbol'; icon: string };
 
-// Icons that are dark/black and need a light color override in dark mode
-const DARK_ICONS_NEEDING_LIGHT_OVERRIDE = new Set(['github', 'notion']);
-
 // Map plugin names/categories to icons
 const PLUGIN_ICON_CONFIG: Record<string, IconConfig> = {
   // Brand icons
@@ -108,6 +105,8 @@ const CATEGORY_ORDER = [
 
 // Component to render plugin icon
 function PluginIcon({ pluginName, category, isDark }: { pluginName: string; category: string; isDark: boolean }) {
+  void isDark;
+
   // Try to find icon by plugin name first
   const nameKey = pluginName.toLowerCase().replace(/[^a-z0-9]/g, '');
   let config = PLUGIN_ICON_CONFIG[nameKey];
@@ -119,27 +118,8 @@ function PluginIcon({ pluginName, category, isDark }: { pluginName: string; cate
   }
 
   if (config.type === 'simple-icons') {
-    const needsLightOverride = isDark && DARK_ICONS_NEEDING_LIGHT_OVERRIDE.has(config.slug);
-    const iconUrl = needsLightOverride
-      ? `https://cdn.simpleicons.org/${config.slug}/ffffff`
-      : `https://cdn.simpleicons.org/${config.slug}`;
-
     return (
-      <>
-        <img
-          src={iconUrl}
-          alt=""
-          className="plugin-icon-img w-5 h-5 object-contain"
-          loading="lazy"
-          onError={(e) => {
-            const target = e.target as HTMLImageElement;
-            target.style.display = 'none';
-            const fallback = target.nextElementSibling as HTMLElement;
-            if (fallback) fallback.style.display = 'flex';
-          }}
-        />
-        <span className="plugin-icon-fallback text-sm font-semibold text-[var(--nim-text-muted)] items-center justify-center w-full h-full hidden">{pluginName[0]}</span>
-      </>
+      <span className="plugin-icon-fallback text-sm font-semibold text-[var(--nim-text-muted)] flex items-center justify-center w-full h-full">{pluginName[0]}</span>
     );
   }
 

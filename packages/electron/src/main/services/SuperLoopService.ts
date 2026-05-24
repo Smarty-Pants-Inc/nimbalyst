@@ -28,6 +28,7 @@ import {
   type SuperIteration,
 } from '../../shared/types/superLoop';
 import { SuperLoopProgressService } from './SuperLoopProgressService';
+import { resolveSuperLoopSessionRoute } from './superLoopRouting';
 
 const logger = log.scope('SuperLoopService');
 
@@ -525,9 +526,7 @@ export class SuperLoopService {
 
     // Create the session in the database
     const phaseLabel = phase === 'planning' ? 'Plan' : 'Build';
-    const model = runner.loop.modelId || 'claude-code:opus-1m';
-    // Extract provider from model ID (format is "provider:model")
-    const provider = model.includes(':') ? model.split(':')[0] : 'claude-code';
+    const { model, provider } = resolveSuperLoopSessionRoute(runner.loop.modelId);
     await AISessionsRepository.create({
       id: sessionId,
       provider,

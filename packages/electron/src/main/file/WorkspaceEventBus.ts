@@ -323,7 +323,7 @@ function loadGitignoreFilterSync(rootPath: string): Ignore {
  * that contains a `.git` entry, bounded at `workspaceAbs`. Memoizes per-directory
  * results so a chokidar walk over 100k entries does at most one `existsSync`
  * per unique ancestor. Mirrors the boundary semantics of
- * `GitStatusService.findGitRootForFile` — out-of-boundary inputs return null
+ * `GitPathService.findGitRootForFile` — out-of-boundary inputs return null
  * so we never resolve to an unrelated repo higher up the filesystem.
  */
 function findGitRootForPathCached(

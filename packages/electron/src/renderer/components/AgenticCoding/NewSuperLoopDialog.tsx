@@ -13,7 +13,7 @@ import {
   upsertSuperLoopAtom,
 } from '../../store/atoms/superLoop';
 import { SUPER_LOOP_DEFAULTS } from '../../../shared/types/superLoop';
-import { getClaudeCodeModelLabel } from '../../utils/modelUtils';
+import { DEFAULT_MODELS } from '@nimbalyst/runtime/ai/modelConstants';
 
 interface AgentModel {
   id: string;
@@ -26,7 +26,19 @@ interface NewSuperLoopDialogProps {
   onSuperLoopCreated?: (superLoopId: string, worktreeId: string) => void;
 }
 
-const DEFAULT_MODEL = 'claude-code:opus';
+export const SUPER_LOOP_DEFAULT_MODEL = DEFAULT_MODELS['smarty-server'];
+
+export function getSuperLoopAgentModels(grouped: Record<string, unknown>): AgentModel[] {
+  const smartyModels = grouped['smarty-server'];
+  if (!Array.isArray(smartyModels)) return [];
+  return smartyModels.filter((model): model is AgentModel => (
+    model !== null &&
+    typeof model === 'object' &&
+    typeof (model as AgentModel).id === 'string' &&
+    typeof (model as AgentModel).name === 'string' &&
+    (model as AgentModel).provider === 'smarty-server'
+  ));
+}
 
 export const NewSuperLoopDialog: React.FC<NewSuperLoopDialogProps> = ({
   workspacePath,
@@ -37,7 +49,7 @@ export const NewSuperLoopDialog: React.FC<NewSuperLoopDialogProps> = ({
 
   const [taskDescription, setTaskDescription] = useState('');
   const [maxIterations, setMaxIterations] = useState<number>(SUPER_LOOP_DEFAULTS.maxIterations);
-  const [selectedModel, setSelectedModel] = useState<string>(DEFAULT_MODEL);
+  const [selectedModel, setSelectedModel] = useState<string>(SUPER_LOOP_DEFAULT_MODEL);
   const [agentModels, setAgentModels] = useState<AgentModel[]>([]);
   const [loadingModels, setLoadingModels] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
@@ -52,15 +64,7 @@ export const NewSuperLoopDialog: React.FC<NewSuperLoopDialogProps> = ({
       try {
         const response = await window.electronAPI.aiGetModels();
         if (response.success && response.grouped) {
-          // Only include agent providers (claude-code, openai-codex)
-          const agents: AgentModel[] = [];
-          for (const [provider, models] of Object.entries(response.grouped)) {
-            if (provider === 'claude-code' || provider === 'openai-codex') {
-              for (const model of models as AgentModel[]) {
-                agents.push(model);
-              }
-            }
-          }
+          const agents = getSuperLoopAgentModels(response.grouped);
           setAgentModels(agents);
 
           // If the default model isn't in the list, select the first available
@@ -83,7 +87,7 @@ export const NewSuperLoopDialog: React.FC<NewSuperLoopDialogProps> = ({
     if (isOpen) {
       setTaskDescription('');
       setMaxIterations(SUPER_LOOP_DEFAULTS.maxIterations);
-      setSelectedModel(DEFAULT_MODEL);
+      setSelectedModel(SUPER_LOOP_DEFAULT_MODEL);
       setError(null);
     }
   }, [isOpen]);
@@ -145,11 +149,6 @@ export const NewSuperLoopDialog: React.FC<NewSuperLoopDialogProps> = ({
     // Check if it's in the loaded list
     const model = agentModels.find(m => m.id === modelId);
     if (model) return model.name;
-
-    // Fallback for claude-code models
-    if (modelId.startsWith('claude-code')) {
-      return getClaudeCodeModelLabel(modelId);
-    }
 
     // Strip provider prefix
     const [, ...parts] = modelId.split(':');
@@ -224,7 +223,7 @@ export const NewSuperLoopDialog: React.FC<NewSuperLoopDialogProps> = ({
                   {loadingModels ? (
                     <option value={selectedModel}>Loading models...</option>
                   ) : agentModels.length === 0 ? (
-                    <option value={DEFAULT_MODEL}>{getModelDisplayName(DEFAULT_MODEL)}</option>
+                    <option value={SUPER_LOOP_DEFAULT_MODEL}>{getModelDisplayName(SUPER_LOOP_DEFAULT_MODEL)}</option>
                   ) : (
                     agentModels.map((model) => (
                       <option key={model.id} value={model.id}>

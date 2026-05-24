@@ -7,14 +7,97 @@
  */
 
 import type { SyncProvider, SessionControlMessage } from '@nimbalyst/runtime/sync';
-import { ProviderFactory } from '@nimbalyst/runtime/ai/server';
-import type { BrowserWindow } from 'electron';
+import { AI_PROVIDER_TYPES, ProviderFactory } from '@nimbalyst/runtime/ai/server';
+import type { AIProvider, AIProviderType, SessionData, StreamChunk } from '@nimbalyst/runtime/ai/server';
+import { BrowserWindow, ipcMain } from 'electron';
 import { logger } from '../../utils/logger';
 import type { PermissionScope } from '@nimbalyst/runtime';
 import { TrayManager } from '../../tray/TrayManager';
 import { resolveRequestUserInputPromptTargets } from '../../mcp/tools/codexToolCallResolver';
 
 const log = logger.ai;
+const knownProviderTypes = new Set<string>(AI_PROVIDER_TYPES);
+
+interface SessionProviderContext {
+  session: SessionData;
+  providerType: AIProviderType;
+  provider: AIProvider;
+}
+
+async function loadSession(sessionId: string): Promise<SessionData | null> {
+  const { AISessionsRepository } = await import('@nimbalyst/runtime/storage/repositories/AISessionsRepository');
+  return await AISessionsRepository.get(sessionId);
+}
+
+function resolveProviderType(session: SessionData): AIProviderType | null {
+  return knownProviderTypes.has(session.provider)
+    ? (session.provider as AIProviderType)
+    : null;
+}
+
+function getSessionResponseSource(session: SessionData | null): string {
+  return typeof session?.provider === 'string' && session.provider.length > 0
+    ? session.provider
+    : 'unknown';
+}
+
+function restoreProviderSessionData(provider: AIProvider, session: SessionData): void {
+  if (!session.providerSessionId || typeof provider.setProviderSessionData !== 'function') {
+    return;
+  }
+
+  provider.setProviderSessionData(session.id, {
+    providerSessionId: session.providerSessionId,
+    claudeSessionId: session.providerSessionId,
+    codexThreadId: session.providerSessionId,
+    langGraphThreadId: session.providerSessionId,
+  });
+}
+
+async function getSessionProviderContext(
+  sessionId: string,
+  action: string,
+  callbacks?: MobileSessionControlCallbacks
+): Promise<SessionProviderContext | null> {
+  const session = await loadSession(sessionId).catch((err) => {
+    log.warn(`[Mobile] Failed to load session for ${action}:`, err);
+    return null;
+  });
+  if (!session) {
+    log.warn(`[Mobile] Session not found for ${action}:`, sessionId);
+    return null;
+  }
+
+  return await getProviderContextForSession(session, sessionId, action, callbacks);
+}
+
+async function getProviderContextForSession(
+  session: SessionData,
+  sessionId: string,
+  action: string,
+  callbacks?: MobileSessionControlCallbacks
+): Promise<SessionProviderContext | null> {
+  const providerType = resolveProviderType(session);
+  if (!providerType) {
+    log.warn(`[Mobile] Unknown provider for ${action}:`, session.provider, sessionId);
+    return null;
+  }
+
+  let provider = ProviderFactory.getProvider(providerType, sessionId);
+  if (!provider && callbacks?.getOrCreateProviderForSession) {
+    provider = await callbacks.getOrCreateProviderForSession(session, providerType).catch((err) => {
+      log.warn(`[Mobile] Failed to recreate provider for ${action}:`, err);
+      return null;
+    });
+  }
+  if (!provider) {
+    log.warn(`[Mobile] Provider not found for ${action}:`, providerType, sessionId);
+    return null;
+  }
+
+  restoreProviderSessionData(provider, session);
+  return { session, providerType, provider };
+}
 
 /**
  * Known control message types.
@@ -102,6 +185,25 @@ export interface MobileSessionControlCallbacks {
    * mobile cancels isn't left permanently wedged.
    */
   rollbackExecutingPrompts(sessionId: string): Promise<number>;
+
+  /**
+   * Process chunks returned while resuming a provider after an approval.
+   * Used by Smarty Server approvals that synthesize file-change/tool chunks
+   * after interrupt/resume.
+   */
+  handleResumedProviderChunks?(sessionId: string, workspacePath: string, chunks: StreamChunk[]): Promise<void>;
+
+  /**
+   * True only when AIService can process resumed chunks without dropping
+   * history/session-file/transcript side effects.
+   */
+  canHandleResumedProviderChunks?(sessionId: string, workspacePath: string): boolean;
+
+  /**
+   * Recreate and initialize a provider when a durable mobile response arrives
+   * after the in-memory provider instance has gone away.
+   */
+  getOrCreateProviderForSession?(session: SessionData, providerType: AIProviderType): Promise<AIProvider | null>;
 }
 
 /**
@@ -145,7 +247,7 @@ function handleControlMessage(
     // Legacy handler - kept for backwards compatibility with older mobile versions
     case 'question_response': {
       const payload = message.payload as unknown as QuestionResponsePayload;
-      handleAskUserQuestionResponse(
+      void handleAskUserQuestionResponse(
         message.sessionId,
         payload.questionId,
         payload.answers,
@@ -161,6 +263,7 @@ function handleControlMessage(
       handlePromptResponse(
         message.sessionId,
         payload,
+        callbacks,
         findWindowByWorkspace
       );
       break;
@@ -215,6 +318,7 @@ async function handlePromptTrigger(
 function handlePromptResponse(
   sessionId: string,
   payload: PromptResponsePayload,
+  callbacks: MobileSessionControlCallbacks,
   findWindowByWorkspace: (workspacePath: string) => BrowserWindow | null | undefined
 ): void {
   log.info('Handling prompt response:', payload.promptType, 'promptId:', payload.promptId);
@@ -222,7 +326,7 @@ function handlePromptResponse(
   switch (payload.promptType) {
     case 'ask_user_question': {
       const response = payload.response as AskUserQuestionResponse;
-      handleAskUserQuestionResponse(
+      void handleAskUserQuestionResponse(
         sessionId,
         payload.promptId,
         response.answers,
@@ -234,7 +338,7 @@ function handlePromptResponse(
 
     case 'exit_plan_mode': {
       const response = payload.response as ExitPlanModeResponse;
-      handleExitPlanModeResponse(
+      void handleExitPlanModeResponse(
         sessionId,
         payload.promptId,
         response,
@@ -245,10 +349,11 @@ function handlePromptResponse(
 
     case 'tool_permission': {
       const response = payload.response as ToolPermissionResponse;
-      handleToolPermissionResponse(
+      void handleToolPermissionResponse(
         sessionId,
         payload.promptId,
         response,
+        callbacks,
         findWindowByWorkspace
       );
       break;
@@ -295,7 +400,6 @@ function handleRequestUserInputResponse(
     `[Mobile] RequestUserInput response: promptId=${promptId}, sessionId=${sessionId}, cancelled=${response.cancelled === true}`,
   );
 
-  const { ipcMain } = require('electron');
   const { waiterPromptIds: promptIdAliases, rawPromptId } =
     resolveRequestUserInputPromptTargets(promptId);
 
@@ -336,10 +440,15 @@ function handleRequestUserInputResponse(
   });
 
   // DB fallback: write a response row so the MCP server's polling loop resolves.
-  import('@nimbalyst/runtime/storage/repositories/AgentMessagesRepository').then(({ AgentMessagesRepository }) => {
-    AgentMessagesRepository.create({
+  void (async () => {
+    const session = await loadSession(sessionId).catch((err) => {
+      log.warn(`[Mobile] Failed to load session for RequestUserInput response: ${err}`);
+      return null;
+    });
+    const { AgentMessagesRepository } = await import('@nimbalyst/runtime/storage/repositories/AgentMessagesRepository');
+    await AgentMessagesRepository.create({
       sessionId,
-      source: 'claude-code',
+      source: getSessionResponseSource(session),
       direction: 'output' as const,
       createdAt: new Date(),
       content: JSON.stringify({
@@ -351,9 +460,9 @@ function handleRequestUserInputResponse(
         respondedBy: 'mobile',
         respondedAt: Date.now(),
       }),
-    }).catch((err) => {
-      log.warn(`[Mobile] Failed to persist RequestUserInput response: ${err}`);
     });
+  })().catch((err) => {
+    log.warn(`[Mobile] Failed to persist RequestUserInput response: ${err}`);
   });
 
   // Notify all windows to clear the pending UI.
@@ -368,8 +477,9 @@ async function handleCancel(
   sessionId: string,
   callbacks: MobileSessionControlCallbacks
 ): Promise<void> {
-  const provider = ProviderFactory.getProvider('claude-code', sessionId);
-  if (provider && 'abort' in provider) {
+  const context = await getSessionProviderContext(sessionId, 'cancel', callbacks);
+  if (context) {
+    const { provider, providerType } = context;
     log.info('Aborting session:', sessionId);
 
     // Defensive cleanup: if a queued prompt was in-flight when mobile
@@ -385,7 +495,25 @@ async function handleCancel(
       log.error('Mobile cancel: rollbackExecutingPrompts failed:', rollbackErr);
     }
 
-    (provider as { abort: () => void }).abort();
+    if (providerType === 'smarty-server') {
+      try {
+        const workspacePath = context.session.worktreePath || context.session.workspacePath || undefined;
+        if (
+          workspacePath &&
+          typeof (provider as any).interruptSession === 'function' &&
+          context.session.providerSessionId
+        ) {
+          await (provider as any).interruptSession(sessionId, { workspacePath });
+        } else {
+          await provider.interruptCurrentTurn();
+        }
+      } catch (interruptError) {
+        log.warn('[Mobile] Smarty Server graceful cancel failed; falling back to abort:', interruptError);
+        provider.abort();
+      }
+    } else {
+      provider.abort();
+    }
 
     // Notify renderer to update UI
     notifyAllWindows('ai:sessionCancelled', { sessionId });
@@ -418,17 +546,24 @@ async function handleArchive(sessionId: string, isArchived: boolean): Promise<vo
 /**
  * Handle AskUserQuestion response from mobile
  */
-function handleAskUserQuestionResponse(
+async function handleAskUserQuestionResponse(
   sessionId: string,
   questionId: string,
   answers: Record<string, string>,
   cancelled: boolean,
   _findWindowByWorkspace: (workspacePath: string) => BrowserWindow | null | undefined
-): void {
+): Promise<void> {
   log.info(`[Mobile] AskUserQuestion response: questionId=${questionId}, sessionId=${sessionId}, cancelled=${cancelled}`);
 
   let providerResolved = false;
-  const provider = ProviderFactory.getProvider('claude-code', sessionId);
+  const session = await loadSession(sessionId).catch((err) => {
+    log.warn(`[Mobile] Failed to load session for AskUserQuestion response: ${err}`);
+    return null;
+  });
+  const context = session
+    ? await getProviderContextForSession(session, sessionId, 'AskUserQuestion response')
+    : null;
+  const provider = context?.provider ?? null;
 
   if (provider) {
     if (cancelled) {
@@ -451,8 +586,6 @@ function handleAskUserQuestionResponse(
   // is empty, so resolveAskUserQuestion returns false. Fall back to IPC emission +
   // database write so the MCP server's IPC listeners or database polling can resolve it.
   if (!providerResolved) {
-    const { ipcMain } = require('electron');
-
     // Try MCP-specific IPC channel
     const mcpChannel = `ask-user-question-response:${sessionId}:${questionId}`;
     const hasMcpWaiter = ipcMain.listenerCount(mcpChannel) > 0;
@@ -485,7 +618,7 @@ function handleAskUserQuestionResponse(
     import('@nimbalyst/runtime/storage/repositories/AgentMessagesRepository').then(({ AgentMessagesRepository }) => {
       AgentMessagesRepository.create({
         sessionId,
-        source: 'claude-code',
+        source: getSessionResponseSource(session),
         direction: 'output' as const,
         createdAt: new Date(),
         content: JSON.stringify({
@@ -517,21 +650,20 @@ function handleAskUserQuestionResponse(
 /**
  * Handle ExitPlanMode response from mobile
  */
-function handleExitPlanModeResponse(
+async function handleExitPlanModeResponse(
   sessionId: string,
   promptId: string,
   response: ExitPlanModeResponse,
   _findWindowByWorkspace: (workspacePath: string) => BrowserWindow | null | undefined
-): void {
+): Promise<void> {
   log.info('Handling ExitPlanMode response:', promptId, 'approved:', response.approved);
 
   // Get the provider to resolve the SDK's pending promise
-  const provider = ProviderFactory.getProvider('claude-code', sessionId);
-
-  if (!provider) {
-    log.warn('No provider found for session:', sessionId);
+  const context = await getSessionProviderContext(sessionId, 'ExitPlanMode response');
+  if (!context) {
     return;
   }
+  const { provider } = context;
 
   // Call resolveExitPlanModeConfirmation on the provider to resolve the SDK's pending promise
   if ('resolveExitPlanModeConfirmation' in provider) {
@@ -565,23 +697,73 @@ function handleExitPlanModeResponse(
 /**
  * Handle ToolPermission response from mobile
  */
-function handleToolPermissionResponse(
+async function handleToolPermissionResponse(
   sessionId: string,
   promptId: string,
   response: ToolPermissionResponse,
+  callbacks: MobileSessionControlCallbacks,
   _findWindowByWorkspace: (workspacePath: string) => BrowserWindow | null | undefined
-): void {
+): Promise<void> {
   log.info('Handling ToolPermission response:', promptId, 'decision:', response.decision, 'scope:', response.scope);
 
   // Resolve the permission on the provider directly (same as desktop renderer does via IPC)
-  const provider = ProviderFactory.getProvider('claude-code', sessionId);
-  log.info('ToolPermission provider lookup:', provider ? 'found' : 'not found', 'hasResolve:', provider ? typeof (provider as any).resolveToolPermission : 'N/A');
+  const context = await getSessionProviderContext(sessionId, 'tool permission', callbacks);
+  const provider = context?.provider ?? null;
+  log.info('ToolPermission provider lookup:', provider ? 'found' : 'not found', 'providerType:', context?.providerType ?? 'unknown', 'hasResolve:', provider ? typeof (provider as any).resolveToolPermission : 'N/A');
 
+  let permissionResolved = false;
   if (provider && typeof (provider as any).resolveToolPermission === 'function') {
     log.info('Calling resolveToolPermission on provider for:', promptId);
-    (provider as any).resolveToolPermission(promptId, response, sessionId, 'mobile');
+    const workspacePath =
+      context?.session.worktreePath ||
+      context?.session.workspacePath ||
+      undefined;
+    const permissionsPath = context?.session.worktreeProjectPath || workspacePath;
+    if (
+      context?.providerType === 'smarty-server' &&
+      response.decision === 'allow' &&
+      workspacePath &&
+      callbacks.canHandleResumedProviderChunks &&
+      !callbacks.canHandleResumedProviderChunks(sessionId, workspacePath)
+    ) {
+      log.error('[Mobile] Refusing to resolve Smarty Server approval without a live resumed-chunk processing target:', sessionId);
+      return;
+    }
+    try {
+      const resumedChunks = await Promise.resolve((provider as any).resolveToolPermission(
+        promptId,
+        response,
+        sessionId,
+        'mobile',
+        context?.providerType === 'smarty-server' && workspacePath
+          ? { workspacePath, permissionsPath }
+          : undefined,
+      ));
+      if (
+        context?.providerType === 'smarty-server' &&
+        workspacePath &&
+        Array.isArray(resumedChunks) &&
+        resumedChunks.length > 0
+      ) {
+        if (callbacks.handleResumedProviderChunks) {
+          await callbacks.handleResumedProviderChunks(sessionId, workspacePath, resumedChunks as StreamChunk[]);
+        } else {
+          log.warn('[Mobile] Smarty Server returned resumed chunks but no handler is registered:', sessionId);
+          return;
+        }
+      }
+      permissionResolved = true;
+    } catch (err) {
+      log.error('[Mobile] Failed to resolve tool permission:', err);
+      return;
+    }
   } else {
     log.warn('No provider found or provider does not support tool permission for session:', sessionId);
+    return;
+  }
+
+  if (!permissionResolved) {
+    return;
   }
 
   // Notify renderer to update the UI
@@ -677,8 +859,7 @@ async function handleGitCommitResponse(
 /**
  * Helper to notify all windows
  */
-async function notifyAllWindows(channel: string, data: Record<string, unknown>): Promise<void> {
-  const { BrowserWindow } = await import('electron');
+function notifyAllWindows(channel: string, data: Record<string, unknown>): void {
   const windows = BrowserWindow.getAllWindows().filter(w => !w.isDestroyed());
   for (const win of windows) {
     win.webContents.send(channel, data);

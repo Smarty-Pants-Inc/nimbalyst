@@ -4,9 +4,9 @@
  * This file handles custom user-data-dir configuration, which must be set
  * before any electron-store usage.
  *
- * Note: electron-store is lazy-initialized in store.ts, so we can use static
- * imports without worrying about load order. The stores are created on first
- * access, which happens well after app.setPath() is called here.
+ * Note: the main process must be loaded with a dynamic import at the end of
+ * this file. Static imports are evaluated before this module body, which can
+ * let top-level stores/services bind to the host profile before app.setPath().
  *
  * Native modules (node-pty) are handled via explicit path resolution in
  * TerminalSessionManager.ts using createRequire, which eliminates the need
@@ -143,8 +143,13 @@ if (process.env.NODE_ENV !== 'production') {
   // console.log(`[Bootstrap] CDP remote debugging enabled on port ${cdpPort}`);
 }
 
-// Static import - no chunk boundary, no module duplication issues.
-// This works because:
-// 1. electron-store is lazy-initialized (store.ts)
-// 2. node-pty uses explicit path resolution (TerminalSessionManager.ts)
-import './index.js';
+// Import the main process only after the userData/appData paths and early env
+// scrub are in place.
+void import('./index.js').catch((error) => {
+  console.error('[Bootstrap] Failed to load main process:', error);
+  dialog.showErrorBox(
+    'Nimbalyst - Startup Error',
+    `${error?.name || 'Error'}: ${error?.message || String(error)}\n\n${error?.stack || ''}`,
+  );
+  app.quit();
+});

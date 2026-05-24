@@ -1361,6 +1361,7 @@ export const AIInput = forwardRef<AIInputRef, AIInputProps>(
             onCancel && (
               <button
                 className="ai-chat-cancel-button w-9 h-9 flex items-center justify-center bg-red-600 border-none rounded-md text-white cursor-pointer transition-all duration-200 animate-pulse hover:bg-red-700 hover:scale-105 hover:animate-none"
+                data-testid="ai-input-cancel-request"
                 onClick={() => {
                   console.log('[AIInput] Cancel button clicked, onCancel:', !!onCancel);
                   onCancel();

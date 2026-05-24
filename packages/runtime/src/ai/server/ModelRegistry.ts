@@ -60,10 +60,6 @@ export class ModelRegistry {
           const { OpenAICodexACPProvider } = await import('./providers/OpenAICodexACPProvider');
           models = await OpenAICodexACPProvider.getModels(apiKey);
           break;
-        case 'deepagents-acp':
-          const { DeepAgentsACPProvider } = await import('./providers/DeepAgentsACPProvider');
-          models = await DeepAgentsACPProvider.getModels(apiKey, baseUrl);
-          break;
         case 'opencode':
           const { OpenCodeProvider } = await import('./providers/OpenCodeProvider');
           models = await OpenCodeProvider.getModels();
@@ -77,6 +73,10 @@ export class ModelRegistry {
         case 'copilot-cli':
           const { CopilotCLIProvider } = await import('./providers/CopilotCLIProvider');
           models = await CopilotCLIProvider.getModels();
+          break;
+        case 'smarty-server':
+          const { SmartyServerProvider } = await import('./providers/SmartyServerProvider');
+          models = await SmartyServerProvider.getModels();
           break;
         default:
           assertExhaustiveProvider(provider);
@@ -113,10 +113,10 @@ export class ModelRegistry {
     if (shouldFetch('openai')) promises.push(this.getModelsForProvider('openai', apiKeys['openai']));
     if (shouldFetch('openai-codex')) promises.push(this.getModelsForProvider('openai-codex', apiKeys['openai']));
     if (shouldFetch('openai-codex-acp')) promises.push(this.getModelsForProvider('openai-codex-acp', apiKeys['openai']));
-    if (shouldFetch('deepagents-acp')) promises.push(this.getModelsForProvider('deepagents-acp', apiKeys['deepagents-acp'], apiKeys['deepagents_cli_proxy_base_url']));
     if (shouldFetch('opencode')) promises.push(this.getModelsForProvider('opencode'));
     if (shouldFetch('lmstudio')) promises.push(this.getModelsForProvider('lmstudio', undefined, apiKeys['lmstudio_url']));
     if (shouldFetch('copilot-cli')) promises.push(this.getModelsForProvider('copilot-cli'));
+    if (shouldFetch('smarty-server')) promises.push(this.getModelsForProvider('smarty-server'));
 
     const results = await Promise.allSettled(promises);
 
@@ -149,9 +149,6 @@ export class ModelRegistry {
       case 'openai-codex-acp':
         const { OpenAICodexACPProvider } = await import('./providers/OpenAICodexACPProvider');
         return OpenAICodexACPProvider.getDefaultModel();
-      case 'deepagents-acp':
-        const { DeepAgentsACPProvider } = await import('./providers/DeepAgentsACPProvider');
-        return DeepAgentsACPProvider.getDefaultModel();
       case 'opencode':
         const { OpenCodeProvider: OCP } = await import('./providers/OpenCodeProvider');
         return OCP.DEFAULT_MODEL;
@@ -161,6 +158,9 @@ export class ModelRegistry {
       case 'copilot-cli':
         const { CopilotCLIProvider: CLP } = await import('./providers/CopilotCLIProvider');
         return CLP.getDefaultModel();
+      case 'smarty-server':
+        const { SmartyServerProvider: SSP } = await import('./providers/SmartyServerProvider');
+        return SSP.getDefaultModel();
       default:
         assertExhaustiveProvider(provider);
     }

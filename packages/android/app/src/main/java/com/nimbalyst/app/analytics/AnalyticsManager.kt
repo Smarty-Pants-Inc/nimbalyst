@@ -28,7 +28,7 @@ object AnalyticsManager {
     private var initialized = false
     private lateinit var preferences: SharedPreferences
 
-    var isEnabled: Boolean = true
+    var isEnabled: Boolean = false
         private set
 
     /**
@@ -59,8 +59,8 @@ object AnalyticsManager {
             preferences.edit().putString(KEY_ANALYTICS_ID, distinctId).apply()
         }
 
-        // Load opt-out preference
-        isEnabled = preferences.getBoolean(KEY_ANALYTICS_ENABLED, true)
+        // Load opt-in preference. Missing preference means disabled.
+        isEnabled = preferences.getBoolean(KEY_ANALYTICS_ENABLED, false)
 
         // Configure PostHog
         val config = PostHogAndroidConfig(apiKey = POSTHOG_KEY, host = POSTHOG_HOST).apply {
@@ -69,19 +69,19 @@ object AnalyticsManager {
         }
         PostHogAndroid.setup(appContext, config)
 
-        // Set the distinct ID
-        PostHog.identify(distinctId)
-
-        // Mark dev users in debug builds
-        if (isDebugBuild()) {
-            PostHog.capture(
-                "\$set",
-                properties = mapOf("\$set_once" to mapOf("is_dev_user" to true))
-            )
-        }
-
         if (!isEnabled) {
             PostHog.optOut()
+        } else {
+            // Set the distinct ID only after explicit opt-in.
+            PostHog.identify(distinctId)
+
+            // Mark dev users in debug builds only after explicit opt-in.
+            if (isDebugBuild()) {
+                PostHog.capture(
+                    "\$set",
+                    properties = mapOf("\$set_once" to mapOf("is_dev_user" to true))
+                )
+            }
         }
 
         initialized = true
@@ -95,13 +95,13 @@ object AnalyticsManager {
     fun setDistinctIdFromPairing(analyticsId: String?) {
         if (analyticsId.isNullOrBlank()) return
 
-        if (initialized) {
+        if (initialized && isEnabled) {
             PostHog.alias(analyticsId)
         }
 
         preferences.edit().putString(KEY_ANALYTICS_ID, analyticsId).apply()
 
-        if (initialized) {
+        if (initialized && isEnabled) {
             PostHog.identify(analyticsId)
         }
     }
@@ -110,7 +110,7 @@ object AnalyticsManager {
      * Called after Stytch login to set email on PostHog profile.
      */
     fun setEmail(email: String) {
-        if (email.isBlank() || !initialized) return
+        if (email.isBlank() || !initialized || !isEnabled) return
         PostHog.capture(
             "\$set",
             properties = mapOf("\$set" to mapOf("email" to email))

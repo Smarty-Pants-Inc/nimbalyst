@@ -8,10 +8,10 @@ import { ClaudeCodeProvider } from './providers/ClaudeCodeProvider';
 import { OpenAIProvider } from './providers/OpenAIProvider';
 import { OpenAICodexProvider } from './providers/OpenAICodexProvider';
 import { OpenAICodexACPProvider } from './providers/OpenAICodexACPProvider';
-import { DeepAgentsACPProvider } from './providers/DeepAgentsACPProvider';
 import { LMStudioProvider } from './providers/LMStudioProvider';
 import { OpenCodeProvider } from './providers/OpenCodeProvider';
 import { CopilotCLIProvider } from './providers/CopilotCLIProvider';
+import { SmartyServerProvider } from './providers/SmartyServerProvider';
 import { ProviderConfig, AIProviderType, assertExhaustiveProvider } from './types';
 
 export class ProviderFactory {
@@ -67,9 +67,6 @@ export class ProviderFactory {
       case 'openai-codex-acp':
         provider = new OpenAICodexACPProvider();
         break;
-      case 'deepagents-acp':
-        provider = new DeepAgentsACPProvider();
-        break;
       case 'opencode':
         provider = new OpenCodeProvider();
         break;
@@ -78,6 +75,9 @@ export class ProviderFactory {
         break;
       case 'copilot-cli':
         provider = new CopilotCLIProvider();
+        break;
+      case 'smarty-server':
+        provider = new SmartyServerProvider();
         break;
       default:
         assertExhaustiveProvider(type);

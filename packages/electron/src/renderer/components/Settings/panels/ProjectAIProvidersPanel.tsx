@@ -5,6 +5,7 @@ interface ProviderOverride {
   enabled?: boolean;
   models?: string[];
   defaultModel?: string;
+  baseUrl?: string;
   apiKey?: string;
 }
 

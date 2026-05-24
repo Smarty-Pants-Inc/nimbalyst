@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { ModelIdentifier } from '../ModelIdentifier';
+import { ProviderFactory } from '../ProviderFactory';
 
 describe('ModelIdentifier', () => {
   describe('parse', () => {
@@ -47,11 +48,11 @@ describe('ModelIdentifier', () => {
       expect(id.combined).toBe('openai-codex:openai-codex-cli');
     });
 
-    it('parses valid deepagents-acp model identifiers', () => {
-      const id = ModelIdentifier.parse('deepagents-acp:openai/gpt-5.4-mini');
-      expect(id.provider).toBe('deepagents-acp');
-      expect(id.model).toBe('openai/gpt-5.4-mini');
-      expect(id.combined).toBe('deepagents-acp:openai/gpt-5.4-mini');
+    it('parses valid smarty-server model identifiers', () => {
+      const id = ModelIdentifier.parse('smarty-server:smarty_coding_agent');
+      expect(id.provider).toBe('smarty-server');
+      expect(id.model).toBe('smarty_coding_agent');
+      expect(id.combined).toBe('smarty-server:smarty_coding_agent');
     });
 
     it('throws on empty string', () => {
@@ -68,6 +69,10 @@ describe('ModelIdentifier', () => {
 
     it('throws on invalid provider', () => {
       expect(() => ModelIdentifier.parse('invalid:gpt-4')).toThrow('Invalid provider');
+    });
+
+    it('rejects retired deepagents-acp model identifiers', () => {
+      expect(() => ModelIdentifier.parse('deepagents-acp:openai/gpt-5.4-mini')).toThrow('Invalid provider');
     });
   });
 
@@ -124,11 +129,12 @@ describe('ModelIdentifier', () => {
       expect(id.model).toBe('default');
     });
 
-    it('preserves provider-profile model IDs for deepagents-acp', () => {
-      const id = ModelIdentifier.create('deepagents-acp', 'openai/gpt-5.4-mini');
-      expect(id.provider).toBe('deepagents-acp');
-      expect(id.model).toBe('openai/gpt-5.4-mini');
+    it('allows empty model for smarty-server (uses default assistant)', () => {
+      const id = ModelIdentifier.create('smarty-server', '');
+      expect(id.provider).toBe('smarty-server');
+      expect(id.model).toBe('smarty_coding_agent');
     });
+
   });
 
   describe('baseVariant', () => {
@@ -180,13 +186,19 @@ describe('ModelIdentifier', () => {
       expect(ModelIdentifier.parse('claude-code:opus').isAgentProvider()).toBe(true);
       expect(ModelIdentifier.parse('openai-codex:cli').isAgentProvider()).toBe(true);
       expect(ModelIdentifier.parse('openai-codex-acp:cli').isAgentProvider()).toBe(true);
-      expect(ModelIdentifier.parse('deepagents-acp:openai/gpt-5.4-mini').isAgentProvider()).toBe(true);
+      expect(ModelIdentifier.parse('smarty-server:smarty_coding_agent').isAgentProvider()).toBe(true);
     });
 
     it('returns false for chat providers', () => {
       expect(ModelIdentifier.parse('claude:model').isAgentProvider()).toBe(false);
       expect(ModelIdentifier.parse('openai:gpt-4o').isAgentProvider()).toBe(false);
       expect(ModelIdentifier.parse('lmstudio:model').isAgentProvider()).toBe(false);
+    });
+  });
+
+  describe('retired providers', () => {
+    it('cannot create a DeepAgents ACP provider', () => {
+      expect(() => ProviderFactory.createProvider('deepagents-acp' as any, 'session-1')).toThrow('Unhandled provider');
     });
   });
 
@@ -260,6 +272,12 @@ describe('ModelIdentifier', () => {
       const id = ModelIdentifier.getDefaultForProvider('openai');
       expect(id.provider).toBe('openai');
       expect(id.combined).toBe('openai:gpt-5.4');
+    });
+
+    it('returns default ModelIdentifier for smarty-server', () => {
+      const id = ModelIdentifier.getDefaultForProvider('smarty-server');
+      expect(id.provider).toBe('smarty-server');
+      expect(id.combined).toBe('smarty-server:smarty_coding_agent');
     });
 
     it('returns default ModelIdentifier for openai-codex', () => {

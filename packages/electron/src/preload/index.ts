@@ -476,7 +476,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   // AI operations (new unified interface)
   aiHasApiKey: () => ipcRenderer.invoke('ai:hasApiKey'),
   aiInitialize: (provider?: string, apiKey?: string) => ipcRenderer.invoke('ai:initialize', provider, apiKey),
-  aiCreateSession: (provider: 'claude' | 'claude-code' | 'openai' | 'openai-codex' | 'deepagents-acp' | 'opencode' | 'copilot-cli' | 'lmstudio', documentContext?: any, workspacePath?: string, modelId?: string, sessionType?: string, worktreeId?: string) => {
+  aiCreateSession: (provider: 'claude' | 'claude-code' | 'openai' | 'openai-codex' | 'opencode' | 'copilot-cli' | 'smarty-server' | 'lmstudio', documentContext?: any, workspacePath?: string, modelId?: string, sessionType?: string, worktreeId?: string) => {
     // console.log('[Preload] aiCreateSession called:', { provider, workspacePath, sessionType, worktreeId });
     return ipcRenderer.invoke('ai:createSession', provider, documentContext, workspacePath, modelId, sessionType, worktreeId);
   },
@@ -492,7 +492,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   aiDeleteSession: (sessionId: string, workspacePath?: string) => ipcRenderer.invoke('ai:deleteSession', sessionId, workspacePath),
   getAISettings: () => ipcRenderer.invoke('ai:getSettings'),
   saveAISettings: (settings: any) => ipcRenderer.invoke('ai:saveSettings', settings),
-  testAIConnection: (provider: 'claude' | 'claude-code' | 'openai' | 'lmstudio') => ipcRenderer.invoke('ai:testConnection', provider),
+  testAIConnection: (provider: 'claude' | 'claude-code' | 'openai' | 'smarty-server' | 'lmstudio') => ipcRenderer.invoke('ai:testConnection', provider),
   getAIModels: () => ipcRenderer.invoke('ai:getModels'),
   // Aliases for consistency with component naming
   aiGetSettings: () => ipcRenderer.invoke('ai:getSettings'),
@@ -650,7 +650,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   ai: {
     hasApiKey: () => ipcRenderer.invoke('ai:hasApiKey'),
     initialize: (provider?: string, apiKey?: string) => ipcRenderer.invoke('ai:initialize', provider, apiKey),
-    createSession: (provider: 'claude' | 'claude-code' | 'openai' | 'openai-codex' | 'lmstudio', documentContext?: any, workspacePath?: string, modelId?: string, sessionType?: string, worktreeId?: string) =>
+    createSession: (provider: 'claude' | 'claude-code' | 'openai' | 'openai-codex' | 'opencode' | 'copilot-cli' | 'smarty-server' | 'lmstudio', documentContext?: any, workspacePath?: string, modelId?: string, sessionType?: string, worktreeId?: string) =>
       ipcRenderer.invoke('ai:createSession', provider, documentContext, workspacePath, modelId, sessionType, worktreeId),
     sendMessage: (message: string, documentContext?: any, sessionId?: string, workspacePath?: string) =>
       ipcRenderer.invoke('ai:sendMessage', message, documentContext, sessionId, workspacePath),

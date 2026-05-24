@@ -54,10 +54,6 @@ export default defineConfig(({ mode }) => ({
         {
           src: 'src/editor/images/**/*',
           dest: 'images'
-        },
-        {
-          src: 'src/ai/server/protocols/deepagents_acp_launcher.py',
-          dest: 'ai/server/protocols'
         }
       ]
     }),

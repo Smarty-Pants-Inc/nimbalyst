@@ -131,7 +131,7 @@ export interface Message {
  * Add new providers here -- the type, runtime array, and exhaustiveness
  * checks all derive from this one definition.
  */
-export const AI_PROVIDER_TYPES = ['claude', 'claude-code', 'openai', 'openai-codex', 'openai-codex-acp', 'deepagents-acp', 'lmstudio', 'opencode', 'copilot-cli'] as const;
+export const AI_PROVIDER_TYPES = ['claude', 'claude-code', 'openai', 'openai-codex', 'openai-codex-acp', 'lmstudio', 'opencode', 'copilot-cli', 'smarty-server'] as const;
 
 export type AIProviderType = typeof AI_PROVIDER_TYPES[number];
 
@@ -150,8 +150,8 @@ export function assertExhaustiveProvider(provider: never): never {
   throw new Error(`Unhandled provider: ${provider}`);
 }
 
-export function isAgentProvider(provider: string | null | undefined): provider is 'claude-code' | 'openai-codex' | 'openai-codex-acp' | 'deepagents-acp' | 'opencode' | 'copilot-cli' {
-  return provider === 'claude-code' || provider === 'openai-codex' || provider === 'openai-codex-acp' || provider === 'deepagents-acp' || provider === 'opencode' || provider === 'copilot-cli';
+export function isAgentProvider(provider: string | null | undefined): provider is 'claude-code' | 'openai-codex' | 'openai-codex-acp' | 'opencode' | 'copilot-cli' | 'smarty-server' {
+  return provider === 'claude-code' || provider === 'openai-codex' || provider === 'openai-codex-acp' || provider === 'opencode' || provider === 'copilot-cli' || provider === 'smarty-server';
 }
 
 /**

@@ -8,12 +8,13 @@ import { ipcMain } from 'electron';
 import simpleGit, { SimpleGit } from 'simple-git';
 import log from 'electron-log/main';
 import { existsSync } from 'fs';
-import { dirname, join, relative, isAbsolute, resolve } from 'path';
+import { join, resolve } from 'path';
 import { gitOperationLock } from '../services/GitOperationLock';
 import { executeGitCommit } from '../services/GitCommitService';
 import { safeHandle } from '../utils/ipcRegistry';
-import { findGitRootForFile } from '../services/GitStatusService';
-import { isFileInWorkspaceOrWorktree } from '../utils/workspaceDetection';
+import { discardGitChangesForFiles, type GitDiscardChangesResult } from '../services/GitDiscardService';
+import { getGitFileDiff, type GitFileDiffResult, type GitFileDiffRequest } from '../services/GitFileDiffService';
+import { clearGitStatusCache } from './GitStatusHandlers';
 
 function isGitRepository(workspacePath: string): boolean {
   try {
@@ -33,26 +34,6 @@ async function hasCommits(git: SimpleGit): Promise<boolean> {
     return true;
   } catch {
     return false;
-  }
-}
-
-function findNearestGitRoot(filePath: string): string | null {
-  let dir = dirname(resolve(filePath));
-
-  while (true) {
-    try {
-      if (existsSync(join(dir, '.git'))) {
-        return dir;
-      }
-    } catch {
-      // Ignore filesystem errors and continue walking up.
-    }
-
-    const parent = dirname(dir);
-    if (parent === dir) {
-      return null;
-    }
-    dir = parent;
   }
 }
 
@@ -77,28 +58,6 @@ export function normalizeBranchSelection(branch: string | null | undefined): str
   const normalized = branch?.trim();
   if (!normalized) return undefined;
   return isDetachedHeadState(normalized) ? 'HEAD' : normalized;
-}
-
-export function resolveGitDiffTarget(
-  workspacePath: string,
-  filePath: string
-): { gitWorkspacePath: string; gitFilePath: string } {
-  const resolvedWorkspacePath = resolve(workspacePath);
-  const absoluteFilePath = isAbsolute(filePath)
-    ? resolve(filePath)
-    : resolve(resolvedWorkspacePath, filePath);
-
-  const relatedAbsolutePath = isAbsolute(filePath) && isFileInWorkspaceOrWorktree(absoluteFilePath, resolvedWorkspacePath)
-    ? absoluteFilePath
-    : null;
-  const gitWorkspacePath = relatedAbsolutePath
-    ? findNearestGitRoot(relatedAbsolutePath) ?? resolvedWorkspacePath
-    : findGitRootForFile(filePath, resolvedWorkspacePath) ?? resolvedWorkspacePath;
-
-  return {
-    gitWorkspacePath,
-    gitFilePath: relative(gitWorkspacePath, absoluteFilePath).replace(/\\/g, '/'),
-  };
 }
 
 interface GitStatusResult {
@@ -750,23 +709,42 @@ export function registerGitHandlers(): void {
   );
 
   /**
-   * Discard changes to specific files (git checkout -- <files>)
+   * Discard changes to specific files.
+   *
+   * Restores tracked/staged/deleted files from git and removes files only
+   * when git reports them as untracked. The helper validates every path
+   * remains inside the requested workspace root before touching disk.
    */
   safeHandle(
     'git:discard-changes',
-    async (_event, workspacePath: string, files: string[]): Promise<{ success: boolean; error?: string }> => {
+    async (_event, workspacePath: string, files: string[]): Promise<GitDiscardChangesResult & { error?: string }> => {
       if (!workspacePath) throw new Error('workspacePath is required');
       if (!files || files.length === 0) throw new Error('files are required');
-      if (!isGitRepository(workspacePath)) return { success: false, error: 'Not a git repository' };
+      if (!isGitRepository(workspacePath)) {
+        return {
+          success: false,
+          discarded: [],
+          skipped: [],
+          errors: [],
+          error: 'Not a git repository',
+        };
+      }
 
       return gitOperationLock.withLock(workspacePath, 'git:discard-changes', async () => {
         try {
-          const git: SimpleGit = simpleGit(workspacePath);
-          await git.checkout(['--', ...files]);
-          return { success: true };
+          const result = await discardGitChangesForFiles(workspacePath, files);
+          clearGitStatusCache(resolve(workspacePath));
+          _event.sender.send('git:status-changed', { workspacePath: resolve(workspacePath) });
+          return result;
         } catch (error) {
           log.error('[git:discard-changes] Failed:', error);
-          return { success: false, error: error instanceof Error ? error.message : String(error) };
+          return {
+            success: false,
+            discarded: [],
+            skipped: [],
+            errors: [],
+            error: error instanceof Error ? error.message : String(error),
+          };
         }
       });
     }
@@ -845,91 +823,18 @@ export function registerGitHandlers(): void {
     async (
       _event,
       workspacePath: string,
-      args: { path: string; group: 'staged' | 'unstaged' | 'untracked' | 'conflicted' | 'working' }
-    ): Promise<{
-      unifiedDiff: string;
-      isBinary: boolean;
-      truncated?: boolean;
-    }> => {
+      args: GitFileDiffRequest
+    ): Promise<GitFileDiffResult> => {
       if (!workspacePath) throw new Error('workspacePath is required');
       if (!args?.path) throw new Error('path is required');
       if (!isGitRepository(workspacePath)) {
         return { unifiedDiff: '', isBinary: false };
       }
 
-      const filePath = args.path;
-      const group = args.group;
-      const { gitWorkspacePath, gitFilePath } = resolveGitDiffTarget(workspacePath, filePath);
-      const git: SimpleGit = simpleGit(gitWorkspacePath);
-      const repoHasCommits = await hasCommits(git);
-
       try {
-        if (group === 'staged') {
-          const diff = repoHasCommits
-            ? await git.diff(['--cached', '--', gitFilePath])
-            : await git.diff(['--cached', '--', gitFilePath]);
-          return { unifiedDiff: diff, isBinary: /\bBinary files\b/.test(diff) };
-        }
-
-        if (group === 'unstaged' || group === 'conflicted') {
-          const diff = await git.diff(['--', gitFilePath]);
-          return { unifiedDiff: diff, isBinary: /\bBinary files\b/.test(diff) };
-        }
-
-        if (group === 'working') {
-          // Combined HEAD-vs-working-tree diff. For untracked files there's nothing in
-          // HEAD, so synthesize against /dev/null. For deleted files HEAD has the
-          // content and the working tree doesn't — `git diff HEAD` handles this.
-          if (repoHasCommits) {
-            const diff = await git.diff(['HEAD', '--', gitFilePath]);
-            if (diff && diff.trim().length > 0) {
-              return { unifiedDiff: diff, isBinary: /\bBinary files\b/.test(diff) };
-            }
-          }
-          // Fall through to untracked-file synthesis if HEAD diff was empty
-          // (e.g. file is brand-new and not staged).
-          const absolute = isAbsolute(filePath) ? filePath : join(gitWorkspacePath, gitFilePath);
-          if (!existsSync(absolute)) {
-            return { unifiedDiff: '', isBinary: false };
-          }
-          try {
-            const diff = await git.raw(['diff', '--no-index', '--', '/dev/null', gitFilePath]);
-            return { unifiedDiff: diff, isBinary: /\bBinary files\b/.test(diff) };
-          } catch (err) {
-            const diff = (err as { stdout?: string })?.stdout ?? '';
-            if (diff) {
-              return { unifiedDiff: diff, isBinary: /\bBinary files\b/.test(diff) };
-            }
-            return { unifiedDiff: '', isBinary: false };
-          }
-        }
-
-        if (group === 'untracked') {
-          // Synthesize a unified diff from the working-tree file contents.
-          const absolute = isAbsolute(filePath) ? filePath : join(gitWorkspacePath, gitFilePath);
-          if (!existsSync(absolute)) {
-            return { unifiedDiff: '', isBinary: false };
-          }
-          // Use git diff --no-index against /dev/null to produce a real unified diff
-          // for an untracked file. This handles binary detection naturally and respects
-          // the user's diff config (e.g. mnemonicPrefix).
-          try {
-            const diff = await git.raw(['diff', '--no-index', '--', '/dev/null', gitFilePath]);
-            return { unifiedDiff: diff, isBinary: /\bBinary files\b/.test(diff) };
-          } catch (err) {
-            // git diff --no-index exits 1 when files differ; simple-git treats this as success
-            // but in case it doesn't, fall through to read the file manually.
-            const diff = (err as { stdout?: string })?.stdout ?? '';
-            if (diff) {
-              return { unifiedDiff: diff, isBinary: /\bBinary files\b/.test(diff) };
-            }
-            throw err;
-          }
-        }
-
-        return { unifiedDiff: '', isBinary: false };
+        return await getGitFileDiff(workspacePath, args);
       } catch (error) {
-        log.error(`[git:file-diff] Failed for ${group}/${filePath}:`, error);
+        log.error(`[git:file-diff] Failed for ${args.group}/${args.path}:`, error);
         throw error;
       }
     }

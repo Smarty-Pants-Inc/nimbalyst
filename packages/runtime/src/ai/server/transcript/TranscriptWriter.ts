@@ -28,6 +28,7 @@ export class TranscriptWriter {
   // the first call so we coalesce across batches (each `processNewMessages`
   // call constructs a fresh writer).
   private lastEventBySession = new Map<string, LastEventState | null>();
+  private lastAssistantByCoalesceKey = new Map<string, LastEventState>();
 
   constructor(
     private store: ITranscriptEventStore,
@@ -81,9 +82,11 @@ export class TranscriptWriter {
       thinking?: string;
       thinkingSignature?: string;
       model?: string;
+      coalesceKey?: string;
     },
   ): Promise<TranscriptEvent> {
     const mode = options?.mode ?? 'agent';
+    const coalesceKey = normalizeCoalesceKey(options?.coalesceKey);
     const hasExtras =
       options?.thinking !== undefined ||
       options?.thinkingSignature !== undefined ||
@@ -99,21 +102,20 @@ export class TranscriptWriter {
     // those need to land on their own event so the renderer can place them
     // in the correct part of the turn.
     const last = hasExtras ? null : await this.loadLastEvent(sessionId);
-    if (
-      last &&
-      last.eventType === 'assistant_message' &&
-      last.subagentId === null &&
-      last.mode === mode
-    ) {
-      const mergedText = (last.searchableText ?? '') + text;
-      await this.store.updateEventText(last.id, mergedText);
-      last.searchableText = mergedText;
-      const refreshed = await this.store.getEventById(last.id);
-      return refreshed ?? this.toTranscriptEvent(sessionId, last);
+    if (this.canCoalesceAssistant(last, mode, coalesceKey)) {
+      return this.updateAssistantMessageText(sessionId, last, text);
+    }
+
+    if (!hasExtras && coalesceKey) {
+      const keyed = await this.loadLastAssistantByCoalesceKey(sessionId, coalesceKey);
+      if (this.canCoalesceAssistant(keyed, mode, coalesceKey)) {
+        return this.updateAssistantMessageText(sessionId, keyed, text);
+      }
     }
 
     const payload: AssistantMessagePayload = {
       mode,
+      ...(coalesceKey !== undefined ? { coalesceKey } : {}),
       ...(options?.thinking !== undefined ? { thinking: options.thinking } : {}),
       ...(options?.thinkingSignature !== undefined
         ? { thinkingSignature: options.thinkingSignature }
@@ -254,6 +256,7 @@ export class TranscriptWriter {
     payload: InteractivePromptPayload,
     options?: {
       subagentId?: string | null;
+      providerToolCallId?: string | null;
       createdAt?: Date;
     },
   ): Promise<TranscriptEvent> {
@@ -263,6 +266,7 @@ export class TranscriptWriter {
       searchable: false,
       payload: payload as unknown as Record<string, unknown>,
       subagentId: options?.subagentId ?? null,
+      providerToolCallId: options?.providerToolCallId ?? payload.requestId,
       createdAt: options?.createdAt,
     });
   }
@@ -410,13 +414,8 @@ export class TranscriptWriter {
     // Refresh the coalesce-anchor for this session so the next call sees
     // whatever we just wrote (including non-assistant events that should
     // break the assistant_message coalesce chain).
-    this.lastEventBySession.set(sessionId, {
-      id: event.id,
-      eventType: event.eventType,
-      searchableText: event.searchableText,
-      mode: (event.payload as { mode?: 'agent' | 'planning' })?.mode,
-      subagentId: event.subagentId,
-    });
+    this.lastEventBySession.set(sessionId, this.toLastEventState(event));
+    this.cacheCoalesceBoundary(sessionId, event);
 
     return event;
   }
@@ -428,17 +427,109 @@ export class TranscriptWriter {
 
     const tail = await this.store.getTailEvents(sessionId, 1);
     const event = tail[tail.length - 1] ?? null;
-    const state: LastEventState | null = event
-      ? {
-          id: event.id,
-          eventType: event.eventType,
-          searchableText: event.searchableText,
-          mode: (event.payload as { mode?: 'agent' | 'planning' })?.mode,
-          subagentId: event.subagentId,
-        }
-      : null;
+    const state: LastEventState | null = event ? this.toLastEventState(event) : null;
     this.lastEventBySession.set(sessionId, state);
+    if (event) {
+      this.cacheCoalesceBoundary(sessionId, event);
+    }
     return state;
+  }
+
+  private async loadLastAssistantByCoalesceKey(
+    sessionId: string,
+    coalesceKey: string,
+  ): Promise<LastEventState | null> {
+    const cacheKey = sessionCoalesceCacheKey(sessionId, coalesceKey);
+    const cached = this.lastAssistantByCoalesceKey.get(cacheKey);
+    if (cached) return cached;
+
+    const tail = await this.store.getTailEvents(sessionId, 256);
+    for (let i = tail.length - 1; i >= 0; i -= 1) {
+      const event = tail[i];
+      if (event.eventType !== 'assistant_message') break;
+      if (event.provider !== this.provider) continue;
+      if (extractCoalesceKey(event.payload) !== coalesceKey) continue;
+      const state = this.toLastEventState(event);
+      this.lastAssistantByCoalesceKey.set(cacheKey, state);
+      return state;
+    }
+    return null;
+  }
+
+  private canCoalesceAssistant(
+    last: LastEventState | null,
+    mode: 'agent' | 'planning',
+    coalesceKey: string | undefined,
+  ): last is LastEventState {
+    if (!last) return false;
+    if (last.eventType !== 'assistant_message') return false;
+    if (last.provider !== this.provider) return false;
+    if (last.subagentId !== null) return false;
+    if (last.mode !== mode) return false;
+    if (coalesceKey !== undefined || last.coalesceKey !== undefined) {
+      return last.coalesceKey === coalesceKey;
+    }
+    return true;
+  }
+
+  private async updateAssistantMessageText(
+    sessionId: string,
+    target: LastEventState,
+    text: string,
+  ): Promise<TranscriptEvent> {
+    const mergedText = (target.searchableText ?? '') + text;
+    await this.store.updateEventText(target.id, mergedText);
+    target.searchableText = mergedText;
+
+    const refreshed = await this.store.getEventById(target.id);
+    const refreshedState = refreshed ? this.toLastEventState(refreshed) : target;
+    if (refreshedState.coalesceKey) {
+      this.lastAssistantByCoalesceKey.set(
+        sessionCoalesceCacheKey(sessionId, refreshedState.coalesceKey),
+        refreshedState,
+      );
+    }
+
+    const last = await this.loadLastEvent(sessionId);
+    if (last?.id === refreshedState.id) {
+      this.lastEventBySession.set(sessionId, refreshedState);
+    }
+
+    return refreshed ?? this.toTranscriptEvent(sessionId, refreshedState);
+  }
+
+  private cacheCoalesceBoundary(sessionId: string, event: TranscriptEvent): void {
+    if (event.eventType !== 'assistant_message') {
+      this.clearAssistantCoalesceCacheForSession(sessionId);
+      return;
+    }
+    const coalesceKey = extractCoalesceKey(event.payload);
+    if (!coalesceKey) return;
+    this.lastAssistantByCoalesceKey.set(
+      sessionCoalesceCacheKey(sessionId, coalesceKey),
+      this.toLastEventState(event),
+    );
+  }
+
+  private clearAssistantCoalesceCacheForSession(sessionId: string): void {
+    const prefix = `${sessionId}\0`;
+    for (const key of this.lastAssistantByCoalesceKey.keys()) {
+      if (key.startsWith(prefix)) {
+        this.lastAssistantByCoalesceKey.delete(key);
+      }
+    }
+  }
+
+  private toLastEventState(event: TranscriptEvent): LastEventState {
+    return {
+      id: event.id,
+      provider: event.provider,
+      eventType: event.eventType,
+      searchableText: event.searchableText,
+      mode: (event.payload as { mode?: 'agent' | 'planning' })?.mode,
+      coalesceKey: extractCoalesceKey(event.payload),
+      subagentId: event.subagentId,
+    };
   }
 
   private toTranscriptEvent(sessionId: string, state: LastEventState): TranscriptEvent {
@@ -451,7 +542,10 @@ export class TranscriptWriter {
       eventType: state.eventType,
       searchableText: state.searchableText,
       searchable: true,
-      payload: { mode: state.mode } as Record<string, unknown>,
+      payload: {
+        mode: state.mode,
+        ...(state.coalesceKey ? { coalesceKey: state.coalesceKey } : {}),
+      } as Record<string, unknown>,
       parentEventId: null,
       subagentId: state.subagentId,
       provider: this.provider,
@@ -462,8 +556,24 @@ export class TranscriptWriter {
 
 interface LastEventState {
   id: number;
+  provider: string;
   eventType: TranscriptEventType;
   searchableText: string | null;
   mode: 'agent' | 'planning' | undefined;
+  coalesceKey: string | undefined;
   subagentId: string | null;
+}
+
+function normalizeCoalesceKey(value: string | undefined): string | undefined {
+  const trimmed = value?.trim();
+  return trimmed ? trimmed : undefined;
+}
+
+function extractCoalesceKey(payload: Record<string, unknown>): string | undefined {
+  const value = (payload as { coalesceKey?: unknown })?.coalesceKey;
+  return typeof value === 'string' ? normalizeCoalesceKey(value) : undefined;
+}
+
+function sessionCoalesceCacheKey(sessionId: string, coalesceKey: string): string {
+  return `${sessionId}\0${coalesceKey}`;
 }

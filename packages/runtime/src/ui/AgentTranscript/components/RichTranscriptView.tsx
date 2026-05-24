@@ -1116,6 +1116,49 @@ function LazyMount({
   return <div ref={ref} style={{ minHeight: placeholderHeight }} aria-hidden="true" />;
 }
 
+export function getVisibleToolExitCode(tool: { exitCode?: number; result?: unknown } | null | undefined): number | null {
+  if (!tool) return null;
+  if (typeof tool.exitCode === 'number' && Number.isFinite(tool.exitCode)) {
+    return tool.exitCode;
+  }
+  return extractExitCodeFromToolResult(tool.result);
+}
+
+function extractExitCodeFromToolResult(result: unknown): number | null {
+  if (typeof result === 'string') {
+    try {
+      return extractExitCodeFromToolResult(JSON.parse(result));
+    } catch {
+      const match = result.match(/\b(?:exit code|exited with code)\s*:?\s*(-?\d+)\b/i);
+      return match ? Number(match[1]) : null;
+    }
+  }
+
+  if (Array.isArray(result)) {
+    for (const item of result) {
+      const exitCode = extractExitCodeFromToolResult(item);
+      if (exitCode !== null) return exitCode;
+    }
+    return null;
+  }
+
+  if (!result || typeof result !== 'object') return null;
+  const record = result as Record<string, unknown>;
+  const direct = numericExitCode(record.exit_code)
+    ?? numericExitCode(record.exitCode)
+    ?? numericExitCode(record.returncode)
+    ?? numericExitCode(record.returnCode);
+  if (direct !== null) return direct;
+  return extractExitCodeFromToolResult(record.result) ?? extractExitCodeFromToolResult(record.output);
+}
+
+function numericExitCode(value: unknown): number | null {
+  if (typeof value === 'number' && Number.isFinite(value)) return value;
+  if (typeof value !== 'string' || !value.trim()) return null;
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
 export const RichTranscriptView = React.forwardRef<
   { scrollToMessage: (index: number) => void; scrollToTop: () => void },
   RichTranscriptViewProps
@@ -1847,6 +1890,8 @@ export const RichTranscriptView = React.forwardRef<
 
     // Extract result text
     const resultText = tool.result ? extractResultText(tool.result) : null;
+    const exitCode = getVisibleToolExitCode(tool);
+    const didToolFail = toolMsg.isError || tool.isError || (exitCode !== null && exitCode !== 0);
 
     // Special styling for sub-agents and teammates
     const cardClass = isTeammate
@@ -1976,10 +2021,10 @@ export const RichTranscriptView = React.forwardRef<
               return null;
             })() : (
               <>
-                {tool.result && !toolMsg.isError && (
+                {tool.result && !didToolFail && (
                   <MaterialSymbol icon="check_circle" size={16} className="rich-transcript-tool-success w-4 h-4 text-[var(--nim-success)] shrink-0" />
                 )}
-                {tool.result && toolMsg.isError && (
+                {tool.result && didToolFail && (
                   <MaterialSymbol icon="cancel" size={16} className="rich-transcript-tool-error w-4 h-4 text-[var(--nim-error)] shrink-0" />
                 )}
               </>
@@ -2034,6 +2079,15 @@ export const RichTranscriptView = React.forwardRef<
                   <span className="inline-block w-3 h-3 border-2 border-[var(--nim-primary)] border-t-transparent rounded-full animate-spin" />
                   <span>Running <span className="font-mono text-[var(--nim-text)]">{tool.progress[tool.progress.length - 1]?.progressContent}</span></span>
                   <span>({Math.round(tool.progress[tool.progress.length - 1]?.elapsedSeconds ?? 0)}s)</span>
+                </div>
+              )}
+
+              {exitCode !== null && (
+                <div
+                  className={`rich-transcript-tool-exit-code rich-transcript-tool-section mb-1.5 text-xs font-mono ${exitCode === 0 ? 'text-nim-success' : 'text-nim-error'}`}
+                  data-exit-code={exitCode}
+                >
+                  Exit code: {exitCode}
                 </div>
               )}
 

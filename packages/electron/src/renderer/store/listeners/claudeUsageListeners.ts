@@ -28,14 +28,20 @@ export function initClaudeUsageListeners(): () => void {
     window.electronAPI.on('claude-usage:update', handleUsageUpdate)
   );
 
-  // Fetch initial usage data on startup
-  // This will wake up the service if credentials are available
-  window.electronAPI.invoke('claude-usage:get').then((data: ClaudeUsageData | null) => {
-    if (data) {
-      store.set(claudeUsageAtom, data);
+  // Fetching usage can launch Claude Code's bundled CLI. Do that only when
+  // Claude Code is an explicitly enabled provider, so local-first Smarty Server
+  // startup cannot spawn a hidden executor just to populate a sidebar badge.
+  void window.electronAPI.aiGetSettings().then(async (settings) => {
+    const claudeCodeEnabled = settings?.providerSettings?.['claude-code']?.enabled === true;
+    const usageIndicatorEnabled = settings?.showUsageIndicator !== false;
+    if (!claudeCodeEnabled || !usageIndicatorEnabled) {
+      return;
     }
+
+    const data = await window.electronAPI.invoke('claude-usage:get') as ClaudeUsageData | null;
+    if (data) store.set(claudeUsageAtom, data);
   }).catch((error: Error) => {
-    console.error('[ClaudeUsageListeners] Failed to get initial usage:', error);
+    console.error('[ClaudeUsageListeners] Failed to initialize usage listener:', error);
   });
 
   // Cleanup function

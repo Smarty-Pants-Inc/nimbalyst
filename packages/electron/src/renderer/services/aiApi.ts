@@ -497,7 +497,7 @@ class AIApi {
 
   // Settings management
   async getSettings(): Promise<{
-    defaultProvider: 'claude' | 'claude-code';
+    defaultProvider: string;
     apiKeys: Record<string, string>;
     providerSettings: any;
   }> {
@@ -505,7 +505,7 @@ class AIApi {
   }
 
   async saveSettings(settings: {
-    defaultProvider?: 'claude' | 'claude-code';
+    defaultProvider?: string;
     apiKeys?: Record<string, string>;
     providerSettings?: any;
   }): Promise<{ success: boolean }> {

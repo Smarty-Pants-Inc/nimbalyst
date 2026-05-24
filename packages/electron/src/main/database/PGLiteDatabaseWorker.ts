@@ -33,6 +33,10 @@ export class HandledError extends Error {}
  */
 export const INIT_TIMEOUT_MS = 120_000;
 
+export function isUnexpectedWorkerExit(code: number, shutdownInProgress: boolean): boolean {
+  return code !== 0 && !shutdownInProgress;
+}
+
 // Helper to categorize database errors
 function categorizeDBError(error: any): string {
   const message = error?.message?.toLowerCase() || String(error).toLowerCase();
@@ -198,6 +202,7 @@ export class PGLiteDatabaseWorker {
   private stats = new DatabaseStats();
   private statsInterval: ReturnType<typeof setInterval> | null = null;
   private lastExecMs: number | undefined;
+  private shutdownInProgress = false;
 
   // ============================================================================
   // Helper methods for dialogs and common operations
@@ -366,7 +371,9 @@ export class PGLiteDatabaseWorker {
 
     // Set up exit handler
     this.worker.on('exit', (code) => {
-      if (code !== 0) {
+      const expectedShutdown = this.shutdownInProgress;
+      this.shutdownInProgress = false;
+      if (isUnexpectedWorkerExit(code, expectedShutdown)) {
         logger.main.error(`[PGLite Worker] Worker exited with code ${code}`);
         // Reject all pending requests
         this.pendingRequests.forEach((pending) => {
@@ -375,6 +382,8 @@ export class PGLiteDatabaseWorker {
         this.pendingRequests.clear();
         this.initialized = false;
         this.worker = null;
+      } else if (code !== 0) {
+        logger.main.info(`[PGLite Worker] Worker exited with code ${code} during shutdown`);
       }
     });
   }
@@ -927,12 +936,17 @@ export class PGLiteDatabaseWorker {
       }
     }
     if (this.worker) {
-      await this.sendMessage('close');
-      await this.worker.terminate();
-      this.worker = null;
-      this.initialized = false;
-      this.initPromise = null;
-      logger.main.info('[PGLite Worker] Database worker terminated');
+      this.shutdownInProgress = true;
+      try {
+        await this.sendMessage('close');
+        await this.worker.terminate();
+        this.worker = null;
+        this.initialized = false;
+        this.initPromise = null;
+        logger.main.info('[PGLite Worker] Database worker terminated');
+      } finally {
+        this.shutdownInProgress = false;
+      }
     }
   }
 

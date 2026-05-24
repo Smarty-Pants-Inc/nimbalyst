@@ -8,9 +8,12 @@ import { safeHandle } from '../../utils/ipcRegistry';
 import Store from 'electron-store';
 import { AnalyticsService } from '../analytics/AnalyticsService';
 import { AISessionsRepository } from '@nimbalyst/runtime';
+import { DEFAULT_MODELS } from '@nimbalyst/runtime/ai/modelConstants';
 import { getDatabase } from '../../database/initialize';
 import { getDefaultAIModel } from '../../utils/store';
 import { randomUUID } from 'crypto';
+
+const SMARTY_SERVER_DEFAULT_MODEL = DEFAULT_MODELS['smarty-server'];
 
 // Store active voice session info
 interface VoiceSession {
@@ -627,8 +630,8 @@ export function initVoiceModeService() {
           }
 
           const newSessionId = randomUUID();
-          const provider = 'claude-code';
-          const model = getDefaultAIModel() || 'claude-code:opus-1m';
+          const provider = 'smarty-server';
+          const model = getDefaultAIModel() || SMARTY_SERVER_DEFAULT_MODEL;
           const newTitle = title?.trim() || 'New Session';
 
           await AISessionsRepository.create({

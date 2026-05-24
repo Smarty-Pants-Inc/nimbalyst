@@ -32,9 +32,12 @@ import { workstreamStateAtom } from '../../store/atoms/workstreamState';
 import { setWindowModeAtom } from '../../store/atoms/windowMode';
 import { defaultAgentModelAtom } from '../../store/atoms/appSettings';
 import { ModelIdentifier } from '@nimbalyst/runtime/ai/server/types';
+import { DEFAULT_MODELS } from '@nimbalyst/runtime/ai/modelConstants';
 import { store } from '../../store';
 
 export type ViewMode = 'table' | 'kanban';
+
+const SMARTY_SERVER_DEFAULT_MODEL = DEFAULT_MODELS['smarty-server'];
 
 interface TrackerMainViewProps {
   filterType: TrackerItemType | 'all';
@@ -145,23 +148,19 @@ export const TrackerMainView: React.FC<TrackerMainViewProps> = ({
   /** Launch a new AI session linked to a tracker item */
   const handleLaunchSession = useCallback(async (trackerItemId: string) => {
     try {
-      // Derive provider from the user's default model rather than hardcoding
-      // 'claude-code'. Mirrors AgentMode.createNewSession so a Codex-only
-      // workspace launches a Codex session, not a failed claude-code one.
-      // See nimbalyst#176.
-      const sessionId = crypto.randomUUID();
-      const parsedModel = defaultModel ? ModelIdentifier.tryParse(defaultModel) : null;
-      const provider = parsedModel?.provider || 'claude-code';
-      const result = await window.electronAPI.invoke('sessions:create', {
-        session: {
-          id: sessionId,
-          provider,
-          model: defaultModel,
-          title: 'New Session',
-        },
-        workspaceId: workspacePath,
-      });
-      if (result?.success && result?.id) {
+      // Derive provider from the user's default model and fail closed to the
+      // local daily-driver runtime for clean profiles or missing settings.
+      const resolvedModel = defaultModel || SMARTY_SERVER_DEFAULT_MODEL;
+      const parsedModel = ModelIdentifier.tryParse(resolvedModel);
+      const provider = (parsedModel?.provider || 'smarty-server') as Parameters<typeof window.electronAPI.aiCreateSession>[0];
+      const result = await window.electronAPI.aiCreateSession(
+        provider,
+        undefined,
+        workspacePath,
+        resolvedModel,
+        'session'
+      );
+      if (result?.id) {
         // Look up the tracker item to build a context-aware draft prompt
         const itemsMap = store.get(trackerItemsMapAtom);
         const trackerItem = itemsMap.get(trackerItemId);

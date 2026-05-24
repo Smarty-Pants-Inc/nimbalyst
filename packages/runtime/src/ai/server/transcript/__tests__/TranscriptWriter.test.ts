@@ -115,6 +115,60 @@ describe('TranscriptWriter', () => {
       expect(continued.id).toBe(first.id);
       expect(continued.searchableText).toBe('Hello world');
     });
+
+    it('keeps explicitly keyed interleaved streams separate while coalescing each stream', async () => {
+      const smartyWriter = new TranscriptWriter(store, 'smarty-server');
+      const firstA = await smartyWriter.appendAssistantMessage('session-1', 'A1', {
+        coalesceKey: 'run-a',
+      });
+      const firstB = await smartyWriter.appendAssistantMessage('session-1', 'B1', {
+        coalesceKey: 'run-b',
+      });
+
+      // Simulate a later incremental batch where the prior event for run-a is
+      // no longer the session tail.
+      const writer2 = new TranscriptWriter(store, 'smarty-server');
+      const secondA = await writer2.appendAssistantMessage('session-1', 'A2', {
+        coalesceKey: 'run-a',
+      });
+      const secondB = await writer2.appendAssistantMessage('session-1', 'B2', {
+        coalesceKey: 'run-b',
+      });
+
+      expect(secondA.id).toBe(firstA.id);
+      expect(secondB.id).toBe(firstB.id);
+
+      const assistant = (await store.getSessionEvents('session-1'))
+        .filter((event) => event.eventType === 'assistant_message');
+      expect(assistant).toHaveLength(2);
+      expect(assistant[0].searchableText).toBe('A1A2');
+      expect(assistant[1].searchableText).toBe('B1B2');
+    });
+
+    it('does not coalesce keyed assistant text across tool-call boundaries', async () => {
+      const smartyWriter = new TranscriptWriter(store, 'smarty-server');
+      const beforeTool = await smartyWriter.appendAssistantMessage('session-1', 'Before tool.', {
+        coalesceKey: 'run-a',
+      });
+      await smartyWriter.createToolCall('session-1', {
+        toolName: 'read_file',
+        toolDisplayName: 'read_file',
+        arguments: { path: 'README.md' },
+        providerToolCallId: 'tool-1',
+      });
+      const afterTool = await smartyWriter.appendAssistantMessage('session-1', 'After tool.', {
+        coalesceKey: 'run-a',
+      });
+
+      expect(afterTool.id).not.toBe(beforeTool.id);
+      const assistant = (await store.getSessionEvents('session-1'))
+        .filter((event) => event.eventType === 'assistant_message');
+      expect(assistant).toHaveLength(2);
+      expect(assistant.map((event) => event.searchableText)).toEqual([
+        'Before tool.',
+        'After tool.',
+      ]);
+    });
   });
 
   describe('appendSystemMessage', () => {

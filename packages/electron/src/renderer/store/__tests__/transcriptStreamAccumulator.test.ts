@@ -222,6 +222,29 @@ describe('TranscriptStreamAccumulator', () => {
       // Different object identity proves we ran a fresh projection.
       expect(after).not.toBe(before);
     });
+
+    it('rebuilds when an assistant event stream key changes', () => {
+      const h = createHarness();
+      const seed = {
+        ...makeAssistantEvent(21, 'hello'),
+        payload: { mode: 'agent' as const, coalesceKey: 'run-a' },
+      };
+      h.acc.apply(seed);
+      h.tickFrame();
+      const before = h.lastEmit?.messages[0];
+
+      h.acc.apply({
+        ...seed,
+        searchableText: 'hello again',
+        payload: { mode: 'agent' as const, coalesceKey: 'run-b' },
+      });
+      h.tickFrame();
+      const after = h.lastEmit?.messages[0];
+
+      expect(after?.text).toBe('hello again');
+      expect(after?.coalesceKey).toBe('run-b');
+      expect(after).not.toBe(before);
+    });
   });
 
   describe('session cleanup', () => {

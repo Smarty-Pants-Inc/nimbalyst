@@ -311,6 +311,44 @@ describe('MessageSegment', () => {
     expect(screen.getByText('Failed')).toBeDefined();
   });
 
+  it('renders structured exit codes inside expanded tool results', () => {
+    const toolId = 'execute-pass';
+    const message = makeToolMessage(
+      'execute',
+      { command: 'npm test' },
+      JSON.stringify({ output: 'Test Files 1 passed', exit_code: 0 }),
+      {
+        toolCall: {
+          toolName: 'execute',
+          toolDisplayName: 'execute',
+          status: 'completed',
+          description: null,
+          arguments: { command: 'npm test' },
+          targetFilePath: null,
+          mcpServer: null,
+          mcpTool: null,
+          providerToolCallId: toolId,
+          progress: [],
+          result: JSON.stringify({ output: 'Test Files 1 passed', exit_code: 0 }),
+          exitCode: 0,
+        },
+      }
+    );
+
+    render(
+      <MessageSegment
+        message={message}
+        isUser={false}
+        showToolCalls={true}
+        showThinking={false}
+        expandedTools={new Set([toolId])}
+        onToggleToolExpand={() => {}}
+      />
+    );
+
+    expect(screen.getByText('Exit code: 0')).toBeDefined();
+  });
+
   it('renders attachments for user messages', () => {
     const message = makeMessage({
       type: 'user_message',
@@ -646,6 +684,32 @@ describe('ToolPermissionWidget', () => {
       </Wrapper>
     );
     expect(screen.getByText('npm test')).toBeDefined();
+  });
+
+  it('shows outside-workspace paths on pending permission requests', () => {
+    const outsidePath = '/tmp/outside-worktree/probe.txt';
+    const message = makeToolMessage('ToolPermission', {
+      requestId: 'req-outside-path',
+      toolName: 'write_file',
+      rawCommand: JSON.stringify({ file_path: outsidePath }),
+      pattern: 'Write',
+      isDestructive: true,
+      warnings: ['Path is outside the active workspace/worktree'],
+      outsidePaths: [outsidePath],
+    });
+    render(
+      <Wrapper>
+        <ToolPermissionWidget
+          message={message}
+          isExpanded={false}
+          onToggle={() => {}}
+          sessionId="outside-path-session"
+        />
+      </Wrapper>
+    );
+    expect(screen.getByTestId('tool-permission-outside-paths')).toBeDefined();
+    expect(screen.getByText('Outside active workspace/worktree')).toBeDefined();
+    expect(screen.getByText(outsidePath)).toBeDefined();
   });
 });
 

@@ -127,6 +127,7 @@ export type ProtocolEventType =
   | 'reasoning'               // Thinking/reasoning content (not part of final output)
   | 'tool_call'               // Tool invocation
   | 'tool_result'             // Tool execution result
+  | 'interrupt'               // Agent paused for human input/approval
   | 'error'                   // Error occurred
   | 'complete'                // Stream complete
   | 'usage'                   // Token usage stats
@@ -156,6 +157,12 @@ export interface ProtocolEvent {
     id?: string;
     name: string;
     result?: ToolResult | string;
+  };
+
+  /** Interrupt payload (for 'interrupt' events) */
+  interrupt?: {
+    id?: string;
+    value: unknown;
   };
 
   /** Error message (for 'error' events) */

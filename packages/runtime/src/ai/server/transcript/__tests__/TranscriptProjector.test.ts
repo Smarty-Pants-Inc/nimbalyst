@@ -66,6 +66,38 @@ describe('TranscriptProjector', () => {
     expect(vm.messages[1].text).toBe('Hi there');
   });
 
+  it('does not coalesce adjacent assistant messages with different stream keys', () => {
+    const events: TranscriptEvent[] = [
+      makeEvent({
+        eventType: 'assistant_message',
+        searchableText: 'First stream',
+        searchable: true,
+        payload: { mode: 'agent', coalesceKey: 'run-a' },
+      }),
+      makeEvent({
+        eventType: 'assistant_message',
+        searchableText: 'Second stream',
+        searchable: true,
+        payload: { mode: 'agent', coalesceKey: 'run-b' },
+      }),
+      makeEvent({
+        eventType: 'assistant_message',
+        searchableText: ' continues',
+        searchable: true,
+        payload: { mode: 'agent', coalesceKey: 'run-b' },
+      }),
+    ];
+
+    const vm = TranscriptProjector.project(events);
+
+    expect(vm.messages).toHaveLength(2);
+    expect(vm.messages.map((message) => message.text)).toEqual([
+      'First stream',
+      'Second stream continues',
+    ]);
+    expect(vm.messages.map((message) => message.coalesceKey)).toEqual(['run-a', 'run-b']);
+  });
+
   it('groups tool progress under parent tool call', () => {
     const toolCallId = nextId;
     const events: TranscriptEvent[] = [

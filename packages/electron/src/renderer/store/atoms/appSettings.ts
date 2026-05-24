@@ -19,12 +19,15 @@ import { atom, type Atom } from 'jotai';
 import posthog from 'posthog-js';
 import { copyToClipboard } from '@nimbalyst/runtime';
 import { store } from '@nimbalyst/runtime/store';
+import { DEFAULT_MODELS } from '@nimbalyst/runtime/ai/modelConstants';
 import { type EffortLevel, DEFAULT_EFFORT_LEVEL, parseEffortLevel } from '@nimbalyst/runtime/ai/server/effortLevels';
 import { AlphaFeatureTag, getDefaultAlphaFeatures } from '../../../shared/alphaFeatures';
 import { BetaFeatureTag } from '../../../shared/betaFeatures';
 import { DeveloperFeatureTag, DEVELOPER_FEATURES, getDefaultDeveloperFeatures, enableAllDeveloperFeatures, disableAllDeveloperFeatures, areAllDeveloperFeaturesEnabled } from '../../../shared/developerFeatures';
-import { normalizeCodexProviderConfig, omitModelsField, stripTransientProviderFields } from '@nimbalyst/runtime/ai/server/utils/modelConfigUtils';
+import { normalizeCodexProviderConfig, omitModelsField, stripTransientProviderFields, stripUnknownProviderConfigs } from '@nimbalyst/runtime/ai/server/utils/modelConfigUtils';
 import { setDebugFlags as mirrorDebugFlagsToGlobal, type NimbalystDebugFlags } from '@nimbalyst/runtime/utils/debugFlags';
+
+const SMARTY_SERVER_DEFAULT_MODEL = DEFAULT_MODELS['smarty-server'];
 
 // Voice type - all available OpenAI Realtime voices
 export type VoiceId = 'alloy' | 'ash' | 'ballad' | 'coral' | 'echo' | 'sage' | 'shimmer' | 'verse' | 'marin' | 'cedar';
@@ -385,7 +388,7 @@ export interface AdvancedSettings {
  */
 const defaultAdvancedSettings: AdvancedSettings = {
   releaseChannel: 'stable',
-  analyticsEnabled: true,
+  analyticsEnabled: false,
   extensionDevToolsEnabled: false,
   walkthroughsEnabled: true,
   walkthroughsViewedCount: 0,
@@ -680,7 +683,7 @@ export async function initAdvancedSettings(): Promise<AdvancedSettings> {
 
     return {
       releaseChannel: channel ?? 'stable',
-      analyticsEnabled: analyticsEnabled ?? true,
+      analyticsEnabled: analyticsEnabled ?? false,
       extensionDevToolsEnabled: extensionDevToolsEnabled ?? false,
       walkthroughsEnabled: walkthroughState?.enabled ?? true,
       walkthroughsViewedCount,
@@ -961,7 +964,7 @@ export interface AgentModeSettings {
  * Default agent mode settings.
  */
 const defaultAgentModeSettings: AgentModeSettings = {
-  defaultModel: 'claude-code:opus-1m',
+  defaultModel: SMARTY_SERVER_DEFAULT_MODEL,
   defaultEffortLevel: DEFAULT_EFFORT_LEVEL,
 };
 
@@ -1059,9 +1062,16 @@ export interface ProviderConfig {
   enabled: boolean;
   apiKey?: string;
   baseUrl?: string;
+  defaultModel?: string;
   models?: string[];
   testStatus?: 'idle' | 'testing' | 'success' | 'error';
   testMessage?: string;
+  runtimeHealth?: Record<string, any>;
+  runtimeHealthCheckedAt?: string;
+  runtimeHealthRecovery?: string;
+  runtimeHealthWarnings?: string[];
+  lastSuccessfulRuntimeHealth?: Record<string, any>;
+  lastSuccessfulRuntimeHealthCheckedAt?: string;
   installed?: boolean;
   version?: string;
   updateAvailable?: boolean;
@@ -1092,13 +1102,18 @@ export interface AIProviderSettings {
  */
 const defaultProviders: Record<string, ProviderConfig> = {
   claude: { enabled: false, testStatus: 'idle' },
-  'claude-code': { enabled: true, testStatus: 'idle', installStatus: 'not-installed' },
+  'claude-code': { enabled: false, testStatus: 'idle', installStatus: 'not-installed' },
   openai: { enabled: false, testStatus: 'idle' },
   'openai-codex': { enabled: false, testStatus: 'idle', installStatus: 'not-installed' },
   'openai-codex-acp': { enabled: false, testStatus: 'idle', installStatus: 'not-installed' },
-  'deepagents-acp': { enabled: false, baseUrl: 'http://127.0.0.1:8317/v1', testStatus: 'idle' },
   opencode: { enabled: false, testStatus: 'idle', installStatus: 'not-installed' },
   'copilot-cli': { enabled: false, testStatus: 'idle', installStatus: 'not-installed' },
+  'smarty-server': {
+    enabled: true,
+    baseUrl: 'http://127.0.0.1:8788',
+    defaultModel: SMARTY_SERVER_DEFAULT_MODEL,
+    testStatus: 'idle',
+  },
   lmstudio: { enabled: false, baseUrl: 'http://127.0.0.1:8234', testStatus: 'idle' },
 };
 
@@ -1110,7 +1125,7 @@ const defaultApiKeys: Record<string, string> = {
   'claude-code': '',
   openai: '',
   'openai-codex': '',
-  'deepagents-acp': '',
+  'smarty-server': '',
   lmstudio_url: 'http://127.0.0.1:8234',
 };
 
@@ -1156,9 +1171,20 @@ const pendingApiKeyNames = new Set<string>();
  * Codex uses dynamic model discovery from the API instead of user-configured model selections.
  */
 function sanitizeProvidersForPersistence(providers: Record<string, ProviderConfig>): Record<string, ProviderConfig> {
-  return normalizeCodexProviderConfig(
-    stripTransientProviderFields(providers)
+  return stripUnknownProviderConfigs(
+    normalizeCodexProviderConfig(
+      stripTransientProviderFields(providers)
+    )
   );
+}
+
+function sanitizeApiKeysForPersistence(apiKeys: Record<string, string>): Record<string, string> {
+  const {
+    'deepagents-acp': _retiredDeepAgentsToken,
+    deepagents_cli_proxy_base_url: _retiredDeepAgentsBaseUrl,
+    ...rest
+  } = apiKeys;
+  return rest;
 }
 
 /**
@@ -1233,7 +1259,7 @@ async function flushAIProviderPersist(): Promise<void> {
         partialApiKeys[name] = value;
       }
     }
-    payload.apiKeys = partialApiKeys;
+    payload.apiKeys = sanitizeApiKeysForPersistence(partialApiKeys);
   }
 
   try {
@@ -1415,7 +1441,7 @@ export async function initAIProviderSettings(): Promise<AIProviderSettings> {
 
   // Merge loaded API keys
   if (settings?.apiKeys) {
-    Object.assign(apiKeys, settings.apiKeys);
+    Object.assign(apiKeys, sanitizeApiKeysForPersistence(settings.apiKeys));
   }
 
   aiProviderInitComplete = true;
@@ -1438,6 +1464,7 @@ export interface ProviderOverride {
   enabled?: boolean;
   models?: string[];
   defaultModel?: string;
+  baseUrl?: string;
   apiKey?: string;
 }
 

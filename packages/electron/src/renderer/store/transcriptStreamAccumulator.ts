@@ -217,6 +217,7 @@ export class TranscriptStreamAccumulator {
     if ((ep.thinking ?? null) !== (np.thinking ?? null)) return false;
     if ((ep.model ?? null) !== (np.model ?? null)) return false;
     if ((ep.mode ?? null) !== (np.mode ?? null)) return false;
+    if ((ep.coalesceKey ?? null) !== (np.coalesceKey ?? null)) return false;
 
     return true;
   }
@@ -229,6 +230,6 @@ export class TranscriptStreamAccumulator {
  */
 function applyTextPatch(message: TranscriptViewMessage, event: TranscriptEvent): void {
   message.text = event.searchableText ?? undefined;
-  // mode/thinking/model are unchanged by definition of canPatchInPlace,
+  // mode/thinking/model/coalesceKey are unchanged by definition of canPatchInPlace,
   // so we don't touch them here.
 }

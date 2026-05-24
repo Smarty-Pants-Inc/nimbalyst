@@ -17,16 +17,9 @@ export const STYTCH_CONFIG = {
 
 /**
  * Get the Stytch config.
+ * Client Stytch identifiers are explicit app config only. Do not inherit
+ * ambient STYTCH_* env vars from unrelated development shells.
  */
 export function getStytchConfig() {
-  // Allow override via environment variable
-  if (process.env.STYTCH_PROJECT_ID && process.env.STYTCH_PUBLIC_TOKEN) {
-    return {
-      projectId: process.env.STYTCH_PROJECT_ID,
-      publicToken: process.env.STYTCH_PUBLIC_TOKEN,
-      apiBase: 'https://api.stytch.com/v1/b2b',
-    };
-  }
-
   return STYTCH_CONFIG.live;
 }

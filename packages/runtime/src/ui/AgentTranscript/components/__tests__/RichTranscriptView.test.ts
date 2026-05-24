@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { TranscriptViewMessage } from '../../../../ai/server/transcript/TranscriptProjector';
 import {
   extractEditsFromToolMessage,
+  getVisibleToolExitCode,
   isTranscriptAtBottom,
   parseUnifiedDiffToReplacements,
   shouldAutoScrollTranscript,
@@ -395,6 +396,28 @@ describe('extractEditsFromToolMessage', () => {
     expect(edits).toHaveLength(2);
     expect(edits[0].replacements[0].oldText).toBe('Alpha');
     expect(edits[1].replacements[0].oldText).toBe('Beta');
+  });
+});
+
+describe('getVisibleToolExitCode', () => {
+  it('uses canonical exitCode metadata when present', () => {
+    expect(getVisibleToolExitCode({ exitCode: 0 })).toBe(0);
+    expect(getVisibleToolExitCode({ exitCode: 7 })).toBe(7);
+  });
+
+  it('falls back to JSON-stringified execute results', () => {
+    expect(getVisibleToolExitCode({
+      result: JSON.stringify({
+        output: 'Test Files 1 passed\nTests 4 passed',
+        exit_code: 0,
+      }),
+    })).toBe(0);
+  });
+
+  it('falls back to plain-text exit-code markers', () => {
+    expect(getVisibleToolExitCode({
+      result: 'FAIL pathUtils.planPrompt.test.ts\n\nExit code: 1',
+    })).toBe(1);
   });
 });
 

@@ -10,21 +10,21 @@ final class Phase4Tests: XCTestCase {
     func testParseV4DesktopPayload() {
         let futureMs = Int(Date().timeIntervalSince1970 * 1000) + 900_000 // 15 min from now
         let json = """
-        {"version":4,"serverUrl":"wss://sync.nimbalyst.com","encryptionKeySeed":"abc123base64==","expiresAt":\(futureMs),"analyticsId":"posthog-id","syncEmail":"user@example.com"}
+        {"version":4,"serverUrl":"wss://sync-dev.smartypants.ai","encryptionKeySeed":"abc123base64==","expiresAt":\(futureMs),"analyticsId":"analytics-id","syncEmail":"user@example.com"}
         """
         let result = QRPairingData.parse(json)
         XCTAssertNotNil(result)
         XCTAssertEqual(result?.seed, "abc123base64==")
-        XCTAssertEqual(result?.serverUrl, "wss://sync.nimbalyst.com")
+        XCTAssertEqual(result?.serverUrl, "wss://sync-dev.smartypants.ai")
         XCTAssertEqual(result?.userId, "user@example.com")
-        XCTAssertEqual(result?.analyticsId, "posthog-id")
+        XCTAssertEqual(result?.analyticsId, "analytics-id")
     }
 
     func testParseV4WithoutSyncEmail() {
         // When syncEmail is absent, analyticsId is used as userId
         let futureMs = Int(Date().timeIntervalSince1970 * 1000) + 900_000
         let json = """
-        {"version":4,"serverUrl":"wss://sync.nimbalyst.com","encryptionKeySeed":"key123","expiresAt":\(futureMs),"analyticsId":"analytics-id-456"}
+        {"version":4,"serverUrl":"wss://sync-dev.smartypants.ai","encryptionKeySeed":"key123","expiresAt":\(futureMs),"analyticsId":"analytics-id-456"}
         """
         let result = QRPairingData.parse(json)
         XCTAssertNotNil(result)
@@ -35,19 +35,19 @@ final class Phase4Tests: XCTestCase {
     func testParseExpiredQRCode() {
         let pastMs = Int(Date().timeIntervalSince1970 * 1000) - 60_000 // 1 min ago
         let json = """
-        {"version":4,"serverUrl":"wss://sync.nimbalyst.com","encryptionKeySeed":"key","expiresAt":\(pastMs),"analyticsId":"id","syncEmail":"a@b.com"}
+        {"version":4,"serverUrl":"wss://sync-dev.smartypants.ai","encryptionKeySeed":"key","expiresAt":\(pastMs),"analyticsId":"id","syncEmail":"a@b.com"}
         """
         XCTAssertNil(QRPairingData.parse(json))
     }
 
     func testParseLegacyPayload() {
         let json = """
-        {"seed":"abc123","serverUrl":"https://sync.nimbalyst.com","userId":"user-456"}
+        {"seed":"abc123","serverUrl":"https://sync-dev.smartypants.ai","userId":"user-456"}
         """
         let result = QRPairingData.parse(json)
         XCTAssertNotNil(result)
         XCTAssertEqual(result?.seed, "abc123")
-        XCTAssertEqual(result?.serverUrl, "https://sync.nimbalyst.com")
+        XCTAssertEqual(result?.serverUrl, "https://sync-dev.smartypants.ai")
         XCTAssertEqual(result?.userId, "user-456")
     }
 

@@ -114,21 +114,6 @@ const claudeAgentSdkVersion = (() => {
 const runtimeSrcDir = resolve(__dirname, '../runtime/src');
 const runtimeDistDir = resolve(__dirname, '../runtime/dist');
 
-const copyDeepAgentsLauncher = () => {
-  return {
-    name: 'copy-deepagents-launcher',
-    closeBundle() {
-      const src = resolve(runtimeSrcDir, 'ai/server/protocols/deepagents_acp_launcher.py');
-      const dest = resolve(__dirname, 'out/main/deepagents_acp_launcher.py');
-      if (!fs.existsSync(src)) {
-        return;
-      }
-      fs.mkdirSync(resolve(__dirname, 'out/main'), { recursive: true });
-      fs.copyFileSync(src, dest);
-    },
-  };
-};
-
 // Plugin to resolve workspace package subpaths correctly in production
 const resolveWorkspaceSubpaths = () => {
   return {
@@ -159,7 +144,6 @@ export default defineConfig({
     },
     plugins: [
       resolveWorkspaceSubpaths(),
-      copyDeepAgentsLauncher(),
     ],
     resolve: {
       alias: {
@@ -249,6 +233,8 @@ export default defineConfig({
         const logo = resolve(__dirname, 'nimbalyst-logo.png');
         const about = resolve(__dirname, 'about.html');
         const onboardingDir = resolve(__dirname, 'resources/onboarding');
+        const excalidrawAssetsDir = resolve(__dirname, '../../node_modules/@excalidraw/excalidraw/dist/excalidraw-assets');
+        const excalidrawDevAssetsDir = resolve(__dirname, '../../node_modules/@excalidraw/excalidraw/dist/excalidraw-assets-dev');
 
         if (fs.existsSync(icon)) {
           targets.push({ src: toPosix(icon), dest: '', overwrite: true });
@@ -262,6 +248,12 @@ export default defineConfig({
         // Copy onboarding images for feature walkthrough
         if (fs.existsSync(onboardingDir)) {
           targets.push({ src: toPosix(resolve(onboardingDir, '*')), dest: 'onboarding', overwrite: true });
+        }
+        if (fs.existsSync(excalidrawAssetsDir)) {
+          targets.push({ src: toPosix(resolve(excalidrawAssetsDir, '*')), dest: 'dist/excalidraw-assets', overwrite: true });
+        }
+        if (fs.existsSync(excalidrawDevAssetsDir)) {
+          targets.push({ src: toPosix(resolve(excalidrawDevAssetsDir, '*')), dest: 'dist/excalidraw-assets-dev', overwrite: true });
         }
         // Copy es-module-shims for extension loading (enables dynamic import maps)
         const esModuleShims = resolve(__dirname, '../../node_modules/es-module-shims/dist/es-module-shims.js');

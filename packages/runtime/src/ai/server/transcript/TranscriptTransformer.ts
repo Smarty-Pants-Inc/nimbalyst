@@ -23,6 +23,7 @@ import { CodexRawParserDispatcher } from './parsers/CodexRawParserDispatcher';
 import { CodexACPRawParser } from './parsers/CodexACPRawParser';
 import { CopilotRawParser } from './parsers/CopilotRawParser';
 import { OpenCodeRawParser } from './parsers/OpenCodeRawParser';
+import { SmartyServerRawParser } from './parsers/SmartyServerRawParser';
 import type {
   IRawMessageParser,
   ParseContext,
@@ -414,11 +415,14 @@ export class TranscriptTransformer {
       // route to the new parser. No CURRENT_VERSION bump required.
       return new CodexRawParserDispatcher();
     }
-    if (provider === 'openai-codex-acp' || provider === 'deepagents-acp') {
+    if (provider === 'openai-codex-acp') {
       return new CodexACPRawParser();
     }
     if (provider === 'opencode') {
       return new OpenCodeRawParser();
+    }
+    if (provider === 'smarty-server') {
+      return new SmartyServerRawParser();
     }
     return new ClaudeCodeRawParser();
   }

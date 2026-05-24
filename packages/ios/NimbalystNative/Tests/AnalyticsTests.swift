@@ -47,10 +47,10 @@ final class AnalyticsTests: XCTestCase {
     private static let analyticsEnabledKey = "analytics_enabled"
 
     func testOptOutPersistence() {
-        // Default should be enabled (key not set)
+        // Default should be disabled (key not set)
         UserDefaults.standard.removeObject(forKey: Self.analyticsEnabledKey)
         let defaultValue = UserDefaults.standard.object(forKey: Self.analyticsEnabledKey) as? Bool
-        XCTAssertNil(defaultValue, "Default should be nil (treated as enabled)")
+        XCTAssertNil(defaultValue, "Default should be nil (treated as disabled)")
 
         // Set to false (opt out)
         UserDefaults.standard.set(false, forKey: Self.analyticsEnabledKey)
@@ -67,9 +67,9 @@ final class AnalyticsTests: XCTestCase {
     // MARK: - AnalyticsManager State
 
     @MainActor
-    func testAnalyticsManagerDefaultEnabled() {
-        // AnalyticsManager.shared.isEnabled defaults to true
-        XCTAssertTrue(AnalyticsManager.shared.isEnabled)
+    func testAnalyticsManagerDefaultDisabled() {
+        // AnalyticsManager.shared.isEnabled defaults to false until explicit opt-in
+        XCTAssertFalse(AnalyticsManager.shared.isEnabled)
     }
 
     // MARK: - QRPairingData Equality with analyticsId

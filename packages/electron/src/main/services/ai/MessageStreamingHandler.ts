@@ -30,10 +30,10 @@ import {
   type ToolResult,
   type ProviderConfig,
   type DocumentContext,
+  type StreamChunk,
 } from '@nimbalyst/runtime/ai/server/types';
 import { getSessionStateManager } from '@nimbalyst/runtime/ai/server/SessionStateManager';
 import { isBedrockToolSearchError } from '@nimbalyst/runtime/ai/server/utils/errorDetection';
-import { parseEffortLevel } from '@nimbalyst/runtime/ai/server/effortLevels';
 import type { RawDocumentContext, DocumentContextService } from '@nimbalyst/runtime';
 import { AISessionsRepository } from '@nimbalyst/runtime';
 import { toolRegistry } from './tools';
@@ -60,7 +60,6 @@ import {
 import {
   safeSend,
   previewForLog,
-  extractModelForProvider,
   bucketMessageLength,
   bucketResponseTime,
   bucketChunkCount,
@@ -74,8 +73,9 @@ import {
   getFileExtensionForAnalytics,
 } from './aiServiceUtils';
 import { disableParentNotificationsAfterDirectTakeover } from './childSessionTakeover';
+import { handleResumedProviderChunks as processResumedProviderChunks } from './ResumedProviderChunkHandler';
 import { installScopedProviderListener } from './providerListenerRegistry';
-import type Store from 'electron-store';
+import { buildProviderRuntimeConfig } from './providerRuntimeConfig';
 import type { AIService } from './AIService';
 import type { HooklessAgentFileWatcher } from './HooklessAgentFileWatcher';
 
@@ -105,8 +105,8 @@ interface AIServiceInternal {
   hooklessWatcher: HooklessAgentFileWatcher;
 
   // Helper methods
-  getSettingsStore(): Store<Record<string, unknown>>;
   getApiKeyForProvider(provider: string, workspacePath?: string): string | undefined;
+  getEffectiveProviderSettings(provider: string, workspacePath?: string): Record<string, any>;
   buildClaudeCodeRuntimeConfig(session: SessionData, workspacePath?: string): Promise<ProviderConfig>;
   continueQueuedPromptChain(
     sessionId: string,
@@ -132,6 +132,88 @@ interface AIServiceInternal {
     worktreePath: string,
     event: Electron.IpcMainInvokeEvent,
   ): Promise<void>;
+}
+
+const REAL_ABSOLUTE_PATH_FIRST_SEGMENTS = new Set([
+  'applications',
+  'bin',
+  'dev',
+  'etc',
+  'home',
+  'library',
+  'opt',
+  'private',
+  'proc',
+  'sbin',
+  'system',
+  'tmp',
+  'users',
+  'usr',
+  'var',
+  'volumes',
+]);
+
+function isPathInside(root: string, candidate: string): boolean {
+  const relative = path.relative(root, candidate);
+  return relative === '' || (!relative.startsWith('..') && !path.isAbsolute(relative));
+}
+
+function virtualWorkspaceRelativePath(virtualPath: string): string {
+  const normalized = virtualPath.replace(/^[/\\]+/, '');
+  if (normalized === 'workspace') {
+    return '';
+  }
+  if (normalized.startsWith('workspace/') || normalized.startsWith('workspace\\')) {
+    return normalized.slice('workspace'.length + 1);
+  }
+  return normalized;
+}
+
+function isVirtualWorkspacePath(virtualPath: string): boolean {
+  const normalized = virtualPath.replace(/^[/\\]+/, '');
+  return normalized === 'workspace'
+    || normalized.startsWith('workspace/')
+    || normalized.startsWith('workspace\\');
+}
+
+function isKnownLangGraphVirtualPath(virtualPath: string): boolean {
+  const normalized = virtualPath.replace(/^[/\\]+/, '').replace(/\\/g, '/');
+  return normalized === 'tmp/runtime' || normalized.startsWith('tmp/runtime/');
+}
+
+function resolveSnapshotFilePath(workspacePath: string, rawPath: string): string | null {
+  const workspaceRoot = path.resolve(workspacePath);
+  if (!path.isAbsolute(rawPath)) {
+    const candidate = path.resolve(workspaceRoot, rawPath);
+    return isPathInside(workspaceRoot, candidate) ? candidate : null;
+  }
+
+  const hostPath = path.resolve(rawPath);
+  if (isPathInside(workspaceRoot, hostPath)) {
+    return hostPath;
+  }
+
+  const virtualCandidate = path.resolve(workspaceRoot, virtualWorkspaceRelativePath(rawPath));
+  if (!isPathInside(workspaceRoot, virtualCandidate)) {
+    return null;
+  }
+  if (isVirtualWorkspacePath(rawPath) || isKnownLangGraphVirtualPath(rawPath)) {
+    return virtualCandidate;
+  }
+
+  const firstSegment = virtualWorkspaceRelativePath(rawPath).split(/[\\/]/)[0];
+  if (!firstSegment) return null;
+  if (REAL_ABSOLUTE_PATH_FIRST_SEGMENTS.has(firstSegment.toLowerCase())) {
+    return hostPath;
+  }
+  return virtualCandidate;
+}
+
+function isDuplicateHistoryTagError(error: unknown): boolean {
+  const errorStr = String(error).toLowerCase();
+  return errorStr.includes('unique')
+    || errorStr.includes('duplicate')
+    || errorStr.includes('already exists');
 }
 
 /**
@@ -240,13 +322,30 @@ export class MessageStreamingHandler {
   }
 
   /**
-   * Replace the previously-installed listener for this (provider, event) pair
-   * without touching listeners owned by other modules. handle() registers its
-   * subscriptions on every ai:sendMessage call against the same cached
-   * per-session provider instance, so it needs to remove its own prior
-   * listener but not the whole event channel (the old removeAllListeners
-   * pattern silently dropped any other module that started subscribing).
+   * Process chunks produced by a restored Smarty Server approval resume.
+   *
+   * Normal provider streaming flows through handle()'s for-await loop. After an
+   * app/server restart there is no live sendMessage loop waiting on the old
+   * ToolPermission promise, so AIService resolves the persisted approval and
+   * hands the resumed LangGraph chunks here to run the same host-side evidence
+   * services: history snapshots, session file tracking, transcript reload, and
+   * session state completion.
    */
+  async handleResumedProviderChunks(
+    event: Electron.IpcMainInvokeEvent,
+    sessionId: string,
+    workspacePath: string,
+    chunks: StreamChunk[],
+  ): Promise<void> {
+    await processResumedProviderChunks({
+      chunks,
+      event,
+      sessionId,
+      svc: this.svc,
+      workspacePath,
+    });
+  }
+
   private installListener(
     provider: AIProvider,
     event: string,
@@ -443,16 +542,16 @@ export class MessageStreamingHandler {
           // Codex ACP uses the codex-acp binary's own auth, API key is optional
           requiresApiKey = false;
           break;
-        case 'deepagents-acp':
-          // DeepAgents ACP uses explicit CLIProxyAPI settings; token is optional for local dev proxies.
-          requiresApiKey = false;
-          break;
         case 'opencode':
           // OpenCode uses its own config, API key is optional
           requiresApiKey = false;
           break;
         case 'copilot-cli':
           // Copilot uses its own CLI auth, no API key needed
+          requiresApiKey = false;
+          break;
+        case 'smarty-server':
+          // Smarty Server is an already-running local LangGraph server; key is optional
           requiresApiKey = false;
           break;
         case 'lmstudio':
@@ -475,68 +574,14 @@ export class MessageStreamingHandler {
       if (isProviderClaudeCode) {
       }
 
-      const reinitConfig: any = {
-        apiKey,
-        maxTokens: (session.providerConfig as any)?.maxTokens,
-        temperature: (session.providerConfig as any)?.temperature,
-        // Pass effort level from session metadata (Opus 4.6 adaptive reasoning)
-        ...((session.metadata as any)?.effortLevel && {
-          effortLevel: parseEffortLevel((session.metadata as any).effortLevel),
-        }),
-      };
-
-      // Add baseUrl for LMStudio
-      if (session.provider === 'lmstudio') {
-        const providerSettings = this.svc.getSettingsStore().get('providerSettings', {}) as any;
-        reinitConfig.baseUrl = providerSettings['lmstudio']?.baseUrl || 'http://127.0.0.1:8234';
-      }
-
-      if (session.provider === 'deepagents-acp') {
-        const providerSettings = this.svc.getSettingsStore().get('providerSettings', {}) as any;
-        reinitConfig.baseUrl = providerSettings['deepagents-acp']?.baseUrl || 'http://127.0.0.1:8317/v1';
-      }
-
-      // Pass model to provider config for all providers including claude-code
-      // Claude Code uses the model field to select variants (opus/sonnet/haiku)
-      if (session.model || session.providerConfig?.model) {
-        const fullModel = session.model || session.providerConfig?.model;
-
-        if (fullModel) {
-          // For claude-code, pass the full model ID (e.g., "claude-code:opus")
-          // For other providers, extract the model-only part
-          if (isProviderClaudeCode) {
-            reinitConfig.model = fullModel;
-          } else {
-            const modelForProvider = extractModelForProvider(fullModel, session.provider as AIProviderType);
-            if (modelForProvider !== null) {
-              reinitConfig.model = modelForProvider;
-            } else {
-              // extractModelForProvider returned null - fall back to default
-              const defaultModel = await ModelRegistry.getDefaultModel(session.provider as AIProviderType);
-              if (defaultModel) {
-                const defaultModelForProvider = extractModelForProvider(defaultModel, session.provider as AIProviderType);
-                if (defaultModelForProvider !== null) {
-                  reinitConfig.model = defaultModelForProvider;
-                  logger.main.info(`[AIService] Fell back to default model "${defaultModel}" for provider ${session.provider}`);
-                }
-              }
-            }
-          }
-        }
-      } else {
-        // No model specified - get default
-        const defaultModel = await ModelRegistry.getDefaultModel(session.provider as AIProviderType);
-        if (defaultModel) {
-          if (isProviderClaudeCode) {
-            reinitConfig.model = defaultModel;
-          } else {
-            const defaultModelForProvider = extractModelForProvider(defaultModel, session.provider as AIProviderType);
-            if (defaultModelForProvider !== null) {
-              reinitConfig.model = defaultModelForProvider;
-            }
-          }
-        }
-      }
+      const providerSettings = this.svc.getEffectiveProviderSettings(session.provider, effectiveWorkspacePath);
+      const reinitConfig = isProviderClaudeCode
+        ? await this.svc.buildClaudeCodeRuntimeConfig(session, effectiveWorkspacePath)
+        : await buildProviderRuntimeConfig({
+            session,
+            apiKey,
+            providerSettings,
+          });
 
       if (isProviderClaudeCode) {
         const safeConfig = { ...reinitConfig, apiKey: reinitConfig.apiKey ? '***' : undefined };
@@ -1069,24 +1114,12 @@ export class MessageStreamingHandler {
       } else {
         // Refresh credentials every turn for all providers so key changes in settings apply immediately.
         const freshApiKey = this.svc.getApiKeyForProvider(session.provider, effectiveWorkspacePath);
-        const refreshedConfig: any = {
+        const providerSettings = this.svc.getEffectiveProviderSettings(session.provider, effectiveWorkspacePath);
+        const refreshedConfig = await buildProviderRuntimeConfig({
+          session,
           apiKey: freshApiKey,
-          maxTokens: (session.providerConfig as any)?.maxTokens,
-          temperature: (session.providerConfig as any)?.temperature,
-          ...((session.metadata as any)?.effortLevel && {
-            effortLevel: parseEffortLevel((session.metadata as any).effortLevel),
-          }),
-        };
-
-        if (session.provider === 'lmstudio') {
-          const providerSettings = this.svc.getSettingsStore().get('providerSettings', {}) as any;
-          refreshedConfig.baseUrl = providerSettings['lmstudio']?.baseUrl || 'http://127.0.0.1:8234';
-        }
-
-        if (session.provider === 'deepagents-acp') {
-          const providerSettings = this.svc.getSettingsStore().get('providerSettings', {}) as any;
-          refreshedConfig.baseUrl = providerSettings['deepagents-acp']?.baseUrl || 'http://127.0.0.1:8317/v1';
-        }
+          providerSettings,
+        });
 
         await provider.initialize(refreshedConfig);
       }
@@ -1263,9 +1296,8 @@ export class MessageStreamingHandler {
               // history.
               for (const entry of entries) {
                 if (!entry?.path) continue;
-                const absPath = path.isAbsolute(entry.path)
-                  ? path.normalize(entry.path)
-                  : path.resolve(effectiveWorkspacePath, entry.path);
+                const absPath = resolveSnapshotFilePath(effectiveWorkspacePath, entry.path);
+                if (!absPath) continue;
                 const inferredWorktreePath = this.svc.inferWorktreePathFromFilePath(workspacePath, absPath);
                 if (inferredWorktreePath) {
                   await this.svc.adoptWorktreeForSession(session, inferredWorktreePath, event);
@@ -1294,9 +1326,8 @@ export class MessageStreamingHandler {
                 : this.svc.hooklessWatcher.getEntry(session.id);
               for (const entry of entries) {
                 if (!entry?.path) continue;
-                const absPath = path.isAbsolute(entry.path)
-                  ? path.normalize(entry.path)
-                  : path.resolve(effectiveWorkspacePath, entry.path);
+                const absPath = resolveSnapshotFilePath(effectiveWorkspacePath, entry.path);
+                if (!absPath) continue;
                 addGitignoreBypass(effectiveWorkspacePath, absPath);
                 const tagId = `ai-edit-pending-${session.id}-${toolUseId}`;
 
@@ -1332,6 +1363,16 @@ export class MessageStreamingHandler {
                     toolUseId,
                     { replaceSpeculative: true },
                   );
+                } catch (preEditError) {
+                  if (!isDuplicateHistoryTagError(preEditError)) {
+                    logger.ai.error(
+                      '[AIService] pre_edit_snapshot tag write failed',
+                      preEditError,
+                    );
+                  }
+                }
+
+                try {
                   await sessionFileTracker.trackToolExecution(
                     session.id,
                     effectiveWorkspacePath,
@@ -1341,20 +1382,14 @@ export class MessageStreamingHandler {
                     toolUseId,
                     null,
                   );
-                } catch (preEditError) {
-                  const errorStr = String(preEditError);
-                  if (
-                    !errorStr.includes('unique') &&
-                    !errorStr.includes('UNIQUE') &&
-                    !errorStr.includes('duplicate')
-                  ) {
-                    logger.ai.error(
-                      '[AIService] pre_edit_snapshot tag write failed',
-                      preEditError,
-                    );
-                  }
+                } catch (trackingError) {
+                  logger.ai.error(
+                    '[AIService] pre_edit_snapshot session-file tracking failed',
+                    trackingError,
+                  );
                 }
               }
+              safeSend(event, 'session-files:updated', session.id);
             }
             break;
 
@@ -1373,9 +1408,8 @@ export class MessageStreamingHandler {
               const { toolUseId, entries } = chunk.postEditSnapshot;
               for (const entry of entries) {
                 if (!entry?.path) continue;
-                const absPath = path.isAbsolute(entry.path)
-                  ? path.normalize(entry.path)
-                  : path.resolve(effectiveWorkspacePath, entry.path);
+                const absPath = resolveSnapshotFilePath(effectiveWorkspacePath, entry.path);
+                if (!absPath) continue;
                 try {
                   await historyManager.createSnapshot(
                     absPath,
@@ -1391,6 +1425,7 @@ export class MessageStreamingHandler {
                   );
                 }
               }
+              safeSend(event, 'session-files:updated', session.id);
             }
             break;
 
@@ -1506,7 +1541,7 @@ export class MessageStreamingHandler {
                   const OPENCODE_EDIT_TOOLS = ['edit', 'write', 'create'];
                   const CODEX_ACP_EDIT_TOOLS = ['Edit', 'Write', 'ApplyPatch', 'edit', 'write', 'apply_patch'];
                   const isOpenCodeEdit = OPENCODE_EDIT_TOOLS.includes(trackToolName) && session.provider === 'opencode';
-                  const isCodexAcpEdit = CODEX_ACP_EDIT_TOOLS.includes(trackToolName) && (session.provider === 'openai-codex-acp' || session.provider === 'deepagents-acp');
+                  const isCodexAcpEdit = CODEX_ACP_EDIT_TOOLS.includes(trackToolName) && session.provider === 'openai-codex-acp';
                   if (isOpenCodeEdit || isCodexAcpEdit) {
                     const editFilePath = extractFilePath(trackArgs);
                     const watcherEntry = this.svc.hooklessWatcher.getEntry(session.id);

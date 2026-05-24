@@ -119,7 +119,7 @@ import { registerExtensionHandlers, getClaudePluginPaths, initializeExtensionFil
 import { getAgentWorkflowService } from './services/AgentWorkflowService';
 import { queueMarketplaceInstallRequest, registerExtensionMarketplaceHandlers, runExtensionAutoUpdate } from './ipc/ExtensionMarketplaceHandlers';
 import { getRegisteredExtensions } from './extensions/RegisteredFileTypes';
-import { ClaudeCodeProvider, OpenAICodexProvider, OpenAICodexACPProvider, DeepAgentsACPProvider, OpenCodeProvider, CopilotCLIProvider } from '@nimbalyst/runtime/ai/server';
+import { ClaudeCodeProvider, OpenAICodexProvider, OpenAICodexACPProvider, OpenCodeProvider, CopilotCLIProvider, SmartyServerProvider } from '@nimbalyst/runtime/ai/server';
 import { matchesAllowPattern } from '@nimbalyst/runtime/ai/server/permissions/toolPermissionHelpers';
 import { resolveCodexPreEditHookScriptPath } from './services/ai/codexPreEditHookPath';
 import { sessionFileTracker } from './services/SessionFileTracker';
@@ -1259,28 +1259,6 @@ app.whenReady().then(async () => {
         }
         return enabledServers;
     });
-    DeepAgentsACPProvider.setMCPConfigLoader(async (workspacePath?: string) => {
-        if (!mcpConfigService) {
-            throw new Error('MCP config service not initialized');
-        }
-        const mergedConfig = await mcpConfigService.getMergedConfig(workspacePath);
-        const allServers = mergedConfig.mcpServers || {};
-
-        const enabledServers: Record<string, any> = {};
-        for (const [name, config] of Object.entries(allServers)) {
-            if (isMCPServerEnabledForProvider(config as MCPServerConfig, MCP_PROVIDER_IDS.CODEX)) {
-                const isAuthorized = await mcpConfigService.isOAuthAuthorized(config as MCPServerConfig, {
-                    useMcpRemoteForNativeOAuth: true,
-                });
-                if (!isAuthorized) {
-                    logger.mcp.info(`[MCP] Skipping unauthorized OAuth server for DeepAgents ACP: ${name}`);
-                    continue;
-                }
-                enabledServers[name] = mcpConfigService.processServerConfigForRuntime(config as any);
-            }
-        }
-        return enabledServers;
-    });
     CopilotCLIProvider.setMCPConfigLoader(async (workspacePath?: string) => {
         if (!mcpConfigService) {
             throw new Error('MCP config service not initialized');
@@ -1366,10 +1344,6 @@ app.whenReady().then(async () => {
         const settingsManager = ClaudeSettingsManager.getInstance();
         return settingsManager.getUserLevelEnv();
     });
-    DeepAgentsACPProvider.setClaudeSettingsEnvLoader(async () => {
-        const settingsManager = ClaudeSettingsManager.getInstance();
-        return settingsManager.getUserLevelEnv();
-    });
 
     // Inject shell environment loader to pass the user's full login shell env vars
     // (AWS credentials, NODE_EXTRA_CA_CERTS, etc.) to the Claude Code subprocess.
@@ -1377,7 +1351,6 @@ app.whenReady().then(async () => {
     ClaudeCodeProvider.setShellEnvironmentLoader(() => getShellEnvironment());
     OpenAICodexProvider.setShellEnvironmentLoader(() => getShellEnvironment());
     OpenAICodexACPProvider.setShellEnvironmentLoader(() => getShellEnvironment());
-    DeepAgentsACPProvider.setShellEnvironmentLoader(() => getShellEnvironment());
     OpenCodeProvider.setShellEnvironmentLoader(() => getShellEnvironment());
     CopilotCLIProvider.setShellEnvironmentLoader(() => getShellEnvironment());
 
@@ -1389,7 +1362,6 @@ app.whenReady().then(async () => {
     ClaudeCodeProvider.setEnhancedPathLoader(() => getEnhancedPath());
     OpenAICodexProvider.setEnhancedPathLoader(() => getEnhancedPath());
     OpenAICodexACPProvider.setEnhancedPathLoader(() => getEnhancedPath());
-    DeepAgentsACPProvider.setEnhancedPathLoader(() => getEnhancedPath());
     OpenCodeProvider.setEnhancedPathLoader(() => getEnhancedPath());
     CopilotCLIProvider.setEnhancedPathLoader(() => getEnhancedPath());
 
@@ -1553,7 +1525,7 @@ app.whenReady().then(async () => {
       ClaudeCodeProvider.setSecurityLogger(securityLogger);
       OpenAICodexProvider.setSecurityLogger(securityLogger);
       OpenAICodexACPProvider.setSecurityLogger(securityLogger);
-      DeepAgentsACPProvider.setSecurityLogger(securityLogger);
+      SmartyServerProvider.setSecurityLogger(securityLogger);
     }
 
     ClaudeCodeProvider.setClaudeSettingsPatternSaver(patternSaver);
@@ -1567,9 +1539,10 @@ app.whenReady().then(async () => {
     OpenAICodexACPProvider.setPermissionPatternSaver(patternSaver);
     OpenAICodexACPProvider.setPermissionPatternChecker(patternChecker);
     OpenAICodexACPProvider.setTrustChecker(trustChecker);
-    DeepAgentsACPProvider.setPermissionPatternSaver(patternSaver);
-    DeepAgentsACPProvider.setPermissionPatternChecker(patternChecker);
-    DeepAgentsACPProvider.setTrustChecker(trustChecker);
+
+    SmartyServerProvider.setPermissionPatternSaver(patternSaver);
+    SmartyServerProvider.setPermissionPatternChecker(patternChecker);
+    SmartyServerProvider.setTrustChecker(trustChecker);
 
     // ACP exposes pre/post file-write hooks. Wire them so ACP agent edits
     // produce the same FilesEditedSidebar entries and pre-edit baselines as
@@ -1612,7 +1585,6 @@ app.whenReady().then(async () => {
       }
     };
     OpenAICodexACPProvider.setOnBeforeFileWrite(onACPBeforeFileWrite);
-    DeepAgentsACPProvider.setOnBeforeFileWrite(onACPBeforeFileWrite);
 
     const onACPTurnFilesEdited = async (filePaths: Set<string>, sessionId: string | undefined) => {
       if (!sessionId || filePaths.size === 0) return;
@@ -1632,7 +1604,6 @@ app.whenReady().then(async () => {
       }
     };
     OpenAICodexACPProvider.setOnTurnFilesEdited(onACPTurnFilesEdited);
-    DeepAgentsACPProvider.setOnTurnFilesEdited(onACPTurnFilesEdited);
 
     // Inject image compressor
     // Compresses images to fit within Claude API 5MB base64 limit
@@ -1718,7 +1689,6 @@ app.whenReady().then(async () => {
     ClaudeCodeProvider.setMcpAuthToken(mcpAuthToken);
     OpenAICodexProvider.setMcpAuthToken(mcpAuthToken);
     OpenAICodexACPProvider.setMcpAuthToken(mcpAuthToken);
-    DeepAgentsACPProvider.setMcpAuthToken(mcpAuthToken);
     OpenCodeProvider.setMcpAuthToken(mcpAuthToken);
     CopilotCLIProvider.setMcpAuthToken(mcpAuthToken);
 
@@ -1744,7 +1714,6 @@ app.whenReady().then(async () => {
         ClaudeCodeProvider.setMcpServerPort(result.port);
         OpenAICodexProvider.setMcpServerPort(result.port);
         OpenAICodexACPProvider.setMcpServerPort(result.port);
-        DeepAgentsACPProvider.setMcpServerPort(result.port);
         OpenCodeProvider.setMcpServerPort(result.port);
         CopilotCLIProvider.setMcpServerPort(result.port);
     } catch (error) {
@@ -1778,7 +1747,6 @@ app.whenReady().then(async () => {
         ClaudeCodeProvider.setSessionContextServerPort(result.port);
         OpenAICodexProvider.setSessionContextServerPort(result.port);
         OpenAICodexACPProvider.setSessionContextServerPort(result.port);
-        DeepAgentsACPProvider.setSessionContextServerPort(result.port);
         OpenCodeProvider.setSessionContextServerPort(result.port);
         CopilotCLIProvider.setSessionContextServerPort(result.port);
     } catch (error) {
@@ -1793,7 +1761,6 @@ app.whenReady().then(async () => {
         ClaudeCodeProvider.setSettingsServerPort(result.port);
         OpenAICodexProvider.setSettingsServerPort(result.port);
         OpenAICodexACPProvider.setSettingsServerPort(result.port);
-        DeepAgentsACPProvider.setSettingsServerPort(result.port);
         OpenCodeProvider.setSettingsServerPort(result.port);
         CopilotCLIProvider.setSettingsServerPort(result.port);
 
@@ -1804,7 +1771,6 @@ app.whenReady().then(async () => {
         ClaudeCodeProvider.setSettingsAgentToolsDisabledLoader(killSwitch);
         OpenAICodexProvider.setSettingsAgentToolsDisabledLoader(killSwitch);
         OpenAICodexACPProvider.setSettingsAgentToolsDisabledLoader(killSwitch);
-        DeepAgentsACPProvider.setSettingsAgentToolsDisabledLoader(killSwitch);
         OpenCodeProvider.setSettingsAgentToolsDisabledLoader(killSwitch);
         CopilotCLIProvider.setSettingsAgentToolsDisabledLoader(killSwitch);
     } catch (error) {
@@ -2559,7 +2525,6 @@ app.on('before-quit', async (event) => {
         ClaudeCodeProvider.setSessionContextServerPort(null);
         OpenAICodexProvider.setSessionContextServerPort(null);
         OpenAICodexACPProvider.setSessionContextServerPort(null);
-        DeepAgentsACPProvider.setSessionContextServerPort(null);
         OpenCodeProvider.setSessionContextServerPort(null);
         CopilotCLIProvider.setSessionContextServerPort(null);
         console.log('[QUIT] Session context MCP server shutdown complete');
@@ -2575,7 +2540,6 @@ app.on('before-quit', async (event) => {
         ClaudeCodeProvider.setSettingsServerPort(null);
         OpenAICodexProvider.setSettingsServerPort(null);
         OpenAICodexACPProvider.setSettingsServerPort(null);
-        DeepAgentsACPProvider.setSettingsServerPort(null);
         OpenCodeProvider.setSettingsServerPort(null);
         CopilotCLIProvider.setSettingsServerPort(null);
         console.log('[QUIT] Settings MCP server shutdown complete');
@@ -2591,7 +2555,6 @@ app.on('before-quit', async (event) => {
         ClaudeCodeProvider.setMetaAgentServerPort(null);
         OpenAICodexProvider.setMetaAgentServerPort(null);
         OpenAICodexACPProvider.setMetaAgentServerPort(null);
-        DeepAgentsACPProvider.setMetaAgentServerPort(null);
         console.log('[QUIT] Meta-agent MCP server shutdown complete');
     } catch (error) {
         console.error('[QUIT] Error closing meta-agent MCP server:', error);

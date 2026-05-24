@@ -2,7 +2,7 @@
  * IPC handlers for the extension marketplace.
  *
  * Provides handlers for:
- * - Fetching the extension registry from extensions.nimbalyst.com (with mock fallback)
+ * - Loading the bundled extension registry
  * - Installing extensions from the marketplace (.nimext download + extract)
  * - Installing extensions from GitHub URLs
  * - Uninstalling marketplace extensions
@@ -33,11 +33,9 @@ import {
   type GitHubReleaseAsset,
 } from './extensionReleaseAsset';
 
-// Import mock registry data (used as fallback when live registry is unreachable)
+// Import bundled registry data. Smarty Code must not contact the Nimbalyst
+// marketplace service during normal startup or proof runs.
 import mockRegistry from '../data/extensionRegistry.json';
-
-// Live registry URL -- served by the marketplace Cloudflare Worker
-const REGISTRY_URL = 'https://extensions.nimbalyst.com/registry';
 
 const RENAMED_EXTENSION_IDS: Record<string, string> = {
   'com.developer.nimbalyst-mindmap': 'com.nimbalyst.mindmap',
@@ -46,7 +44,7 @@ const RENAMED_EXTENSION_IDS: Record<string, string> = {
 // Registry cache
 let registryCache: RegistryData | null = null;
 let registryCacheTimestamp = 0;
-const REGISTRY_CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes (matches Worker cache)
+const REGISTRY_CACHE_TTL_MS = 5 * 60 * 1000;
 
 export interface RegistryExtension {
   id: string;
@@ -94,37 +92,46 @@ interface InstallResult {
 
 let pendingMarketplaceInstallRequest: PendingMarketplaceInstallRequest | null = null;
 
+function isNimbalystHostedUrl(value: string | undefined): boolean {
+  if (!value) return false;
+  try {
+    return new URL(value).hostname.endsWith('nimbalyst.com');
+  } catch {
+    return false;
+  }
+}
+
+function getBundledRegistry(): RegistryData {
+  const registry = mockRegistry as RegistryData;
+  return {
+    ...registry,
+    extensions: registry.extensions.map((extension) => ({
+      ...extension,
+      downloadUrl: isNimbalystHostedUrl(extension.downloadUrl) ? '' : extension.downloadUrl,
+      screenshots: extension.screenshots.filter((screenshot) => {
+        const lightSrc = (screenshot as { srcLight?: string }).srcLight;
+        return !isNimbalystHostedUrl(screenshot.src) && !isNimbalystHostedUrl(lightSrc);
+      }),
+    })),
+  };
+}
+
 /**
- * Fetch registry data from the live Cloudflare Worker.
- * Falls back to mock data if the live registry is unreachable.
+ * Load registry data from the bundled registry only.
+ *
+ * The legacy hosted marketplace is not an allowed default resource for Smarty
+ * Code's local-first M1. Future marketplace work should point this at a
+ * Smarty-owned service with the same egress/proof controls as sync/auth.
  */
-async function fetchRegistry(): Promise<RegistryData> {
+export async function fetchRegistry(): Promise<RegistryData> {
   const now = Date.now();
   if (registryCache && (now - registryCacheTimestamp) < REGISTRY_CACHE_TTL_MS) {
     return registryCache;
   }
 
-  try {
-    const response = await net.fetch(REGISTRY_URL, {
-      headers: { 'Accept': 'application/json' },
-    });
-
-    if (response.ok) {
-      const data = await response.json() as RegistryData;
-      registryCache = data;
-      registryCacheTimestamp = now;
-      logger.main.info(`[ExtMarketplace] Fetched live registry: ${data.extensions?.length ?? 0} extensions`);
-      return data;
-    }
-
-    logger.main.warn(`[ExtMarketplace] Live registry returned ${response.status}, using mock fallback`);
-  } catch (err) {
-    logger.main.warn(`[ExtMarketplace] Failed to fetch live registry, using mock fallback:`, err);
-  }
-
-  // Fallback to mock data
-  registryCache = mockRegistry as RegistryData;
+  registryCache = getBundledRegistry();
   registryCacheTimestamp = now;
+  logger.main.info(`[ExtMarketplace] Loaded bundled registry: ${registryCache.extensions?.length ?? 0} extensions`);
   return registryCache;
 }
 

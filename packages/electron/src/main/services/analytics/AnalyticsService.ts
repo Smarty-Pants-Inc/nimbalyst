@@ -49,8 +49,10 @@ export class AnalyticsService {
   private isOfficialBuild: boolean = process.env.OFFICIAL_BUILD === 'true';
 
   public init(): void {
-    this.postHogClient ??= this.initPostHogClient();
-    this.sessionTracker ??= this.initPostHogClient();
+    if (this.allowedToSendAnalytics()) {
+      this.postHogClient ??= this.initPostHogClient();
+      this.sessionTracker ??= this.initPostHogClient();
+    }
     this.healthCheck();
     this.log.info(`Analytics service initialized (analytics ID: ${this.getDistinctId()}, official build: ${this.isOfficialBuild})`);
   }
@@ -62,18 +64,19 @@ export class AnalyticsService {
       return;
     }
 
-    // Check PostHog client initialization
-    if (!this.postHogClient) {
-      this.log.error('[Analytics] Skipping event: PostHog client not initialized', { eventName });
-      return;
-    }
-
-    // Check analytics enabled state
+    // Check analytics enabled state before checking the remote client. Disabled
+    // analytics is an expected local-first state, not an initialization error.
     if (!this.allowedToSendAnalytics()) {
       this.log.info('[Analytics] Skipping event: analytics disabled', {
         eventName,
         analyticsEnabled: isAnalyticsEnabled()
       });
+      return;
+    }
+
+    // Check PostHog client initialization
+    if (!this.postHogClient) {
+      this.log.error('[Analytics] Skipping event: PostHog client not initialized', { eventName });
       return;
     }
 
@@ -104,10 +107,16 @@ export class AnalyticsService {
   public async optIn(): Promise<void> {
     this.log.info('Processing analytics opt-in');
 
-    this.postHogClient ??= this.initPostHogClient();
-    await this.postHogClient?.optIn()
-
     setAnalyticsEnabled(true);
+
+    if (!this.isOfficialBuild) {
+      this.log.info('[Analytics] Opt-in recorded but analytics remains disabled for unofficial builds');
+      return;
+    }
+
+    this.postHogClient ??= this.initPostHogClient();
+    this.sessionTracker ??= this.initPostHogClient();
+    await this.postHogClient?.optIn()
 
     // Keep analytics ID in the analytics-specific store
     if (!this.getSettingsStore().get("analyticsId")) {
@@ -119,7 +128,6 @@ export class AnalyticsService {
     this.log.info('Processing analytics opt-out');
 
     if (this.postHogClient) {
-      await this.postHogClient.captureImmediate({ distinctId: this.getDistinctId(), event: 'analytics_opt_out' });
       await this.postHogClient.optOut()
     }
 
@@ -182,15 +190,17 @@ export class AnalyticsService {
   }
 
   public allowedToSendAnalytics(): boolean {
+    if (!this.isOfficialBuild) {
+      return false;
+    }
+
     // Check if user has enabled analytics in settings
     try {
       const enabled = isAnalyticsEnabled();
-      return enabled;
+      return enabled === true;
     } catch (error) {
       this.log.error('[Analytics] Error checking analytics enabled state', { error });
-      // Fail open - if we can't read the setting, allow analytics
-      // This ensures analytics works even if store initialization fails
-      return true;
+      return false;
     }
   }
 
@@ -216,7 +226,7 @@ export class AnalyticsService {
 
     this.log.info('[Analytics] Health check', checks);
 
-    if (!checks.postHogClient) {
+    if (checks.analyticsEnabled && !checks.postHogClient) {
       this.log.error('[Analytics] CRITICAL: PostHog client not initialized');
     }
 
@@ -237,7 +247,7 @@ export class AnalyticsService {
     return this.settingsStore ??= new Store({
       name: 'analytics-settings',
       defaults: {
-        analyticsEnabled: true,
+        analyticsEnabled: false,
         analyticsId: `nimbalyst_${ulid()}`
       }
     });
@@ -253,7 +263,7 @@ export class AnalyticsService {
         },
         disableGeoip: false,
         enableExceptionAutocapture: false,
-        before_send: (event) => process.env.PLAYWRIGHT_TEST ? null : event
+        before_send: (event) => (process.env.PLAYWRIGHT === '1' || process.env.PLAYWRIGHT_TEST) ? null : event
       }
     );
   }

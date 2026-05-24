@@ -101,7 +101,7 @@ export interface TrackerKeyMaterial {
 }
 
 export interface TrackerSyncEngineConfig {
-  /** WebSocket server URL, e.g. `wss://sync.nimbalyst.com`. */
+  /** WebSocket server URL, e.g. `wss://sync-dev.smartypants.ai`. */
   serverUrl: string;
 
   /** B2B org ID; namespace prefix of the room ID. */
@@ -876,4 +876,3 @@ function parseServerMessage(data: unknown): TrackerServerMessage | null {
     return null;
   }
 }
-

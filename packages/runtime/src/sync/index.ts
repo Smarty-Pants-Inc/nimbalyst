@@ -10,7 +10,7 @@
  *
  * // 1. Create sync provider with JWT auth
  * const syncProvider = createCollabV3Sync({
- *   serverUrl: 'wss://sync.nimbalyst.com',
+ *   serverUrl: 'wss://sync-dev.smartypants.ai',
  *   jwt: stytchSessionJwt, // User ID extracted from 'sub' claim
  *   encryptionKey: derivedKey, // Required for E2E encryption
  * });

@@ -83,19 +83,15 @@ interface OAuthStatusResult {
   requiresOAuth?: boolean;
 }
 
-// Icon configuration for MCP server templates
-// Uses Simple Icons CDN for brand icons, Material Symbols for generic tools
+// Icon configuration for MCP server templates. Brand icons use local fallbacks
+// so opening settings does not trigger remote image requests.
 type IconConfig =
   | { type: 'simple-icons'; slug: string }
   | { type: 'material-symbol'; icon: string }
   | { type: 'url'; url: string };
 
-// Icons that are dark/black and need a light color override in dark mode
-// Most brand icons have colorful logos that work on both light and dark backgrounds
-const DARK_ICONS_NEEDING_LIGHT_OVERRIDE = new Set(['github', 'notion']);
-
 const TEMPLATE_ICON_CONFIG: Record<string, IconConfig> = {
-  // Brand icons from Simple Icons CDN
+  // Brand icons use local text fallbacks to avoid remote icon requests.
   linear: { type: 'simple-icons', slug: 'linear' },
   github: { type: 'simple-icons', slug: 'github' },
   'brave-search': { type: 'simple-icons', slug: 'brave' },
@@ -105,7 +101,7 @@ const TEMPLATE_ICON_CONFIG: Record<string, IconConfig> = {
   asana: { type: 'simple-icons', slug: 'asana' },
   slack: { type: 'simple-icons', slug: 'slack' },
   zapier: { type: 'simple-icons', slug: 'zapier' },
-  aws: { type: 'url', url: 'https://cdn.jsdelivr.net/npm/simple-icons/icons/amazonwebservices.svg' },
+  aws: { type: 'material-symbol', icon: 'cloud' },
   stripe: { type: 'simple-icons', slug: 'stripe' },
   snowflake: { type: 'simple-icons', slug: 'snowflake' },
   shopify: { type: 'simple-icons', slug: 'shopify' },
@@ -126,6 +122,8 @@ const TEMPLATE_ICON_CONFIG: Record<string, IconConfig> = {
 
 // Component to render MCP server icon
 function MCPServerIcon({ templateId, name, isDark }: { templateId: string; name: string; isDark: boolean }) {
+  void isDark;
+
   const config = TEMPLATE_ICON_CONFIG[templateId];
 
   if (!config) {
@@ -134,31 +132,7 @@ function MCPServerIcon({ templateId, name, isDark }: { templateId: string; name:
   }
 
   if (config.type === 'simple-icons') {
-    // Simple Icons CDN supports color parameters:
-    // - Default brand color: https://cdn.simpleicons.org/{slug}
-    // - Custom color: https://cdn.simpleicons.org/{slug}/{color}
-    // Most brand icons have colorful logos that work on both backgrounds.
-    // Only override dark/black icons (like GitHub, Notion) in dark mode.
-    const needsLightOverride = isDark && DARK_ICONS_NEEDING_LIGHT_OVERRIDE.has(config.slug);
-    const iconUrl = needsLightOverride
-      ? `https://cdn.simpleicons.org/${config.slug}/ffffff`
-      : `https://cdn.simpleicons.org/${config.slug}`;
-
-    return (
-      <img
-        src={iconUrl}
-        alt=""
-        className="mcp-icon-img w-5 h-5 object-contain"
-        loading="lazy"
-        onError={(e) => {
-          // Hide image on error and show fallback
-          const target = e.target as HTMLImageElement;
-          target.style.display = 'none';
-          const fallback = target.nextElementSibling as HTMLElement;
-          if (fallback) fallback.style.display = 'flex';
-        }}
-      />
-    );
+    return <span className="mcp-icon-fallback text-sm font-semibold text-[var(--nim-text-muted)] flex items-center justify-center w-full h-full">{name[0]}</span>;
   }
 
   if (config.type === 'material-symbol') {
@@ -170,14 +144,7 @@ function MCPServerIcon({ templateId, name, isDark }: { templateId: string; name:
   }
 
   if (config.type === 'url') {
-    return (
-      <img
-        src={config.url}
-        alt=""
-        className="mcp-icon-img w-5 h-5 object-contain"
-        loading="lazy"
-      />
-    );
+    return <span className="mcp-icon-fallback text-sm font-semibold text-[var(--nim-text-muted)] flex items-center justify-center w-full h-full">{name[0]}</span>;
   }
 
   return <span className="mcp-icon-fallback text-sm font-semibold text-[var(--nim-text-muted)] flex items-center justify-center w-full h-full">{name[0]}</span>;

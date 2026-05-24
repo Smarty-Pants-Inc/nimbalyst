@@ -14,6 +14,7 @@
  */
 
 import type { SessionStore } from '@nimbalyst/runtime';
+import { DEFAULT_MODELS } from '@nimbalyst/runtime/ai/modelConstants';
 import type { DeviceInfo } from '@nimbalyst/runtime/sync';
 import * as syncModule from '@nimbalyst/runtime/sync';
 import { getSessionSyncConfig, setSessionSyncConfig, getReleaseChannel, getDefaultAIModel, store, type SessionSyncConfig } from '../utils/store';
@@ -31,6 +32,8 @@ import { setSleepPreventionMode, setSyncConnected, shutdownSleepPrevention, type
 import { reconnectAllTrackerSyncs } from './TrackerSyncManager';
 import { BrowserWindow } from 'electron';
 import { timeStartupPhase } from '../utils/startupTiming';
+
+const SMARTY_SERVER_DEFAULT_MODEL = DEFAULT_MODELS['smarty-server'];
 
 function loadSyncModule() {
   return syncModule;
@@ -1108,10 +1111,11 @@ async function getAvailableModelsForMobile(): Promise<{ models: Array<{ id: stri
     // Build enabled provider set to avoid fetching from disabled providers (e.g., LMStudio network call)
     const enabledSet = new Set<string>();
     if (providerSettings['claude']?.enabled === true && !!apiKeys['anthropic']) enabledSet.add('claude');
-    if (providerSettings['claude-code']?.enabled !== false) enabledSet.add('claude-code');
+    if (providerSettings['claude-code']?.enabled === true) enabledSet.add('claude-code');
     if (providerSettings['openai']?.enabled === true && !!apiKeys['openai']) enabledSet.add('openai');
     if (providerSettings['openai-codex']?.enabled === true) enabledSet.add('openai-codex');
     if (providerSettings['openai-codex-acp']?.enabled === true) enabledSet.add('openai-codex-acp');
+    if (providerSettings['smarty-server']?.enabled === true) enabledSet.add('smarty-server');
     if (providerSettings['lmstudio']?.enabled === true) enabledSet.add('lmstudio');
 
     const modelsConfig = {
@@ -1130,7 +1134,7 @@ async function getAvailableModelsForMobile(): Promise<{ models: Array<{ id: stri
     });
 
     const models = enabledModels.map(m => ({ id: m.id, name: m.name, provider: m.provider }));
-    const defaultModel = getDefaultAIModel() || 'claude-code:opus-1m';
+    const defaultModel = getDefaultAIModel() || SMARTY_SERVER_DEFAULT_MODEL;
     return { models, defaultModel };
   } catch (err) {
     logger.main.warn('[SyncManager] Failed to fetch models for mobile sync:', err);

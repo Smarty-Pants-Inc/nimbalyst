@@ -118,6 +118,12 @@ export interface PermissionRequest {
   toolInput?: any;
 }
 
+export type RejectedPermissionRequest = PermissionRequest | {
+  id?: string;
+  requestId?: string;
+  sessionId?: string;
+};
+
 /**
  * Centralized permission service for agent providers
  */
@@ -240,7 +246,7 @@ export class ToolPermissionService {
    * @param requestId - Request ID to resolve
    * @param decision - User's decision
    */
-  resolvePermission(requestId: string, decision: PermissionDecision): void {
+  resolvePermission(requestId: string, decision: PermissionDecision): boolean {
     const pending = this.pendingPermissions.get(requestId);
     if (pending) {
       pending.resolve(decision);
@@ -250,8 +256,10 @@ export class ToolPermissionService {
         decision: decision.decision,
         scope: decision.scope,
       });
+      return true;
     } else {
       this.securityLogger('[ToolPermissionService] No pending permission found', { requestId });
+      return false;
     }
   }
 
@@ -280,15 +288,18 @@ export class ToolPermissionService {
    *
    * Called on abort or provider cleanup.
    */
-  rejectAllPending(): void {
+  rejectAllPending(error = new Error('Request aborted')): RejectedPermissionRequest[] {
+    const rejectedRequests = Array.from(this.pendingPermissions.values())
+      .map((pending) => pending.request as RejectedPermissionRequest);
     const count = this.pendingPermissions.size;
     for (const [requestId, pending] of this.pendingPermissions) {
-      pending.reject(new Error('Request aborted'));
+      pending.reject(error);
     }
     this.pendingPermissions.clear();
     if (count > 0) {
       this.securityLogger('[ToolPermissionService] Rejected all pending permissions', { count });
     }
+    return rejectedRequests;
   }
 
   /**
@@ -349,6 +360,9 @@ export class ToolPermissionService {
     toolDescription: string;
     isDestructive: boolean;
     warnings?: string[];
+    referencedPaths?: string[];
+    outsidePaths?: string[];
+    sensitivePaths?: string[];
     signal: AbortSignal;
     /** Name of the teammate requesting permission (undefined for lead agent) */
     teammateName?: string;
@@ -365,6 +379,9 @@ export class ToolPermissionService {
       toolDescription,
       isDestructive,
       warnings = [],
+      referencedPaths = [],
+      outsidePaths = [],
+      sensitivePaths = [],
       signal,
       teammateName,
     } = options;
@@ -445,7 +462,7 @@ export class ToolPermissionService {
           displayName: toolDescription,
           command: toolName === 'Bash' ? toolInput?.command || '' : '',
           isDestructive,
-          referencedPaths: [],
+          referencedPaths,
           hasRedirection: false,
         },
         decision: 'ask' as const,
@@ -453,8 +470,8 @@ export class ToolPermissionService {
         isDestructive,
         isRisky: toolName === 'Bash',
         warnings,
-        outsidePaths: [],
-        sensitivePaths: [],
+        outsidePaths,
+        sensitivePaths,
       }],
       hasDestructiveActions: isDestructive,
       createdAt: Date.now(),

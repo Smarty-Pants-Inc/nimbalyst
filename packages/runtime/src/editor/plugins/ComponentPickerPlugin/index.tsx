@@ -82,21 +82,11 @@ export const MaterialIcon: React.FC<{name: string; className?: string; style?: R
 };
 
 /**
- * Load Material Symbols font if not already loaded
- * Call this once at app initialization
+ * Material Symbols is bundled by the app CSS. Do not inject a remote Google
+ * Fonts stylesheet from the runtime package.
  */
 export function ensureMaterialSymbolsLoaded() {
-  // Check if already loaded
-  if (document.getElementById('material-symbols-font')) {
-    return;
-  }
-
-  // Add the font link
-  const link = document.createElement('link');
-  link.id = 'material-symbols-font';
-  link.rel = 'stylesheet';
-  link.href = 'https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200';
-  document.head.appendChild(link);
+  return;
 }
 
 // ============================================================================

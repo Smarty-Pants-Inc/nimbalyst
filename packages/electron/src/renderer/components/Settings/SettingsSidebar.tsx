@@ -10,9 +10,9 @@ export type SettingsCategory =
   | 'claude'
   | 'openai'
   | 'openai-codex'
-  | 'deepagents-acp'
   | 'opencode'
   | 'copilot-cli'
+  | 'smarty-server'
   | 'lmstudio'
   | 'notifications'
   | 'voice-mode'
@@ -144,13 +144,6 @@ Best for complex coding tasks.`,
           statusDot: getStatusDot('openai-codex'),
         },
         {
-          id: 'deepagents-acp',
-          name: 'DeepAgents',
-          icon: getProviderIcon('deepagents-acp', { size: 16 }),
-          statusDot: getStatusDot('deepagents-acp'),
-          isAlpha: true,
-        },
-        {
           id: 'opencode',
           name: 'OpenCode',
           icon: getProviderIcon('opencode', { size: 16 }),
@@ -163,6 +156,12 @@ Best for complex coding tasks.`,
           icon: <MaterialSymbol icon="terminal" size={16} />,
           statusDot: getStatusDot('copilot-cli'),
           isAlpha: true,
+        },
+        {
+          id: 'smarty-server',
+          name: 'Smarty Server',
+          icon: getProviderIcon('smarty-server', { size: 16 }),
+          statusDot: getStatusDot('smarty-server'),
         },
       ],
     },

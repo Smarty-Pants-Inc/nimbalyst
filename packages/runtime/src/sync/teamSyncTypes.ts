@@ -42,7 +42,7 @@ export type ServerTeamState = ProtocolTeamState;
 // ============================================================================
 
 export interface TeamSyncConfig {
-  /** WebSocket server URL (e.g., wss://sync.nimbalyst.com) */
+  /** WebSocket server URL (e.g., wss://sync-dev.smartypants.ai) */
   serverUrl: string;
 
   /** Function to get fresh JWT for WebSocket auth */

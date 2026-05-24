@@ -11,9 +11,9 @@ import { ClaudePanel } from '../GlobalSettings/panels/ClaudePanel';
 import { ClaudeCodePanel } from '../GlobalSettings/panels/ClaudeCodePanel';
 import { OpenAIPanel } from '../GlobalSettings/panels/OpenAIPanel';
 import { OpenAICodexPanel } from '../GlobalSettings/panels/OpenAICodexPanel';
-import { DeepAgentsPanel } from '../GlobalSettings/panels/DeepAgentsPanel';
 import { OpenCodePanel } from '../GlobalSettings/panels/OpenCodePanel';
 import { CopilotCLIPanel } from '../GlobalSettings/panels/CopilotCLIPanel';
+import { SmartyServerPanel } from '../GlobalSettings/panels/SmartyServerPanel';
 import { LMStudioPanel } from '../GlobalSettings/panels/LMStudioPanel';
 import { AdvancedPanel } from '../GlobalSettings/panels/AdvancedPanel';
 import { AgentFeaturesPanel } from './AgentFeaturesPanel';
@@ -56,6 +56,8 @@ export interface Model {
 
 // Note: The ProviderConfig interface has been moved to appSettings.ts
 
+const DYNAMIC_AGENT_PROVIDERS = new Set(['openai-codex', 'opencode', 'copilot-cli', 'smarty-server']);
+
 export type SettingsScope = 'user' | 'project';
 
 interface MarketplaceInstallRequest {
@@ -85,7 +87,7 @@ export function SettingsView({
 }: SettingsViewProps) {
   const posthog = usePostHog();
 
-  const [selectedCategory, setSelectedCategory] = useState<SettingsCategory>(initialCategory || 'claude-code');
+  const [selectedCategory, setSelectedCategory] = useState<SettingsCategory>(initialCategory || 'smarty-server');
   const [scope, setScope] = useState<SettingsScope>(initialScope || 'user');
 
   // AI Provider settings - using Jotai atoms (Phase 5b)
@@ -146,8 +148,8 @@ export function SettingsView({
   const [workspaceMcpServerCount, setWorkspaceMcpServerCount] = useState(0);
 
   // Valid categories for each scope
-  const projectCategories: SettingsCategory[] = ['agent-permissions', 'team', 'tracker-config', 'installed-extensions', 'claude-plugins', 'mcp-servers', 'claude-code', 'claude', 'openai', 'openai-codex', 'deepagents-acp', 'opencode', 'copilot-cli', 'lmstudio'];
-  const userCategories: SettingsCategory[] = ['claude-code', 'claude', 'openai', 'openai-codex', 'deepagents-acp', 'opencode', 'copilot-cli', 'lmstudio', 'sync', 'notifications', 'voice-mode', 'agent-features', 'advanced', 'marketplace', 'installed-extensions', 'claude-plugins', 'mcp-servers'];
+  const projectCategories: SettingsCategory[] = ['agent-permissions', 'team', 'tracker-config', 'installed-extensions', 'claude-plugins', 'mcp-servers', 'claude-code', 'claude', 'openai', 'openai-codex', 'opencode', 'copilot-cli', 'smarty-server', 'lmstudio'];
+  const userCategories: SettingsCategory[] = ['claude-code', 'claude', 'openai', 'openai-codex', 'opencode', 'copilot-cli', 'smarty-server', 'lmstudio', 'sync', 'notifications', 'voice-mode', 'agent-features', 'advanced', 'marketplace', 'installed-extensions', 'claude-plugins', 'mcp-servers'];
 
   // When initialCategory/initialScope props change, update state (for deep linking)
   useEffect(() => {
@@ -186,7 +188,7 @@ export function SettingsView({
     const validCategories = scope === 'project' ? projectCategories : userCategories;
     if (!validCategories.includes(selectedCategory)) {
       // Default to first valid category for the scope
-      setSelectedCategory(scope === 'project' ? 'agent-permissions' : 'claude-code');
+      setSelectedCategory(scope === 'project' ? 'agent-permissions' : 'smarty-server');
     }
   }, [scope]);
 
@@ -240,7 +242,7 @@ export function SettingsView({
   };
 
   const handleProviderToggle = async (provider: string, enabled: boolean) => {
-    if (enabled && (provider === 'claude-code' || provider === 'openai-codex' || provider === 'deepagents-acp' || provider === 'opencode' || provider === 'copilot-cli')) {
+    if (enabled && (provider === 'claude-code' || DYNAMIC_AGENT_PROVIDERS.has(provider))) {
       await fetchModels(provider);
     }
 
@@ -256,12 +258,12 @@ export function SettingsView({
 
       posthog?.capture('ai_provider_configured', {
         provider,
-        modelCount: (provider === 'openai-codex' || provider === 'deepagents-acp' || provider === 'opencode' || provider === 'copilot-cli') ? 0 : models.length,
+        modelCount: DYNAMIC_AGENT_PROVIDERS.has(provider) ? 0 : models.length,
         action: enabled ? 'enabled' : 'disabled'
       });
 
       // Agent CLI providers use dynamic model discovery, not user selection
-      if (provider === 'openai-codex' || provider === 'deepagents-acp' || provider === 'opencode' || provider === 'copilot-cli') {
+      if (DYNAMIC_AGENT_PROVIDERS.has(provider)) {
         const currentProvider = prev[provider] || { enabled: false };
         return {
           ...prev,
@@ -283,7 +285,7 @@ export function SettingsView({
     });
     debouncedSave();
 
-    if (enabled && provider !== 'claude-code' && provider !== 'openai-codex' && provider !== 'deepagents-acp' && provider !== 'opencode' && provider !== 'copilot-cli') {
+    if (enabled && provider !== 'claude-code' && !DYNAMIC_AGENT_PROVIDERS.has(provider)) {
       fetchModels(provider);
     }
   };
@@ -407,7 +409,7 @@ export function SettingsView({
       onApiKeyChange: handleApiKeyChange,
       onModelToggle: (modelId: string, enabled: boolean) => {
         // Agent CLI providers don't support user model selection - models are discovered dynamically
-        if (selectedCategory === 'openai-codex' || selectedCategory === 'deepagents-acp' || selectedCategory === 'opencode' || selectedCategory === 'copilot-cli') {
+        if (DYNAMIC_AGENT_PROVIDERS.has(selectedCategory)) {
           return;
         }
 
@@ -434,7 +436,7 @@ export function SettingsView({
       },
       onSelectAllModels: (selectAll: boolean) => {
         // Agent CLI providers don't support user model selection - models are discovered dynamically
-        if (selectedCategory === 'openai-codex' || selectedCategory === 'deepagents-acp' || selectedCategory === 'opencode' || selectedCategory === 'copilot-cli') {
+        if (DYNAMIC_AGENT_PROVIDERS.has(selectedCategory)) {
           return;
         }
 
@@ -455,7 +457,15 @@ export function SettingsView({
       onTestConnection: async () => {
         setProviders(prev => ({
           ...prev,
-          [selectedCategory]: { ...prev[selectedCategory], testStatus: 'testing', testMessage: undefined }
+          [selectedCategory]: {
+            ...prev[selectedCategory],
+            testStatus: 'testing',
+            testMessage: undefined,
+            runtimeHealth: undefined,
+            runtimeHealthCheckedAt: undefined,
+            runtimeHealthRecovery: undefined,
+            runtimeHealthWarnings: undefined,
+          }
         }));
 
         // Ensure any debounced provider/apiKey changes are saved before testing
@@ -469,13 +479,22 @@ export function SettingsView({
             selectedCategory,
             workspacePath ?? undefined
           );
+          const runtimeHealthCheckedAt = new Date().toISOString();
 
           setProviders(prev => ({
             ...prev,
             [selectedCategory]: {
               ...prev[selectedCategory],
               testStatus: result.success ? 'success' : 'error',
-              testMessage: result.success ? 'Connected' : result.error
+              testMessage: result.success ? 'Connected' : result.error,
+              runtimeHealth: result.health,
+              runtimeHealthCheckedAt,
+              runtimeHealthRecovery: result.recovery,
+              runtimeHealthWarnings: result.warnings,
+              ...(result.success && result.health ? {
+                lastSuccessfulRuntimeHealth: result.health,
+                lastSuccessfulRuntimeHealthCheckedAt: runtimeHealthCheckedAt,
+              } : {}),
             }
           }));
 
@@ -489,7 +508,11 @@ export function SettingsView({
             [selectedCategory]: {
               ...prev[selectedCategory],
               testStatus: 'error',
-              testMessage: 'Connection failed'
+              testMessage: 'Connection failed',
+              runtimeHealth: undefined,
+              runtimeHealthCheckedAt: new Date().toISOString(),
+              runtimeHealthRecovery: undefined,
+              runtimeHealthWarnings: undefined,
             }
           }));
         }
@@ -539,12 +562,12 @@ export function SettingsView({
         return wrapWithOverride('openai', 'OpenAI', <OpenAIPanel {...commonProps} />);
       case 'openai-codex':
         return wrapWithOverride('openai-codex', 'OpenAI Codex', <OpenAICodexPanel {...commonProps} />);
-      case 'deepagents-acp':
-        return wrapWithOverride('deepagents-acp', 'DeepAgents', <DeepAgentsPanel {...commonProps} />);
       case 'opencode':
         return wrapWithOverride('opencode', 'OpenCode', <OpenCodePanel {...commonProps} />);
       case 'copilot-cli':
         return wrapWithOverride('copilot-cli', 'GitHub Copilot', <CopilotCLIPanel {...commonProps} />);
+      case 'smarty-server':
+        return wrapWithOverride('smarty-server', 'Smarty Server', <SmartyServerPanel {...commonProps} />);
       case 'lmstudio':
         return wrapWithOverride('lmstudio', 'LM Studio', <LMStudioPanel {...commonProps} />);
       case 'advanced':
@@ -631,7 +654,7 @@ export function SettingsView({
     // Only change category if current one is not available in the new scope
     if (newScope === 'user' && projectOnlyCategories.includes(selectedCategory)) {
       // Switching to user scope from a project-only category
-      setSelectedCategory('claude-code');
+      setSelectedCategory('smarty-server');
     }
     // When switching to project scope, keep the current category (all user categories are available in project scope)
   };

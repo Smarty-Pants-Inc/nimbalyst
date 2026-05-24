@@ -44,7 +44,7 @@ function extractFileMentions(message: string): string[] {
  */
 function getLinkTypeForTool(toolName: string): FileLinkType | null {
   const editTools = [
-    'Write', 'Edit', 'NotebookEdit', 'writeFile', 'editFile', 'applyDiff', 'streamContent', 'Bash', 'file_change',
+    'Write', 'Edit', 'NotebookEdit', 'writeFile', 'editFile', 'write_file', 'edit_file', 'applyDiff', 'streamContent', 'Bash', 'file_change',
     // Codex ACP: kind:'edit'/'delete'/'move' tool calls map to 'ApplyPatch' in
     // CodexACPProtocol.deriveToolName; the path is forwarded from ACP locations[].
     'ApplyPatch',
@@ -53,7 +53,7 @@ function getLinkTypeForTool(toolName: string): FileLinkType | null {
     'edit', 'write', 'create',
   ];
   const readTools = [
-    'Read', 'Glob', 'Grep', 'readFile', 'searchFiles', 'listFiles', 'getDocumentContent',
+    'Read', 'Glob', 'Grep', 'readFile', 'read_file', 'searchFiles', 'listFiles', 'list_files', 'getDocumentContent',
     // OpenCode tool names (short names from real SDK: read, list, search)
     'file_read', 'file_list', 'file_search',
     'read', 'list', 'search',
@@ -67,6 +67,113 @@ function getLinkTypeForTool(toolName: string): FileLinkType | null {
   }
 
   return null;
+}
+
+const LANGGRAPH_VIRTUAL_WORKSPACE_TOOLS = new Set([
+  'write_file',
+  'edit_file',
+  'read_file',
+  'list_files',
+]);
+
+const FILE_CHANGE_VIRTUAL_WORKSPACE_TOOLS = new Set([
+  'file_change',
+]);
+
+const REAL_ABSOLUTE_PATH_FIRST_SEGMENTS = new Set([
+  'applications',
+  'bin',
+  'dev',
+  'etc',
+  'home',
+  'library',
+  'opt',
+  'private',
+  'proc',
+  'sbin',
+  'system',
+  'tmp',
+  'users',
+  'usr',
+  'var',
+  'volumes',
+]);
+
+function isPathInside(root: string, candidate: string): boolean {
+  const relative = path.relative(root, candidate);
+  return relative === '' || (!relative.startsWith('..') && !path.isAbsolute(relative));
+}
+
+function virtualWorkspaceRelativePath(virtualPath: string): string {
+  const normalized = virtualPath.replace(/^[/\\]+/, '');
+  if (normalized === 'workspace') {
+    return '';
+  }
+  if (normalized.startsWith('workspace/') || normalized.startsWith('workspace\\')) {
+    return normalized.slice('workspace'.length + 1);
+  }
+  return normalized;
+}
+
+function resolveVirtualWorkspacePath(workspaceRoot: string, virtualPath: string): string | null {
+  const candidate = path.resolve(workspaceRoot, virtualWorkspaceRelativePath(virtualPath));
+  return isPathInside(workspaceRoot, candidate) ? candidate : null;
+}
+
+function isVirtualWorkspacePath(virtualPath: string): boolean {
+  const normalized = virtualPath.replace(/^[/\\]+/, '');
+  return normalized === 'workspace'
+    || normalized.startsWith('workspace/')
+    || normalized.startsWith('workspace\\');
+}
+
+function isKnownLangGraphVirtualPath(virtualPath: string): boolean {
+  const normalized = virtualPath.replace(/^[/\\]+/, '').replace(/\\/g, '/');
+  return normalized === 'tmp/runtime' || normalized.startsWith('tmp/runtime/');
+}
+
+function isKnownVirtualWorkspaceCandidate(virtualPath: string): boolean {
+  if (!path.isAbsolute(virtualPath)) return false;
+  if (isVirtualWorkspacePath(virtualPath) || isKnownLangGraphVirtualPath(virtualPath)) {
+    return true;
+  }
+  const firstSegment = virtualWorkspaceRelativePath(virtualPath).split(/[\\/]/)[0];
+  return Boolean(firstSegment) && !REAL_ABSOLUTE_PATH_FIRST_SEGMENTS.has(firstSegment.toLowerCase());
+}
+
+function resolveKnownVirtualWorkspacePath(workspaceRoot: string, virtualPath: string): string | null {
+  if (!isKnownVirtualWorkspaceCandidate(virtualPath)) return null;
+  return resolveVirtualWorkspacePath(workspaceRoot, virtualPath);
+}
+
+function normalizeToolFilePath(workspaceId: string, filePath: string, toolName: string): string | null {
+  const workspaceRoot = path.resolve(workspaceId);
+  if (!path.isAbsolute(filePath)) {
+    return path.resolve(workspaceRoot, filePath);
+  }
+
+  const hostPath = path.resolve(filePath);
+  if (isPathInside(workspaceRoot, hostPath)) {
+    return hostPath;
+  }
+
+  if (FILE_CHANGE_VIRTUAL_WORKSPACE_TOOLS.has(toolName)) {
+    const virtualPath = resolveKnownVirtualWorkspacePath(workspaceRoot, filePath);
+    if (virtualPath) {
+      return virtualPath;
+    }
+    return isKnownVirtualWorkspaceCandidate(filePath) ? null : hostPath;
+  }
+
+  // LangGraph/DeepAgents file tools report paths in their virtual workspace
+  // namespace, where "/README.md" means "<workspace>/README.md". Convert those
+  // before persisting session-file rows; git/diff surfaces only understand host
+  // paths under the opened repository.
+  if (LANGGRAPH_VIRTUAL_WORKSPACE_TOOLS.has(toolName)) {
+    return resolveVirtualWorkspacePath(workspaceRoot, filePath);
+  }
+
+  return hostPath;
 }
 
 // extractFilePathFromArgs has been replaced by the shared extractFilePath utility
@@ -96,7 +203,7 @@ function extractEditMetadata(toolName: string, args: any, result: any, filePath?
   };
 
   // Determine operation type
-  if (toolName === 'Write' || toolName === 'writeFile' || toolName === 'file_write' || toolName === 'file_create') {
+  if (toolName === 'Write' || toolName === 'writeFile' || toolName === 'write_file' || toolName === 'file_write' || toolName === 'file_create') {
     metadata.operation = 'create';
   } else if (toolName === 'ApplyPatch') {
     // Codex apply_patch tells us add/update/delete per-file in args.changes.
@@ -109,7 +216,7 @@ function extractEditMetadata(toolName: string, args: any, result: any, filePath?
     } else {
       metadata.operation = 'edit';
     }
-  } else if (toolName === 'Edit' || toolName === 'editFile' || toolName === 'applyDiff' || toolName === 'file_edit' || toolName === 'patch') {
+  } else if (toolName === 'Edit' || toolName === 'editFile' || toolName === 'edit_file' || toolName === 'applyDiff' || toolName === 'file_edit' || toolName === 'patch') {
     metadata.operation = 'edit';
   } else if (toolName === 'Bash' || toolName === 'shell') {
     // For Bash/shell, store the command for reference
@@ -238,16 +345,24 @@ export class SessionFileTracker {
         let bypassCount = 0;
         for (const change of changes) {
           if (!change || typeof change.path !== 'string' || !change.path.trim()) continue;
-          // Resolve relative paths against workspace (Codex sometimes sends relative paths)
-          const changePath = change.path.startsWith('/')
-            ? change.path
-            : path.resolve(workspaceId, change.path);
+          const changePath = normalizeToolFilePath(workspaceId, change.path, toolName);
+          if (!changePath) {
+            logger.main.warn(`[SessionFileTracker] Skipping ${toolName} path outside workspace: ${change.path}`);
+            continue;
+          }
           // Cap bypass additions at 10 per file_change tool call
           if (bypassCount < 10) {
             addGitignoreBypass(workspaceId, changePath);
             bypassCount++;
           }
-          await this.trackSingleFile(sessionId, workspaceId, changePath, linkType, toolName, args, result, toolUseId, window);
+          const normalizedArgs = {
+            ...args,
+            changes: [{
+              ...change,
+              path: changePath,
+            }],
+          };
+          await this.trackSingleFile(sessionId, workspaceId, changePath, linkType, toolName, normalizedArgs, result, toolUseId, window);
         }
         return;
       }
@@ -326,9 +441,12 @@ export class SessionFileTracker {
     // pass relative paths while watcher- and ApplyPatch-driven tracking pass
     // absolute paths; an inconsistent mix produces duplicate rows in the
     // FilesEditedSidebar tree.
-    if (!path.isAbsolute(filePath)) {
-      filePath = path.resolve(workspaceId, filePath);
+    const normalizedFilePath = normalizeToolFilePath(workspaceId, filePath, toolName);
+    if (!normalizedFilePath) {
+      logger.main.warn(`[SessionFileTracker] Skipping ${toolName} path outside workspace: ${filePath}`);
+      return;
     }
+    filePath = normalizedFilePath;
 
     try {
       // Dedup: skip if this file+session was already tracked as edited recently.

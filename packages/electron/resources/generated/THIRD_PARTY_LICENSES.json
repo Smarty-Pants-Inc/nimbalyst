@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-20T00:37:39.177Z",
+  "generatedAt": "2026-05-24T08:17:06.152Z",
   "scope": {
     "workspaceRoots": [
       "packages/electron",
@@ -26,7 +26,7 @@
     "description": "Production dependencies reachable from Electron, runtime, and built-in extension workspaces."
   },
   "summary": {
-    "packageCount": 827,
+    "packageCount": 844,
     "reviewRequiredCount": 0,
     "approvedExceptionCount": 3,
     "licenseCounts": {
@@ -39,7 +39,7 @@
       "EPL-2.0": 1,
       "ISC": 56,
       "LGPL-3.0": 1,
-      "MIT": 683,
+      "MIT": 700,
       "Python-2.0": 1,
       "SEE LICENSE IN README.md": 1,
       "Unlicense": 1
@@ -221,6 +221,27 @@
           "text": "MIT License\n\nCopyright (c) 2017 Braintree\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.\n"
         }
       ],
+      "noticeFiles": []
+    },
+    {
+      "id": "@cfworker/json-schema@4.1.1",
+      "name": "@cfworker/json-schema",
+      "version": "4.1.1",
+      "rawLicense": "MIT",
+      "selectedLicense": "MIT",
+      "reviewRequired": false,
+      "reviewReasons": [],
+      "approved": false,
+      "approvalReason": null,
+      "approvalLicense": null,
+      "issues": [
+        "No license file found in package directory"
+      ],
+      "installPaths": [
+        "node_modules/@cfworker/json-schema"
+      ],
+      "resolved": "https://registry.npmjs.org/@cfworker/json-schema/-/json-schema-4.1.1.tgz",
+      "licenseFiles": [],
       "noticeFiles": []
     },
     {
@@ -1690,6 +1711,81 @@
           "fileName": "LICENSE",
           "relativePath": "node_modules/@kwsites/promise-deferred/LICENSE",
           "text": "MIT License\n\nCopyright (c) 2018 kwsites\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.\n"
+        }
+      ],
+      "noticeFiles": []
+    },
+    {
+      "id": "@langchain/core@1.1.46",
+      "name": "@langchain/core",
+      "version": "1.1.46",
+      "rawLicense": "MIT",
+      "selectedLicense": "MIT",
+      "reviewRequired": false,
+      "reviewReasons": [],
+      "approved": false,
+      "approvalReason": null,
+      "approvalLicense": null,
+      "issues": [],
+      "installPaths": [
+        "node_modules/@langchain/core"
+      ],
+      "resolved": "https://registry.npmjs.org/@langchain/core/-/core-1.1.46.tgz",
+      "licenseFiles": [
+        {
+          "fileName": "LICENSE",
+          "relativePath": "node_modules/@langchain/core/LICENSE",
+          "text": "MIT License\n\nCopyright (c) LangChain, Inc.\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.\n"
+        }
+      ],
+      "noticeFiles": []
+    },
+    {
+      "id": "@langchain/langgraph-sdk@1.9.2",
+      "name": "@langchain/langgraph-sdk",
+      "version": "1.9.2",
+      "rawLicense": "MIT",
+      "selectedLicense": "MIT",
+      "reviewRequired": false,
+      "reviewReasons": [],
+      "approved": false,
+      "approvalReason": null,
+      "approvalLicense": null,
+      "issues": [],
+      "installPaths": [
+        "node_modules/@langchain/langgraph-sdk"
+      ],
+      "resolved": "https://registry.npmjs.org/@langchain/langgraph-sdk/-/langgraph-sdk-1.9.2.tgz",
+      "licenseFiles": [
+        {
+          "fileName": "LICENSE",
+          "relativePath": "node_modules/@langchain/langgraph-sdk/LICENSE",
+          "text": "MIT License\n\nCopyright (c) 2024 LangChain, Inc.\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.\n"
+        }
+      ],
+      "noticeFiles": []
+    },
+    {
+      "id": "@langchain/protocol@0.0.15",
+      "name": "@langchain/protocol",
+      "version": "0.0.15",
+      "rawLicense": "MIT",
+      "selectedLicense": "MIT",
+      "reviewRequired": false,
+      "reviewReasons": [],
+      "approved": false,
+      "approvalReason": null,
+      "approvalLicense": null,
+      "issues": [],
+      "installPaths": [
+        "node_modules/@langchain/protocol"
+      ],
+      "resolved": "https://registry.npmjs.org/@langchain/protocol/-/protocol-0.0.15.tgz",
+      "licenseFiles": [
+        {
+          "fileName": "LICENSE",
+          "relativePath": "node_modules/@langchain/protocol/LICENSE",
+          "text": "MIT License\n\nCopyright (c) 2026 LangChain, Inc.\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.\n"
         }
       ],
       "noticeFiles": []
@@ -4532,6 +4628,31 @@
         {
           "fileName": "LICENSE",
           "relativePath": "node_modules/@types/js-yaml/LICENSE",
+          "text": "    MIT License\n\n    Copyright (c) Microsoft Corporation.\n\n    Permission is hereby granted, free of charge, to any person obtaining a copy\n    of this software and associated documentation files (the \"Software\"), to deal\n    in the Software without restriction, including without limitation the rights\n    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell\n    copies of the Software, and to permit persons to whom the Software is\n    furnished to do so, subject to the following conditions:\n\n    The above copyright notice and this permission notice shall be included in all\n    copies or substantial portions of the Software.\n\n    THE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\n    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\n    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\n    AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\n    LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\n    OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\n    SOFTWARE\n"
+        }
+      ],
+      "noticeFiles": []
+    },
+    {
+      "id": "@types/json-schema@7.0.15",
+      "name": "@types/json-schema",
+      "version": "7.0.15",
+      "rawLicense": "MIT",
+      "selectedLicense": "MIT",
+      "reviewRequired": false,
+      "reviewReasons": [],
+      "approved": false,
+      "approvalReason": null,
+      "approvalLicense": null,
+      "issues": [],
+      "installPaths": [
+        "node_modules/@types/json-schema"
+      ],
+      "resolved": "https://registry.npmjs.org/@types/json-schema/-/json-schema-7.0.15.tgz",
+      "licenseFiles": [
+        {
+          "fileName": "LICENSE",
+          "relativePath": "node_modules/@types/json-schema/LICENSE",
           "text": "    MIT License\n\n    Copyright (c) Microsoft Corporation.\n\n    Permission is hereby granted, free of charge, to any person obtaining a copy\n    of this software and associated documentation files (the \"Software\"), to deal\n    in the Software without restriction, including without limitation the rights\n    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell\n    copies of the Software, and to permit persons to whom the Software is\n    furnished to do so, subject to the following conditions:\n\n    The above copyright notice and this permission notice shall be included in all\n    copies or substantial portions of the Software.\n\n    THE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\n    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\n    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\n    AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\n    LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\n    OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\n    SOFTWARE\n"
         }
       ],
@@ -9237,6 +9358,37 @@
       "noticeFiles": []
     },
     {
+      "id": "eventemitter3@4.0.7",
+      "name": "eventemitter3",
+      "version": "4.0.7",
+      "rawLicense": "MIT",
+      "selectedLicense": "MIT",
+      "reviewRequired": false,
+      "reviewReasons": [],
+      "approved": false,
+      "approvalReason": null,
+      "approvalLicense": null,
+      "issues": [],
+      "installPaths": [
+        "node_modules/langsmith/node_modules/eventemitter3",
+        "node_modules/@langchain/core/node_modules/eventemitter3"
+      ],
+      "resolved": "https://registry.npmjs.org/eventemitter3/-/eventemitter3-4.0.7.tgz",
+      "licenseFiles": [
+        {
+          "fileName": "LICENSE",
+          "relativePath": "node_modules/langsmith/node_modules/eventemitter3/LICENSE",
+          "text": "The MIT License (MIT)\n\nCopyright (c) 2014 Arnout Kazemier\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.\n"
+        },
+        {
+          "fileName": "LICENSE",
+          "relativePath": "node_modules/@langchain/core/node_modules/eventemitter3/LICENSE",
+          "text": "The MIT License (MIT)\n\nCopyright (c) 2014 Arnout Kazemier\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.\n"
+        }
+      ],
+      "noticeFiles": []
+    },
+    {
       "id": "eventemitter3@5.0.4",
       "name": "eventemitter3",
       "version": "5.0.4",
@@ -11776,6 +11928,31 @@
       "noticeFiles": []
     },
     {
+      "id": "is-network-error@1.3.2",
+      "name": "is-network-error",
+      "version": "1.3.2",
+      "rawLicense": "MIT",
+      "selectedLicense": "MIT",
+      "reviewRequired": false,
+      "reviewReasons": [],
+      "approved": false,
+      "approvalReason": null,
+      "approvalLicense": null,
+      "issues": [],
+      "installPaths": [
+        "node_modules/is-network-error"
+      ],
+      "resolved": "https://registry.npmjs.org/is-network-error/-/is-network-error-1.3.2.tgz",
+      "licenseFiles": [
+        {
+          "fileName": "license",
+          "relativePath": "node_modules/is-network-error/license",
+          "text": "MIT License\n\nCopyright (c) Sindre Sorhus <sindresorhus@gmail.com> (https://sindresorhus.com)\n\nPermission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the \"Software\"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.\n"
+        }
+      ],
+      "noticeFiles": []
+    },
+    {
       "id": "is-obj@2.0.0",
       "name": "is-obj",
       "version": "2.0.0",
@@ -12097,6 +12274,27 @@
       "noticeFiles": []
     },
     {
+      "id": "js-tiktoken@1.0.21",
+      "name": "js-tiktoken",
+      "version": "1.0.21",
+      "rawLicense": "MIT",
+      "selectedLicense": "MIT",
+      "reviewRequired": false,
+      "reviewReasons": [],
+      "approved": false,
+      "approvalReason": null,
+      "approvalLicense": null,
+      "issues": [
+        "No license file found in package directory"
+      ],
+      "installPaths": [
+        "node_modules/js-tiktoken"
+      ],
+      "resolved": "https://registry.npmjs.org/js-tiktoken/-/js-tiktoken-1.0.21.tgz",
+      "licenseFiles": [],
+      "noticeFiles": []
+    },
+    {
       "id": "js-tokens@4.0.0",
       "name": "js-tokens",
       "version": "4.0.0",
@@ -12372,9 +12570,9 @@
       "noticeFiles": []
     },
     {
-      "id": "katex@0.16.45",
+      "id": "katex@0.16.47",
       "name": "katex",
-      "version": "0.16.45",
+      "version": "0.16.47",
       "rawLicense": "MIT",
       "selectedLicense": "MIT",
       "reviewRequired": false,
@@ -12384,13 +12582,13 @@
       "approvalLicense": null,
       "issues": [],
       "installPaths": [
-        "packages/runtime/node_modules/katex"
+        "packages/extensions/math/node_modules/katex"
       ],
-      "resolved": "https://registry.npmjs.org/katex/-/katex-0.16.45.tgz",
+      "resolved": "https://registry.npmjs.org/katex/-/katex-0.16.47.tgz",
       "licenseFiles": [
         {
           "fileName": "LICENSE",
-          "relativePath": "packages/runtime/node_modules/katex/LICENSE",
+          "relativePath": "packages/extensions/math/node_modules/katex/LICENSE",
           "text": "The MIT License (MIT)\n\nCopyright (c) 2013-2020 Khan Academy and other contributors\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.\n"
         }
       ],
@@ -12471,6 +12669,27 @@
           "text": "Copyright 2021 TypeFox GmbH\n\nPermission is hereby granted, free of charge, to any person obtaining a copy of this software and\nassociated documentation files (the \"Software\"), to deal in the Software without restriction,\nincluding without limitation the rights to use, copy, modify, merge, publish, distribute,\nsublicense, and/or sell copies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all copies or\nsubstantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING\nBUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND\nNONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,\nDAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.\n"
         }
       ],
+      "noticeFiles": []
+    },
+    {
+      "id": "langsmith@0.7.1",
+      "name": "langsmith",
+      "version": "0.7.1",
+      "rawLicense": "MIT",
+      "selectedLicense": "MIT",
+      "reviewRequired": false,
+      "reviewReasons": [],
+      "approved": false,
+      "approvalReason": null,
+      "approvalLicense": null,
+      "issues": [
+        "No license file found in package directory"
+      ],
+      "installPaths": [
+        "node_modules/langsmith"
+      ],
+      "resolved": "https://registry.npmjs.org/langsmith/-/langsmith-0.7.1.tgz",
+      "licenseFiles": [],
       "noticeFiles": []
     },
     {
@@ -14713,6 +14932,31 @@
       "noticeFiles": []
     },
     {
+      "id": "mustache@4.2.0",
+      "name": "mustache",
+      "version": "4.2.0",
+      "rawLicense": "MIT",
+      "selectedLicense": "MIT",
+      "reviewRequired": false,
+      "reviewReasons": [],
+      "approved": false,
+      "approvalReason": null,
+      "approvalLicense": null,
+      "issues": [],
+      "installPaths": [
+        "node_modules/mustache"
+      ],
+      "resolved": "https://registry.npmjs.org/mustache/-/mustache-4.2.0.tgz",
+      "licenseFiles": [
+        {
+          "fileName": "LICENSE",
+          "relativePath": "node_modules/mustache/LICENSE",
+          "text": "The MIT License\n\nCopyright (c) 2009 Chris Wanstrath (Ruby)\nCopyright (c) 2010-2014 Jan Lehnardt (JavaScript)\nCopyright (c) 2010-2015 The mustache.js community\n\nPermission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the \"Software\"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.\n"
+        }
+      ],
+      "noticeFiles": []
+    },
+    {
       "id": "nanoid@3.3.11",
       "name": "nanoid",
       "version": "3.3.11",
@@ -15209,6 +15453,31 @@
       "noticeFiles": []
     },
     {
+      "id": "p-finally@1.0.0",
+      "name": "p-finally",
+      "version": "1.0.0",
+      "rawLicense": "MIT",
+      "selectedLicense": "MIT",
+      "reviewRequired": false,
+      "reviewReasons": [],
+      "approved": false,
+      "approvalReason": null,
+      "approvalLicense": null,
+      "issues": [],
+      "installPaths": [
+        "node_modules/p-finally"
+      ],
+      "resolved": "https://registry.npmjs.org/p-finally/-/p-finally-1.0.0.tgz",
+      "licenseFiles": [
+        {
+          "fileName": "license",
+          "relativePath": "node_modules/p-finally/license",
+          "text": "The MIT License (MIT)\n\nCopyright (c) Sindre Sorhus <sindresorhus@gmail.com> (sindresorhus.com)\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in\nall copies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN\nTHE SOFTWARE.\n"
+        }
+      ],
+      "noticeFiles": []
+    },
+    {
       "id": "p-limit@2.3.0",
       "name": "p-limit",
       "version": "2.3.0",
@@ -15285,6 +15554,143 @@
           "fileName": "license",
           "relativePath": "node_modules/qrcode/node_modules/p-locate/license",
           "text": "MIT License\n\nCopyright (c) Sindre Sorhus <sindresorhus@gmail.com> (sindresorhus.com)\n\nPermission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the \"Software\"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.\n"
+        }
+      ],
+      "noticeFiles": []
+    },
+    {
+      "id": "p-queue@6.6.2",
+      "name": "p-queue",
+      "version": "6.6.2",
+      "rawLicense": "MIT",
+      "selectedLicense": "MIT",
+      "reviewRequired": false,
+      "reviewReasons": [],
+      "approved": false,
+      "approvalReason": null,
+      "approvalLicense": null,
+      "issues": [],
+      "installPaths": [
+        "node_modules/langsmith/node_modules/p-queue",
+        "node_modules/@langchain/core/node_modules/p-queue"
+      ],
+      "resolved": "https://registry.npmjs.org/p-queue/-/p-queue-6.6.2.tgz",
+      "licenseFiles": [
+        {
+          "fileName": "license",
+          "relativePath": "node_modules/langsmith/node_modules/p-queue/license",
+          "text": "MIT License\n\nCopyright (c) Sindre Sorhus <sindresorhus@gmail.com> (https://sindresorhus.com)\n\nPermission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the \"Software\"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.\n"
+        },
+        {
+          "fileName": "license",
+          "relativePath": "node_modules/@langchain/core/node_modules/p-queue/license",
+          "text": "MIT License\n\nCopyright (c) Sindre Sorhus <sindresorhus@gmail.com> (https://sindresorhus.com)\n\nPermission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the \"Software\"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.\n"
+        }
+      ],
+      "noticeFiles": []
+    },
+    {
+      "id": "p-queue@9.2.0",
+      "name": "p-queue",
+      "version": "9.2.0",
+      "rawLicense": "MIT",
+      "selectedLicense": "MIT",
+      "reviewRequired": false,
+      "reviewReasons": [],
+      "approved": false,
+      "approvalReason": null,
+      "approvalLicense": null,
+      "issues": [],
+      "installPaths": [
+        "node_modules/p-queue"
+      ],
+      "resolved": "https://registry.npmjs.org/p-queue/-/p-queue-9.2.0.tgz",
+      "licenseFiles": [
+        {
+          "fileName": "license",
+          "relativePath": "node_modules/p-queue/license",
+          "text": "MIT License\n\nCopyright (c) Sindre Sorhus <sindresorhus@gmail.com> (https://sindresorhus.com)\n\nPermission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the \"Software\"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.\n"
+        }
+      ],
+      "noticeFiles": []
+    },
+    {
+      "id": "p-retry@7.1.1",
+      "name": "p-retry",
+      "version": "7.1.1",
+      "rawLicense": "MIT",
+      "selectedLicense": "MIT",
+      "reviewRequired": false,
+      "reviewReasons": [],
+      "approved": false,
+      "approvalReason": null,
+      "approvalLicense": null,
+      "issues": [],
+      "installPaths": [
+        "node_modules/p-retry"
+      ],
+      "resolved": "https://registry.npmjs.org/p-retry/-/p-retry-7.1.1.tgz",
+      "licenseFiles": [
+        {
+          "fileName": "license",
+          "relativePath": "node_modules/p-retry/license",
+          "text": "MIT License\n\nCopyright (c) Sindre Sorhus <sindresorhus@gmail.com> (https://sindresorhus.com)\n\nPermission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the \"Software\"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.\n"
+        }
+      ],
+      "noticeFiles": []
+    },
+    {
+      "id": "p-timeout@3.2.0",
+      "name": "p-timeout",
+      "version": "3.2.0",
+      "rawLicense": "MIT",
+      "selectedLicense": "MIT",
+      "reviewRequired": false,
+      "reviewReasons": [],
+      "approved": false,
+      "approvalReason": null,
+      "approvalLicense": null,
+      "issues": [],
+      "installPaths": [
+        "node_modules/langsmith/node_modules/p-timeout",
+        "node_modules/@langchain/core/node_modules/p-timeout"
+      ],
+      "resolved": "https://registry.npmjs.org/p-timeout/-/p-timeout-3.2.0.tgz",
+      "licenseFiles": [
+        {
+          "fileName": "license",
+          "relativePath": "node_modules/langsmith/node_modules/p-timeout/license",
+          "text": "MIT License\n\nCopyright (c) Sindre Sorhus <sindresorhus@gmail.com> (sindresorhus.com)\n\nPermission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the \"Software\"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.\n"
+        },
+        {
+          "fileName": "license",
+          "relativePath": "node_modules/@langchain/core/node_modules/p-timeout/license",
+          "text": "MIT License\n\nCopyright (c) Sindre Sorhus <sindresorhus@gmail.com> (sindresorhus.com)\n\nPermission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the \"Software\"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.\n"
+        }
+      ],
+      "noticeFiles": []
+    },
+    {
+      "id": "p-timeout@7.0.1",
+      "name": "p-timeout",
+      "version": "7.0.1",
+      "rawLicense": "MIT",
+      "selectedLicense": "MIT",
+      "reviewRequired": false,
+      "reviewReasons": [],
+      "approved": false,
+      "approvalReason": null,
+      "approvalLicense": null,
+      "issues": [],
+      "installPaths": [
+        "node_modules/p-timeout"
+      ],
+      "resolved": "https://registry.npmjs.org/p-timeout/-/p-timeout-7.0.1.tgz",
+      "licenseFiles": [
+        {
+          "fileName": "license",
+          "relativePath": "node_modules/p-timeout/license",
+          "text": "MIT License\n\nCopyright (c) Sindre Sorhus <sindresorhus@gmail.com> (https://sindresorhus.com)\n\nPermission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the \"Software\"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.\n"
         }
       ],
       "noticeFiles": []
@@ -19575,6 +19981,31 @@
         {
           "fileName": "LICENSE.md",
           "relativePath": "node_modules/uuid/LICENSE.md",
+          "text": "The MIT License (MIT)\n\nCopyright (c) 2010-2020 Robert Kieffer and other contributors\n\nPermission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the \"Software\"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.\n"
+        }
+      ],
+      "noticeFiles": []
+    },
+    {
+      "id": "uuid@13.0.2",
+      "name": "uuid",
+      "version": "13.0.2",
+      "rawLicense": "MIT",
+      "selectedLicense": "MIT",
+      "reviewRequired": false,
+      "reviewReasons": [],
+      "approved": false,
+      "approvalReason": null,
+      "approvalLicense": null,
+      "issues": [],
+      "installPaths": [
+        "node_modules/@langchain/langgraph-sdk/node_modules/uuid"
+      ],
+      "resolved": "https://registry.npmjs.org/uuid/-/uuid-13.0.2.tgz",
+      "licenseFiles": [
+        {
+          "fileName": "LICENSE.md",
+          "relativePath": "node_modules/@langchain/langgraph-sdk/node_modules/uuid/LICENSE.md",
           "text": "The MIT License (MIT)\n\nCopyright (c) 2010-2020 Robert Kieffer and other contributors\n\nPermission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the \"Software\"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.\n"
         }
       ],

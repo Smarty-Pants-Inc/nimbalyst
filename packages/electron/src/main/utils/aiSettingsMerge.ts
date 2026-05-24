@@ -8,6 +8,12 @@
 
 import { AIProviderOverrides, ProviderOverride, getAIProviderOverrides } from './store';
 import { resolveProjectPath } from './workspaceDetection';
+import {
+  isKnownAIProviderId,
+  normalizeCodexProviderConfig,
+  normalizeDefaultProvider,
+  stripUnknownProviderConfigs,
+} from '@nimbalyst/runtime/ai/server/utils/modelConfigUtils';
 
 /**
  * Global AI settings structure (from ai-settings electron-store)
@@ -58,8 +64,21 @@ export interface EffectiveAISettings {
   overrides: {
     defaultProvider: boolean;
     customClaudeCodePath: boolean;
-    providers: Record<string, { enabled?: boolean; models?: boolean; defaultModel?: boolean; apiKey?: boolean }>;
+    providers: Record<string, { enabled?: boolean; models?: boolean; defaultModel?: boolean; baseUrl?: boolean; apiKey?: boolean }>;
   };
+}
+
+function stripRetiredAISettingKeys(apiKeys: Record<string, string>): Record<string, string> {
+  const {
+    'deepagents-acp': _retiredDeepAgentsToken,
+    deepagents_cli_proxy_base_url: _retiredDeepAgentsBaseUrl,
+    ...remainingApiKeys
+  } = apiKeys;
+  return remainingApiKeys;
+}
+
+function normalizeProviderSettingsForMerge<T extends Record<string, any>>(providerSettings: T): T {
+  return normalizeCodexProviderConfig(stripUnknownProviderConfigs((providerSettings || {}) as T));
 }
 
 /**
@@ -68,10 +87,10 @@ export interface EffectiveAISettings {
 function mergeProviderSettings(
   global: ProviderSettings | undefined,
   override: ProviderOverride | undefined
-): EffectiveProviderSettings & { overrideInfo: { enabled?: boolean; models?: boolean; defaultModel?: boolean; apiKey?: boolean } } {
+): EffectiveProviderSettings & { overrideInfo: { enabled?: boolean; models?: boolean; defaultModel?: boolean; baseUrl?: boolean; apiKey?: boolean } } {
   const base: ProviderSettings = global || {};
   const result: EffectiveProviderSettings = { ...base };
-  const overrideInfo: { enabled?: boolean; models?: boolean; defaultModel?: boolean; apiKey?: boolean } = {};
+  const overrideInfo: { enabled?: boolean; models?: boolean; defaultModel?: boolean; baseUrl?: boolean; apiKey?: boolean } = {};
 
   if (!override) {
     return { ...result, overrideInfo };
@@ -93,6 +112,11 @@ function mergeProviderSettings(
   if (override.defaultModel !== undefined) {
     result.defaultModel = override.defaultModel;
     overrideInfo.defaultModel = true;
+  }
+
+  if (override.baseUrl !== undefined) {
+    result.baseUrl = override.baseUrl;
+    overrideInfo.baseUrl = true;
   }
 
   // Override API key if provided (project-specific key)
@@ -143,6 +167,9 @@ export function mergeAISettings(
   if (!workspacePath) {
     return {
       ...globalSettings,
+      defaultProvider: normalizeDefaultProvider(globalSettings.defaultProvider),
+      apiKeys: stripRetiredAISettingKeys(globalSettings.apiKeys || {}),
+      providerSettings: normalizeProviderSettingsForMerge(globalSettings.providerSettings || {}),
       overrides: {
         defaultProvider: false,
         customClaudeCodePath: false,
@@ -158,6 +185,9 @@ export function mergeAISettings(
   if (!projectOverrides) {
     return {
       ...globalSettings,
+      defaultProvider: normalizeDefaultProvider(globalSettings.defaultProvider),
+      apiKeys: stripRetiredAISettingKeys(globalSettings.apiKeys || {}),
+      providerSettings: normalizeProviderSettingsForMerge(globalSettings.providerSettings || {}),
       overrides: {
         defaultProvider: false,
         customClaudeCodePath: false,
@@ -168,8 +198,8 @@ export function mergeAISettings(
 
   // Start with global settings
   const effective: EffectiveAISettings = {
-    defaultProvider: globalSettings.defaultProvider,
-    apiKeys: { ...globalSettings.apiKeys },
+    defaultProvider: normalizeDefaultProvider(globalSettings.defaultProvider),
+    apiKeys: stripRetiredAISettingKeys(globalSettings.apiKeys || {}),
     providerSettings: {},
     showToolCalls: globalSettings.showToolCalls,
     aiDebugLogging: globalSettings.aiDebugLogging,
@@ -184,8 +214,10 @@ export function mergeAISettings(
 
   // Override default provider if set
   if (projectOverrides.defaultProvider !== undefined) {
-    effective.defaultProvider = projectOverrides.defaultProvider;
-    effective.overrides.defaultProvider = true;
+    if (isKnownAIProviderId(projectOverrides.defaultProvider)) {
+      effective.defaultProvider = projectOverrides.defaultProvider;
+      effective.overrides.defaultProvider = true;
+    }
   }
 
   // Override custom Claude Code executable path if set
@@ -194,16 +226,19 @@ export function mergeAISettings(
     effective.overrides.customClaudeCodePath = true;
   }
 
+  const normalizedGlobalProviders = normalizeProviderSettingsForMerge(globalSettings.providerSettings || {});
+  const normalizedOverrideProviders = normalizeProviderSettingsForMerge(projectOverrides.providers || {});
+
   // Get all provider IDs (union of global and override)
   const allProviderIds = new Set([
-    ...Object.keys(globalSettings.providerSettings || {}),
-    ...Object.keys(projectOverrides.providers || {}),
+    ...Object.keys(normalizedGlobalProviders),
+    ...Object.keys(normalizedOverrideProviders),
   ]);
 
   // Merge each provider's settings
   for (const providerId of allProviderIds) {
-    const globalProvider = globalSettings.providerSettings?.[providerId];
-    const overrideProvider = projectOverrides.providers?.[providerId];
+    const globalProvider = normalizedGlobalProviders[providerId];
+    const overrideProvider = normalizedOverrideProviders[providerId];
 
     const { overrideInfo, ...mergedSettings } = mergeProviderSettings(globalProvider, overrideProvider);
 
@@ -250,6 +285,10 @@ export function getEffectiveApiKey(
   providerId: string,
   workspacePath?: string
 ): string | undefined {
+  if (!isKnownAIProviderId(providerId)) {
+    return undefined;
+  }
+
   const effective = mergeAISettings(globalSettings, workspacePath);
 
   // Check for project-specific key first
@@ -283,6 +322,10 @@ export function getEffectiveModel(
   providerId: string,
   workspacePath?: string
 ): string | undefined {
+  if (!isKnownAIProviderId(providerId)) {
+    return undefined;
+  }
+
   const effective = mergeAISettings(globalSettings, workspacePath);
   return effective.providerSettings[providerId]?.defaultModel;
 }

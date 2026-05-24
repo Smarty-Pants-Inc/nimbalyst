@@ -11,6 +11,12 @@
     <script>window.esmsInitOptions = { shimMode: true };</script>
     <script async src="./es-module-shims.js"></script>
 
+    <script>
+        // Excalidraw's npm bundle falls back to unpkg.com unless this is set.
+        // Assets are copied into ./dist/excalidraw-assets by electron.vite.config.ts.
+        window.EXCALIDRAW_ASSET_PATH = './dist/';
+    </script>
+
     <!-- Load prismjs synchronously BEFORE any ESM module evaluates so that
          window.Prism is set when the prism-* language chunks reference the
          bare `Prism` global. Vite/esbuild prebundling of @lexical/code (via

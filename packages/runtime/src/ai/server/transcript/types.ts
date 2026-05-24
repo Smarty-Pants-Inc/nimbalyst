@@ -40,6 +40,11 @@ export interface UserMessagePayload {
 export interface AssistantMessagePayload {
   mode: 'agent' | 'planning';
   /**
+   * Internal streaming/run identity used to coalesce chunks from the same
+   * provider run without merging concurrent runs into one assistant message.
+   */
+  coalesceKey?: string;
+  /**
    * Extended-thinking output. Stored on the assistant_message payload so we
    * can render it without introducing a new event_type (the
    * `ai_transcript_events.event_type` CHECK constraint locks the allowed

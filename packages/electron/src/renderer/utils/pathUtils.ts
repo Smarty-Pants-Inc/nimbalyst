@@ -106,18 +106,42 @@ export function resolvePlanFilePath(planFilePath: string | undefined, basePath: 
  * Prefers the explicit plan path from ExitPlanMode, but can fall back to the currently open
  * planning document when Claude does not provide planFilePath in the tool arguments.
  */
+function resolvePlanFilePathForPrompt(planFilePath: string | undefined, basePath: string | undefined): string | null {
+  if (!planFilePath) return null;
+
+  const isAbsolute = planFilePath.startsWith('/') || /^[A-Za-z]:/.test(planFilePath);
+
+  if (isAbsolute) {
+    return planFilePath;
+  }
+
+  if (!basePath) {
+    return null;
+  }
+
+  return `${basePath.replace(/[\\/]+$/, '')}/${planFilePath}`;
+}
+
+function formatPlanPathForPrompt(planPath: string): string {
+  if (!/[\s"\\]/.test(planPath)) {
+    return planPath;
+  }
+
+  return `"${planPath.replace(/["\\]/g, '\\$&')}"`;
+}
+
 export function buildPlanImplementationPrompt(options: {
   planFilePath?: string;
   basePath?: string;
 }): string {
-  const resolvedPlanPath = resolvePlanFilePath(options.planFilePath, options.basePath);
+  const resolvedPlanPath = resolvePlanFilePathForPrompt(options.planFilePath, options.basePath);
 
   if (resolvedPlanPath) {
-    return `Fully implement the following plan: ${resolvedPlanPath}`;
+    return `Fully implement the following plan: ${formatPlanPathForPrompt(resolvedPlanPath)}`;
   }
 
   if (options.planFilePath) {
-    return `Fully implement the following plan: ${options.planFilePath}`;
+    return `Fully implement the following plan: ${formatPlanPathForPrompt(options.planFilePath)}`;
   }
 
   return 'Fully implement the approved plan.';

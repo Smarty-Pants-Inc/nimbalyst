@@ -116,6 +116,8 @@ export const ToolPermissionWidget: React.FC<CustomToolWidgetProps> = ({
   const patternDisplayName = (args.patternDisplayName || getPatternDisplayName(pattern)) as string;
   const isDestructive = (args.isDestructive || false) as boolean;
   const warnings: string[] = (args.warnings || []) as string[];
+  const outsidePaths: string[] = Array.isArray(args.outsidePaths) ? args.outsidePaths : [];
+  const sensitivePaths: string[] = Array.isArray(args.sensitivePaths) ? args.sensitivePaths : [];
   const workspacePath = (args.workspacePath || '') as string;
 
   const teammateName = (args.teammateName || '') as string;
@@ -448,6 +450,34 @@ export const ToolPermissionWidget: React.FC<CustomToolWidgetProps> = ({
                   <circle cx="8" cy="8" r="6" stroke="currentColor" strokeWidth="1.5"/>
                 </svg>
                 <span>{warning}</span>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {outsidePaths.length > 0 && (
+          <div
+            data-testid="tool-permission-outside-paths"
+            className="rounded border border-[var(--nim-error)] bg-[color-mix(in_srgb,var(--nim-error)_8%,transparent)] px-2 py-1.5 text-xs text-[var(--nim-error)]"
+          >
+            <div className="font-semibold mb-1">Outside active workspace/worktree</div>
+            {outsidePaths.map((outsidePath, i) => (
+              <div key={i} className="font-mono text-[11px] break-all" data-testid="tool-permission-outside-path">
+                {outsidePath}
+              </div>
+            ))}
+          </div>
+        )}
+
+        {sensitivePaths.length > 0 && (
+          <div
+            data-testid="tool-permission-sensitive-paths"
+            className="rounded border border-[var(--nim-warning)] bg-[color-mix(in_srgb,var(--nim-warning)_8%,transparent)] px-2 py-1.5 text-xs text-nim-warning"
+          >
+            <div className="font-semibold mb-1">Sensitive path</div>
+            {sensitivePaths.map((sensitivePath, i) => (
+              <div key={i} className="font-mono text-[11px] break-all">
+                {sensitivePath}
               </div>
             ))}
           </div>

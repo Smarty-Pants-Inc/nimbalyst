@@ -140,7 +140,11 @@ export class ModelIdentifier {
       return new ModelIdentifier(provider, baseVariant + suffix);
     }
 
-    if (provider === 'openai-codex' || provider === 'openai-codex-acp' || provider === 'deepagents-acp') {
+    if (provider === 'smarty-server') {
+      return new ModelIdentifier(provider, model || 'smarty_coding_agent');
+    }
+
+    if (provider === 'openai-codex' || provider === 'openai-codex-acp') {
       // Agent providers accept raw model IDs and provider/profile-prefixed IDs.
       return new ModelIdentifier(provider, model || 'default');
     }
@@ -164,7 +168,14 @@ export class ModelIdentifier {
    * (providers that support MCP and file system tools).
    */
   isAgentProvider(): boolean {
-    return this.provider === 'claude-code' || this.provider === 'openai-codex' || this.provider === 'openai-codex-acp' || this.provider === 'deepagents-acp';
+    return (
+      this.provider === 'claude-code' ||
+      this.provider === 'openai-codex' ||
+      this.provider === 'openai-codex-acp' ||
+      this.provider === 'opencode' ||
+      this.provider === 'copilot-cli' ||
+      this.provider === 'smarty-server'
+    );
   }
 
   /**

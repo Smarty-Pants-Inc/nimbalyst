@@ -71,6 +71,30 @@ export const sessionPendingReviewFilesAtom = atomFamily((sessionId: string) =>
   atom<Set<string>>(new Set<string>())
 );
 
+export function workstreamSessionScopeKey(workstreamId: string, activeSessionId: string | null | undefined): string {
+  return JSON.stringify([workstreamId, activeSessionId ?? null]);
+}
+
+function parseWorkstreamSessionScopeKey(scopeKey: string): { workstreamId: string; activeSessionId: string | null } {
+  const [workstreamId, activeSessionId] = JSON.parse(scopeKey) as [string, string | null];
+  return { workstreamId, activeSessionId };
+}
+
+function getScopedSessionIds(
+  workstreamId: string,
+  activeSessionId: string | null,
+  workstreamSessions: string[],
+): string[] {
+  const sessionIds = new Set(workstreamSessions);
+  if (sessionIds.size === 0) {
+    sessionIds.add(workstreamId);
+  }
+  if (activeSessionId) {
+    sessionIds.add(activeSessionId);
+  }
+  return Array.from(sessionIds);
+}
+
 // ============================================================================
 // Per-Workstream Derived Atoms
 // ============================================================================
@@ -149,6 +173,57 @@ export const workstreamPendingReviewFilesAtom = atomFamily((workstreamId: string
     }
 
     return allPendingFiles;
+  })
+);
+
+/**
+ * Workstream file edits plus the currently attached active session.
+ *
+ * Restored tracker/card views can briefly have stale child-session membership
+ * while the visible active session is already known. Files Edited must still
+ * show that active session's persisted rows, otherwise launched-agent edits
+ * disappear until registry state catches up.
+ */
+export const workstreamFileEditsWithActiveSessionAtom = atomFamily((scopeKey: string) =>
+  atom((get) => {
+    const { workstreamId, activeSessionId } = parseWorkstreamSessionScopeKey(scopeKey);
+    const sessionIds = getScopedSessionIds(
+      workstreamId,
+      activeSessionId,
+      get(workstreamSessionsAtom(workstreamId)),
+    );
+
+    const allFiles: FileEditWithSession[] = [];
+    for (const sessionId of sessionIds) {
+      allFiles.push(...get(sessionFileEditsAtom(sessionId)));
+    }
+    return allFiles;
+  })
+);
+
+export const workstreamGitStatusWithActiveSessionAtom = atomFamily((scopeKey: string) =>
+  atom((get) => {
+    const { workstreamId, activeSessionId } = parseWorkstreamSessionScopeKey(scopeKey);
+    const combinedStatus = { ...get(workstreamGitStatusAtom(workstreamId)) };
+
+    if (activeSessionId) {
+      Object.assign(combinedStatus, get(sessionGitStatusAtom(activeSessionId)));
+    }
+
+    return combinedStatus;
+  })
+);
+
+export const workstreamPendingReviewFilesWithActiveSessionAtom = atomFamily((scopeKey: string) =>
+  atom((get) => {
+    const { workstreamId, activeSessionId } = parseWorkstreamSessionScopeKey(scopeKey);
+    const pendingFiles = new Set(get(workstreamPendingReviewFilesAtom(workstreamId)));
+
+    if (activeSessionId) {
+      get(sessionPendingReviewFilesAtom(activeSessionId)).forEach(filePath => pendingFiles.add(filePath));
+    }
+
+    return pendingFiles;
   })
 );
 

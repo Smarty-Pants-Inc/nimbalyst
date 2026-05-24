@@ -1,8 +1,9 @@
 import { execSync } from 'child_process';
 import { existsSync, statSync } from 'fs';
-import { dirname, isAbsolute, join, relative, resolve } from 'path';
+import { isAbsolute, join, relative, resolve } from 'path';
 import { isGitAvailable, logEbadfDiagnostic } from '../utils/gitUtils';
 import { getAllFilesInDirectory } from '../utils/fileUtils';
+import { findGitRootForFile } from './GitPathService';
 
 export interface FileGitStatus {
   filePath: string;
@@ -12,57 +13,6 @@ export interface FileGitStatus {
 
 export interface GitStatusResult {
   [filePath: string]: FileGitStatus;
-}
-
-/**
- * Find the git repository root that owns a file path.
- *
- * Walks up from the file's parent directory looking for a `.git` entry
- * (directory or worktree-link file). Stops at `boundary` so a file outside
- * the workspace cannot be matched against an unrelated repo somewhere
- * higher up the filesystem.
- *
- * Returns the absolute path of the owning git root, or null if the file
- * is not inside any git repo within `boundary`. The returned root may be
- * `boundary` itself (when the workspace IS a git repo) or a nested
- * subdirectory (workspace contains nested repos but is not itself one).
- *
- * Exported for unit testing.
- */
-export function findGitRootForFile(filePath: string, boundary: string): string | null {
-  const boundaryAbs = resolve(boundary);
-  const fileAbs = isAbsolute(filePath) ? filePath : resolve(boundaryAbs, filePath);
-
-  // The file must live inside the boundary. resolve normalizes separators
-  // so we can compare prefix-wise. Add a separator on the right side to
-  // avoid matching siblings like `/foo/bar2` against boundary `/foo/bar`.
-  const boundaryWithSep = boundaryAbs.endsWith('/') || boundaryAbs.endsWith('\\')
-    ? boundaryAbs
-    : boundaryAbs + (process.platform === 'win32' ? '\\' : '/');
-  if (fileAbs !== boundaryAbs && !fileAbs.startsWith(boundaryWithSep)) {
-    return null;
-  }
-
-  let dir = dirname(fileAbs);
-  // Walk up until we leave the boundary, hit fs root, or find `.git`.
-  while (true) {
-    try {
-      if (existsSync(join(dir, '.git'))) {
-        return dir;
-      }
-    } catch {
-      // ignore - keep walking
-    }
-    if (dir === boundaryAbs) break;
-    const parent = dirname(dir);
-    if (parent === dir) break; // hit filesystem root
-    // If walking up would take us out of the boundary, stop after one
-    // last check at boundary (handled by the `dir === boundaryAbs` break).
-    if (!parent.startsWith(boundaryWithSep) && parent !== boundaryAbs) break;
-    dir = parent;
-  }
-
-  return null;
 }
 
 /**

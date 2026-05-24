@@ -89,6 +89,10 @@ export abstract class BaseAgentProvider extends BaseAIProvider {
    */
   destroy(): void {
     this.abort();
+    this.destroyProviderState();
+  }
+
+  protected destroyProviderState(): void {
     this.sessions.clear();
     this.permissions.clearSessionCache();
     super.destroy();

@@ -2,7 +2,7 @@
 
 Generated from `package-lock.json` and installed package legal files.
 
-- Packages scanned: 827
+- Packages scanned: 844
 - Review required: 0
 - Approved exceptions: 3
 
@@ -17,7 +17,7 @@ Generated from `package-lock.json` and installed package legal files.
 - EPL-2.0: 1
 - ISC: 56
 - LGPL-3.0: 1
-- MIT: 683
+- MIT: 700
 - Python-2.0: 1
 - SEE LICENSE IN README.md: 1
 - Unlicense: 1

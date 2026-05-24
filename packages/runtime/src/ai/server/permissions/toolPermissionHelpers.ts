@@ -236,6 +236,8 @@ export function matchesAllowPattern(candidate: string, allowed: string): boolean
 
   if (allowedCmd === candidateCmd) return true;
 
+  if (allowedTool !== 'Bash') return false;
+
   // Word-boundary prefix match: `git` covers `git status`, `npm` does NOT
   // cover `npmrc`. The trailing space in the prefix is the boundary check.
   return candidateCmd.startsWith(allowedCmd + ' ');

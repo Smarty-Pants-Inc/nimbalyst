@@ -202,7 +202,7 @@ export const SharedLinksPanel: React.FC = () => {
                   </span>
                 </div>
                 <div className="flex items-center gap-2 text-[0.6875rem] text-[var(--nim-text-faint)]">
-                  <span className="truncate">share.nimbalyst.com/share/{share.shareId.slice(0, 8)}...</span>
+                  <span className="truncate">sync-dev.smartypants.ai/share/{share.shareId.slice(0, 8)}...</span>
                   <span>{formatDate(share.createdAt)}</span>
                   <span>{formatSize(share.sizeBytes)}</span>
                   {formatExpiry(share.expiresAt) && (

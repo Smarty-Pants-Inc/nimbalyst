@@ -10,11 +10,13 @@ import { DEFAULT_ONBOARDING_CONFIG } from '../../shared/types/workspace';
 import { AlphaFeatureTag, getDefaultAlphaFeatures, ALPHA_FEATURES } from '../../shared/alphaFeatures';
 import { DeveloperFeatureTag, getDefaultDeveloperFeatures, DEVELOPER_FEATURES } from '../../shared/developerFeatures';
 import { BetaFeatureTag, getDefaultBetaFeatures, enableAllBetaFeatures as enableAllBetaFeaturesUtil, BETA_FEATURES } from '../../shared/betaFeatures';
-import { normalizeCodexProviderConfig, omitModelsField } from '@nimbalyst/runtime/ai/server/utils/modelConfigUtils';
+import { isKnownAIProviderId, normalizeCodexProviderConfig, omitModelsField, stripUnknownProviderConfigs } from '@nimbalyst/runtime/ai/server/utils/modelConfigUtils';
+import { DEFAULT_MODELS } from '@nimbalyst/runtime/ai/modelConstants';
 
 // Theme can be a built-in theme or an extension theme ID (format: "extensionId:themeId")
 export type AppTheme = 'dark' | 'light' | 'system' | 'auto' | 'crystal-dark' | string;
 export type { SessionState, SessionWindow } from '../types';
+const SMARTY_SERVER_DEFAULT_MODEL = DEFAULT_MODELS['smarty-server'];
 
 export type CompletionSoundType = 'chime' | 'bell' | 'pop' | 'alert' | 'none';
 export type ReleaseChannel = 'stable' | 'alpha';
@@ -70,6 +72,8 @@ interface AppStoreSchema {
   releaseChannel?: ReleaseChannel;
   // Default AI model for new sessions (format: "provider:model" e.g., "claude-code:sonnet")
   defaultAIModel?: string;
+  // One-time migration marker for Daily-Driver M1's local smarty-server default.
+  dailyDriverM1DefaultModelMigrated?: boolean;
   // Analytics
   analyticsEnabled?: boolean;
   // User onboarding
@@ -312,6 +316,8 @@ export interface ProviderOverride {
   models?: string[];
   /** Override default model for this provider */
   defaultModel?: string;
+  /** Override local/server base URL for providers that expose one */
+  baseUrl?: string;
   /** Project-specific API key (optional, overrides global key) */
   apiKey?: string;
 }
@@ -480,7 +486,7 @@ function getAppStore(): Store<AppStoreSchema> {
             documents: [],
           },
           openWorkspaces: [],
-          analyticsEnabled: true, // Default to enabled
+          analyticsEnabled: false,
         },
       });
       console.log('[Store] App store initialized at:', _appStore.path);
@@ -1053,35 +1059,42 @@ export function normalizeAIProviderOverrides(overrides: AIProviderOverrides | un
     return overrides;
   }
 
-  const providers = overrides.providers;
-  if (!providers || typeof providers !== 'object') {
-    return overrides;
+  const normalizedOverrides: AIProviderOverrides = { ...overrides };
+
+  if (
+    normalizedOverrides.defaultProvider !== undefined &&
+    !isKnownAIProviderId(normalizedOverrides.defaultProvider)
+  ) {
+    delete normalizedOverrides.defaultProvider;
   }
 
-  const normalizedProviders = normalizeCodexProviderConfig(providers);
+  if (normalizedOverrides.customClaudeCodePath === undefined) {
+    delete normalizedOverrides.customClaudeCodePath;
+  }
+
+  const providers = overrides.providers;
+  if (!providers || typeof providers !== 'object') {
+    return Object.keys(normalizedOverrides).length > 0 ? normalizedOverrides : undefined;
+  }
+
+  const normalizedProviders = stripUnknownProviderConfigs(
+    normalizeCodexProviderConfig(providers)
+  );
   const codexConfig = normalizedProviders['openai-codex'];
 
   // Drop an empty codex config entry (artifact of UI clearing the override).
   if (codexConfig && Object.keys(codexConfig).length === 0) {
     const { 'openai-codex': _removed, ...restProviders } = normalizedProviders;
-    if (Object.keys(restProviders).length === 0) {
-      const { providers: _unusedProviders, ...restOverrides } = overrides;
-      // Spreading the input keeps own-but-undefined keys (e.g. an explicit
-      // `customClaudeCodePath: undefined` from a "clear override" save), which
-      // would prevent the empty-overrides check below from collapsing the
-      // object back to `undefined`.
-      if (restOverrides.customClaudeCodePath === undefined) {
-        delete restOverrides.customClaudeCodePath;
-      }
-      return Object.keys(restOverrides).length > 0 ? restOverrides : undefined;
-    }
-    return { ...overrides, providers: restProviders };
+    normalizedOverrides.providers = restProviders;
+  } else {
+    normalizedOverrides.providers = normalizedProviders;
   }
 
-  return {
-    ...overrides,
-    providers: normalizedProviders,
-  };
+  if (!normalizedOverrides.providers || Object.keys(normalizedOverrides.providers).length === 0) {
+    delete normalizedOverrides.providers;
+  }
+
+  return Object.keys(normalizedOverrides).length > 0 ? normalizedOverrides : undefined;
 }
 
 // Community popup shown state for current process launch (non-persisted)
@@ -1317,11 +1330,29 @@ export function setDeveloperMode(enabled: boolean): void {
 
 // Default AI Model Settings
 export function getDefaultAIModel(): string | undefined {
-  return getAppStore().get('defaultAIModel');
+  return getAppStore().get('defaultAIModel', SMARTY_SERVER_DEFAULT_MODEL);
 }
 
 export function setDefaultAIModel(model: string): void {
   getAppStore().set('defaultAIModel', model);
+}
+
+function migrateDailyDriverM1DefaultModel(): void {
+  const appStore = getAppStore();
+  if (appStore.get('dailyDriverM1DefaultModelMigrated', false)) {
+    return;
+  }
+
+  const currentDefault = appStore.get('defaultAIModel');
+  if (
+    currentDefault === undefined ||
+    currentDefault === 'claude-code:opus' ||
+    currentDefault === 'claude-code:opus-1m'
+  ) {
+    logger.store.info('[Migrations] Migrating default model to smarty-server:smarty_coding_agent');
+    appStore.set('defaultAIModel', SMARTY_SERVER_DEFAULT_MODEL);
+  }
+  appStore.set('dailyDriverM1DefaultModelMigrated', true);
 }
 
 // Default Effort Level Settings (Opus 4.6 adaptive reasoning)
@@ -1338,13 +1369,11 @@ export function setDefaultEffortLevel(level: EffortLevel): void {
 // Analytics Settings
 export function isAnalyticsEnabled(): boolean {
   try {
-    const enabled = getAppStore().get('analyticsEnabled', true); // Default to enabled
+    const enabled = getAppStore().get('analyticsEnabled', false);
     return enabled;
   } catch (error) {
     console.error('[Store] Failed to read analyticsEnabled from store:', error);
-    // Fail open - default to enabled if we can't read the store
-    // This ensures analytics works even if store is temporarily unavailable
-    return true;
+    return false;
   }
 }
 
@@ -2139,24 +2168,6 @@ export function setDebugFlags(flags: Partial<DebugFlags>): void {
 // ============================================================================
 
 /**
- * Compare two semantic version strings.
- * Returns true if versionA <= versionB.
- */
-function versionLessThanOrEqual(versionA: string, versionB: string): boolean {
-  const parseVersion = (v: string) => {
-    const parts = v.split('.').map(Number);
-    return { major: parts[0] || 0, minor: parts[1] || 0, patch: parts[2] || 0 };
-  };
-
-  const a = parseVersion(versionA);
-  const b = parseVersion(versionB);
-
-  if (a.major !== b.major) return a.major < b.major;
-  if (a.minor !== b.minor) return a.minor < b.minor;
-  return a.patch <= b.patch;
-}
-
-/**
  * Run app migrations based on version changes.
  * Should be called once during app startup.
  */
@@ -2230,6 +2241,7 @@ export function setRestorePreviousProjectsOnLaunch(enabled: boolean): void {
 
 export function runMigrations(currentVersion: string): void {
   const lastKnownVersion = getAppStore().get('lastKnownVersion');
+  migrateDailyDriverM1DefaultModel();
 
   // Missing lastKnownVersion means user is upgrading from <= 0.52.10
   // (versions before we started tracking lastKnownVersion)
@@ -2241,17 +2253,6 @@ export function runMigrations(currentVersion: string): void {
   }
 
   logger.store.info('[Migrations] Running migrations from', lastKnownVersion || '(unknown/<=0.52.10)', 'to', currentVersion);
-
-  // Migration: Auto-switch users from claude-code:opus to claude-code:opus-1m (1M context)
-  // Only runs once — on first upgrade to a version with this migration.
-  // New users get opus-1m by default; this migrates existing users who had opus selected.
-  if (isUpgradingFromOldVersion || versionLessThanOrEqual(lastKnownVersion, '0.56.7')) {
-    const currentDefault = getAppStore().get('defaultAIModel');
-    if (currentDefault === 'claude-code:opus') {
-      logger.store.info('[Migrations] Migrating default model from claude-code:opus to claude-code:opus-1m');
-      getAppStore().set('defaultAIModel', 'claude-code:opus-1m');
-    }
-  }
 
   // Update last known version
   getAppStore().set('lastKnownVersion', currentVersion);

@@ -33,6 +33,7 @@ export interface TranscriptViewMessage {
   type: TranscriptEventType;
   text?: string;
   mode?: 'agent' | 'planning';
+  coalesceKey?: string;
   attachments?: UserMessagePayload['attachments'];
   toolCall?: {
     toolName: string;
@@ -176,6 +177,7 @@ function coalesceAdjacentAssistantMessages(
       message.type === 'assistant_message' &&
       previous.subagentId === message.subagentId &&
       previous.mode === message.mode &&
+      assistantCoalesceKeysMatch(previous, message) &&
       // Don't fuse a thinking-only message into a regular text message --
       // the renderer needs them as distinct UI blocks.
       previous.thinking === undefined &&
@@ -217,6 +219,9 @@ function projectEvent(
       const p = event.payload as unknown as AssistantMessagePayload;
       base.text = event.searchableText ?? undefined;
       base.mode = p.mode;
+      if (typeof p.coalesceKey === 'string' && p.coalesceKey) {
+        base.coalesceKey = p.coalesceKey;
+      }
       if (p.thinking !== undefined) base.thinking = p.thinking;
       if (p.model !== undefined) base.model = p.model;
       break;
@@ -285,6 +290,16 @@ function projectEvent(
   }
 
   return base;
+}
+
+function assistantCoalesceKeysMatch(
+  previous: TranscriptViewMessage,
+  next: TranscriptViewMessage,
+): boolean {
+  if (previous.coalesceKey !== undefined || next.coalesceKey !== undefined) {
+    return previous.coalesceKey === next.coalesceKey;
+  }
+  return true;
 }
 
 // ---------------------------------------------------------------------------
