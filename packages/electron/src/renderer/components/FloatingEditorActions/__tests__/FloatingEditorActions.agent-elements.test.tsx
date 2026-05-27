@@ -4,6 +4,8 @@ import '@testing-library/jest-dom/vitest';
 import React from 'react';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
+import fs from 'node:fs';
+import path from 'node:path';
 import {
   FloatingEditorActions,
   FloatingEditorButton,
@@ -25,6 +27,11 @@ vi.mock('@nimbalyst/runtime', async () => {
     }) => ReactModule.createElement('span', { 'data-icon': icon, 'data-size': size, className }),
   };
 });
+
+const floatingEditorActionsSourcePath = path.join(
+  process.cwd(),
+  'packages/electron/src/renderer/components/FloatingEditorActions/FloatingEditorActions.tsx',
+);
 
 describe('FloatingEditorActions Agent Elements shell', () => {
   it('renders Agent Elements floating editor controls while preserving legacy classes and button behavior', () => {
@@ -68,6 +75,8 @@ describe('FloatingEditorActions Agent Elements shell', () => {
     const menu = screen.getByRole('menu');
     expect(menu).toHaveClass('floating-editor-menu', 'agent-elements-floating-editor-menu', 'agent-elements-tool-card');
     expect(menu).toHaveAttribute('data-component', 'FloatingEditorMenu');
+    expect(menu).toHaveAttribute('data-agent-elements-card-padding', 'symmetric-inline');
+    expect(menu).toHaveAttribute('data-agent-elements-card-width', 'floating-menu');
     expect(menu.className).not.toMatch(/rounded-md|rgba|shadow-\[0_4px|--nim-/);
 
     const activeItem = screen.getByRole('menuitem', { name: /Preview/i });
@@ -95,5 +104,17 @@ describe('FloatingEditorActions Agent Elements shell', () => {
     );
 
     expect(screen.queryByRole('menu')).not.toBeInTheDocument();
+  });
+
+  it('keeps floating editor menu card intent and gutters explicit in source', () => {
+    const source = fs.readFileSync(floatingEditorActionsSourcePath, 'utf8');
+
+    expect(source).toContain('data-agent-elements-card-padding="symmetric-inline"');
+    expect(source).toContain('data-agent-elements-card-width="floating-menu"');
+    expect(source).toContain('px-[var(--agent-elements-card-inline-padding)]');
+    expect(source).toContain('py-[var(--agent-elements-card-block-padding)]');
+    expect(source).not.toMatch(/floating-editor-menu[^\n"]*\bp-1\b/);
+    expect(source).not.toMatch(/rounded-\[(?:8|10)px\]/);
+    expect(source).not.toMatch(/var\(--nim-[^)]+\)/);
   });
 });

@@ -1,6 +1,13 @@
 /* Import theme CSS - editor class styles and unified CSS variables (--nim-* prefix) */
+@import "tailwindcss";
 @import '../../../runtime/src/editor/themes/NimbalystEditorTheme.css';
 @import '../../../runtime/src/editor/themes/NimbalystTheme.css';
+@import '../../../runtime/src/ui/AgentElements/AgentElementsPrimitives.css';
+@import '../../../runtime/src/ui/AgentElements/AgentElementsMessages.css';
+@import '../../../runtime/src/ui/AgentElements/AgentElementsToolRenderers.css';
+@import '../../../runtime/src/ui/AgentElements/AgentElementsFrameworkEvents.css';
+@import '../../../runtime/src/ui/AgentElements/AgentElementsStreamEvents.css';
+@import '../../../runtime/src/ui/AgentElements/AgentElementsTodoPlan.css';
 
 @font-face {
   font-family: 'Material Symbols Outlined';
@@ -10,11 +17,7 @@
   font-display: block;
 }
 
-/* Tailwind CSS - comes after theme variables so it can reference them */
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
-
+@config "../../tailwind.config.ts";
 
 /* Shared component utilities are now imported via JS in index.tsx */
 

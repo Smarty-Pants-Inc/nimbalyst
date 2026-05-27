@@ -33,6 +33,76 @@ const getSnapshotId = (snapshot: { timestamp: string; baseMarkdownHash: string }
   return `${snapshot.timestamp}-${snapshot.baseMarkdownHash}-${index}`;
 };
 
+const backdropClass =
+  'history-dialog-overlay agent-elements-history-backdrop fixed inset-0 z-[10000] flex items-center justify-center bg-[color-mix(in_srgb,var(--an-foreground)_14%,transparent)] p-[var(--an-spacing-xxl)]';
+const dialogClass =
+  'history-dialog agent-elements-history-dialog agent-elements-tool-card flex h-[min(80vh,800px)] w-[min(90vw,1200px)] max-w-[1200px] flex-col overflow-hidden rounded-[var(--an-border-radius)] border border-[var(--an-border-color)] bg-[var(--an-background)] text-[var(--an-foreground)] shadow-[0_20px_60px_color-mix(in_srgb,var(--an-foreground)_10%,transparent)] @container/history-dialog';
+const headerClass =
+  'history-dialog-header agent-elements-history-header flex min-h-[60px] items-center justify-between gap-[var(--an-spacing-lg)] border-b border-[var(--an-border-color)] bg-[var(--an-background)] px-[var(--an-spacing-xxl)] py-[var(--an-spacing-lg)]';
+const titleClass = 'history-dialog-title flex min-w-0 flex-1 flex-col gap-[var(--an-spacing-xxs)]';
+const controlsClass = 'history-dialog-header-right flex shrink-0 items-center gap-[var(--an-spacing-sm)]';
+const toggleGroupClass =
+  'view-mode-toggle agent-elements-history-toggle flex gap-[var(--an-spacing-xxs)] rounded-[var(--an-input-border-radius)] border border-[var(--an-border-color)] bg-[var(--an-background-secondary)] p-[var(--an-spacing-xxs)]';
+const toggleButtonBaseClass =
+  'view-mode-button cursor-pointer rounded-[calc(var(--an-input-border-radius)_-_4px)] border border-transparent px-3 py-1 text-[11px] font-medium transition-[background-color,border-color,color] duration-150 ease-out focus-visible:outline-2 focus-visible:outline-[var(--an-focus-ring)] focus-visible:outline-offset-1';
+const toggleButtonActiveClass =
+  'active border-[var(--an-primary-color)] bg-[var(--an-primary-color)] text-[var(--an-send-button-color)]';
+const toggleButtonIdleClass =
+  'text-[var(--an-foreground-muted)] hover:bg-[var(--an-background-tertiary)] hover:text-[var(--an-foreground)]';
+const closeButtonClass =
+  'history-dialog-close agent-elements-history-close inline-flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-[var(--an-input-border-radius)] border border-transparent bg-transparent text-[var(--an-foreground-muted)] transition-[background-color,border-color,color] duration-150 ease-out hover:border-[var(--an-border-color)] hover:bg-[var(--an-background-tertiary)] hover:text-[var(--an-foreground)] focus-visible:outline-2 focus-visible:outline-[var(--an-focus-ring)] focus-visible:outline-offset-2';
+const contentClass = 'history-dialog-content flex min-h-0 flex-1 overflow-hidden';
+const listPanelClass =
+  'history-list agent-elements-history-list-panel flex w-[min(34vw,350px)] min-w-[280px] flex-col border-r border-[var(--an-border-color)] bg-[var(--an-background-secondary)] @max-[760px]/history-dialog:w-[300px]';
+const listHeaderClass =
+  'history-list-header flex min-h-11 items-center justify-between gap-[var(--an-spacing-sm)] border-b border-[var(--an-border-color)] px-[var(--an-spacing-lg)] py-[var(--an-spacing-sm)] text-xs font-medium text-[var(--an-foreground-muted)]';
+const iconButtonClass =
+  'inline-flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-[var(--an-input-border-radius)] border border-transparent bg-transparent text-[var(--an-foreground-muted)] transition-[background-color,border-color,color,opacity] duration-150 ease-out hover:border-[var(--an-border-color)] hover:bg-[var(--an-background-tertiary)] hover:text-[var(--an-foreground)] focus-visible:outline-2 focus-visible:outline-[var(--an-focus-ring)] focus-visible:outline-offset-2';
+const historyItemsClass = 'history-items nim-scrollbar flex-1 overflow-y-auto p-[var(--an-spacing-xs)]';
+const historyItemBaseClass =
+  'history-item agent-elements-history-snapshot-item group mb-1 cursor-pointer rounded-[var(--an-small-border-radius)] border border-transparent transition-[background-color,border-color,box-shadow] duration-150 ease-out hover:border-[var(--an-border-color)] hover:bg-[var(--an-background-tertiary)] focus-visible:outline-2 focus-visible:outline-[var(--an-focus-ring)] focus-visible:outline-offset-[-2px]';
+const historyItemSelectedClass =
+  'selected border-[color-mix(in_srgb,var(--an-primary-color)_22%,var(--an-border-color))] bg-[color-mix(in_srgb,var(--an-primary-color)_8%,var(--an-background))] shadow-[inset_0_0_0_1px_color-mix(in_srgb,var(--an-primary-color)_12%,transparent)]';
+const snapshotIconBaseClass =
+  'history-item-icon flex h-7 w-7 shrink-0 items-center justify-center rounded-[var(--an-small-border-radius)] border';
+const sessionLinkBaseClass =
+  'history-item-session-link flex max-w-full cursor-pointer items-center gap-[var(--an-spacing-xxs)] overflow-hidden text-[11px] text-[var(--an-primary-color)] no-underline transition-[color] duration-150 ease-out hover:text-[color-mix(in_srgb,var(--an-primary-color)_82%,var(--an-foreground))]';
+const deleteButtonClass =
+  'history-item-delete inline-flex h-6 w-6 shrink-0 cursor-pointer items-center justify-center rounded-[var(--an-small-border-radius)] border border-transparent bg-transparent text-[var(--an-foreground-muted)] opacity-0 transition-[background-color,border-color,color,opacity] duration-150 ease-out group-hover:opacity-70 hover:border-[color-mix(in_srgb,var(--an-diff-removed-text)_24%,var(--an-border-color))] hover:bg-[color-mix(in_srgb,var(--an-diff-removed-text)_8%,var(--an-background))] hover:text-[var(--an-diff-removed-text)] focus-visible:opacity-100 focus-visible:outline-2 focus-visible:outline-[var(--an-focus-ring)] focus-visible:outline-offset-2';
+const previewPanelClass =
+  'history-preview agent-elements-history-preview-panel relative flex min-w-0 flex-1 flex-col overflow-hidden bg-[var(--an-background)]';
+const previewHeaderClass =
+  'history-preview-header agent-elements-history-preview-header flex min-h-[48px] items-center justify-between gap-[var(--an-spacing-lg)] border-b border-[var(--an-border-color)] bg-[var(--an-background-secondary)] px-[var(--an-spacing-xxl)] py-[var(--an-spacing-sm)]';
+const previewHeaderLeftClass = 'history-preview-header-left flex min-w-0 flex-1 flex-wrap items-center gap-[var(--an-spacing-sm)] overflow-hidden';
+const diffLabelClass =
+  'diff-version-label rounded-[var(--an-small-border-radius)] border border-[var(--an-border-color)] bg-[var(--an-background)] px-2 py-0.5 text-[11px] font-medium';
+const diffNavButtonClass =
+  'diff-nav-button inline-flex h-7 w-7 cursor-pointer items-center justify-center rounded-[var(--an-small-border-radius)] border border-[var(--an-border-color)] bg-[var(--an-background)] p-0 text-[var(--an-foreground-muted)] transition-[background-color,border-color,color,opacity] duration-150 ease-out hover:not-disabled:bg-[var(--an-background-tertiary)] hover:not-disabled:text-[var(--an-foreground)] disabled:cursor-not-allowed disabled:opacity-40 focus-visible:outline-2 focus-visible:outline-[var(--an-focus-ring)] focus-visible:outline-offset-2';
+const primaryButtonClass =
+  'history-restore-button agent-elements-history-button inline-flex min-h-8 shrink-0 cursor-pointer items-center justify-center gap-[var(--an-spacing-xs)] whitespace-nowrap rounded-[var(--an-input-border-radius)] border border-[var(--an-primary-color)] bg-[var(--an-primary-color)] px-3.5 py-1.5 text-[13px] font-medium text-[var(--an-send-button-color)] transition-[background-color,border-color,color,box-shadow,opacity] duration-150 ease-out hover:not-disabled:border-[color-mix(in_srgb,var(--an-primary-color)_82%,var(--an-foreground))] hover:not-disabled:bg-[color-mix(in_srgb,var(--an-primary-color)_88%,var(--an-foreground))] disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-[var(--an-focus-ring)] focus-visible:outline-offset-2';
+const previewContentClass =
+  'history-preview-content nim-scrollbar flex-1 overflow-auto bg-[var(--an-background)]';
+const emptyStateClass =
+  'history-preview-empty flex flex-1 items-center justify-center px-[var(--an-spacing-xxl)] text-center text-sm text-[var(--an-foreground-muted)]';
+const loadingOverlayClass =
+  'history-preview-loading absolute inset-0 z-10 flex flex-col items-center justify-center gap-[var(--an-spacing-lg)] bg-[var(--an-background)] text-sm text-[var(--an-foreground-muted)]';
+const loadingSpinnerClass =
+  'history-preview-loading-spinner h-8 w-8 rounded-full border-2 border-[var(--an-border-color)] border-t-[var(--an-primary-color)] motion-safe:animate-spin';
+
+function DecorativeMaterialSymbol({
+  icon,
+  className,
+}: {
+  icon: string;
+  className?: string;
+}) {
+  return (
+    <span aria-hidden="true" className={`material-symbols-outlined ${className ?? ''}`}>
+      {icon}
+    </span>
+  );
+}
+
 export function HistoryDialog({ isOpen, onClose, filePath, onRestore, theme = 'light', workspacePath, onOpenSessionInChat }: HistoryDialogProps) {
   const posthog = usePostHog();
   const { snapshots, loading, refreshSnapshots, loadSnapshot, deleteSnapshot } = useHistory(filePath);
@@ -486,81 +556,130 @@ export function HistoryDialog({ isOpen, onClose, filePath, onRestore, theme = 'l
 
   if (!isOpen) return null;
 
+  const getSnapshotIconBgClass = (type: string) => {
+    switch (type) {
+      case 'auto-save':
+      case 'auto':
+        return 'border-[color-mix(in_srgb,var(--an-primary-color)_18%,var(--an-border-color))] bg-[color-mix(in_srgb,var(--an-primary-color)_9%,var(--an-background))] text-[var(--an-primary-color)]';
+      case 'manual':
+      case 'incremental-approval':
+        return 'border-[color-mix(in_srgb,var(--an-success-color)_18%,var(--an-border-color))] bg-[color-mix(in_srgb,var(--an-success-color)_9%,var(--an-background))] text-[var(--an-success-color)]';
+      case 'external-change':
+        return 'border-[color-mix(in_srgb,var(--an-warning-color)_18%,var(--an-border-color))] bg-[color-mix(in_srgb,var(--an-warning-color)_9%,var(--an-background))] text-[var(--an-warning-color)]';
+      case 'ai-diff':
+      case 'pre-apply':
+      case 'pre-edit':
+      default:
+        return 'border-[color-mix(in_srgb,var(--an-primary-color)_18%,var(--an-border-color))] bg-[color-mix(in_srgb,var(--an-primary-color)_9%,var(--an-background))] text-[var(--an-primary-color)]';
+    }
+  };
+
   return (
-    <div className="history-dialog-overlay fixed inset-0 flex items-center justify-center z-[10000] bg-black/50" onClick={onClose}>
-      <div className="history-dialog flex flex-col overflow-hidden rounded-xl bg-[var(--nim-bg)] border border-[var(--nim-border)] shadow-[0_20px_60px_rgba(0,0,0,0.3)] w-[90vw] max-w-[1200px] h-[80vh] max-h-[800px]" onClick={(e) => e.stopPropagation()}>
-        <div className="history-dialog-header flex items-center justify-between py-3 px-4 border-b border-[var(--nim-border)]">
-          <div className="history-dialog-title flex flex-col gap-0.5 min-w-0 flex-1">
-            <h2 className="m-0 text-base font-semibold text-[var(--nim-text)] whitespace-nowrap overflow-hidden text-ellipsis">{filePath ? getFileName(filePath) : 'Document History'}</h2>
-            {filePath && <span className="history-dialog-path text-[11px] text-[var(--nim-text-muted)] whitespace-nowrap overflow-hidden text-ellipsis">{filePath}</span>}
+    <div
+      className={backdropClass}
+      onClick={onClose}
+      data-testid="agent-elements-history-backdrop"
+      data-agent-elements-shell="history-backdrop"
+    >
+      <div
+        className={dialogClass}
+        onClick={(e) => e.stopPropagation()}
+        data-testid="agent-elements-history-dialog"
+        data-component="HistoryDialog"
+        data-agent-elements-shell="history-dialog"
+      >
+        <div
+          className={headerClass}
+          data-testid="agent-elements-history-header"
+          data-agent-elements-shell="history-header"
+        >
+          <div className={titleClass}>
+            <h2 className="m-0 truncate text-base font-semibold text-[var(--an-foreground)]">{filePath ? getFileName(filePath) : 'Document History'}</h2>
+            {filePath && <span className="history-dialog-path truncate text-[11px] text-[var(--an-foreground-subtle)]">{filePath}</span>}
           </div>
-          <div className="history-dialog-header-right flex items-center gap-3">
+          <div className={controlsClass}>
             {fileType === 'markdown' && (
-              <div className="view-variant-toggle flex bg-[var(--nim-bg-secondary)] border border-[var(--nim-border)] rounded-md p-0.5 gap-0.5">
+              <div
+                className={`view-variant-toggle ${toggleGroupClass}`}
+                data-testid="agent-elements-history-rich-toggle"
+                data-agent-elements-shell="history-rich-toggle"
+              >
                 <button
-                  className={`view-mode-button py-1 px-3 text-[11px] font-medium border-none rounded cursor-pointer transition-all duration-200 ${richView ? 'text-white bg-[var(--nim-primary)]' : 'text-[var(--nim-text-muted)] hover:text-[var(--nim-text)] hover:bg-[var(--nim-bg-hover)]'}`}
+                  className={`${toggleButtonBaseClass} ${richView ? toggleButtonActiveClass : toggleButtonIdleClass}`}
                   onClick={() => setRichView(true)}
                   title="Rendered view"
+                  type="button"
                 >
                   Rich
                 </button>
                 <button
-                  className={`view-mode-button py-1 px-3 text-[11px] font-medium border-none rounded cursor-pointer transition-all duration-200 ${!richView ? 'text-white bg-[var(--nim-primary)]' : 'text-[var(--nim-text-muted)] hover:text-[var(--nim-text)] hover:bg-[var(--nim-bg-hover)]'}`}
+                  className={`${toggleButtonBaseClass} ${!richView ? toggleButtonActiveClass : toggleButtonIdleClass}`}
                   onClick={() => setRichView(false)}
                   title="Raw source"
+                  type="button"
                 >
                   Raw
                 </button>
               </div>
             )}
-            <div className="view-mode-toggle flex bg-[var(--nim-bg-secondary)] border border-[var(--nim-border)] rounded-md p-0.5 gap-0.5">
+            <div
+              className={toggleGroupClass}
+              data-testid="agent-elements-history-view-toggle"
+              data-agent-elements-shell="history-view-toggle"
+            >
               <button
-                className={`view-mode-button py-1 px-3 text-[11px] font-medium border-none rounded cursor-pointer transition-all duration-200 ${viewMode === 'changes' ? 'text-white bg-[var(--nim-primary)]' : 'text-[var(--nim-text-muted)] hover:text-[var(--nim-text)] hover:bg-[var(--nim-bg-hover)]'}`}
+                className={`${toggleButtonBaseClass} ${viewMode === 'changes' ? toggleButtonActiveClass : toggleButtonIdleClass}`}
                 onClick={() => setViewMode('changes')}
                 title="Show diff with previous version"
+                type="button"
               >
                 Diff
               </button>
               <button
-                className={`view-mode-button py-1 px-3 text-[11px] font-medium border-none rounded cursor-pointer transition-all duration-200 ${viewMode === 'version' ? 'text-white bg-[var(--nim-primary)]' : 'text-[var(--nim-text-muted)] hover:text-[var(--nim-text)] hover:bg-[var(--nim-bg-hover)]'}`}
+                className={`${toggleButtonBaseClass} ${viewMode === 'version' ? toggleButtonActiveClass : toggleButtonIdleClass}`}
                 onClick={() => setViewMode('version')}
                 title="View full content"
+                type="button"
               >
                 Full
               </button>
             </div>
-            <button className="history-dialog-close nim-btn-icon" onClick={onClose}>
-              <span className="material-symbols-outlined text-xl">close</span>
+            <button className={closeButtonClass} onClick={onClose} type="button" aria-label="Close document history">
+              <DecorativeMaterialSymbol icon="close" className="text-xl" />
             </button>
           </div>
         </div>
 
-        <div className="history-dialog-content flex-1 flex overflow-hidden">
-          <div className="history-list w-[350px] border-r border-[var(--nim-border)] flex flex-col">
-            <div className="history-list-header py-2 px-3 border-b border-[var(--nim-border)] flex items-center justify-between bg-[var(--nim-bg-secondary)]">
-              <div className="history-list-header-left flex items-center gap-2">
-                <h3 className="m-0 text-xs font-semibold text-[var(--nim-text-muted)] uppercase tracking-wider">Snapshots ({displayedSnapshots.length}{compactView && snapshots.length !== displayedSnapshots.length ? ` of ${snapshots.length}` : ''})</h3>
-                {loading && <span className="history-loading text-xs text-[var(--nim-text-muted)]">Loading...</span>}
+        <div className={contentClass}>
+          <div
+            className={listPanelClass}
+            data-testid="agent-elements-history-list-panel"
+            data-agent-elements-shell="history-list-panel"
+          >
+            <div className={listHeaderClass}>
+              <div className="history-list-header-left flex items-center gap-[var(--an-spacing-sm)]">
+                <h3 className="m-0 text-xs font-medium text-[var(--an-foreground-muted)]">Snapshots ({displayedSnapshots.length}{compactView && snapshots.length !== displayedSnapshots.length ? ` of ${snapshots.length}` : ''})</h3>
+                {loading && <span className="history-loading text-xs text-[var(--an-foreground-subtle)]">Loading...</span>}
               </div>
               {snapshots.length > 5 && (
                 <button
-                  className="history-compact-toggle nim-btn-icon"
+                  className={`history-compact-toggle ${iconButtonClass}`}
                   onClick={() => setCompactView(!compactView)}
                   title={compactView ? 'Show all versions' : 'Hide minor auto-saves'}
+                  type="button"
+                  aria-label={compactView ? 'Show all versions' : 'Hide minor auto-saves'}
                 >
-                  <span className="material-symbols-outlined text-lg">
-                    {compactView ? 'unfold_more' : 'unfold_less'}
-                  </span>
+                  <DecorativeMaterialSymbol icon={compactView ? 'unfold_more' : 'unfold_less'} className="text-lg" />
                 </button>
               )}
             </div>
 
             {displayedSnapshots.length === 0 ? (
-              <div className="history-empty py-10 px-5 text-center text-[var(--nim-text-muted)] text-sm">
+              <div className="history-empty px-[var(--an-spacing-xl)] py-10 text-center text-sm text-[var(--an-foreground-muted)]">
                 No history available for this document
               </div>
             ) : (
-              <div className="history-items nim-scrollbar flex-1 overflow-y-auto p-1">
+              <div className={historyItemsClass}>
                 {displayedSnapshots.map((snapshot, index) => {
                   const snapshotId = getSnapshotId(snapshot, index);
                   const isSelected = selectedVersions.some(v => v.snapshotId === snapshotId);
@@ -581,43 +700,57 @@ export function HistoryDialog({ isOpen, onClose, filePath, onRestore, theme = 'l
                   <div
                     key={snapshotId}
                     data-testid={`history-item-${index}`}
+                    data-agent-elements-shell="history-snapshot-item"
                     data-snapshot-id={snapshotId}
                     data-snapshot-type={snapshot.type}
                     data-selected={isSelected}
-                    className={`history-item mb-0.5 rounded cursor-pointer transition-all duration-150 ${isSelected ? 'selected bg-[var(--nim-primary)]' : 'hover:bg-[var(--nim-bg-hover)]'}`}
+                    className={`${historyItemBaseClass} ${isSelected ? historyItemSelectedClass : ''}`}
                     onClick={(e) => handleSnapshotSelect(snapshotId, snapshot.timestamp, index, e.metaKey || e.ctrlKey)}
+                    role="button"
+                    tabIndex={0}
+                    onKeyDown={(event) => {
+                      if (event.key === 'Enter' || event.key === ' ') {
+                        event.preventDefault();
+                        void handleSnapshotSelect(snapshotId, snapshot.timestamp, index, event.metaKey || event.ctrlKey);
+                      }
+                    }}
                   >
-                    <div className="history-item-content py-1.5 px-2 flex items-center justify-between">
-                      <div className="history-item-main flex items-center gap-2 flex-1 min-w-0">
-                        <span className={`history-item-icon material-symbols-outlined text-lg shrink-0 ${isSelected ? 'text-white' : 'text-[var(--nim-text-muted)]'}`}>{getSnapshotIcon(snapshot.type)}</span>
-                        <div className="history-item-info flex flex-col gap-0.5 min-w-0 flex-1">
-                          <div className="history-item-type-row flex items-center justify-between gap-2">
-                            <span className={`history-item-type text-xs font-medium capitalize whitespace-nowrap ${isSelected ? 'text-white' : 'text-[var(--nim-text)]'}`}>{snapshot.type.replace('-', ' ')}</span>
-                            <span className={`history-item-time text-[11px] whitespace-nowrap shrink-0 ${isSelected ? 'text-white' : 'text-[var(--nim-text-faint)]'}`}>{relativeTime}</span>
+                    <div className="history-item-content flex items-center justify-between px-[var(--an-spacing-sm)] py-[var(--an-spacing-sm)]">
+                      <div className="history-item-main flex min-w-0 flex-1 items-center gap-[var(--an-spacing-sm)]">
+                        <div className={`${snapshotIconBaseClass} ${getSnapshotIconBgClass(snapshot.type)}`}>
+                          <DecorativeMaterialSymbol icon={getSnapshotIcon(snapshot.type)} className="text-base" />
+                        </div>
+                        <div className="history-item-info flex min-w-0 flex-1 flex-col gap-[var(--an-spacing-xxs)]">
+                          <div className="history-item-type-row flex items-center justify-between gap-[var(--an-spacing-sm)]">
+                            <span className="history-item-type truncate text-xs font-medium capitalize text-[var(--an-foreground)]">{snapshot.type.replace('-', ' ')}</span>
+                            <span className="history-item-time shrink-0 whitespace-nowrap text-[11px] text-[var(--an-foreground-subtle)]">{relativeTime}</span>
                           </div>
                           {isAIEdit && session && (
-                            <span
-                              className={`history-item-session-link flex items-center gap-1 text-[11px] cursor-pointer transition-colors duration-150 max-w-full overflow-hidden no-underline ${isSelected ? 'text-white/80 hover:text-white' : 'text-[var(--nim-link)] hover:text-[var(--nim-link-hover)]'}`}
+                            <button
+                              type="button"
+                              className={sessionLinkBaseClass}
+                              title="Open AI session in chat"
+                              onClick={handleSessionClick}
                             >
                               <ProviderIcon provider={session.provider} size={11} />
-                              <a title="Open AI session in chat"
-                                  onClick={handleSessionClick}
-                                  className="history-item-session-name whitespace-nowrap overflow-hidden text-ellipsis hover:underline">{session.title}</a>
-                            </span>
+                              <span className="history-item-session-name overflow-hidden text-ellipsis whitespace-nowrap">{session.title}</span>
+                            </button>
                           )}
                         </div>
                       </div>
-                      <div className="history-item-actions flex items-center gap-2 shrink-0">
+                      <div className="history-item-actions flex shrink-0 items-center gap-[var(--an-spacing-sm)]">
                         <button
-                          className={`history-item-delete w-5 h-5 border-none bg-transparent cursor-pointer opacity-0 transition-all duration-200 rounded flex items-center justify-center shrink-0 group-hover:opacity-60 hover:!opacity-100 hover:bg-[var(--nim-error-light)] [.history-item:hover_&]:opacity-60`}
+                          className={deleteButtonClass}
                           data-testid={`history-item-delete-${index}`}
                           onClick={(e) => {
                             e.stopPropagation();
                             handleDelete(snapshotId, snapshot.timestamp);
                           }}
                           title="Delete snapshot"
+                          type="button"
+                          aria-label="Delete snapshot"
                         >
-                          <span className={`material-symbols-outlined text-base ${isSelected ? 'text-white' : 'text-[var(--nim-text-muted)]'} [.history-item-delete:hover_&]:text-[var(--nim-error)]`}>delete</span>
+                          <DecorativeMaterialSymbol icon="delete" className="text-base" />
                         </button>
                       </div>
                     </div>
@@ -628,17 +761,25 @@ export function HistoryDialog({ isOpen, onClose, filePath, onRestore, theme = 'l
             )}
           </div>
 
-          <div className="history-preview flex-1 flex flex-col relative min-w-0 overflow-hidden">
-            <div className="history-preview-header py-2 px-3 border-b border-[var(--nim-border)] flex items-center justify-between bg-[var(--nim-bg-secondary)] gap-3">
-              <div className="history-preview-header-left flex items-center gap-3 min-w-0 flex-1 overflow-hidden flex-wrap">
-                <h3 className="m-0 text-xs font-semibold text-[var(--nim-text-muted)] uppercase tracking-wider">{diffMode ? 'Diff Preview' : 'Preview'}</h3>
+          <div
+            className={previewPanelClass}
+            data-testid="agent-elements-history-preview-panel"
+            data-agent-elements-shell="history-preview-panel"
+          >
+            <div
+              className={previewHeaderClass}
+              data-testid={diffMode ? 'agent-elements-history-diff-header' : 'agent-elements-history-preview-header'}
+              data-agent-elements-shell={diffMode ? 'history-diff-header' : 'history-preview-header'}
+            >
+              <div className={previewHeaderLeftClass}>
+                <h3 className="m-0 text-xs font-medium text-[var(--an-foreground-muted)]">{diffMode ? 'Diff Preview' : 'Preview'}</h3>
                 {diffMode && versionAMeta && versionBMeta && (
-                  <div className="diff-version-labels flex items-center gap-2 text-[11px] text-[var(--nim-text-muted)]">
-                    <span className="diff-version-label diff-version-old py-0.5 px-2 rounded bg-[var(--nim-bg-tertiary)] font-medium text-[var(--nim-error)]">
+                  <div className="diff-version-labels flex items-center gap-[var(--an-spacing-sm)] text-[11px] text-[var(--an-foreground-muted)]">
+                    <span className={`${diffLabelClass} diff-version-old text-[var(--an-diff-removed-text)]`}>
                       {formatVersionLabel(versionAMeta.type, versionAMeta.timestamp)}
                     </span>
-                    <span className="diff-version-separator font-semibold text-[var(--nim-text-faint)]">vs</span>
-                    <span className="diff-version-label diff-version-new py-0.5 px-2 rounded bg-[var(--nim-bg-tertiary)] font-medium text-[var(--nim-success)]">
+                    <span className="diff-version-separator font-semibold text-[var(--an-foreground-subtle)]">vs</span>
+                    <span className={`${diffLabelClass} diff-version-new text-[var(--an-success-color)]`}>
                       {formatVersionLabel(versionBMeta.type, versionBMeta.timestamp)}
                     </span>
                   </div>
@@ -646,34 +787,38 @@ export function HistoryDialog({ isOpen, onClose, filePath, onRestore, theme = 'l
                 {diffMode && fileType === 'markdown' && (
                   <>
                     {navigationState && navigationState.totalGroups > 0 && (
-                      <div className="diff-navigation-controls flex items-center gap-2 ml-3">
+                      <div className="diff-navigation-controls flex items-center gap-[var(--an-spacing-sm)]">
                         <button
-                          className="diff-nav-button w-6 h-6 p-0 border border-[var(--nim-border)] bg-[var(--nim-bg)] rounded cursor-pointer flex items-center justify-center text-[var(--nim-text-muted)] transition-all duration-200 hover:not-disabled:bg-[var(--nim-bg-hover)] hover:not-disabled:text-[var(--nim-text)] disabled:opacity-40 disabled:cursor-not-allowed"
+                          className={diffNavButtonClass}
                           onClick={handleNavigatePrevious}
                           disabled={!navigationState.canGoPrevious}
                           title="Previous change"
+                          type="button"
+                          aria-label="Previous change"
                         >
                           <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
                             <path d="M6 9L3 6L6 3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
                           </svg>
                         </button>
-                        <span className="diff-change-counter text-[11px] font-medium text-[var(--nim-text-muted)] min-w-[50px] text-center">
+                        <span className="diff-change-counter min-w-[50px] text-center text-[11px] font-medium text-[var(--an-foreground-muted)]">
                           {navigationState.currentIndex + 1} / {navigationState.totalGroups}
                         </span>
                         <button
-                          className="diff-nav-button w-6 h-6 p-0 border border-[var(--nim-border)] bg-[var(--nim-bg)] rounded cursor-pointer flex items-center justify-center text-[var(--nim-text-muted)] transition-all duration-200 hover:not-disabled:bg-[var(--nim-bg-hover)] hover:not-disabled:text-[var(--nim-text)] disabled:opacity-40 disabled:cursor-not-allowed"
+                          className={diffNavButtonClass}
                           onClick={handleNavigateNext}
                           disabled={!navigationState.canGoNext}
                           title="Next change"
+                          type="button"
+                          aria-label="Next change"
                         >
                           <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
                             <path d="M6 3L9 6L6 9" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
                           </svg>
                         </button>
                         {!richView && 'addedLines' in navigationState && (
-                          <div className="diff-stats flex items-center gap-2 ml-2 pl-2 border-l border-[var(--nim-border)]">
-                            <span className="diff-stat diff-stat-added text-[11px] font-semibold py-0.5 px-1.5 rounded-sm text-[var(--nim-success)] bg-[var(--nim-success-light)]">+{navigationState.addedLines}</span>
-                            <span className="diff-stat diff-stat-removed text-[11px] font-semibold py-0.5 px-1.5 rounded-sm text-[var(--nim-error)] bg-[var(--nim-error-light)]">-{navigationState.removedLines}</span>
+                          <div className="diff-stats flex items-center gap-[var(--an-spacing-xs)] border-l border-[var(--an-border-color)] pl-[var(--an-spacing-sm)]">
+                            <span className="diff-stat diff-stat-added rounded-[var(--an-small-border-radius)] bg-[color-mix(in_srgb,var(--an-success-color)_8%,var(--an-background))] px-1.5 py-0.5 text-[11px] font-semibold text-[var(--an-success-color)]">+{navigationState.addedLines}</span>
+                            <span className="diff-stat diff-stat-removed rounded-[var(--an-small-border-radius)] bg-[color-mix(in_srgb,var(--an-diff-removed-text)_8%,var(--an-background))] px-1.5 py-0.5 text-[11px] font-semibold text-[var(--an-diff-removed-text)]">-{navigationState.removedLines}</span>
                           </div>
                         )}
                       </div>
@@ -683,9 +828,10 @@ export function HistoryDialog({ isOpen, onClose, filePath, onRestore, theme = 'l
               </div>
               {selectedVersions.length === 1 && (
                 <button
-                  className="history-restore-button py-1.5 px-4 bg-[var(--nim-primary)] text-white border-none rounded-md text-[13px] font-medium cursor-pointer transition-all duration-200 shrink-0 whitespace-nowrap hover:not-disabled:bg-[var(--nim-primary-hover)] hover:not-disabled:-translate-y-px hover:not-disabled:shadow-[0_2px_8px_rgba(59,130,246,0.3)] disabled:opacity-50 disabled:cursor-not-allowed"
+                  className={primaryButtonClass}
                   onClick={handleRestore}
                   disabled={!previewContent}
+                  type="button"
                 >
                   Restore This Version
                 </button>
@@ -693,7 +839,7 @@ export function HistoryDialog({ isOpen, onClose, filePath, onRestore, theme = 'l
             </div>
 
             {diffMode ? (
-              <div className="history-preview-content nim-scrollbar flex-1 overflow-auto [&:has(.diff-preview-editor)]:p-0">
+              <div className={`${previewContentClass} [&:has(.diff-preview-editor)]:p-0`}>
                 {fileType === 'markdown' ? (
                   // Markdown files: use rich or text diff
                   richView ? (
@@ -736,9 +882,9 @@ export function HistoryDialog({ isOpen, onClose, filePath, onRestore, theme = 'l
                 )}
               </div>
             ) : selectedVersions.length === 1 ? (
-              <div className="history-preview-content nim-scrollbar flex-1 overflow-auto [&:has(.monaco-editor)]:overflow-hidden [&:has(.nimbalyst-editor-root)]:overflow-hidden">
+              <div className={`${previewContentClass} [&:has(.monaco-editor)]:overflow-hidden [&:has(.nimbalyst-editor-root)]:overflow-hidden`}>
                 {fileType === 'image' ? (
-                  <div className="image-preview flex items-center justify-center w-full h-full bg-[var(--nim-bg-tertiary)] p-4 [&_img]:max-w-full [&_img]:max-h-full [&_img]:object-contain">
+                  <div className="image-preview flex h-full w-full items-center justify-center bg-[var(--an-background-secondary)] p-[var(--an-spacing-xl)] [&_img]:max-h-full [&_img]:max-w-full [&_img]:object-contain">
                     <img src={nimAssetUrl(filePath || '')} alt="Preview" />
                   </div>
                 ) : fileType === 'markdown' && richView ? (
@@ -774,7 +920,7 @@ export function HistoryDialog({ isOpen, onClose, filePath, onRestore, theme = 'l
                 )}
               </div>
             ) : (
-              <div className="history-preview-empty flex-1 flex items-center justify-center text-[var(--nim-text-muted)] text-sm">
+              <div className={emptyStateClass}>
                 {viewMode === 'changes'
                   ? 'Select a snapshot to see diff, or Cmd+Click two to compare'
                   : 'Select a snapshot to view'}
@@ -782,9 +928,9 @@ export function HistoryDialog({ isOpen, onClose, filePath, onRestore, theme = 'l
             )}
 
             {loadingPreview && (richView || !diffMode) && (
-              <div className="history-preview-loading absolute inset-0 flex flex-col items-center justify-center bg-[var(--nim-bg)] z-10 gap-3">
-                <div className="history-preview-loading-spinner w-10 h-10 border-[3px] border-[var(--nim-border)] border-t-[var(--nim-primary)] rounded-full animate-spin" />
-                <div className="history-preview-loading-text text-[var(--nim-text-muted)] text-sm">
+              <div className={loadingOverlayClass}>
+                <div className={loadingSpinnerClass} />
+                <div className="history-preview-loading-text text-sm text-[var(--an-foreground-muted)]">
                   {selectedVersions.length === 2 ? 'Loading diff...' : 'Loading preview...'}
                 </div>
               </div>

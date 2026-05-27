@@ -49,6 +49,10 @@ describe('WorkspaceWelcome Agent Elements shell', () => {
     const tips = screen.getByTestId('agent-elements-workspace-welcome-tips');
     expect(tips).toHaveClass('workspace-welcome-tips', 'agent-elements-tool-card');
     expect(tips).toHaveAttribute('data-agent-elements-shell', 'workspace-welcome-tips');
+    expect(tips).toHaveAttribute('data-agent-elements-card-padding', 'symmetric-inline');
+    expect(tips).toHaveAttribute('data-agent-elements-card-width', 'bounded-fallback');
+    expect(tips.className).toContain('--agent-elements-card-inline-padding');
+    expect(tips.className).toContain('--agent-elements-card-block-padding');
     expect(screen.getAllByTestId('agent-elements-workspace-welcome-tip')).toHaveLength(3);
     expect(tips).toHaveTextContent('Open Markdown files from the sidebar');
     expect(tips).toHaveTextContent('Edit files directly or use the agent on the right side');

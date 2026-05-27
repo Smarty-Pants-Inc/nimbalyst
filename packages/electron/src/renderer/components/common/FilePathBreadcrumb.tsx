@@ -1,6 +1,7 @@
 import React, { useCallback, useMemo } from 'react';
 import { basename } from 'pathe';
 import { useSetAtom } from 'jotai';
+import { MaterialSymbol } from '@nimbalyst/runtime';
 
 import {
   openFileRequestAtom,
@@ -86,39 +87,66 @@ export const FilePathBreadcrumb: React.FC<FilePathBreadcrumbProps> = ({
   }, [revealFolder, revealFile, setOpenFileRequest, setWindowMode]);
 
   return (
-    <div className={`unified-header-breadcrumb flex items-center gap-1.5 text-[13px] min-w-0 overflow-hidden ${className}`.trim()}>
+    <div
+      className={`unified-header-breadcrumb agent-elements-file-path-breadcrumb flex min-w-0 items-center gap-1.5 overflow-hidden text-[13px] text-[var(--an-foreground-muted)] ${className}`.trim()}
+      data-testid="agent-elements-file-path-breadcrumb"
+      data-agent-elements-shell="file-path-breadcrumb"
+    >
       {breadcrumbSegments.map((segment, index) => {
         const isLast = index === breadcrumbSegments.length - 1;
         const isClickable = (!isLast && segment.folderPath) || (isLast && Boolean(filePath));
+        const segmentClassName = `breadcrumb-segment agent-elements-file-path-breadcrumb-segment flex items-center gap-1 whitespace-nowrap ${
+          isLast
+            ? 'breadcrumb-filename text-[var(--an-foreground)] font-medium'
+            : 'text-[var(--an-foreground-muted)]'
+        } ${
+          isClickable
+            ? 'breadcrumb-clickable cursor-pointer rounded-[var(--an-small-border-radius)] px-1 py-0.5 -mx-1 -my-0.5 transition-colors duration-150 hover:bg-[var(--an-background-tertiary)] hover:text-[var(--an-foreground)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--an-focus-ring)]'
+            : ''
+        }`;
+        const icon = (
+          <MaterialSymbol
+            icon={isLast ? 'description' : 'folder'}
+            size={14}
+            className={`breadcrumb-icon h-3.5 w-3.5 shrink-0 ${isLast ? 'opacity-80' : 'opacity-70'}`}
+          />
+        );
+        const content = (
+          <>
+            {icon}
+            {segment.name}
+          </>
+        );
         return (
           <React.Fragment key={`${segment.name}-${index}`}>
-            <span
-              className={`breadcrumb-segment flex items-center gap-1 whitespace-nowrap ${
-                isLast
-                  ? 'breadcrumb-filename text-[var(--nim-text)] font-medium'
-                  : 'text-[var(--nim-text-muted)]'
-              } ${
-                isClickable
-                  ? 'breadcrumb-clickable cursor-pointer rounded py-0.5 px-1 -my-0.5 -mx-1 transition-colors duration-150 hover:text-[var(--nim-text)] hover:bg-[var(--nim-bg-hover)]'
-                  : ''
-              }`}
-              onClick={isClickable ? () => handleBreadcrumbClick(segment.folderPath, isLast ? filePath : undefined) : undefined}
-              title={isClickable ? `Go to ${segment.name} in file tree` : undefined}
-            >
-              {!isLast && (
-                <svg className="breadcrumb-icon w-3.5 h-3.5 opacity-70 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
-                </svg>
-              )}
-              {isLast && (
-                <svg className="breadcrumb-icon w-3.5 h-3.5 opacity-80 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-                  <polyline points="14 2 14 8 20 8"/>
-                </svg>
-              )}
-              {segment.name}
-            </span>
-            {!isLast && <span className="breadcrumb-separator text-[var(--nim-text-faint)] text-[11px]">/</span>}
+            {isClickable ? (
+              <button
+                type="button"
+                className={`${segmentClassName} border-none bg-transparent font-inherit`}
+                data-testid={isLast ? 'agent-elements-file-path-breadcrumb-file' : 'agent-elements-file-path-breadcrumb-folder'}
+                data-agent-elements-shell={isLast ? 'file-path-breadcrumb-file' : 'file-path-breadcrumb-folder'}
+                onClick={() => handleBreadcrumbClick(segment.folderPath, isLast ? filePath : undefined)}
+                title={`Go to ${segment.name} in file tree`}
+              >
+                {content}
+              </button>
+            ) : (
+              <span
+                className={segmentClassName}
+                data-testid={isLast ? 'agent-elements-file-path-breadcrumb-file' : 'agent-elements-file-path-breadcrumb-folder'}
+                data-agent-elements-shell={isLast ? 'file-path-breadcrumb-file' : 'file-path-breadcrumb-folder'}
+              >
+                {content}
+              </span>
+            )}
+            {!isLast && (
+              <span
+                className="breadcrumb-separator agent-elements-file-path-breadcrumb-separator text-[11px] text-[var(--an-foreground-subtle)]"
+                data-agent-elements-shell="file-path-breadcrumb-separator"
+              >
+                /
+              </span>
+            )}
           </React.Fragment>
         );
       })}

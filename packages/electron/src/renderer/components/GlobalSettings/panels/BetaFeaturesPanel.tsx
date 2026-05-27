@@ -8,10 +8,10 @@ import {
 } from '../../../store/atoms/appSettings';
 import {
   BETA_FEATURES,
-  areAllBetaFeaturesEnabled,
   enableAllBetaFeatures as enableAllBetaFeaturesUtil,
   disableAllBetaFeatures,
 } from '../../../../shared/betaFeatures';
+import { createProviderPanelChrome } from './providerPanelChrome';
 
 /**
  * BetaFeaturesPanel - Settings panel for toggling beta features.
@@ -20,6 +20,21 @@ import {
  * Unlike alpha features (hidden behind release channel), beta features
  * are user-facing and discoverable.
  */
+const chrome = createProviderPanelChrome({
+  headerClassName: 'provider-panel-header beta-features-panel-header',
+  sectionClassName: 'provider-panel-section beta-features-section',
+  configCardClassName: 'beta-features-card',
+  inputClassName: 'beta-features-input',
+  loadingClassName: 'beta-features-loading',
+  modelRowClassName: 'beta-features-row',
+  testButtonClassName: 'beta-features-action-button',
+  testErrorClassName: 'beta-features-error',
+  emptyClassName: 'beta-features-empty',
+});
+
+const betaCardPaddingClass =
+  '[--agent-elements-card-block-padding:var(--an-spacing-lg)] [--agent-elements-card-inline-padding:var(--an-spacing-lg)]';
+
 export function BetaFeaturesPanel() {
   const posthog = usePostHog();
   const [settings] = useAtom(advancedSettingsAtom);
@@ -34,30 +49,30 @@ export function BetaFeaturesPanel() {
       data-testid="agent-elements-beta-features-panel"
     >
       <div
-        className="provider-panel-header beta-features-panel-header agent-elements-settings-panel-header mb-6 pb-4 border-b border-[var(--nim-border)]"
+        className={chrome.header}
         data-agent-elements-shell="beta-features-header"
         data-testid="agent-elements-beta-features-header"
       >
-        <h3 className="provider-panel-title text-xl font-semibold leading-tight mb-2 text-[var(--nim-text)]">
+        <h3 className={chrome.title}>
           Beta Features
         </h3>
-        <p className="provider-panel-description text-sm leading-relaxed text-[var(--nim-text-muted)]">
+        <p className={chrome.description}>
           Try out new features before they are generally available. Beta features may not be fully complete or polished, and may be removed in the future.
         </p>
       </div>
 
       <div
-        className="provider-panel-section beta-features-section agent-elements-settings-section py-4 mb-4 border-b border-[var(--nim-border)] last:border-b-0 last:mb-0 last:pb-0"
+        className={chrome.section}
         data-agent-elements-shell="beta-features-section"
         data-testid="agent-elements-beta-features-section"
       >
         <div
-          className="beta-features-master-card agent-elements-tool-card p-3 bg-nim-secondary rounded-md border border-nim"
+          className={`beta-features-master-card agent-elements-tool-card ${betaCardPaddingClass}`}
           data-agent-elements-shell="beta-features-master-card"
           data-testid="agent-elements-beta-features-master-card"
         >
           {/* "Enable All Beta Features" master toggle */}
-          <div className="mb-3 pb-3 border-b border-nim">
+          <div className="mb-[var(--an-spacing-lg)] border-b border-[var(--an-border-color)] pb-[var(--an-spacing-lg)]">
             <SettingsToggle
               checked={enableAllBetaFeatures}
               onChange={(enabled) => {
@@ -80,12 +95,12 @@ export function BetaFeaturesPanel() {
           {BETA_FEATURES.map((feature) => (
             <div
               key={feature.tag}
-              className={`setting-item beta-feature-row py-2 ${enableAllBetaFeatures ? 'opacity-60 pointer-events-none' : ''}`}
+              className={`setting-item beta-feature-row py-[var(--an-spacing-sm)] ${enableAllBetaFeatures ? 'pointer-events-none opacity-60' : ''}`}
               data-agent-elements-shell="beta-feature-row"
               data-beta-feature-tag={feature.tag}
               data-testid={`agent-elements-beta-feature-row-${feature.tag}`}
             >
-              <label className="setting-label flex items-start gap-3 cursor-pointer">
+              <label className="setting-label flex cursor-pointer items-start gap-[var(--an-spacing-md)]">
                 <input
                   type="checkbox"
                   checked={betaFeatures[feature.tag] ?? false}
@@ -97,17 +112,17 @@ export function BetaFeaturesPanel() {
                       enabled: checked,
                     });
                   }}
-                  className="setting-checkbox w-4 h-4 mt-0.5 cursor-pointer shrink-0 accent-[var(--nim-primary)]"
+                  className="setting-checkbox mt-0.5 h-4 w-4 shrink-0 cursor-pointer accent-[var(--an-primary-color)]"
                   disabled={enableAllBetaFeatures}
                 />
-                <div className="setting-text flex flex-col gap-0.5">
-                  <span className="setting-name text-sm font-medium text-[var(--nim-text)] flex items-center gap-2">
+                <div className="setting-text flex flex-col gap-[var(--an-spacing-xxs)]">
+                  <span className="setting-name flex items-center gap-[var(--an-spacing-sm)] text-sm font-medium text-[var(--an-foreground)]">
                     {feature.icon && (
                       <span className="material-symbols-outlined text-sm">{feature.icon}</span>
                     )}
                     {feature.name}
                   </span>
-                  <span className="setting-description text-xs leading-relaxed text-[var(--nim-text-muted)]">
+                  <span className="setting-description text-xs leading-relaxed text-[var(--an-foreground-muted)]">
                     {feature.description}
                   </span>
                 </div>
@@ -116,7 +131,7 @@ export function BetaFeaturesPanel() {
           ))}
         </div>
         <p
-          className="beta-features-note agent-elements-tool-card mt-3 p-2 text-[13px] text-[var(--nim-text-muted)] bg-nim-secondary rounded border border-nim"
+          className={`beta-features-note agent-elements-tool-card mt-[var(--an-spacing-lg)] text-[13px] text-[var(--an-foreground-muted)] ${betaCardPaddingClass}`}
           data-agent-elements-shell="beta-features-note"
           data-tone="warning"
           data-testid="agent-elements-beta-features-note"

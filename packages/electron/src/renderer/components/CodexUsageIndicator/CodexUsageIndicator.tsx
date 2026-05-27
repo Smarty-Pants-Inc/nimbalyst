@@ -35,11 +35,11 @@ function getUsageVisualState(color: string, forceMuted = false): UsageVisualStat
 function getUsageRingColor(state: UsageVisualState): string {
   switch (state) {
     case 'healthy':
-      return 'var(--nim-success)';
+      return 'var(--an-success-color)';
     case 'warning':
-      return 'var(--nim-warning)';
+      return 'var(--an-warning-color)';
     case 'danger':
-      return 'var(--nim-error)';
+      return 'var(--an-error-color)';
     default:
       return 'var(--an-foreground-subtle)';
   }

@@ -25,6 +25,13 @@ interface UserMenuItem {
   onClick: () => void;
 }
 
+const floatingPopoverCardGutters = [
+  '[--agent-elements-card-block-padding:var(--an-spacing-xs)]',
+  '[--agent-elements-card-inline-padding:var(--an-spacing-xs)]',
+  'px-[var(--agent-elements-card-inline-padding)]',
+  'py-[var(--agent-elements-card-block-padding)]',
+].join(' ');
+
 export function UserMenuPopover({ onNavigateSettings, onClose, isProjectConnected = false, anchorEl }: UserMenuPopoverProps) {
   const authState = useAtomValue(stytchAuthAtom);
 
@@ -98,11 +105,11 @@ export function UserMenuPopover({ onNavigateSettings, onClose, isProjectConnecte
     'border',
     'border-[var(--an-tool-border-color)]',
     'bg-[var(--an-tool-background)]',
-    'p-1',
     'text-[13px]',
     'leading-5',
     'text-[var(--an-tool-color)]',
     'shadow-[0_12px_32px_color-mix(in_srgb,var(--an-foreground)_10%,transparent)]',
+    floatingPopoverCardGutters,
   ].join(' ');
 
   const menuItemClasses = [
@@ -111,7 +118,7 @@ export function UserMenuPopover({ onNavigateSettings, onClose, isProjectConnecte
     'w-full',
     'items-center',
     'gap-2.5',
-    'rounded-[8px]',
+    'rounded-[var(--an-tool-border-radius)]',
     'border-0',
     'bg-transparent',
     'px-3',
@@ -141,6 +148,8 @@ export function UserMenuPopover({ onNavigateSettings, onClose, isProjectConnecte
         className={menuShellClasses}
         data-component="UserMenuPopover"
         data-agent-elements-shell="user-menu-popover"
+        data-agent-elements-card-padding="symmetric-inline"
+        data-agent-elements-card-width="floating-popover"
         data-testid="user-menu-popover"
       >
         <div className="py-1">
@@ -174,7 +183,7 @@ export function UserMenuPopover({ onNavigateSettings, onClose, isProjectConnecte
             'w-full',
             'items-center',
             'gap-2.5',
-            'rounded-[8px]',
+            'rounded-[var(--an-tool-border-radius)]',
             'border-0',
             'bg-transparent',
             'px-3',

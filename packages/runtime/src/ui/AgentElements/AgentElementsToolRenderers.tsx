@@ -1,7 +1,13 @@
 import type { HTMLAttributes, ReactNode } from 'react';
 import { useState } from 'react';
 import { MaterialSymbol } from '../icons/MaterialSymbol';
-import { AgentStatusPill, AgentToolCard, type AgentToolStatus } from './AgentElementsPrimitives';
+import {
+  AgentStatusPill,
+  AgentToolCard,
+  agentToolStatusToTone,
+  type AgentToolStatus,
+} from './AgentElementsPrimitives';
+import { AgentProgressUpdateList, type AgentProgressUpdate } from './AgentElementsStreamEvents';
 import './AgentElementsToolRenderers.css';
 
 type ToolCardDivProps = Omit<HTMLAttributes<HTMLDivElement>, 'results' | 'title'>;
@@ -18,14 +24,6 @@ function formatCount(value: number, label: string): string {
   return `${value} ${label}${value === 1 ? '' : 's'}`;
 }
 
-function statusToTone(status: AgentToolStatus) {
-  if (status === 'running') return 'running';
-  if (status === 'completed') return 'success';
-  if (status === 'error') return 'error';
-  if (status === 'interrupted') return 'warning';
-  return 'neutral';
-}
-
 export interface AgentCommandToolCardProps extends ToolCardDivProps, DataTestIdAttribute {
   command: string;
   output?: ReactNode;
@@ -33,6 +31,7 @@ export interface AgentCommandToolCardProps extends ToolCardDivProps, DataTestIdA
   exitCode?: number;
   status?: AgentToolStatus;
   deniedReason?: ReactNode;
+  progressUpdates?: AgentProgressUpdate[];
   debugPayload?: unknown;
 }
 
@@ -43,6 +42,7 @@ export function AgentCommandToolCard({
   exitCode,
   status = 'idle',
   deniedReason,
+  progressUpdates = [],
   debugPayload,
   className,
   'data-testid': dataTestId = 'agent-elements-command-tool-card',
@@ -71,6 +71,7 @@ export function AgentCommandToolCard({
         {output ? <div className="agent-elements-command-output">{output}</div> : null}
         {deniedReason ? <div className="agent-elements-command-denied">{deniedReason}</div> : null}
       </div>
+      <AgentProgressUpdateList updates={progressUpdates} showEmpty={false} />
     </AgentToolCard>
   );
 }
@@ -173,7 +174,7 @@ export function AgentEditToolCard({
             <span data-diff-tone="remove">-{removeCount}</span>
           </span>
         ) : (
-          <AgentStatusPill tone={statusToTone(getEditToolStatus(status))}>{status.replace('_', ' ')}</AgentStatusPill>
+          <AgentStatusPill tone={agentToolStatusToTone(getEditToolStatus(status))}>{status.replace('_', ' ')}</AgentStatusPill>
         )
       }
     >
@@ -242,6 +243,7 @@ export interface AgentSearchToolCardProps extends ToolCardDivProps, DataTestIdAt
   status?: AgentToolStatus;
   results?: AgentSearchResult[];
   summary?: ReactNode;
+  progressUpdates?: AgentProgressUpdate[];
   debugPayload?: unknown;
   defaultExpanded?: boolean;
 }
@@ -252,6 +254,7 @@ export function AgentSearchToolCard({
   status = 'completed',
   results = [],
   summary,
+  progressUpdates = [],
   debugPayload,
   defaultExpanded = true,
   className,
@@ -260,7 +263,7 @@ export function AgentSearchToolCard({
 }: AgentSearchToolCardProps) {
   const [isExpanded, setIsExpanded] = useState(defaultExpanded);
   const resultCount = results.length;
-  const title = status === 'running' ? 'Searching' : resultCount > 0 ? `Found ${formatCount(resultCount, 'result')}` : 'No matches';
+  const title = status === 'error' ? 'Search failed' : status === 'running' ? 'Searching' : resultCount > 0 ? `Found ${formatCount(resultCount, 'result')}` : 'No matches';
 
   return (
     <AgentToolCard
@@ -287,6 +290,7 @@ export function AgentSearchToolCard({
         </button>
         {isExpanded ? (
           <div className="agent-elements-search-body">
+            <AgentProgressUpdateList updates={progressUpdates} showEmpty={false} />
             {resultCount > 0 ? (
               <div className="agent-elements-search-results" data-testid="agent-elements-search-results">
                 {results.map((result, index) => (

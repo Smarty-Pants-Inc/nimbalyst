@@ -1,6 +1,13 @@
 import type { HTMLAttributes, ReactNode } from 'react';
 import { useState } from 'react';
 import { MaterialSymbol } from '../icons/MaterialSymbol';
+import {
+  AgentStatusPill,
+  AgentToolCard,
+  agentToolStatusToTone,
+  type AgentElementsCardAttributes,
+  type AgentToolStatus,
+} from './AgentElementsPrimitives';
 import './AgentElementsTodoPlan.css';
 
 export type AgentTodoStatus = 'pending' | 'in_progress' | 'completed' | 'cancelled';
@@ -28,7 +35,7 @@ export interface AgentTodoItem {
   activeForm?: ReactNode;
 }
 
-export interface AgentTodoListProps extends HTMLAttributes<HTMLDivElement>, DataTestIdAttribute {
+export interface AgentTodoListProps extends HTMLAttributes<HTMLDivElement>, DataTestIdAttribute, AgentElementsCardAttributes {
   items: AgentTodoItem[];
   isStreaming?: boolean;
   emptyLabel?: ReactNode;
@@ -46,6 +53,8 @@ export function AgentTodoList({
   isStreaming = false,
   emptyLabel = 'No todos yet.',
   className,
+  'data-agent-elements-card-padding': dataCardPadding = 'content-owned',
+  'data-agent-elements-card-width': dataCardWidth = 'bridge-fill',
   'data-testid': dataTestId = 'agent-elements-todo-list',
   ...rest
 }: AgentTodoListProps) {
@@ -55,6 +64,8 @@ export function AgentTodoList({
     <div
       {...rest}
       className={classNames('agent-elements-todo-list', className)}
+      data-agent-elements-card-padding={dataCardPadding}
+      data-agent-elements-card-width={dataCardWidth}
       data-component="AgentTodoList"
       data-testid={dataTestId}
       data-todo-streaming={isStreaming ? 'true' : 'false'}
@@ -86,13 +97,79 @@ export function AgentTodoList({
   );
 }
 
+export interface AgentTodoCardProps extends Omit<HTMLAttributes<HTMLDivElement>, 'title'>, DataTestIdAttribute, AgentElementsCardAttributes {
+  items: AgentTodoItem[];
+  isStreaming?: boolean;
+  emptyLabel?: ReactNode;
+  title?: string;
+  subtitle?: ReactNode;
+  status?: AgentToolStatus;
+  debugPayload?: unknown;
+}
+
+function getTodoCardStatus(status: AgentToolStatus | undefined, isStreaming: boolean): AgentToolStatus {
+  if (status) return status;
+  return isStreaming ? 'running' : 'completed';
+}
+
+function getTodoCardTrailingLabel(status: AgentToolStatus, countLabel: string): string {
+  if (status === 'running') return 'Updating';
+  if (status === 'error') return 'Needs attention';
+  if (status === 'interrupted') return 'Interrupted';
+  return countLabel;
+}
+
+export function AgentTodoCard({
+  items,
+  isStreaming = false,
+  emptyLabel,
+  title = 'Todo list',
+  subtitle,
+  status,
+  debugPayload,
+  className,
+  'data-agent-elements-card-padding': dataCardPadding = 'symmetric-inline',
+  'data-agent-elements-card-width': dataCardWidth = 'bridge-fill',
+  'data-testid': dataTestId = 'agent-elements-todo-card',
+  ...rest
+}: AgentTodoCardProps) {
+  const cardStatus = getTodoCardStatus(status, isStreaming);
+  const visibleCount = items.length;
+  const countLabel = visibleCount === 1 ? '1 item' : `${visibleCount} items`;
+
+  return (
+    <AgentToolCard
+      {...rest}
+      className={classNames('agent-elements-todo-card', className)}
+      data-agent-elements-card-padding={dataCardPadding}
+      data-agent-elements-card-width={dataCardWidth}
+      data-testid={dataTestId}
+      debugPayload={debugPayload}
+      icon={<MaterialSymbol icon={cardStatus === 'running' ? 'progress_activity' : 'checklist'} size={14} />}
+      status={cardStatus}
+      subtitle={subtitle ?? countLabel}
+      title={title}
+      trailing={<AgentStatusPill tone={agentToolStatusToTone(cardStatus)}>{getTodoCardTrailingLabel(cardStatus, countLabel)}</AgentStatusPill>}
+    >
+      <AgentTodoList
+        className="agent-elements-todo-card-list"
+        data-agent-elements-card-padding="content-owned"
+        data-agent-elements-card-width="card-content"
+        emptyLabel={emptyLabel}
+        isStreaming={isStreaming}
+        items={items}
+      />
+    </AgentToolCard>
+  );
+}
+
 export interface AgentPlanStep {
   id?: string;
   label: ReactNode;
   status: AgentPlanStepStatus;
 }
 
-export interface AgentPlanCardProps extends Omit<HTMLAttributes<HTMLDivElement>, 'title'>, DataTestIdAttribute {
+export interface AgentPlanCardProps extends Omit<HTMLAttributes<HTMLDivElement>, 'title'>, DataTestIdAttribute, AgentElementsCardAttributes {
   title: ReactNode;
   summary?: ReactNode;
   steps?: AgentPlanStep[];
@@ -136,6 +213,8 @@ export function AgentPlanCard({
   approved = false,
   onApprove,
   className,
+  'data-agent-elements-card-padding': dataCardPadding = 'symmetric-inline',
+  'data-agent-elements-card-width': dataCardWidth = 'bridge-fill',
   'data-testid': dataTestId = 'agent-elements-plan-card',
   ...rest
 }: AgentPlanCardProps) {
@@ -154,6 +233,8 @@ export function AgentPlanCard({
     <section
       {...rest}
       className={classNames('agent-elements-plan-card', className)}
+      data-agent-elements-card-padding={dataCardPadding}
+      data-agent-elements-card-width={dataCardWidth}
       data-component="AgentPlanCard"
       data-plan-status={status}
       data-testid={dataTestId}

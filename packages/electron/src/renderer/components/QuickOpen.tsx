@@ -58,7 +58,7 @@ export const QuickOpen: React.FC<QuickOpenProps> = ({
   const [mouseHasMoved, setMouseHasMoved] = useState(false);
   const [recentFiles, setRecentFiles] = useState<string[]>([]);
   const searchInputRef = useRef<HTMLInputElement>(null);
-  const searchTimeoutRef = useRef<NodeJS.Timeout>();
+  const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const resultsListRef = useRef<HTMLUListElement>(null);
 
   // Convert recent files to FileItems (excluding current file)
@@ -453,13 +453,13 @@ export const QuickOpen: React.FC<QuickOpenProps> = ({
   return (
     <>
       <div
-        className="quick-open-backdrop agent-elements-quick-open-backdrop fixed inset-0 z-[99998] nim-animate-fade-in bg-[color-mix(in_srgb,var(--nim-text)_36%,transparent)]"
+        className="quick-open-backdrop agent-elements-quick-open-backdrop fixed inset-0 z-[99998] nim-animate-fade-in bg-[color-mix(in_srgb,var(--an-foreground)_36%,transparent)]"
         onClick={onClose}
         data-testid="agent-elements-quick-open-backdrop"
         data-agent-elements-shell="quick-open-backdrop"
       />
       <div
-        className="quick-open-modal agent-elements-quick-open agent-elements-tool-card fixed top-[18%] left-1/2 -translate-x-1/2 w-[90vw] max-w-[640px] max-h-[62vh] !gap-0 !p-0 flex flex-col overflow-hidden rounded-[var(--an-border-radius)] z-[99999] bg-[var(--an-background)] border border-[var(--an-border-color)] shadow-[0_20px_60px_color-mix(in_srgb,var(--nim-text)_18%,transparent)]"
+        className="quick-open-modal agent-elements-quick-open agent-elements-tool-card fixed top-[18%] left-1/2 -translate-x-1/2 w-[90vw] max-w-[640px] max-h-[62vh] !gap-0 !p-0 flex flex-col overflow-hidden rounded-[var(--an-border-radius)] z-[99999] bg-[var(--an-background)] border border-[var(--an-border-color)] shadow-[0_20px_60px_color-mix(in_srgb,var(--an-foreground)_18%,transparent)]"
         data-testid="agent-elements-quick-open"
         data-component="QuickOpen"
         data-agent-elements-shell="quick-open"
@@ -585,7 +585,7 @@ export const QuickOpen: React.FC<QuickOpenProps> = ({
                     {/*)}*/}
                     {file.matches && file.matches.length > 0 && (
                       <span
-                        className="quick-open-badge content-badge agent-elements-status-pill text-[10px] px-1.5 py-0.5 rounded-[6px] text-[var(--nim-bg)] font-semibold bg-[var(--an-primary-color)]"
+                        className="quick-open-badge content-badge agent-elements-status-pill text-[10px] px-1.5 py-0.5 rounded-[6px] text-[var(--an-button-primary-text)] font-semibold bg-[var(--an-primary-color)]"
                         data-agent-elements-shell="quick-open-match-badge"
                       >
                         {file.matches.length} match{file.matches.length > 1 ? 'es' : ''}
@@ -616,7 +616,7 @@ export const QuickOpen: React.FC<QuickOpenProps> = ({
                           <span className="quick-open-match-text">
                             {match.text.substring(0, match.start)}
                             <mark
-                              className="px-0.5 rounded font-semibold bg-[var(--nim-highlight-bg)] text-[var(--nim-highlight-text)]"
+                              className="px-0.5 rounded-[var(--an-radius-xs)] font-semibold bg-[color-mix(in_srgb,var(--an-primary-color)_14%,transparent)] text-[var(--an-foreground)]"
                             >
                               {match.text.substring(match.start, match.end)}
                             </mark>

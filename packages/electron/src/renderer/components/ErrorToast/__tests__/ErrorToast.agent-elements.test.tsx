@@ -4,6 +4,8 @@ import '@testing-library/jest-dom/vitest';
 import React from 'react';
 import { act, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import fs from 'node:fs';
+import path from 'node:path';
 import { ErrorToastContainer } from '../ErrorToast';
 import { errorNotificationService } from '../../../services/ErrorNotificationService';
 
@@ -135,5 +137,18 @@ describe('ErrorToast Agent Elements shell', () => {
     expect(source).not.toMatch(/border-l-\[#[0-9a-fA-F]{6}\]|bg-\[#[0-9a-fA-F]{6}\]|dark:bg-\[#[0-9a-fA-F]{6}\]/);
     expect(source).not.toContain('rounded-lg');
     expect(source).not.toContain('shadow-[0_4px_12px_rgba');
+  });
+
+  it('keeps toast visual tokens on Agent Elements aliases', () => {
+    const source = fs.readFileSync(
+      path.join(process.cwd(), 'packages/electron/src/renderer/components/ErrorToast/ErrorToast.tsx'),
+      'utf8'
+    );
+
+    expect(source).toContain('--an-error-color');
+    expect(source).toContain('--an-warning-color');
+    expect(source).toContain('--an-info-color');
+    expect(source).toContain('--an-foreground');
+    expect(source).not.toMatch(/var\(--nim-|--nim-primary-hover|--nim-text|--nim-error|--nim-warning|--nim-info|rgba\(/);
   });
 });

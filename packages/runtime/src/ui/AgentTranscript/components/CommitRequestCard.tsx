@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { AgentStatusPill, AgentToolCard, type AgentStatusTone } from '../../AgentElements';
 import { MaterialSymbol } from '../../icons/MaterialSymbol';
 
 const COMMIT_REQUEST_PREFIX = 'Use the developer_git_commit_proposal tool to create a commit.';
@@ -45,10 +46,16 @@ export function parseCommitRequest(text: string): ParsedCommitRequest | null {
   };
 }
 
-const STATUS_COLORS: Record<string, string> = {
-  added: 'text-[var(--nim-success)]',
-  modified: 'text-[var(--nim-info)]',
-  deleted: 'text-[var(--nim-error)]',
+const STATUS_CLASSES: Record<ParsedCommitFile['status'], string> = {
+  added: 'text-[var(--an-diff-added-text)]',
+  modified: 'text-[var(--an-primary-color)]',
+  deleted: 'text-[var(--an-diff-removed-text)]',
+};
+
+const STATUS_TONES: Record<ParsedCommitFile['status'], AgentStatusTone> = {
+  added: 'success',
+  modified: 'neutral',
+  deleted: 'error',
 };
 
 interface CommitRequestCardProps {
@@ -64,47 +71,58 @@ export const CommitRequestCard: React.FC<CommitRequestCardProps> = ({ request })
     : `${files.length} file${files.length !== 1 ? 's' : ''}`;
 
   return (
-    <div className="rounded-lg bg-[var(--nim-bg-secondary)] border border-[var(--nim-border)] overflow-hidden">
+    <AgentToolCard
+      className="agent-elements-commit-request-card"
+      data-agent-elements-shell="commit-request"
+      data-component="CommitRequestCard"
+      data-testid="agent-elements-commit-request-card"
+      icon={<MaterialSymbol icon="commit" size={14} />}
+      status="interrupted"
+      subtitle={scopeLabel}
+      title="Requesting commit proposal"
+      trailing={isWorktree ? <AgentStatusPill tone="warning">worktree</AgentStatusPill> : null}
+    >
       <button
-        className="w-full flex items-center gap-2 p-2 bg-transparent border-none cursor-pointer text-left transition-colors hover:bg-[var(--nim-bg-hover)]"
+        aria-expanded={isExpanded}
+        className="agent-elements-commit-request-toggle flex w-full items-center gap-[var(--an-spacing-sm)] rounded-[var(--an-small-border-radius)] border border-[var(--an-tool-border-color)] bg-[var(--an-background)] px-[var(--an-spacing-sm)] py-[var(--an-spacing-sm)] text-left text-[var(--an-foreground-muted)] transition-[background-color,border-color,color] duration-150 ease-out hover:border-[var(--an-border-color-strong)] hover:bg-[var(--an-background-tertiary)] hover:text-[var(--an-foreground)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--an-input-focus-outline)]"
         onClick={() => setIsExpanded(!isExpanded)}
+        type="button"
       >
-        <MaterialSymbol icon="commit" size={16} className="text-[var(--nim-primary)] shrink-0" />
-        <span className="text-sm font-medium text-[var(--nim-text)] flex-1">
-          Requesting commit proposal
-        </span>
-        <span className="text-xs text-[var(--nim-text-faint)]">
-          {scopeLabel}
-        </span>
-        {isWorktree && (
-          <span className="text-[10px] rounded-full font-medium px-1.5 py-0.5 bg-[var(--nim-bg-tertiary)] text-[var(--nim-text-muted)]">
-            worktree
-          </span>
-        )}
         <MaterialSymbol
           icon={isExpanded ? 'expand_less' : 'expand_more'}
           size={16}
-          className="text-[var(--nim-text-faint)] shrink-0"
+          className="shrink-0 text-[var(--an-foreground-subtle)]"
         />
+        <span className="min-w-0 flex-1 text-sm font-medium text-[var(--an-foreground)]">
+          {isExpanded ? 'Hide commit request files' : 'Show commit request files'}
+        </span>
+        <span className="shrink-0 text-xs text-[var(--an-foreground-subtle)]">
+          {scopeLabel}
+        </span>
       </button>
 
       {isExpanded && files.length > 0 && (
-        <div className="px-2 pb-2 flex flex-col gap-0.5 border-t border-[var(--nim-border)]">
+        <div
+          className="agent-elements-commit-request-files flex flex-col gap-[var(--an-spacing-xs)]"
+          data-testid="agent-elements-commit-request-files"
+        >
           {files.map((file) => (
             <div
               key={file.path}
-              className="flex items-center gap-1.5 px-2 py-0.5 text-[0.8125rem]"
+              className="agent-elements-commit-request-file flex min-w-0 items-center gap-[var(--an-spacing-sm)] rounded-[var(--an-radius-sm)] border border-[var(--an-tool-border-color)] bg-[var(--an-background-secondary)] px-[var(--an-spacing-sm)] py-[var(--an-spacing-xs)] text-[0.8125rem]"
+              data-file-status={file.status}
             >
-              <span className={`font-mono ${STATUS_COLORS[file.status] || 'text-[var(--nim-text)]'}`}>
+              <AgentStatusPill tone={STATUS_TONES[file.status]}>{file.status}</AgentStatusPill>
+              <span className={`min-w-0 shrink-0 font-mono ${STATUS_CLASSES[file.status]}`}>
                 {file.path.split('/').pop()}
               </span>
-              <span className="text-[var(--nim-text-faint)] text-xs truncate">
+              <span className="min-w-0 truncate text-xs text-[var(--an-foreground-subtle)]">
                 {file.path.includes('/') ? file.path.substring(0, file.path.lastIndexOf('/')) : ''}
               </span>
             </div>
           ))}
         </div>
       )}
-    </div>
+    </AgentToolCard>
   );
 };

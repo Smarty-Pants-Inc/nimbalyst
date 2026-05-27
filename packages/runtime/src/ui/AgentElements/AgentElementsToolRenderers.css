@@ -12,7 +12,9 @@
 .agent-elements-command-terminal {
   display: flex;
   flex-direction: column;
+  width: 100%;
   max-width: 100%;
+  box-sizing: border-box;
   max-height: 164px;
   overflow: hidden;
   color: var(--an-code-color);
@@ -48,7 +50,7 @@
 
 .agent-elements-command-prompt {
   flex: 0 0 auto;
-  color: var(--nim-warning);
+  color: var(--an-warning-color);
   user-select: none;
 }
 
@@ -86,7 +88,9 @@
 .agent-elements-search-panel {
   display: flex;
   flex-direction: column;
+  width: 100%;
   max-width: 100%;
+  box-sizing: border-box;
   overflow: hidden;
   background: var(--an-background);
   border: 1px solid var(--an-tool-border-color);
@@ -100,7 +104,8 @@
   gap: var(--an-spacing-xs);
   min-width: 0;
   min-height: 28px;
-  padding: 0 var(--an-spacing-md);
+  padding-block: 0;
+  padding-inline: var(--agent-elements-card-inline-padding, var(--an-spacing-md));
   color: var(--an-tool-color-muted);
   background: var(--an-tool-background);
   border: 0;
@@ -125,7 +130,7 @@
 .agent-elements-edit-header-button:focus-visible,
 .agent-elements-search-header:focus-visible,
 .agent-elements-edit-approval button:focus-visible {
-  outline: 2px solid var(--an-input-focus-outline, var(--nim-border-focus));
+  outline: 2px solid var(--an-input-focus-outline);
   outline-offset: -2px;
 }
 
@@ -180,7 +185,8 @@
 
 .agent-elements-edit-summary,
 .agent-elements-search-empty {
-  padding: var(--an-spacing-sm) var(--an-spacing-md);
+  padding-block: var(--an-spacing-sm);
+  padding-inline: var(--agent-elements-card-inline-padding, var(--an-spacing-md));
   color: var(--an-tool-color-muted);
   font-size: 14px;
   line-height: 1.45;
@@ -194,7 +200,8 @@
   justify-content: space-between;
   gap: var(--an-spacing-sm);
   min-height: 32px;
-  padding: var(--an-spacing-xs) var(--an-spacing-md);
+  padding-block: var(--an-spacing-xs);
+  padding-inline: var(--agent-elements-card-inline-padding, var(--an-spacing-md));
   color: var(--an-tool-color-muted);
   background: var(--an-tool-background);
   border-top: 1px solid var(--an-tool-border-color);
@@ -260,7 +267,8 @@
   flex-direction: column;
   gap: var(--an-spacing-xs);
   max-height: 200px;
-  padding: var(--an-spacing-xs);
+  padding-block: var(--an-spacing-xs);
+  padding-inline: var(--agent-elements-card-inline-padding, var(--an-spacing-md));
   overflow: auto;
 }
 

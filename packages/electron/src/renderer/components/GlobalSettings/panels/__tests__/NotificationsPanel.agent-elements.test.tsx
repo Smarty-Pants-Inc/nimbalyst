@@ -2,8 +2,21 @@
 
 import '@testing-library/jest-dom/vitest';
 import React from 'react';
+import { readFileSync } from 'node:fs';
+import path from 'node:path';
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+const sourcePath = path.join(
+  process.cwd(),
+  'packages/electron/src/renderer/components/GlobalSettings/panels/NotificationsPanel.tsx',
+);
+const chromeSourcePath = path.join(
+  process.cwd(),
+  'packages/electron/src/renderer/components/GlobalSettings/panels/providerPanelChrome.ts',
+);
+const legacyVisualChromePattern =
+  /bg-nim|text-nim|border-nim|bg-\[var\(--nim|text-\[var\(--nim|border-\[var\(--nim|--nim-|rgba\(|#[0-9a-fA-F]{3,8}\b|bg-white|rounded-lg|transition-all|text-white/;
 
 const mockState = vi.hoisted(() => ({
   tokens: {
@@ -89,5 +102,19 @@ describe('NotificationsPanel Agent Elements shell', () => {
 
     fireEvent.click(checkboxes[3]);
     expect(mockState.updateSettings).toHaveBeenCalledWith({ sessionBlockedNotificationsEnabled: false });
+  });
+
+  it('keeps notification settings chrome on Agent Elements aliases instead of legacy visual tokens', () => {
+    const panelSource = readFileSync(sourcePath, 'utf8');
+    const chromeSource = readFileSync(chromeSourcePath, 'utf8');
+    const source = `${panelSource}\n${chromeSource}`;
+
+    expect(panelSource).toContain('createProviderPanelChrome');
+    expect(source).toContain('--an-border-color');
+    expect(source).toContain('--an-foreground');
+    expect(source).toContain('--an-foreground-muted');
+    expect(source).toContain('--an-primary-color');
+    expect(source).toContain('--agent-elements-card-inline-padding');
+    expect(source).not.toMatch(legacyVisualChromePattern);
   });
 });

@@ -12,6 +12,7 @@ import { autoCommitEnabledAtom, setAutoCommitEnabledAtom } from '../../store/ato
 import { ALPHA_FEATURES, type AlphaFeatureTag } from '../../../shared/alphaFeatures';
 import { AlphaBadge, SETTINGS_ALPHA_TOOLTIP } from '../common/AlphaBadge';
 import { SettingsToggle } from '../GlobalSettings/SettingsToggle';
+import { createProviderPanelChrome } from '../GlobalSettings/panels/providerPanelChrome';
 
 const AGENT_FEATURE_TAGS: AlphaFeatureTag[] = [
   'super-loops',
@@ -30,6 +31,43 @@ interface WorkflowExportSettings {
   codexEnabled: boolean;
   claudeGeneratedExtensionWorkflowsEnabled: boolean;
 }
+
+const chrome = createProviderPanelChrome({
+  headerClassName: 'provider-panel-header agent-features-header',
+  sectionClassName: 'provider-panel-section agent-features-section',
+  configCardClassName: 'agent-elements-agent-workflow-card',
+  inputClassName: 'agent-elements-agent-feature-input',
+  loadingClassName: 'agent-elements-agent-feature-loading',
+  modelRowClassName: 'agent-elements-agent-feature-row',
+  testButtonClassName: 'agent-elements-agent-feature-button',
+  testErrorClassName: 'agent-elements-agent-feature-error',
+  emptyClassName: 'agent-elements-agent-feature-empty',
+});
+
+const formRowClass =
+  'agent-preferred-language agent-elements-form-row flex items-start justify-between gap-[var(--an-spacing-lg)] py-[var(--an-spacing-md)]';
+const formLabelClass =
+  'text-sm font-medium leading-tight text-[var(--an-foreground)]';
+const formDescriptionClass =
+  'mt-[var(--an-spacing-xxs)] text-xs leading-snug text-[var(--an-foreground-muted)]';
+const sectionHeadingClass =
+  'agent-elements-section-heading mb-[var(--an-spacing-md)] flex items-center gap-[var(--an-spacing-sm)]';
+const warningCardClass =
+  'agent-elements-status-card mb-[var(--an-spacing-lg)] flex items-start gap-[var(--an-spacing-sm)] rounded-[var(--an-tool-border-radius)] border border-[color-mix(in_srgb,var(--an-warning-color)_34%,var(--an-border-color))] bg-[color-mix(in_srgb,var(--an-warning-color)_10%,var(--an-background))] px-[var(--agent-elements-card-inline-padding,var(--an-spacing-md))] py-[var(--agent-elements-card-block-padding,var(--an-spacing-md))] [--agent-elements-card-block-padding:var(--an-spacing-md)] [--agent-elements-card-inline-padding:var(--an-spacing-md)]';
+const warningIconClass =
+  'mt-[var(--an-spacing-xxs)] shrink-0 text-[var(--an-warning-color)]';
+const warningTextClass =
+  'm-0 text-[13px] leading-snug text-[var(--an-foreground)]';
+const workflowCardClass =
+  `${chrome.configCard} mb-[var(--an-spacing-xl)]`;
+const workflowTitleClass =
+  'mb-[var(--an-spacing-xs)] text-sm font-semibold text-[var(--an-foreground)]';
+const workflowDescriptionClass =
+  'mb-[var(--an-spacing-md)] text-xs leading-relaxed text-[var(--an-foreground-muted)]';
+const workflowGroupDividerClass =
+  'mb-[var(--an-spacing-md)] border-b border-[var(--an-border-color)] pb-[var(--an-spacing-sm)]';
+const developerIntroClass =
+  'mb-[var(--an-spacing-md)] text-sm leading-relaxed text-[var(--an-foreground-muted)]';
 
 function AgentFeatureToggleShell({
   control,
@@ -170,20 +208,20 @@ export function AgentFeaturesPanel() {
       data-testid="agent-elements-agent-features-panel"
     >
       <div
-        className="provider-panel-header agent-elements-settings-panel-header mb-6 pb-4 border-b border-[var(--nim-border)]"
+        className={chrome.header}
         data-agent-elements-shell="agent-features-header"
         data-testid="agent-elements-agent-features-header"
       >
-        <h3 className="provider-panel-title text-xl font-semibold leading-tight mb-2 text-[var(--nim-text)]">
+        <h3 className={chrome.title}>
           Agent Features
         </h3>
-        <p className="provider-panel-description text-sm leading-relaxed text-[var(--nim-text-muted)]">
+        <p className={chrome.description}>
           Settings that control how agent sessions behave.
         </p>
       </div>
 
       <div
-        className="provider-panel-section agent-elements-settings-section py-4 mb-4 border-b border-[var(--nim-border)]"
+        className={chrome.section}
         data-agent-elements-shell="agent-feature-section"
         data-section="core"
         data-testid="agent-elements-agent-features-core-section"
@@ -201,15 +239,15 @@ export function AgentFeaturesPanel() {
         </AgentFeatureToggleShell>
 
         <div
-          className="agent-preferred-language agent-elements-form-row flex items-start justify-between gap-4 py-3"
+          className={formRowClass}
           data-agent-elements-shell="agent-feature-input-row"
           data-agent-feature-control="preferred-agent-language"
         >
           <div className="flex-1 min-w-0">
-            <div className="text-sm font-medium text-[var(--nim-text)] leading-tight">
+            <div className={formLabelClass}>
               Preferred Agent Language
             </div>
-            <div className="text-xs text-[var(--nim-text-muted)] leading-snug mt-0.5">
+            <div className={formDescriptionClass}>
               Preferred language for AI-generated session names (e.g. "Japanese", "ja", "Spanish"). Leave blank to let the agent pick based on the conversation.
             </div>
           </div>
@@ -218,51 +256,51 @@ export function AgentFeaturesPanel() {
             value={preferredAgentLanguage}
             onChange={(e) => handlePreferredAgentLanguageChange(e.target.value)}
             placeholder="e.g. ja"
-            className="agent-elements-input w-40 py-1.5 px-3 rounded-md text-sm bg-[var(--nim-bg-secondary)] border border-[var(--nim-border)] text-[var(--nim-text)] outline-none focus:border-[var(--nim-primary)]"
+            className={`${chrome.input} w-40 text-sm`}
             data-testid="preferred-agent-language-input"
           />
         </div>
       </div>
 
       <div
-        className="provider-panel-section agent-elements-settings-section"
+        className={chrome.section}
         data-agent-elements-shell="agent-feature-section"
         data-section="experimental"
         data-testid="agent-elements-agent-features-experimental-section"
       >
         <div
-          className="agent-elements-section-heading flex items-center gap-2 mb-2"
+          className={sectionHeadingClass}
           data-agent-elements-shell="agent-feature-section-heading"
         >
-          <h4 className="provider-panel-section-title text-base font-semibold text-[var(--nim-text)] m-0">Experimental</h4>
+          <h4 className={`${chrome.sectionTitle} m-0`}>Experimental</h4>
           <AlphaBadge size="sm" tooltip={SETTINGS_ALPHA_TOOLTIP} />
         </div>
 
         <div
-          className="agent-elements-status-card flex items-start gap-2 p-3 mb-3 rounded border border-[var(--nim-warning)]/30 bg-[var(--nim-warning)]/10"
+          className={warningCardClass}
           data-agent-elements-shell="agent-feature-warning"
           data-tone="warning"
           data-testid="agent-elements-agent-features-warning"
         >
-          <MaterialSymbol icon="science" size={16} className="text-[var(--nim-warning)] shrink-0 mt-0.5" />
-          <p className="m-0 text-[13px] text-[var(--nim-text)] leading-snug">
+          <MaterialSymbol icon="science" size={16} className={warningIconClass} />
+          <p className={warningTextClass}>
             These features may change, regress, or be removed. Some require a restart to take full effect.
           </p>
         </div>
 
         <div
-          className="agent-elements-tool-card agent-elements-agent-workflow-card mb-4 rounded border border-[var(--nim-border)] bg-[var(--nim-bg-secondary)] p-3"
+          className={workflowCardClass}
           data-agent-elements-shell="agent-feature-workflow-card"
           data-testid="agent-elements-agent-features-workflow-card"
         >
-          <h5 className="text-sm font-semibold mb-1.5 text-[var(--nim-text)]">
+          <h5 className={workflowTitleClass}>
             Agent skills and commands compatibility
           </h5>
-          <p className="text-xs leading-relaxed text-[var(--nim-text-muted)] mb-2">
+          <p className={workflowDescriptionClass}>
             Control which command and skill sources feed the shared picker and which generated compatibility exports are written for Claude Code and Codex.
           </p>
 
-          <div className="border-b border-[var(--nim-border)] mb-2">
+          <div className={workflowGroupDividerClass}>
             <AgentFeatureToggleShell control="workspace-claude-compatibility">
               <SettingsToggle
                 checked={workflowSourceSettings.workspaceClaudeCompatibilityEnabled}
@@ -346,12 +384,12 @@ export function AgentFeaturesPanel() {
 
       {isDevelopment && (
         <div
-          className="provider-panel-section agent-elements-settings-section py-4 mt-4 border-t border-[var(--nim-border)]"
+          className={chrome.section}
           data-agent-elements-shell="agent-feature-section"
           data-section="developer"
         >
-          <h4 className="provider-panel-section-title text-base font-semibold mb-2 text-[var(--nim-text)]">Developer Options</h4>
-          <p className="text-sm leading-relaxed text-[var(--nim-text-muted)] mb-2">
+          <h4 className={chrome.sectionTitle}>Developer Options</h4>
+          <p className={developerIntroClass}>
             Only available in development mode.
           </p>
 

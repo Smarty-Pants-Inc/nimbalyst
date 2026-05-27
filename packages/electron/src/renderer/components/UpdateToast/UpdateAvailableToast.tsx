@@ -16,15 +16,19 @@ export function UpdateAvailableToast({
   onRemindLater,
   onDismiss,
 }: UpdateAvailableToastProps): React.ReactElement {
+  const toastCardClass =
+    'update-toast agent-elements-update-toast agent-elements-tool-card relative w-[380px] max-w-[calc(100vw-32px)] overflow-hidden rounded-[var(--an-tool-border-radius)] border border-[var(--an-border-color)] bg-[var(--an-background)] [--agent-elements-card-block-padding:var(--an-spacing-xl)] [--agent-elements-card-inline-padding:var(--an-spacing-xl)] px-[var(--agent-elements-card-inline-padding)] py-[var(--agent-elements-card-block-padding)] text-[var(--an-foreground)] shadow-[0_14px_42px_color-mix(in_srgb,var(--an-foreground)_16%,transparent)]';
   const buttonBase =
     'update-toast-btn inline-flex items-center justify-center gap-2 rounded-[var(--an-input-border-radius)] border px-3 py-2 text-sm font-medium transition-[background-color,border-color,color] duration-150 ease-out focus:outline-none focus:ring-2 focus:ring-[var(--an-input-focus-outline)]';
 
   return (
     <div
-      className="update-toast agent-elements-update-toast agent-elements-tool-card relative w-[380px] max-w-[calc(100vw-32px)] overflow-hidden rounded-[var(--an-tool-border-radius)] border border-[var(--an-border-color)] bg-[var(--an-background)] p-[var(--an-spacing-xl)] text-[var(--an-foreground)] shadow-[0_14px_42px_color-mix(in_srgb,var(--nim-text)_16%,transparent)]"
+      className={toastCardClass}
       data-testid="update-available-toast"
       data-component="UpdateAvailableToast"
       data-agent-elements-shell="update-available-toast"
+      data-agent-elements-card-padding="symmetric-inline"
+      data-agent-elements-card-width="floating-toast"
     >
       <button
         className="update-toast-dismiss agent-elements-update-toast-dismiss absolute right-3 top-3 inline-flex h-8 w-8 cursor-pointer items-center justify-center rounded-[var(--an-input-border-radius)] border border-transparent bg-transparent p-0 text-[var(--an-foreground-muted)] transition-[background-color,border-color,color] duration-150 ease-out hover:border-[var(--an-border-color)] hover:bg-[var(--an-background-tertiary)] hover:text-[var(--an-foreground)] focus:outline-none focus:ring-2 focus:ring-[var(--an-input-focus-outline)]"
@@ -65,7 +69,7 @@ export function UpdateAvailableToast({
         data-agent-elements-shell="update-toast-actions"
       >
         <button
-          className={`${buttonBase} update-toast-btn-primary flex-1 border-[var(--an-primary-color)] bg-[var(--an-primary-color)] text-[var(--an-background)] hover:border-[var(--nim-primary-hover)] hover:bg-[var(--nim-primary-hover)]`}
+          className={`${buttonBase} update-toast-btn-primary flex-1 border-[var(--an-primary-color)] bg-[var(--an-primary-color)] text-[var(--an-button-primary-text)] hover:border-[color-mix(in_srgb,var(--an-primary-color)_82%,var(--an-foreground))] hover:bg-[color-mix(in_srgb,var(--an-primary-color)_88%,var(--an-foreground))]`}
           onClick={onUpdateNow}
           data-testid="update-now-btn"
         >

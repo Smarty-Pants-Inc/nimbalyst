@@ -2,6 +2,8 @@
 
 import '@testing-library/jest-dom/vitest';
 import React from 'react';
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -147,5 +149,34 @@ describe('ThemesPanel Agent Elements shell', () => {
     const userCard = screen.getByTestId('agent-elements-theme-card-user-theme');
     fireEvent.click(within(userCard).getByTitle('Uninstall theme'));
     await waitFor(() => expect((window as any).electronAPI.invoke).toHaveBeenCalledWith('theme:uninstall', 'user-theme'));
+  });
+
+  it('keeps theme settings chrome on Agent Elements aliases instead of legacy Nimbalyst visual tokens', () => {
+    const source = readFileSync(
+      resolve(process.cwd(), 'packages/electron/src/renderer/components/Settings/panels/ThemesPanel.tsx'),
+      'utf8'
+    );
+
+    expect(source).toContain('--an-');
+    expect(source).toContain('--agent-elements-card-inline-padding');
+    expect(source).not.toMatch(/\b(?:bg|border|text)-nim(?:\b|-|\/)/);
+    expect(source).not.toMatch(/rounded-lg|rounded-md|transition-all|text-white|bg-white/);
+    expect(source).not.toMatch(/agent-elements-tool-card[^`'"]*\bp(?:x|y)?-\[var\(--an-spacing/);
+    expect(source).not.toMatch(/agent-elements-tool-card[^`'"]*\bmax-w-/);
+  });
+
+  it('keeps the installed themes empty card on shared symmetric card padding', async () => {
+    (window as any).electronAPI.invoke = vi.fn((channel: string) => {
+      if (channel === 'theme:list') return Promise.resolve(themes.filter((theme) => theme.origin === 'builtin'));
+      return Promise.resolve(undefined);
+    });
+
+    render(<ThemesPanel scope="project" workspacePath="/tmp/example" />);
+
+    const emptyCard = await screen.findByTestId('agent-elements-themes-empty-state');
+    expect(emptyCard).toHaveClass('agent-elements-tool-card');
+    expect(emptyCard.className).toContain('--agent-elements-card-inline-padding');
+    expect(emptyCard.className).toContain('--agent-elements-card-block-padding');
+    expect(emptyCard.className).not.toContain('p-[var(--an-spacing');
   });
 });

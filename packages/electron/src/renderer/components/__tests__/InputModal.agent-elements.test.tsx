@@ -3,8 +3,12 @@
 import '@testing-library/jest-dom/vitest';
 import React from 'react';
 import { fireEvent, render, screen } from '@testing-library/react';
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { describe, expect, it, vi } from 'vitest';
 import { InputModal } from '../InputModal';
+
+const sourcePath = resolve(__dirname, '../InputModal.tsx');
 
 describe('InputModal Agent Elements shell', () => {
   it('renders an Agent Elements modal shell while preserving focus, suffix, and trimmed submit behavior', () => {
@@ -85,5 +89,14 @@ describe('InputModal Agent Elements shell', () => {
 
     fireEvent.click(screen.getByTestId('agent-elements-input-modal-backdrop'));
     expect(onCancel).toHaveBeenCalledTimes(2);
+  });
+
+  it('keeps InputModal visual chrome on Agent Elements aliases', () => {
+    const source = readFileSync(sourcePath, 'utf8');
+
+    expect(source).toContain('--an-foreground');
+    expect(source).toContain('--an-send-button-color');
+    expect(source).not.toMatch(/var\(--nim-/);
+    expect(source).not.toMatch(/color-mix\(in_srgb,var\(--nim-/);
   });
 });

@@ -120,11 +120,12 @@ export function FileContextMenu({
 
   const hasMultipleSelected = selectedPaths && selectedPaths.size > 1;
 
-  const menuShellClasses = "file-context-menu agent-elements-file-context-menu agent-elements-tool-card min-w-[200px] max-h-[calc(100vh-20px)] overflow-y-auto rounded-[10px] border border-nim bg-nim-secondary p-1 text-[13px] shadow-[0_12px_32px_color-mix(in_srgb,var(--nim-text)_10%,transparent)] z-[10000]";
-  const renameMenuShellClasses = "file-context-menu file-context-menu-rename agent-elements-file-context-menu-rename agent-elements-tool-card min-w-[250px] rounded-[10px] border border-nim bg-nim-secondary p-2 shadow-[0_12px_32px_color-mix(in_srgb,var(--nim-text)_10%,transparent)] z-[10000]";
-  const menuItemClasses = "file-context-menu-item agent-elements-file-context-menu-item flex w-full items-center gap-2.5 rounded-[8px] border-0 bg-transparent px-3 py-2 text-left text-[13px] leading-5 text-nim transition-[background-color,color] duration-150 cursor-pointer select-none hover:bg-nim-hover focus-visible:outline-2 focus-visible:outline-[var(--nim-primary)] focus-visible:outline-offset-2";
-  const dangerItemClasses = "file-context-menu-item file-context-menu-item-danger agent-elements-file-context-menu-item agent-elements-file-context-menu-item-danger flex w-full items-center gap-2.5 rounded-[8px] border-0 bg-transparent px-3 py-2 text-left text-[13px] leading-5 text-[var(--nim-error)] transition-[background-color,color] duration-150 cursor-pointer select-none hover:bg-[var(--nim-error-subtle)] focus-visible:outline-2 focus-visible:outline-[var(--nim-error)] focus-visible:outline-offset-2";
-  const separatorClasses = "context-menu-separator agent-elements-file-context-menu-separator h-px my-1 mx-2 bg-[var(--nim-border)]";
+  const floatingMenuCardGutters = "[--agent-elements-card-block-padding:var(--an-spacing-xs)] [--agent-elements-card-inline-padding:var(--an-spacing-xs)] px-[var(--agent-elements-card-inline-padding)] py-[var(--agent-elements-card-block-padding)]";
+  const menuShellClasses = `file-context-menu agent-elements-file-context-menu agent-elements-tool-card min-w-[200px] max-h-[calc(100vh-20px)] overflow-y-auto rounded-[var(--an-tool-border-radius)] border border-[var(--an-tool-border-color)] bg-[var(--an-tool-background)] text-[13px] shadow-[0_12px_32px_color-mix(in_srgb,var(--an-foreground)_10%,transparent)] z-[10000] ${floatingMenuCardGutters}`;
+  const renameMenuShellClasses = `file-context-menu file-context-menu-rename agent-elements-file-context-menu-rename agent-elements-tool-card min-w-[250px] rounded-[var(--an-tool-border-radius)] border border-[var(--an-tool-border-color)] bg-[var(--an-tool-background)] shadow-[0_12px_32px_color-mix(in_srgb,var(--an-foreground)_10%,transparent)] z-[10000] ${floatingMenuCardGutters}`;
+  const menuItemClasses = "file-context-menu-item agent-elements-file-context-menu-item flex w-full items-center gap-2.5 rounded-[var(--an-small-border-radius)] border-0 bg-transparent px-3 py-2 text-left text-[13px] leading-5 text-[var(--an-tool-color)] transition-[background-color,color] duration-150 cursor-pointer select-none hover:bg-[var(--an-background-tertiary)] focus-visible:outline-2 focus-visible:outline-[var(--an-focus-ring)] focus-visible:outline-offset-2";
+  const dangerItemClasses = "file-context-menu-item file-context-menu-item-danger agent-elements-file-context-menu-item agent-elements-file-context-menu-item-danger flex w-full items-center gap-2.5 rounded-[var(--an-small-border-radius)] border-0 bg-transparent px-3 py-2 text-left text-[13px] leading-5 text-[var(--an-error-color)] transition-[background-color,color] duration-150 cursor-pointer select-none hover:bg-[color-mix(in_srgb,var(--an-error-color)_12%,transparent)] focus-visible:outline-2 focus-visible:outline-[var(--an-error-color)] focus-visible:outline-offset-2";
+  const separatorClasses = "context-menu-separator agent-elements-file-context-menu-separator h-px my-1 mx-2 bg-[var(--an-border-color)]";
 
   const renderSeparator = (id: string) => (
     <div
@@ -176,6 +177,8 @@ export function FileContextMenu({
           className={renameMenuShellClasses}
           data-testid="agent-elements-file-context-menu-rename"
           data-agent-elements-shell="file-context-menu-rename"
+          data-agent-elements-card-padding="symmetric-inline"
+          data-agent-elements-card-width="floating-menu"
         >
           <div className="rename-input-container agent-elements-file-context-menu-rename-container flex items-center">
             <input
@@ -185,7 +188,7 @@ export function FileContextMenu({
               onChange={(e) => setNewName(e.target.value)}
               onKeyDown={handleRenameKeyDown}
               onBlur={handleRenameSubmit}
-              className="rename-input agent-elements-file-context-menu-rename-input w-full rounded-[8px] border border-[var(--nim-primary)] bg-nim px-2.5 py-2 text-[13px] leading-5 text-nim outline-none transition-[border-color,box-shadow] duration-150 focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--nim-primary)_25%,transparent)]"
+              className="rename-input agent-elements-file-context-menu-rename-input w-full rounded-[var(--an-small-border-radius)] border border-[var(--an-input-focus-border)] bg-[var(--an-input-background)] px-2.5 py-2 text-[13px] leading-5 text-[var(--an-input-color)] outline-none transition-[border-color,box-shadow] duration-150 focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--an-focus-ring)_25%,transparent)]"
               data-testid="agent-elements-file-context-menu-rename-input"
             />
           </div>
@@ -205,6 +208,8 @@ export function FileContextMenu({
           className={menuShellClasses}
           data-testid="agent-elements-file-context-menu"
           data-agent-elements-shell="file-context-menu"
+          data-agent-elements-card-padding="symmetric-inline"
+          data-agent-elements-card-width="floating-menu"
         >
           {renderMenuItem({
             id: 'delete-multiple',
@@ -227,6 +232,8 @@ export function FileContextMenu({
         className={menuShellClasses}
         data-testid="agent-elements-file-context-menu"
         data-agent-elements-shell="file-context-menu"
+        data-agent-elements-card-padding="symmetric-inline"
+        data-agent-elements-card-width="floating-menu"
       >
         {fileType === 'directory' && (
           <>

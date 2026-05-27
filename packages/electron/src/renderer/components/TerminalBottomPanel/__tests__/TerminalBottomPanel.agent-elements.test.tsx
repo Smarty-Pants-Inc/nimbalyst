@@ -2,9 +2,18 @@
 
 import '@testing-library/jest-dom/vitest';
 import React from 'react';
+import { readFileSync } from 'node:fs';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { TerminalBottomPanel } from '../TerminalBottomPanel';
+
+const testDir = dirname(fileURLToPath(import.meta.url));
+const sourcePaths = [
+  join(testDir, '../TerminalBottomPanel.tsx'),
+  join(testDir, '../TerminalTab.tsx'),
+];
 
 const mockState = vi.hoisted(() => {
   const terminals = [
@@ -274,5 +283,17 @@ describe('TerminalBottomPanel Agent Elements shell', () => {
       expect(window.electronAPI.terminal.delete).toHaveBeenCalledWith('/workspace/demo', 'term-2');
       expect(window.electronAPI.terminal.setActive).toHaveBeenCalledWith('/workspace/demo', 'term-1');
     });
+  });
+
+  it('keeps terminal panel and tab chrome on Agent Elements aliases instead of legacy visual utilities', () => {
+    const source = sourcePaths.map((sourcePath) => readFileSync(sourcePath, 'utf8')).join('\n');
+
+    expect(source).toContain('agent-elements-terminal-bottom-panel');
+    expect(source).toContain('agent-elements-terminal-tab');
+    expect(source).toMatch(/--an-(background|foreground|border|primary|tool|radius|spacing)/);
+    expect(source).not.toMatch(/bg-\[var\(--nim|text-\[var\(--nim|border-\[var\(--nim/);
+    expect(source).not.toMatch(/hover:bg-\[var\(--nim|hover:text-\[var\(--nim/);
+    expect(source).not.toMatch(/--nim-/);
+    expect(source).not.toMatch(/rounded-md|bg-yellow-400|(?:^|\s)rounded(?:\s|")/);
   });
 });

@@ -29,6 +29,84 @@ import { workstreamHasChildrenAtom } from '../../store/atoms/workstreamState';
 import { SessionContextMenu } from '../AgenticCoding/SessionContextMenu';
 import type { SerializableDocumentContext } from '../../hooks/useDocumentContext';
 
+const emptyStateClass = [
+  'workstream-session-tabs-empty',
+  'agent-elements-workstream-session-tabs-empty',
+  'flex h-full items-center justify-center bg-[var(--an-background-secondary)]',
+  'px-[var(--an-spacing-lg)] text-sm text-[var(--an-foreground-muted)]',
+].join(' ');
+
+const rootClass = [
+  'workstream-session-tabs',
+  'agent-elements-workstream-session-tabs',
+  'flex flex-col overflow-hidden bg-[var(--an-background)] text-[var(--an-foreground)]',
+  '[container-type:inline-size]',
+].join(' ');
+
+const tabBarClass = [
+  'session-tab-bar',
+  'agent-elements-workstream-session-tab-bar',
+  'flex shrink-0 flex-wrap items-center gap-[var(--an-spacing-xxs)]',
+  'border-b border-t border-[var(--an-border-color)] bg-[var(--an-background-secondary)]',
+  'px-[var(--an-spacing-lg)] py-[var(--an-spacing-xs)]',
+].join(' ');
+
+const sessionTabBaseClass = [
+  'session-tab',
+  'agent-elements-session-tab',
+  'flex max-w-[190px] cursor-pointer items-center gap-[var(--an-spacing-xs)] whitespace-nowrap',
+  'rounded-[var(--an-input-border-radius)] border border-transparent',
+  'px-[var(--an-spacing-sm)] py-[var(--an-spacing-xs)] text-xs font-medium leading-none',
+  'outline-none transition-[background-color,border-color,color,opacity] duration-150 ease-out',
+  'focus-visible:ring-2 focus-visible:ring-[var(--an-focus-ring)]',
+].join(' ');
+
+const sessionTabActiveClass = [
+  'active',
+  'border-[var(--an-border-color)] bg-[var(--an-background)] text-[var(--an-foreground)]',
+].join(' ');
+
+const sessionTabInactiveClass = [
+  'bg-transparent text-[var(--an-foreground-muted)]',
+  'hover:border-[var(--an-border-color)] hover:bg-[var(--an-background-tertiary)] hover:text-[var(--an-foreground)]',
+].join(' ');
+
+const processingDotClass = [
+  'session-tab-processing-dot',
+  'h-1.5 w-1.5 shrink-0 rounded-[999px] bg-[var(--an-primary-color)]',
+  'animate-pulse',
+].join(' ');
+
+const unreadDotClass = [
+  'session-tab-unread-dot',
+  'h-1.5 w-1.5 shrink-0 rounded-[999px] bg-[var(--an-warning)]',
+].join(' ');
+
+const renameInputClass = [
+  'session-tab-rename-input',
+  'agent-elements-session-tab-rename-input',
+  'w-full max-w-[150px] rounded-[var(--an-input-border-radius)] border border-[var(--an-primary-color)]',
+  'bg-[var(--an-background)] px-[var(--an-spacing-xs)] py-0 text-xs font-medium',
+  'text-[var(--an-foreground)] outline-none focus-visible:ring-2 focus-visible:ring-[var(--an-focus-ring)]',
+].join(' ');
+
+const newSessionButtonClass = [
+  'session-tab-new',
+  'agent-elements-new-session-tab-button',
+  'flex h-6 w-6 shrink-0 cursor-pointer items-center justify-center',
+  'rounded-[var(--an-input-border-radius)] border border-transparent bg-transparent text-[var(--an-foreground-subtle)]',
+  'outline-none transition-[background-color,border-color,color] duration-150 ease-out',
+  'hover:border-[var(--an-border-color)] hover:bg-[var(--an-background-tertiary)] hover:text-[var(--an-foreground-muted)]',
+  'focus-visible:ring-2 focus-visible:ring-[var(--an-focus-ring)]',
+  'active:bg-[var(--an-background)]',
+].join(' ');
+
+const contentClass = [
+  'workstream-session-tabs-content',
+  'agent-elements-workstream-session-tabs-content',
+  'overflow-hidden bg-[var(--an-background)]',
+].join(' ');
+
 export interface WorkstreamSessionTabsProps {
   workspacePath: string;
   workstreamId: string;
@@ -110,17 +188,23 @@ const SessionTab: React.FC<{
   return (
     <div className="relative">
       <button
-        className={`session-tab flex items-center gap-1.5 px-2.5 py-[5px] border-none rounded text-xs font-medium cursor-pointer whitespace-nowrap transition-colors duration-150 ${
-          isActive
-            ? 'active bg-[var(--nim-bg-tertiary)] text-[var(--nim-text)]'
-            : 'bg-transparent text-[var(--nim-text-muted)] hover:bg-[var(--nim-bg-hover)] hover:text-[var(--nim-text)]'
-        } ${hasUnread ? 'unread' : ''} ${isArchived ? 'opacity-60' : ''}`}
+        className={`${sessionTabBaseClass} ${isActive ? sessionTabActiveClass : sessionTabInactiveClass} ${hasUnread ? 'unread' : ''} ${isArchived ? 'opacity-60' : ''}`}
+        data-active={isActive ? 'true' : 'false'}
+        data-archived={isArchived ? 'true' : 'false'}
+        data-component="SessionTab"
+        data-processing={isProcessing ? 'true' : 'false'}
+        data-testid={`agent-elements-session-tab-${sessionId}`}
+        data-unread={hasUnread ? 'true' : 'false'}
         onClick={onClick}
         onContextMenu={handleContextMenu}
         title={title || 'Untitled'}
+        type="button"
       >
         {isProcessing && (
-          <span className="session-tab-processing-dot w-1.5 h-1.5 rounded-full bg-[var(--nim-primary)] animate-pulse" />
+          <span
+            className={processingDotClass}
+            data-testid="agent-elements-session-tab-processing-dot"
+          />
         )}
         <ProviderIcon
           provider={provider}
@@ -131,7 +215,8 @@ const SessionTab: React.FC<{
           <input
             ref={renameInputRef}
             type="text"
-            className="session-tab-rename-input w-full max-w-[150px] px-1 py-0 text-xs font-medium border border-[var(--nim-primary)] rounded bg-[var(--nim-bg)] text-[var(--nim-text)] outline-none"
+            className={renameInputClass}
+            data-testid="agent-elements-session-tab-rename-input"
             value={renameValue}
             onChange={(e) => setRenameValue(e.target.value)}
             onKeyDown={handleRenameKeyDown}
@@ -144,7 +229,10 @@ const SessionTab: React.FC<{
           </span>
         )}
         {hasUnread && !isRenaming && (
-          <span className="session-tab-unread-dot w-1.5 h-1.5 rounded-full bg-[var(--nim-warning)]" />
+          <span
+            className={unreadDotClass}
+            data-testid="agent-elements-session-tab-unread-dot"
+          />
         )}
       </button>
 
@@ -183,7 +271,11 @@ const SessionTabBar: React.FC<{
 }> = React.memo(({ sessions, activeSessionId, onSessionSelect, onNewSession, onSessionArchive, onSessionUnarchive, onSessionRename }) => {
   // Always show the tab bar - even for single sessions, the user should see their session tab
   return (
-    <div className="session-tab-bar flex flex-wrap items-center gap-0.5 px-3 pt-1 pb-1.5 bg-[var(--nim-bg-secondary)] border-t-[3px] border-b border-[var(--nim-border)] shrink-0">
+    <div
+      className={tabBarClass}
+      data-agent-elements-shell="workstream-session-tab-bar"
+      data-testid="agent-elements-workstream-session-tab-bar"
+    >
       {sessions.map((sessionId) => (
         <SessionTab
           key={sessionId}
@@ -196,9 +288,11 @@ const SessionTabBar: React.FC<{
         />
       ))}
       <button
-        className="session-tab-new nim-btn-icon-sm text-[var(--nim-text-faint)] hover:text-[var(--nim-text-muted)] active:bg-[var(--nim-bg-tertiary)]"
+        className={newSessionButtonClass}
+        data-testid="agent-elements-new-session-tab-button"
         onClick={onNewSession}
         title="New session in workstream"
+        type="button"
       >
         <MaterialSymbol icon="add" size={16} />
       </button>
@@ -265,14 +359,26 @@ export const WorkstreamSessionTabs: React.FC<WorkstreamSessionTabsProps> = React
 
   if (!activeSessionId) {
     return (
-      <div className="workstream-session-tabs-empty flex items-center justify-center h-full text-[var(--nim-text-muted)] text-sm">
+      <div
+        className={emptyStateClass}
+        data-agent-elements-shell="workstream-session-tabs-empty"
+        data-component="WorkstreamSessionTabs"
+        data-testid="agent-elements-workstream-session-tabs-empty"
+      >
         <p>Loading sessions...</p>
       </div>
     );
   }
 
   return (
-    <div className={`workstream-session-tabs flex flex-col overflow-hidden ${collapseTranscript ? '' : 'h-full'}`}>
+    <div
+      className={`${rootClass} ${collapseTranscript ? '' : 'h-full'}`}
+      data-active-session-id={activeSessionId}
+      data-agent-elements-shell="workstream-session-tabs"
+      data-component="WorkstreamSessionTabs"
+      data-session-count={sessions.length}
+      data-testid="agent-elements-workstream-session-tabs"
+    >
       <SessionTabBar
         sessions={sessions}
         activeSessionId={activeSessionId}
@@ -283,7 +389,11 @@ export const WorkstreamSessionTabs: React.FC<WorkstreamSessionTabsProps> = React
         onSessionRename={onSessionRename}
       />
 
-      <div className={`workstream-session-tabs-content overflow-hidden ${collapseTranscript ? '' : 'flex-1 min-h-0'}`}>
+      <div
+        className={`${contentClass} ${collapseTranscript ? '' : 'min-h-0 flex-1'}`}
+        data-agent-elements-shell="workstream-session-tabs-content"
+        data-testid="agent-elements-workstream-session-tabs-content"
+      >
         <AgentSessionPanel
           key={activeSessionId}
           sessionId={activeSessionId}

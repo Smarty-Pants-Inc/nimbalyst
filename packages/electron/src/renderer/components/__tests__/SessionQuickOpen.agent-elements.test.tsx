@@ -4,6 +4,8 @@ import '@testing-library/jest-dom/vitest';
 import React from 'react';
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import fs from 'node:fs';
+import path from 'node:path';
 import { SessionQuickOpen } from '../SessionQuickOpen';
 
 const mockState = vi.hoisted(() => ({
@@ -87,6 +89,11 @@ const sessions = [
     uncommittedCount: 0,
   },
 ];
+
+const sessionQuickOpenSourcePath = path.join(
+  process.cwd(),
+  'packages/electron/src/renderer/components/SessionQuickOpen.tsx',
+);
 
 describe('SessionQuickOpen Agent Elements shell', () => {
   beforeEach(() => {
@@ -213,5 +220,14 @@ describe('SessionQuickOpen Agent Elements shell', () => {
     expect(screen.getByTestId('agent-elements-session-quick-open-file-count')).toHaveTextContent(
       '1 session edited this file'
     );
+  });
+
+  it('keeps session quick-open chrome on Agent Elements visual aliases', () => {
+    const source = fs.readFileSync(sessionQuickOpenSourcePath, 'utf8');
+
+    expect(source).toContain('agent-elements-session-quick-open-backdrop');
+    expect(source).toContain('var(--an-foreground)');
+    expect(source).toContain('var(--an-warning-color)');
+    expect(source).not.toMatch(/var\(--nim-[^)]+\)/);
   });
 });

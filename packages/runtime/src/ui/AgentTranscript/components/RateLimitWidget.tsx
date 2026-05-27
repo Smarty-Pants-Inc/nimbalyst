@@ -1,24 +1,6 @@
-import React, { useEffect } from 'react';
-
-// Inject rate limit widget styles once (for color-mix patterns)
-const injectRateLimitStyles = () => {
-  const styleId = 'rate-limit-widget-styles';
-  if (document.getElementById(styleId)) return;
-
-  const style = document.createElement('style');
-  style.id = styleId;
-  style.textContent = `
-    .rate-limit-widget {
-      background-color: color-mix(in srgb, var(--nim-warning) 8%, transparent);
-      border: 1px solid color-mix(in srgb, var(--nim-warning) 25%, transparent);
-    }
-    .rate-limit-widget-blocked {
-      background-color: color-mix(in srgb, var(--nim-error) 8%, transparent);
-      border: 1px solid color-mix(in srgb, var(--nim-error) 25%, transparent);
-    }
-  `;
-  document.head.appendChild(style);
-};
+import React from 'react';
+import { AgentStatusPill, AgentToolCard } from '../../AgentElements';
+import { SPECIAL_STATUS_BODY_CLASS } from './SpecialStatusWidgetChrome';
 
 interface RateLimitWidgetProps {
   content: string;
@@ -68,34 +50,33 @@ function formatResetTime(resetsAtMs: number): string {
 }
 
 export const RateLimitWidget: React.FC<RateLimitWidgetProps> = ({ content }) => {
-  useEffect(() => {
-    injectRateLimitStyles();
-  }, []);
-
   const { isWarning, limitType, resetsAtMs, utilization, model } = parseRateLimitInfo(content);
-  const accentVar = isWarning ? '--nim-warning' : '--nim-error';
   const is1mModel = model != null && model.includes('-1m');
+  const title = isWarning ? 'Approaching rate limit' : 'Rate limit reached';
+  const shell = isWarning ? 'rate-limit-warning' : 'rate-limit-blocked';
+  const status = isWarning ? 'idle' : 'error';
+  const tone = isWarning ? 'warning' : 'error';
+  const iconColor = isWarning ? 'text-[var(--an-warning-color)]' : 'text-[var(--an-diff-removed-text)]';
 
   return (
-    <div className={isWarning ? 'rate-limit-widget my-4 p-4 rounded-lg flex flex-col gap-2' : 'rate-limit-widget-blocked my-4 p-4 rounded-lg flex flex-col gap-2'}>
-      <div className="flex items-center gap-2">
-        <span
-          className="flex items-center justify-center w-5 h-5 rounded-full text-white text-xs font-bold"
-          style={{ backgroundColor: `var(${accentVar})` }}
-        >
-          !
-        </span>
-        <span className="text-sm font-semibold" style={{ color: `var(${accentVar})` }}>
-          {isWarning ? 'Approaching rate limit' : 'Rate limit reached'}
-        </span>
-      </div>
-      <div className="text-[var(--nim-text-muted)] text-[0.85rem] leading-relaxed">
+    <AgentToolCard
+      className={isWarning ? 'rate-limit-widget' : 'rate-limit-widget-blocked'}
+      data-agent-elements-shell={shell}
+      data-component="RateLimitWidget"
+      data-testid="agent-elements-rate-limit-widget"
+      icon={<span className={iconColor}>!</span>}
+      status={status}
+      subtitle={model ?? limitType}
+      title={title}
+      trailing={<AgentStatusPill tone={tone}>{isWarning ? 'Warning' : 'Blocked'}</AgentStatusPill>}
+    >
+      <div className={SPECIAL_STATUS_BODY_CLASS}>
         {isWarning
           ? `You're at ${utilization != null ? `${utilization}%` : 'near'} of your ${limitType} limit.`
           : `You've hit your ${limitType} rate limit.`}
         {resetsAtMs && ` Resets in ${formatResetTime(resetsAtMs)}.`}
         {!isWarning && is1mModel && ' This 1M context model may not be available on your plan.'}
       </div>
-    </div>
+    </AgentToolCard>
   );
 };

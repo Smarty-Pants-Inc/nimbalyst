@@ -40,8 +40,8 @@ function statusLabel(wakeup: SessionWakeupView): string {
     case 'overdue': {
       const hoursAgo = Math.max(0, Math.floor((Date.now() - wakeup.fireAt) / 3_600_000));
       return hoursAgo > 0
-        ? `Wakeup was due ${hoursAgo}h ago — fire now or cancel?`
-        : 'Wakeup was due while the app was closed — fire now or cancel?';
+        ? `Wakeup was due ${hoursAgo}h ago, fire now or cancel?`
+        : 'Wakeup was due while the app was closed, fire now or cancel?';
     }
     default:
       return '';
@@ -89,21 +89,28 @@ export function WakeupBanner({ sessionId }: WakeupBannerProps) {
   if (!wakeup) return null;
 
   const isOverdue = wakeup.status === 'overdue';
-  const containerClass = isOverdue
-    ? 'flex items-center justify-between gap-3 px-3 py-2 bg-amber-400/10 border-b border-amber-400/30'
-    : 'flex items-center justify-between gap-3 px-3 py-2 bg-blue-400/10 border-b border-blue-400/30';
-  const textClass = isOverdue
-    ? 'text-xs font-medium text-nim-warning truncate'
-    : 'text-xs font-medium text-nim-primary truncate';
-  const iconColor = isOverdue ? 'text-nim-warning' : 'text-nim-primary';
+  const toneColor = isOverdue ? 'var(--an-warning-color)' : 'var(--an-primary-color)';
+  const containerClass =
+    'agent-elements-wakeup-banner agent-elements-status-banner flex items-center justify-between gap-3 px-3 py-2 border-b text-[var(--an-foreground)] transition-[background-color,border-color,color] duration-150 ease-out';
+  const toneClass = isOverdue
+    ? 'border-[color-mix(in_srgb,var(--an-warning-color)_26%,var(--an-border-color))] bg-[color-mix(in_srgb,var(--an-warning-color)_8%,var(--an-background))]'
+    : 'border-[color-mix(in_srgb,var(--an-primary-color)_22%,var(--an-border-color))] bg-[color-mix(in_srgb,var(--an-primary-color)_7%,var(--an-background))]';
+  const textClass = 'agent-elements-status-banner-text truncate text-xs font-medium';
+  const actionClass =
+    'agent-elements-status-banner-action flex items-center gap-1 rounded-[var(--an-radius-sm)] border border-current bg-transparent px-2.5 py-1 text-[11px] font-medium cursor-pointer transition-[background-color,border-color,color] duration-150 ease-out hover:enabled:bg-[color-mix(in_srgb,currentColor_10%,transparent)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--an-input-focus-outline)] disabled:opacity-50 disabled:cursor-not-allowed';
 
   return (
-    <div className={containerClass} data-testid="wakeup-banner">
+    <div
+      className={`${containerClass} ${toneClass}`}
+      data-testid="wakeup-banner"
+      data-agent-elements-shell="wakeup-banner"
+      data-wakeup-status={wakeup.status}
+    >
       <div className="flex items-center gap-2 min-w-0 flex-1">
-        <MaterialSymbol icon="schedule" size={16} className={iconColor} />
-        <span className={textClass}>
+        <MaterialSymbol icon="schedule" size={16} className="agent-elements-status-banner-icon shrink-0" style={{ color: toneColor }} />
+        <span className={textClass} style={{ color: toneColor }}>
           {statusLabel(wakeup)}
-          {wakeup.reason ? <span className="opacity-80"> — {wakeup.reason}</span> : null}
+          {wakeup.reason ? <span className="opacity-80">, {wakeup.reason}</span> : null}
         </span>
       </div>
       <div className="flex items-center gap-2 flex-shrink-0">
@@ -112,9 +119,10 @@ export function WakeupBanner({ sessionId }: WakeupBannerProps) {
             type="button"
             onClick={handleRunNow}
             disabled={busy}
-            className="flex items-center gap-1 px-2.5 py-1 bg-transparent border border-current rounded text-[11px] font-medium cursor-pointer transition-all duration-200 hover:enabled:bg-current/10 disabled:opacity-50 disabled:cursor-not-allowed"
+            className={actionClass}
             data-testid="wakeup-banner-run-now"
             title="Fire this wakeup right now"
+            style={{ color: toneColor }}
           >
             <MaterialSymbol icon="bolt" size={14} />
             Fire now
@@ -124,7 +132,7 @@ export function WakeupBanner({ sessionId }: WakeupBannerProps) {
           type="button"
           onClick={handleCancel}
           disabled={busy}
-          className="flex items-center gap-1 px-2.5 py-1 bg-transparent border border-nim-border rounded text-nim-text-muted text-[11px] font-medium cursor-pointer transition-all duration-200 hover:enabled:bg-nim-bg-secondary disabled:opacity-50 disabled:cursor-not-allowed"
+          className="agent-elements-status-banner-action flex items-center gap-1 rounded-[var(--an-radius-sm)] border border-[var(--an-border-color)] bg-transparent px-2.5 py-1 text-[var(--an-foreground-muted)] text-[11px] font-medium cursor-pointer transition-[background-color,border-color,color] duration-150 ease-out hover:enabled:bg-[var(--an-background-tertiary)] hover:enabled:text-[var(--an-foreground)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--an-input-focus-outline)] disabled:opacity-50 disabled:cursor-not-allowed"
           data-testid="wakeup-banner-cancel"
           title="Cancel the scheduled wakeup"
         >

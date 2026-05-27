@@ -32,13 +32,13 @@ export const RosettaWarning: React.FC<RosettaWarningProps> = ({
 
   return (
     <div
-      className="nim-overlay agent-elements-rosetta-warning-backdrop bg-[color-mix(in_srgb,var(--nim-text)_36%,transparent)]"
+      className="nim-overlay agent-elements-rosetta-warning-backdrop bg-[color-mix(in_srgb,var(--an-foreground)_36%,transparent)]"
       data-testid="agent-elements-rosetta-warning-backdrop"
       data-agent-elements-shell="platform-warning-backdrop"
       onClick={handleRemindLater}
     >
       <div
-        className="agent-elements-rosetta-warning agent-elements-tool-card flex w-[min(92vw,460px)] flex-col overflow-hidden rounded-[var(--an-border-radius)] border border-[var(--an-border-color)] bg-[var(--an-background)] text-[var(--an-foreground)] shadow-[0_20px_60px_color-mix(in_srgb,var(--nim-text)_18%,transparent)]"
+        className="agent-elements-rosetta-warning agent-elements-tool-card flex w-[min(92vw,460px)] flex-col overflow-hidden rounded-[var(--an-border-radius)] border border-[var(--an-border-color)] bg-[var(--an-background)] text-[var(--an-foreground)] shadow-[0_20px_60px_color-mix(in_srgb,var(--an-foreground)_18%,transparent)]"
         data-testid="agent-elements-rosetta-warning"
         data-component="RosettaWarning"
         data-agent-elements-shell="platform-warning"
@@ -51,7 +51,7 @@ export const RosettaWarning: React.FC<RosettaWarningProps> = ({
         >
           <div className="flex min-w-0 items-start gap-3">
             <span
-              className="agent-elements-rosetta-warning-icon inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-[var(--an-tool-border-radius)] border border-[color-mix(in_srgb,var(--nim-warning)_28%,var(--an-border-color))] bg-[color-mix(in_srgb,var(--nim-warning)_12%,var(--an-background))] text-[var(--nim-warning)]"
+              className="agent-elements-rosetta-warning-icon inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-[var(--an-tool-border-radius)] border border-[color-mix(in_srgb,var(--an-warning-color)_28%,var(--an-border-color))] bg-[color-mix(in_srgb,var(--an-warning-color)_12%,var(--an-background))] text-[var(--an-warning-color)]"
               data-agent-elements-shell="platform-warning-icon"
               aria-hidden="true"
             >
@@ -95,7 +95,7 @@ export const RosettaWarning: React.FC<RosettaWarningProps> = ({
         >
           <button
             type="button"
-            className="agent-elements-rosetta-warning-primary inline-flex min-h-9 cursor-pointer items-center justify-center gap-2 rounded-[var(--an-input-border-radius)] border border-[var(--an-primary-color)] bg-[var(--an-primary-color)] px-4 py-2 text-sm font-medium text-[var(--nim-bg)] transition-[background-color,border-color,transform] duration-150 ease-out hover:bg-[var(--nim-primary-hover)] focus:outline-none focus:ring-2 focus:ring-[var(--an-input-focus-outline)] active:translate-y-px"
+            className="agent-elements-rosetta-warning-primary inline-flex min-h-9 cursor-pointer items-center justify-center gap-2 rounded-[var(--an-input-border-radius)] border border-[var(--an-primary-color)] bg-[var(--an-primary-color)] px-4 py-2 text-sm font-medium text-[var(--an-button-primary-text)] transition-[background-color,border-color,transform] duration-150 ease-out hover:border-[color-mix(in_srgb,var(--an-primary-color)_82%,var(--an-foreground))] hover:bg-[color-mix(in_srgb,var(--an-primary-color)_88%,var(--an-foreground))] focus:outline-none focus:ring-2 focus:ring-[var(--an-input-focus-outline)] active:translate-y-px"
             onClick={handleDownload}
           >
             <MaterialSymbol icon="download" size={17} />

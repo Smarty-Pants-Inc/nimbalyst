@@ -2,8 +2,17 @@
 
 import '@testing-library/jest-dom/vitest';
 import React from 'react';
+import { readFileSync } from 'node:fs';
+import path from 'node:path';
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+const sourcePath = path.join(
+  process.cwd(),
+  'packages/electron/src/renderer/components/GlobalSettings/panels/ClaudeCodePanel.tsx',
+);
+const directCardGutterPattern =
+  /agent-elements-tool-card[^`'"]*\b(?:p-|p-\[|px-|px-\[|py-|py-\[|pl-|pl-\[|pr-|pr-\[|rounded-lg|rounded-md|rounded-xl|bg-\[rgba|rgba\(|bg-\[var\(--nim|border-\[var\(--nim)/;
 
 const mockState = vi.hoisted(() => ({
   tokens: {
@@ -105,18 +114,36 @@ describe('ClaudeCodePanel Agent Elements shell', () => {
     const panel = await screen.findByTestId('agent-elements-claude-code-panel');
     expect(panel).toHaveAttribute('data-agent-elements-shell', 'claude-code-panel');
     expect(panel).toHaveClass('agent-elements-settings-panel');
+    expect(panel).toHaveClass('w-full');
     expect(screen.getByTestId('agent-elements-claude-code-header')).toHaveClass('agent-elements-settings-panel-header');
     expect(screen.getByTestId('agent-elements-claude-code-enable-toggle')).toHaveClass('provider-enable');
     expect(screen.getByTestId('agent-elements-claude-code-usage-toggle')).toHaveClass('provider-enable');
     expect(screen.getByTestId('agent-elements-claude-code-path-section')).toHaveAttribute('data-section', 'custom-installation');
     expect(screen.getByTestId('agent-elements-claude-code-sdk-section')).toHaveAttribute('data-section', 'agent-sdk');
+    expect(await screen.findByTestId('agent-elements-claude-code-sdk-card')).toHaveClass('agent-elements-tool-card');
+    expect(screen.getByTestId('agent-elements-claude-code-sdk-card').className).toContain('--agent-elements-card-inline-padding');
+    expect(screen.getByTestId('agent-elements-claude-code-sdk-card').className).toContain('--agent-elements-card-block-padding');
     expect(screen.getByTestId('agent-elements-claude-code-auth-section')).toHaveAttribute('data-section', 'authentication');
     expect(screen.getByTestId('agent-elements-claude-code-auth-methods')).toHaveAttribute('data-agent-elements-shell', 'claude-code-auth-methods');
     expect(screen.getByTestId('agent-elements-claude-code-api-key-card')).toHaveClass('agent-elements-tool-card');
+    expect(screen.getByTestId('agent-elements-claude-code-api-key-card').className).toContain('--agent-elements-card-inline-padding');
+    expect(screen.getByTestId('agent-elements-claude-code-api-key-card').className).toContain('--agent-elements-card-block-padding');
     expect(screen.getByTestId('agent-elements-claude-code-permissions-section')).toHaveAttribute('data-section', 'tool-permissions');
     expect(screen.getByTestId('agent-elements-claude-code-env-section')).toHaveAttribute('data-section', 'environment-variables');
     expect(await screen.findByTestId('agent-elements-claude-code-env-row-EXISTING_FLAG')).toHaveClass('agent-elements-tool-card');
+    expect(screen.getByTestId('agent-elements-claude-code-env-row-EXISTING_FLAG').className).toContain(
+      '--agent-elements-card-inline-padding',
+    );
+    expect(screen.getByTestId('agent-elements-claude-code-env-row-EXISTING_FLAG').className).toContain(
+      '--agent-elements-card-block-padding',
+    );
     expect(screen.getByTestId('agent-elements-claude-code-add-env-row')).toHaveClass('agent-elements-tool-card');
+    expect(screen.getByTestId('agent-elements-claude-code-add-env-row').className).toContain(
+      '--agent-elements-card-inline-padding',
+    );
+    expect(screen.getByTestId('agent-elements-claude-code-add-env-row').className).toContain(
+      '--agent-elements-card-block-padding',
+    );
     expect(screen.getByTestId('agent-elements-claude-code-test-error')).toHaveTextContent('Invalid Claude Agent API key');
 
     fireEvent.click(within(screen.getByTestId('agent-elements-claude-code-enable-toggle')).getByRole('checkbox', { hidden: true }));
@@ -167,5 +194,13 @@ describe('ClaudeCodePanel Agent Elements shell', () => {
         NEW_FLAG: 'enabled',
       });
     });
+  });
+
+  it('keeps Claude Agent cards on shared Agent Elements gutters instead of direct card padding', () => {
+    const source = readFileSync(sourcePath, 'utf8');
+
+    expect(source).toContain('--agent-elements-card-inline-padding');
+    expect(source).toContain('--agent-elements-card-block-padding');
+    expect(source).not.toMatch(directCardGutterPattern);
   });
 });

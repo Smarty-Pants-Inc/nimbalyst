@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { MaterialSymbol, getProviderIcon } from '@nimbalyst/runtime';
+import { ToggleSwitch } from '../../GlobalSettings/SettingsToggle';
+import { createProviderPanelChrome } from '../../GlobalSettings/panels/providerPanelChrome';
 
 interface ProviderOverride {
   enabled?: boolean;
@@ -49,6 +51,40 @@ const PROVIDERS: ProviderInfo[] = [
   { id: 'openai', name: 'OpenAI', subtitle: 'GPT Models', apiKeyField: 'openai' },
   { id: 'lmstudio', name: 'LM Studio', subtitle: 'Local Models' },
 ];
+
+const chrome = createProviderPanelChrome({
+  headerClassName: 'panel-header project-ai-providers-header',
+  sectionClassName: 'provider-panel-section project-ai-providers-section',
+  configCardClassName: 'project-ai-providers-card',
+  inputClassName: 'project-ai-providers-input',
+  loadingClassName: 'project-ai-providers-loading',
+  modelRowClassName: 'project-ai-providers-model-row',
+  testButtonClassName: 'project-ai-providers-action-button',
+  testErrorClassName: 'project-ai-providers-error',
+  emptyClassName: 'project-ai-providers-empty',
+});
+
+const panelClass =
+  'project-ai-providers-panel agent-elements-settings-panel flex h-full flex-col gap-[var(--an-spacing-xxl)] p-[var(--an-spacing-xxl)]';
+const cardPaddingClass =
+  '[--agent-elements-card-block-padding:var(--an-spacing-lg)] [--agent-elements-card-inline-padding:var(--an-spacing-lg)]';
+const cardInsetClass =
+  'px-[var(--agent-elements-card-inline-padding)] py-[var(--agent-elements-card-block-padding)]';
+const zeroCardPaddingClass =
+  '[--agent-elements-card-block-padding:0px] [--agent-elements-card-inline-padding:0px]';
+const providerCardClass =
+  `provider-card agent-elements-tool-card overflow-hidden border transition-[background-color,border-color,color] duration-150 ease-out ${zeroCardPaddingClass}`;
+const providerHeaderClass =
+  'provider-card-header flex cursor-pointer items-center justify-between p-[var(--an-spacing-xxl)] transition-colors duration-150 ease-out hover:bg-[var(--an-background-tertiary)]';
+const providerContentClass =
+  `provider-card-content agent-elements-tool-card-bordered border-t border-[var(--an-border-color)] bg-[var(--an-background)] ${cardPaddingClass} ${cardInsetClass}`;
+const sectionDividerClass =
+  'config-section border-b border-[var(--an-border-color)] py-[var(--an-spacing-xl)] last:border-b-0';
+const statusPillClass =
+  'agent-elements-status-pill rounded-[var(--an-small-border-radius)] px-[var(--an-spacing-sm)] py-[var(--an-spacing-xxs)] text-[11px] font-medium';
+const selectClass =
+  'rounded-[var(--an-input-border-radius)] border border-[var(--an-input-border-color)] bg-[var(--an-input-background)] px-[var(--an-spacing-md)] py-[var(--an-spacing-sm)] text-sm text-[var(--an-input-color)] outline-none transition-[background-color,border-color,color] duration-150 ease-out focus:border-[var(--an-input-focus-border)] focus:ring-2 focus:ring-[var(--an-focus-ring)]';
+const labelTextClass = 'text-[13px] text-[var(--an-foreground)]';
 
 export function ProjectAIProvidersPanel({ workspacePath, workspaceName }: ProjectAIProvidersPanelProps) {
   const [globalSettings, setGlobalSettings] = useState<Record<string, GlobalProviderSettings>>({});
@@ -166,7 +202,6 @@ export function ProjectAIProvidersPanel({ workspacePath, workspaceName }: Projec
       if (override) {
         // Initialize override with current global values
         const globalProvider = globalSettings[providerId] || {};
-        const provider = PROVIDERS.find(p => p.id === providerId);
         newOverrides.providers[providerId] = {
           enabled: globalProvider.enabled ?? false,
           models: globalProvider.models ? [...globalProvider.models] : [],
@@ -244,40 +279,42 @@ export function ProjectAIProvidersPanel({ workspacePath, workspaceName }: Projec
   if (loading) {
     return (
       <div
-        className="project-ai-providers-panel agent-elements-settings-panel flex flex-col h-full p-6 gap-6"
+        className={panelClass}
         data-testid="agent-elements-project-ai-providers-panel"
         data-agent-elements-shell="project-ai-providers-panel"
         data-workspace-bound={String(Boolean(workspacePath))}
         data-state="loading"
       >
-        <div className="panel-loading agent-elements-tool-card flex items-center justify-center h-[200px] text-[var(--nim-text-muted)]">Loading settings...</div>
+        <div className={`${chrome.configCard} flex h-[200px] items-center justify-center text-[var(--an-foreground-muted)]`}>
+          Loading settings...
+        </div>
       </div>
     );
   }
 
   return (
     <div
-      className="project-ai-providers-panel agent-elements-settings-panel flex flex-col h-full p-6 gap-6"
+      className={panelClass}
       data-testid="agent-elements-project-ai-providers-panel"
       data-agent-elements-shell="project-ai-providers-panel"
       data-workspace-bound={String(Boolean(workspacePath))}
       data-state={hasAnyOverrides() ? 'customized' : 'inherited'}
     >
       <div
-        className="panel-header agent-elements-settings-panel-header"
+        className={chrome.header}
         data-testid="agent-elements-project-ai-providers-header"
         data-agent-elements-shell="project-ai-providers-header"
       >
-        <h2 className="m-0 mb-2 text-lg font-semibold text-[var(--nim-text)]">AI Providers</h2>
-        <p className="panel-description m-0 text-[13px] text-[var(--nim-text-muted)] leading-normal">
-          Override AI provider settings for <strong className="text-[var(--nim-text)] font-medium">{workspaceName}</strong>.
+        <h2 className={chrome.title}>AI Providers</h2>
+        <p className={chrome.description}>
+          Override AI provider settings for <strong className="font-medium text-[var(--an-foreground)]">{workspaceName}</strong>.
           Enable overrides to use different API keys or models for this project.
         </p>
       </div>
 
       <div className="panel-content flex-1 overflow-y-auto">
         <div
-          className="providers-list flex flex-col gap-3"
+          className="providers-list flex flex-col gap-[var(--an-spacing-lg)]"
           data-testid="agent-elements-project-ai-providers-list"
           data-agent-elements-shell="project-ai-providers-list"
         >
@@ -293,7 +330,7 @@ export function ProjectAIProvidersPanel({ workspacePath, workspaceName }: Projec
             return (
               <div
                 key={provider.id}
-                className={`provider-card agent-elements-tool-card !gap-0 !p-0 rounded-lg overflow-hidden transition-colors duration-150 bg-[var(--nim-bg-secondary)] border ${overriding ? 'border-[var(--nim-primary)]' : 'border-[var(--nim-border)]'}`}
+                className={`${providerCardClass} ${overriding ? 'border-[var(--an-primary-color)] bg-[color-mix(in_srgb,var(--an-primary-color)_7%,var(--an-background))]' : 'border-[var(--an-border-color)] bg-[var(--an-background-secondary)]'}`}
                 data-testid={`agent-elements-project-ai-provider-${provider.id}`}
                 data-agent-elements-shell="project-ai-provider-card"
                 data-provider-id={provider.id}
@@ -304,32 +341,32 @@ export function ProjectAIProvidersPanel({ workspacePath, workspaceName }: Projec
               >
                 {/* Provider Header - Always Visible */}
                 <div
-                  className="provider-card-header flex items-center justify-between p-4 cursor-pointer transition-colors duration-150 hover:bg-[var(--nim-bg-hover)]"
+                  className={providerHeaderClass}
                   data-testid={`agent-elements-project-ai-provider-header-${provider.id}`}
                   data-agent-elements-shell="project-ai-provider-header"
                   onClick={() => setExpandedProvider(isExpanded ? null : provider.id)}
                 >
-                  <div className="provider-info flex items-center gap-3">
-                    <span className="provider-icon flex items-center justify-center w-10 h-10 bg-[var(--nim-bg-tertiary)] rounded-lg">
+                  <div className="provider-info flex items-center gap-[var(--an-spacing-lg)]">
+                    <span className="provider-icon flex h-10 w-10 items-center justify-center rounded-[var(--an-small-border-radius)] bg-[var(--an-background-tertiary)]">
                       {getProviderIcon(provider.id as any, { size: 24 })}
                     </span>
                     <div className="provider-details flex flex-col gap-0.5">
-                      <span className="provider-name text-sm font-medium text-[var(--nim-text)]">{provider.name}</span>
-                      <span className="provider-subtitle text-xs text-[var(--nim-text-faint)]">{provider.subtitle}</span>
+                      <span className="provider-name text-sm font-medium text-[var(--an-foreground)]">{provider.name}</span>
+                      <span className="provider-subtitle text-xs text-[var(--an-foreground-subtle)]">{provider.subtitle}</span>
                     </div>
                   </div>
 
-                  <div className="provider-status flex items-center gap-2.5">
-                    <span className={`global-status agent-elements-status-pill text-[11px] px-2 py-0.5 rounded font-medium ${globalEnabled ? 'bg-[rgba(34,197,94,0.12)] text-[#22c55e]' : 'bg-[var(--nim-bg-tertiary)] text-[var(--nim-text-faint)]'}`}>
+                  <div className="provider-status flex items-center gap-[var(--an-spacing-md)]">
+                    <span className={`global-status ${statusPillClass} ${globalEnabled ? 'bg-[color-mix(in_srgb,var(--an-success-color)_12%,transparent)] text-[var(--an-success-color)]' : 'bg-[var(--an-background-tertiary)] text-[var(--an-foreground-subtle)]'}`}>
                       Global: {globalEnabled ? 'On' : 'Off'}
                     </span>
                     {overriding && (
-                      <span className="override-badge agent-elements-status-pill text-[11px] px-2 py-0.5 rounded font-medium bg-[var(--nim-accent-muted)] text-[var(--nim-primary)]">Overridden</span>
+                      <span className={`${statusPillClass} override-badge bg-[color-mix(in_srgb,var(--an-primary-color)_12%,transparent)] text-[var(--an-primary-color)]`}>Overridden</span>
                     )}
-                    <span className={`effective-status agent-elements-status-pill text-[11px] px-2.5 py-1 rounded-xl font-semibold ${effectiveEnabled ? 'bg-[#22c55e] text-white' : 'bg-[var(--nim-bg-tertiary)] text-[var(--nim-text-faint)]'}`}>
+                    <span className={`effective-status ${statusPillClass} font-semibold ${effectiveEnabled ? 'bg-[color-mix(in_srgb,var(--an-success-color)_18%,var(--an-background))] text-[var(--an-success-color)]' : 'bg-[var(--an-background-tertiary)] text-[var(--an-foreground-subtle)]'}`}>
                       {effectiveEnabled ? 'Active' : 'Inactive'}
                     </span>
-                    <span className={`expand-icon text-[var(--nim-text-faint)] transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`}>
+                    <span className={`expand-icon text-[var(--an-foreground-subtle)] transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`}>
                       <MaterialSymbol icon="expand_more" size={16} />
                     </span>
                   </div>
@@ -338,22 +375,19 @@ export function ProjectAIProvidersPanel({ workspacePath, workspaceName }: Projec
                 {/* Expanded Content */}
                 {isExpanded && (
                   <div
-                    className="provider-card-content agent-elements-tool-card-bordered px-4 pb-4 border-t border-[var(--nim-border)] bg-[var(--nim-bg)]"
+                    className={providerContentClass}
                     data-testid={`agent-elements-project-ai-provider-content-${provider.id}`}
                     data-agent-elements-shell="project-ai-provider-content"
                   >
                     {/* Override Toggle */}
-                    <div className="override-toggle-section py-4 border-b border-[var(--nim-border)]">
-                      <label className="override-toggle flex items-center gap-3 cursor-pointer">
-                        <input
-                          type="checkbox"
-                          aria-label={`Project override for ${provider.name}`}
+                    <div className={sectionDividerClass}>
+                      <label className="override-toggle flex cursor-pointer items-center gap-[var(--an-spacing-lg)]">
+                        <ToggleSwitch
                           checked={overriding}
-                          onChange={(e) => handleOverrideToggle(provider.id, e.target.checked)}
-                          className="hidden"
+                          onChange={(checked) => handleOverrideToggle(provider.id, checked)}
+                          ariaLabel={`Project override for ${provider.name}`}
                         />
-                        <span className={`toggle-slider relative w-11 h-6 rounded-xl shrink-0 transition-colors duration-200 before:content-[''] before:absolute before:top-0.5 before:left-0.5 before:w-5 before:h-5 before:bg-white before:rounded-full before:transition-transform before:duration-200 before:shadow-[0_1px_3px_rgba(0,0,0,0.2)] ${overriding ? 'bg-[var(--nim-primary)] before:translate-x-5' : 'bg-[var(--nim-bg-tertiary)]'}`}></span>
-                        <span className="toggle-label text-[13px] text-[var(--nim-text-muted)]">
+                        <span className="toggle-label text-[13px] text-[var(--an-foreground-muted)]">
                           {overriding ? 'Override enabled - using project settings' : 'Using global settings'}
                         </span>
                       </label>
@@ -362,28 +396,23 @@ export function ProjectAIProvidersPanel({ workspacePath, workspaceName }: Projec
                     {overriding && (
                       <>
                         {/* Enable Toggle */}
-                        <div className="config-section py-4 border-b border-[var(--nim-border)]">
+                        <div className={sectionDividerClass}>
                           <div className="config-row flex items-center justify-between">
-                            <span className="config-label text-[13px] text-[var(--nim-text)]">Enable for this project</span>
-                            <label className="toggle-switch relative inline-block cursor-pointer">
-                              <input
-                                type="checkbox"
-                                aria-label={`Enable ${provider.name} for this project`}
-                                checked={override?.enabled ?? false}
-                                onChange={(e) => handleEnabledChange(provider.id, e.target.checked)}
-                                className="hidden"
-                              />
-                              <span className={`toggle-slider relative block w-9 h-5 rounded-xl transition-colors duration-200 before:content-[''] before:absolute before:top-0.5 before:left-0.5 before:w-4 before:h-4 before:bg-white before:rounded-full before:transition-transform before:duration-200 before:shadow-[0_1px_3px_rgba(0,0,0,0.2)] ${override?.enabled ? 'bg-[var(--nim-primary)] before:translate-x-4' : 'bg-[var(--nim-bg-tertiary)]'}`}></span>
-                            </label>
+                            <span className={`config-label ${labelTextClass}`}>Enable for this project</span>
+                            <ToggleSwitch
+                              checked={override?.enabled ?? false}
+                              onChange={(checked) => handleEnabledChange(provider.id, checked)}
+                              ariaLabel={`Enable ${provider.name} for this project`}
+                            />
                           </div>
                         </div>
 
                         {/* API Key (if applicable) */}
                         {provider.apiKeyField && (
-                          <div className="config-section py-4 border-b border-[var(--nim-border)]">
-                            <h4 className="config-section-title nim-section-label m-0 mb-3">API Key</h4>
-                            <div className="api-key-info mb-2">
-                              <span className="api-key-hint text-xs text-[var(--nim-text-faint)]">
+                          <div className={sectionDividerClass}>
+                            <h4 className="config-section-title m-0 mb-[var(--an-spacing-lg)] text-sm font-medium text-[var(--an-foreground)]">API Key</h4>
+                            <div className="api-key-info mb-[var(--an-spacing-sm)]">
+                              <span className="api-key-hint text-xs text-[var(--an-foreground-subtle)]">
                                 {globalApiKeys[provider.apiKeyField]
                                   ? 'Leave empty to use global key, or enter a project-specific key'
                                   : 'Enter an API key for this project'}
@@ -391,7 +420,7 @@ export function ProjectAIProvidersPanel({ workspacePath, workspaceName }: Projec
                             </div>
                             <input
                               type="password"
-                              className="api-key-input nim-input font-mono text-[13px]"
+                              className={`${chrome.input} api-key-input text-[13px]`}
                               data-testid={`agent-elements-project-ai-provider-api-key-${provider.id}`}
                               aria-label={`${provider.name} project API key`}
                               placeholder={globalApiKeys[provider.apiKeyField] ? 'Using global key...' : 'Enter API key...'}
@@ -403,18 +432,18 @@ export function ProjectAIProvidersPanel({ workspacePath, workspaceName }: Projec
 
                         {/* Models Selection */}
                         {models.length > 0 && (
-                          <div className="config-section py-4 border-b border-[var(--nim-border)] last:border-b-0">
-                            <div className="config-section-header flex items-center justify-between mb-3">
-                              <h4 className="config-section-title nim-section-label m-0">Models</h4>
-                              <div className="models-actions flex gap-1.5">
+                          <div className={sectionDividerClass}>
+                            <div className="config-section-header mb-[var(--an-spacing-lg)] flex items-center justify-between">
+                              <h4 className="config-section-title m-0 text-sm font-medium text-[var(--an-foreground)]">Models</h4>
+                              <div className="models-actions flex gap-[var(--an-spacing-sm)]">
                                 <button
-                                  className="models-action-btn px-2.5 py-1 text-[11px] font-medium text-[var(--nim-text-muted)] bg-[var(--nim-bg-tertiary)] border-none rounded cursor-pointer transition-all duration-150 hover:bg-[var(--nim-bg-hover)] hover:text-[var(--nim-text)]"
+                                  className={`${chrome.modelActionButton} models-action-btn`}
                                   onClick={() => handleSelectAllModels(provider.id, true)}
                                 >
                                   All
                                 </button>
                                 <button
-                                  className="models-action-btn px-2.5 py-1 text-[11px] font-medium text-[var(--nim-text-muted)] bg-[var(--nim-bg-tertiary)] border-none rounded cursor-pointer transition-all duration-150 hover:bg-[var(--nim-bg-hover)] hover:text-[var(--nim-text)]"
+                                  className={`${chrome.modelActionButton} models-action-btn`}
                                   onClick={() => handleSelectAllModels(provider.id, false)}
                                 >
                                   None
@@ -427,7 +456,7 @@ export function ProjectAIProvidersPanel({ workspacePath, workspaceName }: Projec
                                 return (
                                   <label
                                     key={model.id}
-                                    className={`model-item flex items-center gap-2 px-3 py-2.5 rounded-md cursor-pointer transition-all duration-150 border ${isSelected ? 'bg-[var(--nim-accent-subtle)] border-[var(--nim-primary)]' : 'bg-[var(--nim-bg-secondary)] border-[var(--nim-border)] hover:border-[var(--nim-border-secondary)]'}`}
+                                    className={`model-item flex cursor-pointer items-center gap-[var(--an-spacing-sm)] rounded-[var(--an-small-border-radius)] border px-[var(--an-spacing-md)] py-[var(--an-spacing-sm)] transition-[background-color,border-color,color] duration-150 ease-out ${isSelected ? 'border-[var(--an-primary-color)] bg-[color-mix(in_srgb,var(--an-primary-color)_10%,var(--an-background))]' : 'border-[var(--an-border-color)] bg-[var(--an-background-secondary)] hover:border-[var(--an-border-color-strong)]'}`}
                                     data-agent-elements-shell="project-ai-provider-model-row"
                                     data-provider-id={provider.id}
                                     data-model-id={model.id}
@@ -437,9 +466,9 @@ export function ProjectAIProvidersPanel({ workspacePath, workspaceName }: Projec
                                       type="checkbox"
                                       checked={isSelected}
                                       onChange={(e) => handleModelToggle(provider.id, model.id, e.target.checked)}
-                                      className="accent-[var(--nim-primary)]"
+                                      className={chrome.checkbox}
                                     />
-                                    <span className="model-name text-[13px] text-[var(--nim-text)]">{model.name || model.id}</span>
+                                    <span className="model-name text-[13px] text-[var(--an-foreground)]">{model.name || model.id}</span>
                                   </label>
                                 );
                               })}
@@ -451,8 +480,8 @@ export function ProjectAIProvidersPanel({ workspacePath, workspaceName }: Projec
 
                     {!overriding && (
                       <div className="no-override-message py-4 text-center">
-                        <p className="m-0 text-[13px] text-[var(--nim-text-muted)]">This project uses global settings for {provider.name}.</p>
-                        <p className="hint mt-1 text-xs text-[var(--nim-text-faint)]">Enable override to customize API key or models for this project.</p>
+                        <p className="m-0 text-[13px] text-[var(--an-foreground-muted)]">This project uses global settings for {provider.name}.</p>
+                        <p className="hint mt-[var(--an-spacing-xs)] text-xs text-[var(--an-foreground-subtle)]">Enable override to customize API key or models for this project.</p>
                       </div>
                     )}
                   </div>
@@ -464,7 +493,7 @@ export function ProjectAIProvidersPanel({ workspacePath, workspaceName }: Projec
 
         {hasAnyOverrides() && (
           <div
-            className="overrides-summary agent-elements-tool-card flex !flex-row items-center gap-2 mt-4 px-4 py-3 rounded-lg text-[13px] bg-[var(--nim-accent-subtle)] border border-[var(--nim-accent-subtle)] text-[var(--nim-primary)]"
+            className={`overrides-summary agent-elements-tool-card mt-[var(--an-spacing-xl)] flex !flex-row items-center gap-[var(--an-spacing-sm)] border-[color-mix(in_srgb,var(--an-primary-color)_24%,var(--an-border-color))] bg-[color-mix(in_srgb,var(--an-primary-color)_10%,var(--an-background))] text-[13px] text-[var(--an-primary-color)] ${cardPaddingClass}`}
             data-testid="agent-elements-project-ai-providers-summary"
             data-agent-elements-shell="project-ai-providers-summary"
           >
@@ -476,14 +505,14 @@ export function ProjectAIProvidersPanel({ workspacePath, workspaceName }: Projec
 
       {/* Tracker Automation Override */}
       <div
-        className="tracker-automation-override agent-elements-settings-section mt-6 pt-4 border-t border-[var(--nim-border)]"
+        className={`${chrome.section} tracker-automation-override`}
         data-testid="agent-elements-project-ai-tracker-automation"
         data-agent-elements-shell="project-ai-tracker-automation"
       >
-        <h3 className="text-sm font-semibold text-[var(--nim-text)] mb-3">Tracker Automation</h3>
-        <div className="flex items-center gap-3 mb-2">
+        <h3 className={chrome.sectionTitle}>Tracker Automation</h3>
+        <div className="mb-[var(--an-spacing-sm)] flex items-center gap-[var(--an-spacing-lg)]">
           <select
-            className="text-sm rounded border border-[var(--nim-border)] bg-[var(--nim-bg-secondary)] text-[var(--nim-text)] px-3 py-1.5"
+            className={selectClass}
             value={trackerAutomationOverride === null ? 'inherit' : trackerAutomationOverride?.enabled ? 'enable' : 'disable'}
             onChange={(e) => {
               const val = e.target.value;
@@ -500,18 +529,18 @@ export function ProjectAIProvidersPanel({ workspacePath, workspaceName }: Projec
             <option value="disable">Disable for this project</option>
           </select>
         </div>
-        <p className="text-xs text-[var(--nim-text-faint)] m-0">
+        <p className="m-0 text-xs text-[var(--an-foreground-subtle)]">
           Override the global tracker automation setting for this workspace.
         </p>
       </div>
 
       <div
-        className="panel-footer flex justify-end pt-4 border-t border-[var(--nim-border)]"
+        className="panel-footer flex justify-end border-t border-[var(--an-border-color)] pt-[var(--an-spacing-xl)]"
         data-testid="agent-elements-project-ai-providers-footer"
         data-agent-elements-shell="project-ai-providers-footer"
       >
         <button
-          className="save-button nim-btn-primary px-6 py-2.5 text-[13px]"
+          className={`${chrome.primaryButton} save-button px-[var(--an-spacing-xxl)] py-[var(--an-spacing-md)] text-[13px]`}
           onClick={handleSave}
           disabled={!hasChanges || saving}
         >

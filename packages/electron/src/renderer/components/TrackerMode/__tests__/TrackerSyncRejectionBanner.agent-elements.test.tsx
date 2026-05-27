@@ -155,6 +155,6 @@ describe('TrackerSyncRejectionBanner Agent Elements shell', () => {
     expect(source).not.toMatch(/rounded-md|rounded-lg|rounded-xl/);
     expect(source).not.toMatch(/#(?:[0-9a-fA-F]{3}){1,2}\b|rgba\(/);
     expect(source).not.toMatch(/bg-white|text-white|bg-black|hover:scale|tracking-\[/);
-    expect(source).not.toMatch(/--nim-accent|--nim-surface|text-nim-fg|<svg/);
+    expect(source).not.toMatch(/var\(--nim-[^)]+\)|--nim-accent|--nim-surface|text-nim-fg|<svg/);
   });
 });

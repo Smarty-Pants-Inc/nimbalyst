@@ -89,6 +89,25 @@ export interface AgentModeProps {
   onOpenSessionInChat?: (sessionId: string) => void;
 }
 
+const agentModeRootClass = [
+  'agent-mode agent-elements-agent-mode flex h-full w-full flex-row overflow-hidden',
+  'bg-[var(--an-background)] text-[var(--an-foreground)]',
+].join(' ');
+
+const agentModeEmptyClass = [
+  'agent-mode-empty agent-elements-agent-mode-empty flex h-full flex-col items-center justify-center',
+  'gap-[var(--an-spacing-md)] bg-[var(--an-background)] text-center text-[var(--an-foreground-muted)]',
+].join(' ');
+
+const agentModeNewSessionButtonClass = [
+  'agent-mode-new-button agent-elements-agent-mode-new-session inline-flex cursor-pointer items-center justify-center',
+  'rounded-[var(--an-radius-sm)] border border-[var(--an-border-color)] bg-[var(--an-background-secondary)]',
+  'px-[var(--an-spacing-lg)] py-[var(--an-spacing-sm)] text-sm font-medium text-[var(--an-foreground)]',
+  'transition-[background-color,border-color,color] duration-150 ease-out',
+  'hover:border-[var(--an-border-color-strong)] hover:bg-[var(--an-background-tertiary)]',
+  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--an-focus-ring)]',
+].join(' ');
+
 /**
  * AgentMode is the top-level container for the agent workspace.
  *
@@ -1029,11 +1048,16 @@ export const AgentMode = forwardRef<AgentModeRef, AgentModeProps>(function Agent
       />
     )
   ) : (
-    <div className="agent-mode-empty flex flex-col items-center justify-center h-full gap-4 text-nim-muted">
-      <p className="m-0 text-sm">Select a session or create a new one to get started</p>
+    <div
+      className={agentModeEmptyClass}
+      data-testid="agent-elements-agent-mode-empty"
+      data-agent-elements-shell="agent-mode-empty"
+    >
+      <p className="m-0 text-sm leading-5">Select a session or create a new one to get started</p>
       <button
+        type="button"
         onClick={() => createNewSession()}
-        className="agent-mode-new-button py-2 px-4 rounded-md border border-nim-border bg-nim-bg-secondary text-nim cursor-pointer text-sm transition-colors hover:bg-nim-bg-active"
+        className={agentModeNewSessionButtonClass}
       >
         New Session
       </button>
@@ -1083,7 +1107,16 @@ export const AgentMode = forwardRef<AgentModeRef, AgentModeProps>(function Agent
   );
 
   return (
-    <div className="agent-mode flex flex-row h-full w-full overflow-hidden">
+    <div
+      className={agentModeRootClass}
+      data-testid="agent-elements-agent-mode"
+      data-component="AgentMode"
+      data-source="packages/electron/src/renderer/components/AgentMode/AgentMode.tsx"
+      data-agent-elements-shell="agent-mode"
+      data-workspace-path={workspacePath}
+      data-active={isActive}
+      data-view-mode={viewMode}
+    >
       <ResizablePanel
         leftPanel={leftContent}
         rightPanel={viewMode === 'kanban' ? kanbanContent : rightContent}

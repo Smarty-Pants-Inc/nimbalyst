@@ -233,5 +233,6 @@ describe('ProjectTrustToast Agent Elements shell', () => {
     expect(source).not.toContain('rounded-md');
     expect(source).not.toContain('shadow-[0_16px_48px');
     expect(source).not.toContain('hover:brightness');
+    expect(source).not.toMatch(/var\(--nim-|--nim-primary-hover|--nim-warning|--nim-text/);
   });
 });

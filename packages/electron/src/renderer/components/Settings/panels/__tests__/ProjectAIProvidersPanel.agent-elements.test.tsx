@@ -4,6 +4,8 @@ import '@testing-library/jest-dom/vitest';
 import React from 'react';
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { readFileSync } from 'node:fs';
+import path from 'node:path';
 
 const mockElectronAPI = vi.hoisted(() => ({
   aiGetSettings: vi.fn(),
@@ -25,6 +27,9 @@ vi.mock('@nimbalyst/runtime', async () => {
 });
 
 import { ProjectAIProvidersPanel } from '../ProjectAIProvidersPanel';
+
+const projectAIProvidersSourcePath = path.join(__dirname, '../ProjectAIProvidersPanel.tsx');
+const providerChromeSourcePath = path.join(__dirname, '../../../GlobalSettings/panels/providerPanelChrome.ts');
 
 describe('ProjectAIProvidersPanel Agent Elements shell', () => {
   beforeEach(() => {
@@ -154,5 +159,26 @@ describe('ProjectAIProvidersPanel Agent Elements shell', () => {
       '/workspace/app',
       { enabled: false }
     );
+  });
+
+  it('keeps project provider override chrome on Agent Elements settings aliases', () => {
+    const source = readFileSync(projectAIProvidersSourcePath, 'utf8');
+    const providerChromeSource = readFileSync(providerChromeSourcePath, 'utf8');
+
+    expect(source).toContain("import { createProviderPanelChrome } from '../../GlobalSettings/panels/providerPanelChrome';");
+    expect(source).toContain("import { ToggleSwitch } from '../../GlobalSettings/SettingsToggle';");
+    expect(source).toContain('const chrome = createProviderPanelChrome({');
+    expect(source).toContain('chrome.header');
+    expect(source).toContain('chrome.configCard');
+    expect(source).toContain('chrome.input');
+    expect(source).toContain('cardInsetClass');
+    expect(source).toContain('px-[var(--agent-elements-card-inline-padding)]');
+    expect(source).toContain('py-[var(--agent-elements-card-block-padding)]');
+    expect(source).toContain('<ToggleSwitch');
+    expect(providerChromeSource).toContain('--agent-elements-card-inline-padding');
+    expect(source).not.toMatch(/bg-nim|text-nim|border-nim/);
+    expect(source).not.toMatch(/bg-\[var\(--nim|text-\[var\(--nim|border-\[var\(--nim|--nim-/);
+    expect(source).not.toMatch(/#[0-9a-fA-F]{3,8}\b|rgba\(/);
+    expect(source).not.toMatch(/bg-white|text-white|rounded-lg|transition-all/);
   });
 });

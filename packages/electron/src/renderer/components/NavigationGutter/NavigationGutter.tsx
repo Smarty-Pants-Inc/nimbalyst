@@ -74,6 +74,95 @@ interface NavButton {
   badge?: number;
 }
 
+const NAVIGATION_GUTTER_CLASS = [
+  'navigation-gutter',
+  'agent-elements-navigation-gutter',
+  'flex',
+  'h-screen',
+  'w-12',
+  'shrink-0',
+  'flex-col',
+  'items-center',
+  'border-r',
+  'border-[var(--an-border-color)]',
+  'bg-[var(--an-background-secondary)]',
+  'py-2',
+  'text-[var(--an-foreground)]',
+].join(' ');
+
+const NAV_SECTION_CLASS = 'nav-section flex w-full flex-col items-center gap-1 px-1.5 py-1';
+const NAV_DIVIDER_SECTION_CLASS = `${NAV_SECTION_CLASS} mt-1 border-t border-[var(--an-border-color)] pt-2`;
+
+const NAV_BUTTON_BASE_CLASS = [
+  'nav-button',
+  'agent-elements-navigation-gutter-button',
+  'relative',
+  'flex',
+  'h-9',
+  'w-9',
+  'cursor-pointer',
+  'items-center',
+  'justify-center',
+  'rounded-[var(--an-tool-border-radius)]',
+  'border',
+  'border-transparent',
+  'bg-transparent',
+  'p-0',
+  'text-[var(--an-foreground-muted)]',
+  'transition-[background-color,border-color,color,box-shadow]',
+  'duration-150',
+  'ease-out',
+  'hover:border-[var(--an-border-color)]',
+  'hover:bg-[var(--an-background-tertiary)]',
+  'hover:text-[var(--an-foreground)]',
+  'focus-visible:outline-none',
+  'focus-visible:ring-2',
+  'focus-visible:ring-[var(--an-input-focus-outline)]',
+].join(' ');
+
+const NAV_BUTTON_ACTIVE_CLASS = [
+  'active',
+  'border-[color-mix(in_srgb,var(--an-primary-color)_24%,var(--an-border-color))]',
+  'bg-[var(--an-primary-color)]',
+  'text-[var(--an-send-button-color)]',
+  'hover:bg-[color-mix(in_srgb,var(--an-primary-color)_88%,var(--an-foreground))]',
+  'hover:text-[var(--an-send-button-color)]',
+].join(' ');
+
+const NAV_BUTTON_WARNING_CLASS = [
+  'text-[var(--an-warning-color)]',
+  'hover:border-[color-mix(in_srgb,var(--an-warning-color)_28%,var(--an-border-color))]',
+  'hover:bg-[color-mix(in_srgb,var(--an-warning-color)_10%,var(--an-background))]',
+  'hover:text-[var(--an-warning-color)]',
+].join(' ');
+
+const NAV_BADGE_CLASS = [
+  'nav-badge',
+  'agent-elements-navigation-gutter-badge',
+  'pointer-events-none',
+  'absolute',
+  'right-0.5',
+  'top-0.5',
+  'flex',
+  'h-4',
+  'min-w-4',
+  'items-center',
+  'justify-center',
+  'rounded-[999px]',
+  'bg-[var(--an-error-color)]',
+  'px-1',
+  'text-[10px]',
+  'font-semibold',
+  'leading-none',
+  'text-[var(--an-send-button-color)]',
+].join(' ');
+
+const getNavigationButtonClass = (isActive: boolean, intent: 'default' | 'warning' = 'default') => [
+  NAV_BUTTON_BASE_CLASS,
+  isActive ? NAV_BUTTON_ACTIVE_CLASS : '',
+  !isActive && intent === 'warning' ? NAV_BUTTON_WARNING_CLASS : '',
+].filter(Boolean).join(' ');
+
 export const NavigationGutter: React.FC<NavigationGutterProps> = ({
   contentMode,
   onContentModeChange,
@@ -247,23 +336,29 @@ export const NavigationGutter: React.FC<NavigationGutterProps> = ({
   };
 
   return (
-    <div className="navigation-gutter w-12 h-screen bg-nim-secondary border-r border-nim flex flex-col items-center py-2 shrink-0" onContextMenu={(e) => {
-      // Only open background context menu if right-clicking empty space (not a button)
-      if ((e.target as HTMLElement).closest('button, [data-panel-id]')) return;
-      openContextMenu(e);
-    }}>
+    <div
+      className={NAVIGATION_GUTTER_CLASS}
+      data-component="NavigationGutter"
+      data-agent-elements-shell="navigation-gutter"
+      onContextMenu={(e) => {
+        // Only open background context menu if right-clicking empty space (not a button)
+        if ((e.target as HTMLElement).closest('button, [data-panel-id]')) return;
+        openContextMenu(e);
+      }}
+    >
       {/* Content Mode Switcher - Top Group (Files) */}
-      <div className="nav-section nav-content-modes flex flex-col items-center gap-1 w-full px-1.5 py-1">
+      <div className={`nav-content-modes ${NAV_SECTION_CLASS}`}>
         {contentModeButtonsTop.map((button) => {
           const testId = `${button.id}-mode-button`;
+          const isActive = contentMode === button.contentMode && !activeExtensionPanel;
           return (
             <HelpTooltip key={button.id} testId={testId} placement="right">
               <button
-                className={`nav-button relative w-9 h-9 flex items-center justify-center border-none rounded-md cursor-pointer transition-all duration-150 p-0 active:scale-95 focus-visible:outline-2 focus-visible:outline-[var(--nim-primary)] focus-visible:outline-offset-2 ${contentMode === button.contentMode && !activeExtensionPanel ? 'active bg-nim-primary text-white hover:bg-nim-primary-hover' : 'bg-transparent text-nim-muted hover:bg-nim-tertiary hover:text-nim'}`}
+                className={getNavigationButtonClass(isActive)}
                 onClick={() => {
                   // Clear any active fullscreen extension panel when switching to a content mode
                   onExtensionPanelChange?.(null);
-                  if (contentMode === button.contentMode && !activeExtensionPanel) {
+                  if (isActive) {
                     // Already on this mode - toggle collapse
                     if (button.contentMode === 'files') {
                       onToggleFilesCollapsed?.();
@@ -277,6 +372,7 @@ export const NavigationGutter: React.FC<NavigationGutterProps> = ({
                 aria-pressed={contentMode === button.contentMode && !activeExtensionPanel}
                 data-mode={button.contentMode || button.id}
                 data-testid={testId}
+                data-agent-elements-shell="navigation-gutter-button"
               >
                 <MaterialSymbol
                   icon={button.icon}
@@ -284,7 +380,7 @@ export const NavigationGutter: React.FC<NavigationGutterProps> = ({
                   fill={contentMode === button.contentMode && !activeExtensionPanel}
                 />
                 {button.badge !== undefined && button.badge > 0 && (
-                  <span className="nav-badge absolute top-0.5 right-0.5 min-w-4 h-4 px-1 bg-nim-error text-white rounded-full text-[10px] font-semibold flex items-center justify-center leading-none pointer-events-none">{button.badge}</span>
+                  <span className={NAV_BADGE_CLASS} data-agent-elements-shell="navigation-gutter-badge">{button.badge}</span>
                 )}
               </button>
             </HelpTooltip>
@@ -293,17 +389,18 @@ export const NavigationGutter: React.FC<NavigationGutterProps> = ({
       </div>
 
       {/* Content Mode Switcher - Agent Group (Agent) */}
-      <div className="nav-section nav-content-modes flex flex-col items-center gap-1 w-full px-1.5 py-1">
+      <div className={`nav-content-modes ${NAV_SECTION_CLASS}`}>
         {contentModeButtonsAgent.map((button) => {
           const testId = `${button.id}-mode-button`;
+          const isActive = contentMode === button.contentMode && !activeExtensionPanel;
           return (
             <HelpTooltip key={button.id} testId={testId} placement="right">
               <button
-                className={`nav-button relative w-9 h-9 flex items-center justify-center border-none rounded-md cursor-pointer transition-all duration-150 p-0 active:scale-95 focus-visible:outline-2 focus-visible:outline-[var(--nim-primary)] focus-visible:outline-offset-2 ${contentMode === button.contentMode && !activeExtensionPanel ? 'active bg-nim-primary text-white hover:bg-nim-primary-hover' : 'bg-transparent text-nim-muted hover:bg-nim-tertiary hover:text-nim'}`}
+                className={getNavigationButtonClass(isActive)}
                 onClick={() => {
                   // Clear any active fullscreen extension panel when switching to a content mode
                   onExtensionPanelChange?.(null);
-                  if (contentMode === button.contentMode && !activeExtensionPanel) {
+                  if (isActive) {
                     // Already on this mode - toggle collapse
                     if (button.contentMode === 'agent') {
                       onToggleAgentCollapsed?.();
@@ -313,9 +410,11 @@ export const NavigationGutter: React.FC<NavigationGutterProps> = ({
                     handleButtonClick(button);
                   }
                 }}
+                aria-label={button.label}
                 aria-pressed={contentMode === button.contentMode && !activeExtensionPanel}
                 data-mode={button.contentMode || button.id}
                 data-testid={testId}
+                data-agent-elements-shell="navigation-gutter-button"
               >
                 <MaterialSymbol
                   icon={button.icon}
@@ -323,7 +422,7 @@ export const NavigationGutter: React.FC<NavigationGutterProps> = ({
                   fill={contentMode === button.contentMode && !activeExtensionPanel}
                 />
                 {button.badge !== undefined && button.badge > 0 && (
-                  <span className="nav-badge absolute top-0.5 right-0.5 min-w-4 h-4 px-1 bg-nim-error text-white rounded-full text-[10px] font-semibold flex items-center justify-center leading-none pointer-events-none">{button.badge}</span>
+                  <span className={NAV_BADGE_CLASS} data-agent-elements-shell="navigation-gutter-badge">{button.badge}</span>
                 )}
               </button>
             </HelpTooltip>
@@ -332,21 +431,24 @@ export const NavigationGutter: React.FC<NavigationGutterProps> = ({
       </div>
 
       {/* Content Mode Switcher - Tracker Group */}
-      <div className="nav-section nav-content-modes flex flex-col items-center gap-1 w-full px-1.5 py-1">
+      <div className={`nav-content-modes ${NAV_SECTION_CLASS}`}>
         {contentModeButtonsTracker.map((button) => {
           const testId = `${button.id}-button`;
+          const isActive = contentMode === button.contentMode && !activeExtensionPanel;
           return (
             <HelpTooltip key={button.id} testId={testId} placement="right">
               <button
-                className={`nav-button relative w-9 h-9 flex items-center justify-center border-none rounded-md cursor-pointer transition-all duration-150 p-0 active:scale-95 focus-visible:outline-2 focus-visible:outline-[var(--nim-primary)] focus-visible:outline-offset-2 ${contentMode === button.contentMode && !activeExtensionPanel ? 'active bg-nim-primary text-white hover:bg-nim-primary-hover' : 'bg-transparent text-nim-muted hover:bg-nim-tertiary hover:text-nim'}`}
+                className={getNavigationButtonClass(isActive)}
                 onClick={() => {
                   // Clear any active fullscreen extension panel when switching to a content mode
                   onExtensionPanelChange?.(null);
                   handleButtonClick(button);
                 }}
+                aria-label={button.label}
                 aria-pressed={contentMode === button.contentMode && !activeExtensionPanel}
                 data-mode={button.contentMode || button.id}
                 data-testid={testId}
+                data-agent-elements-shell="navigation-gutter-button"
               >
                 <MaterialSymbol
                   icon={button.icon}
@@ -361,21 +463,24 @@ export const NavigationGutter: React.FC<NavigationGutterProps> = ({
 
       {/* Content Mode Switcher - Collab Group (Shared Docs) - only shown when workspace has a team */}
       {hasTeam && (
-        <div className="nav-section nav-content-modes flex flex-col items-center gap-1 w-full px-1.5 py-1">
+        <div className={`nav-content-modes ${NAV_SECTION_CLASS}`}>
           {contentModeButtonsCollab.map((button) => {
             const testId = `${button.id}-button`;
+            const isActive = contentMode === button.contentMode && !activeExtensionPanel;
             return (
               <HelpTooltip key={button.id} testId={testId} placement="right">
                 <button
-                  className={`nav-button relative w-9 h-9 flex items-center justify-center border-none rounded-md cursor-pointer transition-all duration-150 p-0 active:scale-95 focus-visible:outline-2 focus-visible:outline-[var(--nim-primary)] focus-visible:outline-offset-2 ${contentMode === button.contentMode && !activeExtensionPanel ? 'active bg-nim-primary text-white hover:bg-nim-primary-hover' : 'bg-transparent text-nim-muted hover:bg-nim-tertiary hover:text-nim'}`}
+                  className={getNavigationButtonClass(isActive)}
                   onClick={() => {
                     // Clear any active fullscreen extension panel when switching to a content mode
                     onExtensionPanelChange?.(null);
                     handleButtonClick(button);
                   }}
+                  aria-label={button.label}
                   aria-pressed={contentMode === button.contentMode && !activeExtensionPanel}
                   data-mode={button.contentMode || button.id}
                   data-testid={testId}
+                  data-agent-elements-shell="navigation-gutter-button"
                 >
                   <MaterialSymbol
                     icon={button.icon}
@@ -395,53 +500,58 @@ export const NavigationGutter: React.FC<NavigationGutterProps> = ({
 
       {/* Fullscreen Extension Panels - appear below Agent as additional modes */}
       {extensionPanelButtons.filter(p => p.placement === 'fullscreen').length > 0 && (
-        <div className="nav-section nav-extension-modes flex flex-col items-center gap-1 w-full px-1.5 py-1 pt-2 mt-1 border-t border-nim">
+        <div className={`nav-extension-modes ${NAV_DIVIDER_SECTION_CLASS}`}>
           {extensionPanelButtons
             .filter(panel => panel.placement === 'fullscreen')
-            .map((panel) => (
-              <button
-                key={panel.id}
-                className={`nav-button relative w-9 h-9 flex items-center justify-center border-none rounded-md cursor-pointer transition-all duration-150 p-0 active:scale-95 focus-visible:outline-2 focus-visible:outline-[var(--nim-primary)] focus-visible:outline-offset-2 ${activeExtensionPanel === panel.id ? 'active bg-nim-primary text-white hover:bg-nim-primary-hover' : 'bg-transparent text-nim-muted hover:bg-nim-tertiary hover:text-nim'}`}
-                onClick={() => {
-                  const newPanelId = activeExtensionPanel === panel.id ? null : panel.id;
-                  onExtensionPanelChange?.(newPanelId);
-                  posthog?.capture('extension_panel_toggled', {
-                    panelId: panel.id,
-                    placement: panel.placement,
-                    action: newPanelId ? 'activated' : 'deactivated',
-                  });
-                }}
-                title={panel.label}
-                aria-label={panel.label}
-                aria-pressed={activeExtensionPanel === panel.id}
-                data-panel-id={panel.id}
-              >
-                <MaterialSymbol
-                  icon={panel.icon}
-                  size={20}
-                  fill={activeExtensionPanel === panel.id}
-                />
-                {panel.isAlpha && (
-                  <AlphaBadge size="dot" className="absolute top-0 right-0.5 pointer-events-none" />
-                )}
-              </button>
-            ))}
+            .map((panel) => {
+              const isActive = activeExtensionPanel === panel.id;
+              return (
+                <button
+                  key={panel.id}
+                  className={getNavigationButtonClass(isActive)}
+                  onClick={() => {
+                    const newPanelId = activeExtensionPanel === panel.id ? null : panel.id;
+                    onExtensionPanelChange?.(newPanelId);
+                    posthog?.capture('extension_panel_toggled', {
+                      panelId: panel.id,
+                      placement: panel.placement,
+                      action: newPanelId ? 'activated' : 'deactivated',
+                    });
+                  }}
+                  title={panel.label}
+                  aria-label={panel.label}
+                  aria-pressed={activeExtensionPanel === panel.id}
+                  data-panel-id={panel.id}
+                  data-agent-elements-shell="navigation-gutter-button"
+                >
+                  <MaterialSymbol
+                    icon={panel.icon}
+                    size={20}
+                    fill={activeExtensionPanel === panel.id}
+                  />
+                  {panel.isAlpha && (
+                    <AlphaBadge size="dot" className="absolute top-0 right-0.5 pointer-events-none" />
+                  )}
+                </button>
+              );
+            })}
         </div>
       )}
 
       {/* Quick Access */}
-      <div className="nav-section nav-quick-access flex flex-col items-center gap-1 w-full px-1.5 py-1 flex-1 pt-2">
+      <div className={`nav-quick-access ${NAV_SECTION_CLASS} flex-1 pt-2`}>
         {quickAccessButtons.map((button) => (
           <button
             key={button.id}
-            className="nav-button relative w-9 h-9 flex items-center justify-center bg-transparent border-none rounded-md text-nim-muted cursor-pointer transition-all duration-150 p-0 hover:bg-nim-tertiary hover:text-nim active:scale-95 focus-visible:outline-2 focus-visible:outline-[var(--nim-primary)] focus-visible:outline-offset-2"
+            className={getNavigationButtonClass(false)}
             onClick={() => handleButtonClick(button)}
             title={button.label}
             aria-label={button.label}
+            data-agent-elements-shell="navigation-gutter-button"
           >
             <MaterialSymbol icon={button.icon} size={20} />
             {button.badge !== undefined && button.badge > 0 && (
-              <span className="nav-badge absolute top-0.5 right-0.5 min-w-4 h-4 px-1 bg-nim-error text-white rounded-full text-[10px] font-semibold flex items-center justify-center leading-none pointer-events-none">{button.badge}</span>
+              <span className={NAV_BADGE_CLASS} data-agent-elements-shell="navigation-gutter-badge">{button.badge}</span>
             )}
           </button>
         ))}
@@ -449,63 +559,69 @@ export const NavigationGutter: React.FC<NavigationGutterProps> = ({
 
       {/* Extension Panels - Sidebar panels only (fullscreen panels are in top modes section) */}
       {extensionPanelButtons.filter(p => p.placement === 'sidebar').length > 0 && (
-        <div className="nav-section nav-extension-panels flex flex-col items-center gap-1 w-full px-1.5 py-1">
+        <div className={`nav-extension-panels ${NAV_SECTION_CLASS}`}>
           {extensionPanelButtons
             .filter(panel => panel.placement === 'sidebar')
-            .map((panel) => (
-              <button
-                key={panel.id}
-                className={`nav-button relative w-9 h-9 flex items-center justify-center border-none rounded-md cursor-pointer transition-all duration-150 p-0 active:scale-95 focus-visible:outline-2 focus-visible:outline-[var(--nim-primary)] focus-visible:outline-offset-2 ${activeExtensionPanel === panel.id ? 'active bg-nim-primary text-white hover:bg-nim-primary-hover' : 'bg-transparent text-nim-muted hover:bg-nim-tertiary hover:text-nim'}`}
-                onClick={() => {
-                  // Toggle panel: if clicking active panel, deactivate it
-                  const newPanelId = activeExtensionPanel === panel.id ? null : panel.id;
-                  onExtensionPanelChange?.(newPanelId);
-                  // Sidebar panels work alongside files mode
-                  if (newPanelId && contentMode !== 'files') {
-                    onContentModeChange('files');
-                  }
-                  posthog?.capture('extension_panel_toggled', {
-                    panelId: panel.id,
-                    placement: panel.placement,
-                    action: newPanelId ? 'activated' : 'deactivated',
-                  });
-                }}
-                title={panel.label}
-                aria-label={panel.label}
-                data-panel-id={panel.id}
-              >
-                <MaterialSymbol
-                  icon={panel.icon}
-                  size={20}
-                  fill={activeExtensionPanel === panel.id}
-                />
-                {panel.isAlpha && (
-                  <AlphaBadge size="dot" className="absolute top-0 right-0.5 pointer-events-none" />
-                )}
-              </button>
-            ))}
+            .map((panel) => {
+              const isActive = activeExtensionPanel === panel.id;
+              return (
+                <button
+                  key={panel.id}
+                  className={getNavigationButtonClass(isActive)}
+                  onClick={() => {
+                    // Toggle panel: if clicking active panel, deactivate it
+                    const newPanelId = activeExtensionPanel === panel.id ? null : panel.id;
+                    onExtensionPanelChange?.(newPanelId);
+                    // Sidebar panels work alongside files mode
+                    if (newPanelId && contentMode !== 'files') {
+                      onContentModeChange('files');
+                    }
+                    posthog?.capture('extension_panel_toggled', {
+                      panelId: panel.id,
+                      placement: panel.placement,
+                      action: newPanelId ? 'activated' : 'deactivated',
+                    });
+                  }}
+                  title={panel.label}
+                  aria-label={panel.label}
+                  aria-pressed={isActive}
+                  data-panel-id={panel.id}
+                  data-agent-elements-shell="navigation-gutter-button"
+                >
+                  <MaterialSymbol
+                    icon={panel.icon}
+                    size={20}
+                    fill={activeExtensionPanel === panel.id}
+                  />
+                  {panel.isAlpha && (
+                    <AlphaBadge size="dot" className="absolute top-0 right-0.5 pointer-events-none" />
+                  )}
+                </button>
+              );
+            })}
         </div>
       )}
 
       {/* Voice Mode - persistent button with integrated context ring */}
       {!isHidden('voice-mode') && (
-        <div className="nav-section nav-voice-mode flex flex-col items-center gap-1 w-full px-1.5 py-1" onContextMenu={(e) => openContextMenu(e, 'voice-mode')}>
+        <div className={`nav-voice-mode ${NAV_SECTION_CLASS}`} onContextMenu={(e) => openContextMenu(e, 'voice-mode')}>
           <VoiceModeButton workspacePath={workspacePath} />
         </div>
       )}
 
       {/* Bottom Panel Toggles - Above Settings */}
-      <div className="nav-section nav-bottom-panels flex flex-col items-center gap-1 w-full px-1.5 py-1">
+      <div className={`nav-bottom-panels ${NAV_SECTION_CLASS}`}>
         {bottomPanelButtons.map((button) => {
-          const isActive = button.id === 'terminal' && terminalPanelVisible;
+          const isActive = button.id === 'terminal' && Boolean(terminalPanelVisible);
           const testId = `${button.id}-panel-button`;
           return (
             <HelpTooltip key={button.id} testId={testId} placement="right">
               <button
-                className={`nav-button relative w-9 h-9 flex items-center justify-center border-none rounded-md cursor-pointer transition-all duration-150 p-0 active:scale-95 focus-visible:outline-2 focus-visible:outline-[var(--nim-primary)] focus-visible:outline-offset-2 ${isActive ? 'active bg-nim-primary text-white hover:bg-nim-primary-hover' : 'bg-transparent text-nim-muted hover:bg-nim-tertiary hover:text-nim'}`}
+                className={getNavigationButtonClass(isActive)}
                 onClick={() => handleButtonClick(button)}
                 aria-label={button.label}
                 data-testid={testId}
+                data-agent-elements-shell="navigation-gutter-button"
               >
                 <MaterialSymbol icon={button.icon} size={20} fill={isActive} />
               </button>
@@ -518,7 +634,7 @@ export const NavigationGutter: React.FC<NavigationGutterProps> = ({
           return (
             <HelpTooltip key={panel.id} testId={testId} placement="right">
               <button
-                className={`nav-button relative w-9 h-9 flex items-center justify-center border-none rounded-md cursor-pointer transition-all duration-150 p-0 active:scale-95 focus-visible:outline-2 focus-visible:outline-[var(--nim-primary)] focus-visible:outline-offset-2 ${isActive ? 'active bg-nim-primary text-white hover:bg-nim-primary-hover' : 'bg-transparent text-nim-muted hover:bg-nim-tertiary hover:text-nim'}`}
+                className={getNavigationButtonClass(isActive)}
                 onClick={() => {
                   const newPanelId = isActive ? null : panel.id;
                   onExtensionBottomPanelChange?.(newPanelId);
@@ -533,6 +649,7 @@ export const NavigationGutter: React.FC<NavigationGutterProps> = ({
                 aria-pressed={isActive}
                 data-testid={testId}
                 data-panel-id={panel.id}
+                data-agent-elements-shell="navigation-gutter-button"
               >
                 <MaterialSymbol icon={panel.icon} size={20} fill={isActive} />
                 {panel.isAlpha && (
@@ -547,7 +664,7 @@ export const NavigationGutter: React.FC<NavigationGutterProps> = ({
 
 
       {/* Settings (bottom) */}
-      <div className="nav-section nav-settings flex flex-col items-center gap-1 w-full px-1.5 py-1 mt-auto pt-2 border-t border-nim">
+      <div className={`nav-settings ${NAV_SECTION_CLASS} mt-auto border-t border-[var(--an-border-color)] pt-2`}>
 
         {/* Claude Usage Indicator - Shows API usage limits */}
         {!isHidden('claude-usage') && (
@@ -603,7 +720,7 @@ export const NavigationGutter: React.FC<NavigationGutterProps> = ({
 
         {/* Theme Toggle - Above Settings */}
         {!isHidden('theme-toggle') && (
-          <div className="nav-section nav-theme flex flex-col items-center gap-1 w-full px-1.5 py-1" onContextMenu={(e) => openContextMenu(e, 'theme-toggle')}>
+          <div className={`nav-theme ${NAV_SECTION_CLASS}`} onContextMenu={(e) => openContextMenu(e, 'theme-toggle')}>
             <ThemeToggleButton />
           </div>
         )}
@@ -611,7 +728,7 @@ export const NavigationGutter: React.FC<NavigationGutterProps> = ({
         {!isHidden('feedback') && (
           <HelpTooltip testId="gutter-feedback-button" placement="right">
             <button
-              className="nimbalyst-feedback-button nav-button relative w-9 h-9 flex items-center justify-center bg-transparent border-none rounded-md text-nim-muted cursor-pointer transition-all duration-150 p-0 hover:bg-nim-tertiary hover:text-nim active:scale-95 focus-visible:outline-2 focus-visible:outline-[var(--nim-primary)] focus-visible:outline-offset-2"
+              className={`nimbalyst-feedback-button ${getNavigationButtonClass(false)}`}
               onClick={() => {
                 // console.log('[NavigationGutter] Feedback button clicked');
                 onOpenFeedback?.();
@@ -619,6 +736,7 @@ export const NavigationGutter: React.FC<NavigationGutterProps> = ({
               onContextMenu={(e) => openContextMenu(e, 'feedback')}
               aria-label={feedbackButton.label}
               data-testid="gutter-feedback-button"
+              data-agent-elements-shell="navigation-gutter-button"
             >
               <MaterialSymbol
                 icon={feedbackButton.icon}
@@ -640,13 +758,14 @@ export const NavigationGutter: React.FC<NavigationGutterProps> = ({
           <HelpTooltip testId="gutter-user-button" placement="right">
             <button
               ref={userMenuButtonRef}
-              className={`nav-button relative w-9 h-9 flex items-center justify-center border-none rounded-md cursor-pointer transition-all duration-150 p-0 active:scale-95 focus-visible:outline-2 focus-visible:outline-[var(--nim-primary)] focus-visible:outline-offset-2 ${userMenuOpen ? 'bg-nim-tertiary text-nim' : needsSignIn ? 'bg-transparent text-nim-warning hover:bg-nim-tertiary' : 'bg-transparent text-nim-muted hover:bg-nim-tertiary hover:text-nim'}`}
+              className={getNavigationButtonClass(userMenuOpen, needsSignIn ? 'warning' : 'default')}
               onClick={() => setUserMenuOpen(!userMenuOpen)}
               aria-label={needsSignIn ? 'User menu (signed out -- sync requires sign in)' : 'User menu'}
               aria-expanded={userMenuOpen}
               data-signed-in={isSignedIn === null ? undefined : isSignedIn}
               data-needs-sign-in={needsSignIn || undefined}
               data-testid="gutter-user-button"
+              data-agent-elements-shell="navigation-gutter-button"
             >
               <MaterialSymbol
                 icon={needsSignIn ? 'no_accounts' : 'person'}

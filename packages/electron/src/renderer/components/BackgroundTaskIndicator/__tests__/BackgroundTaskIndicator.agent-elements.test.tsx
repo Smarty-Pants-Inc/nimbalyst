@@ -198,6 +198,8 @@ describe('BackgroundTaskIndicator Agent Elements shell', () => {
       'agent-elements-tool-card'
     );
     expect(popover).toHaveAttribute('data-agent-elements-shell', 'background-tasks-popover');
+    expect(popover).toHaveAttribute('data-agent-elements-card-padding', 'sectioned-symmetric');
+    expect(popover).toHaveAttribute('data-agent-elements-card-width', 'floating-popover');
 
     const aiRow = screen.getByTestId('agent-elements-background-task-row-ai-session-session-1');
     expect(aiRow).toHaveAttribute('data-agent-elements-shell', 'background-task-row');
@@ -217,11 +219,18 @@ describe('BackgroundTaskIndicator Agent Elements shell', () => {
 
     expect(source).toContain('agent-elements-background-task-button');
     expect(source).toContain('data-agent-elements-shell="background-tasks-popover"');
+    expect(source).toContain('data-agent-elements-card-width="floating-popover"');
+    expect(source).toContain('data-agent-elements-card-padding="sectioned-symmetric"');
     expect(source).toContain('agent-elements-background-task-row');
     expect(source).toContain('agent-elements-status-pill');
     expect(source).toContain('FloatingPortal');
+    expect(source).toContain('--an-error-color');
+    expect(source).toContain('--an-info-color');
+    expect(source).toContain('--an-success-color');
+    expect(source).toContain('--an-foreground');
 
     expect(source).not.toMatch(/rgba\(|#[0-9a-fA-F]{3,8}\b|text-white|rounded-md|rounded-lg/);
     expect(source).not.toMatch(/active:scale|tracking-\[|uppercase|shadow-lg/);
+    expect(source).not.toMatch(/var\(--nim-|--nim-primary-hover|--nim-text|--nim-error|--nim-info|--nim-success/);
   });
 });

@@ -6,6 +6,24 @@ import {
   setNotificationSettingsAtom,
   type CompletionSoundType,
 } from '../../../store/atoms/appSettings';
+import { createProviderPanelChrome } from './providerPanelChrome';
+
+const chrome = createProviderPanelChrome({
+  headerClassName: 'provider-panel-header notifications-panel-header',
+  sectionClassName: 'provider-panel-section notifications-panel-section',
+  configCardClassName: 'notifications-sound-options',
+  inputClassName: 'notifications-input',
+  loadingClassName: 'notifications-loading',
+  modelRowClassName: 'notifications-row',
+  testButtonClassName: 'notifications-action-button',
+  testErrorClassName: 'notifications-error',
+  emptyClassName: 'notifications-empty',
+});
+
+const notificationHelpPaddingClass =
+  '[--agent-elements-card-block-padding:var(--an-spacing-sm)] [--agent-elements-card-inline-padding:var(--an-spacing-md)]';
+const notificationBodyTextClass =
+  'text-sm leading-relaxed text-[var(--an-foreground-muted)]';
 
 /**
  * NotificationsPanel - Self-contained settings panel for notifications.
@@ -64,24 +82,24 @@ export function NotificationsPanel() {
       data-testid="agent-elements-notifications-panel"
     >
       <div
-        className="provider-panel-header notifications-panel-header agent-elements-settings-panel-header mb-6 pb-4 border-b border-[var(--nim-border)]"
+        className={chrome.header}
         data-agent-elements-shell="notifications-header"
         data-testid="agent-elements-notifications-header"
       >
-        <h3 className="provider-panel-title text-xl font-semibold leading-tight mb-2 text-[var(--nim-text)]">Notifications</h3>
-        <p className="provider-panel-description text-sm leading-relaxed text-[var(--nim-text-muted)]">
+        <h3 className={chrome.title}>Notifications</h3>
+        <p className={chrome.description}>
           Configure audio and visual notifications for AI interactions.
         </p>
       </div>
 
       <div
-        className="provider-panel-section notifications-panel-section agent-elements-settings-section py-4 mb-4 border-b border-[var(--nim-border)] last:border-b-0 last:mb-0 last:pb-0"
+        className={chrome.section}
         data-agent-elements-shell="notifications-section"
         data-section="completion-sounds"
         data-testid="agent-elements-notifications-sounds-section"
       >
-        <h4 className="provider-panel-section-title text-base font-semibold mb-3 text-[var(--nim-text)]">Completion Sounds</h4>
-        <p className="text-sm leading-relaxed text-[var(--nim-text-muted)] mb-4">
+        <h4 className={chrome.sectionTitle}>Completion Sounds</h4>
+        <p className={`${notificationBodyTextClass} mb-[var(--an-spacing-lg)]`}>
           Play a sound when the AI or agent completes a turn and is ready for more input.
         </p>
 
@@ -94,26 +112,26 @@ export function NotificationsPanel() {
 
         {completionSoundEnabled && (
           <div
-            className="setting-item notifications-sound-options agent-elements-tool-card py-3 mt-4 rounded-lg border border-[var(--nim-border)] bg-[var(--nim-bg-secondary)] p-3"
+            className={`setting-item ${chrome.configCard}`}
             data-agent-elements-shell="notifications-sound-options"
             data-testid="agent-elements-notifications-sound-options"
           >
-            <div className="setting-text flex flex-col gap-0.5">
-              <span className="setting-name text-sm font-medium text-[var(--nim-text)]">Sound Type</span>
-              <span className="setting-description text-xs leading-relaxed text-[var(--nim-text-muted)]">
+            <div className="setting-text flex flex-col gap-[var(--an-spacing-xxs)]">
+              <span className="setting-name text-sm font-medium text-[var(--an-foreground)]">Sound Type</span>
+              <span className="setting-description text-xs leading-relaxed text-[var(--an-foreground-muted)]">
                 Choose the sound to play when a response completes.
               </span>
             </div>
-            <div className="mt-3 flex flex-col gap-2">
+            <div className="mt-[var(--an-spacing-lg)] flex flex-col gap-[var(--an-spacing-sm)]">
               {(['chime', 'bell', 'pop'] as CompletionSoundType[]).map((sound) => (
-                <label key={sound} className="setting-radio-label flex items-center gap-2 cursor-pointer text-sm text-[var(--nim-text)]">
+                <label key={sound} className="setting-radio-label flex cursor-pointer items-center gap-[var(--an-spacing-sm)] text-sm text-[var(--an-foreground)]">
                   <input
                     type="radio"
                     name="sound-type"
                     value={sound}
                     checked={completionSoundType === sound}
                     onChange={(e) => updateSettings({ completionSoundType: e.target.value as CompletionSoundType })}
-                    className="setting-radio w-4 h-4 cursor-pointer shrink-0 accent-[var(--nim-primary)]"
+                    className="setting-radio h-4 w-4 shrink-0 cursor-pointer accent-[var(--an-primary-color)]"
                   />
                   <span className="capitalize">{sound}</span>
                 </label>
@@ -122,7 +140,7 @@ export function NotificationsPanel() {
             <button
               onClick={handleTestSound}
               disabled={isTestPlaying}
-              className="nim-btn-secondary text-sm mt-3"
+              className={`${chrome.secondaryButton} mt-[var(--an-spacing-lg)]`}
             >
               {isTestPlaying ? 'Playing...' : 'Test Sound'}
             </button>
@@ -131,13 +149,13 @@ export function NotificationsPanel() {
       </div>
 
       <div
-        className="provider-panel-section notifications-panel-section agent-elements-settings-section py-4 mb-4 border-b border-[var(--nim-border)] last:border-b-0 last:mb-0 last:pb-0"
+        className={chrome.section}
         data-agent-elements-shell="notifications-section"
         data-section="os-notifications"
         data-testid="agent-elements-notifications-os-section"
       >
-        <h4 className="provider-panel-section-title text-base font-semibold mb-3 text-[var(--nim-text)]">OS Notifications</h4>
-        <p className="text-sm leading-relaxed text-[var(--nim-text-muted)] mb-4">
+        <h4 className={chrome.sectionTitle}>OS Notifications</h4>
+        <p className={`${notificationBodyTextClass} mb-[var(--an-spacing-lg)]`}>
           Show system notifications when AI responses complete while the app is in the background.
         </p>
 
@@ -164,27 +182,27 @@ export function NotificationsPanel() {
               description="Show notifications even when the app is focused, unless viewing that session."
             />
 
-            <div className="setting-item py-3">
-              <div className="setting-text flex flex-col gap-2">
-                <span className="setting-description text-xs leading-relaxed text-[var(--nim-text-muted)]">
+            <div className="setting-item py-[var(--an-spacing-lg)]">
+              <div className="setting-text flex flex-col gap-[var(--an-spacing-sm)]">
+                <span className="setting-description text-xs leading-relaxed text-[var(--an-foreground-muted)]">
                   Electron does not expose a reliable cross-platform notification permission state here.
                   Use a test notification to trigger the OS prompt or verify delivery.
                 </span>
                 <div
-                  className="notifications-actions flex flex-wrap gap-2"
+                  className="notifications-actions flex flex-wrap gap-[var(--an-spacing-sm)]"
                   data-agent-elements-shell="notifications-actions"
                   data-testid="agent-elements-notifications-actions"
                 >
-                  <button onClick={handleTestNotification} className="nim-btn-secondary text-sm">
+                  <button onClick={handleTestNotification} className={chrome.secondaryButton}>
                     Send Test Notification
                   </button>
-                  <button onClick={handleOpenNotificationSettings} className="nim-btn-secondary text-sm">
+                  <button onClick={handleOpenNotificationSettings} className={chrome.secondaryButton}>
                     Open System Notification Settings
                   </button>
                 </div>
                 {notificationHelp && (
                   <span
-                    className="notifications-help agent-elements-tool-card text-xs leading-relaxed text-[var(--nim-text-muted)] rounded-md border border-[var(--nim-border)] bg-[var(--nim-bg-secondary)] px-3 py-2"
+                    className={`notifications-help agent-elements-tool-card text-xs leading-relaxed text-[var(--an-foreground-muted)] ${notificationHelpPaddingClass}`}
                     data-agent-elements-shell="notifications-help"
                     data-testid="agent-elements-notifications-help"
                   >
@@ -198,13 +216,13 @@ export function NotificationsPanel() {
       </div>
 
       <div
-        className="provider-panel-section notifications-panel-section agent-elements-settings-section py-4 mb-4 border-b border-[var(--nim-border)] last:border-b-0 last:mb-0 last:pb-0"
+        className={chrome.section}
         data-agent-elements-shell="notifications-section"
         data-section="session-blocked"
         data-testid="agent-elements-notifications-session-section"
       >
-        <h4 className="provider-panel-section-title text-base font-semibold mb-3 text-[var(--nim-text)]">Session Blocked Notifications</h4>
-        <p className="text-sm leading-relaxed text-[var(--nim-text-muted)] mb-4">
+        <h4 className={chrome.sectionTitle}>Session Blocked Notifications</h4>
+        <p className={`${notificationBodyTextClass} mb-[var(--an-spacing-lg)]`}>
           Show system notifications when an AI session needs your input.
         </p>
 

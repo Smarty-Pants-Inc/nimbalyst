@@ -1,20 +1,30 @@
 import React from 'react';
-import { stripCommonContext } from '../utils/stripCommonContext';
 
-// Diff line styles - use color-mix for subtle backgrounds
-const diffLineStyles = {
-  removed: {
-    backgroundColor: 'color-mix(in srgb, var(--nim-error) 12%, transparent)',
-  },
-  removedHover: {
-    backgroundColor: 'color-mix(in srgb, var(--nim-error) 18%, transparent)',
-  },
-  added: {
-    backgroundColor: 'color-mix(in srgb, var(--nim-success) 12%, transparent)',
-  },
-  addedHover: {
-    backgroundColor: 'color-mix(in srgb, var(--nim-success) 18%, transparent)',
-  },
+const DIFF_VIEWER_ROOT_CLASS =
+  'diff-viewer agent-elements-diff-viewer flex max-w-full flex-col overflow-hidden rounded-[var(--an-tool-border-radius)] border border-[var(--an-tool-border-color)] bg-[var(--an-tool-background)] font-mono text-xs leading-normal text-[var(--an-tool-color)]';
+const DIFF_VIEWER_HEADER_CLASS =
+  'diff-file-header agent-elements-diff-viewer-header flex shrink-0 items-center border-b border-[var(--an-tool-border-color)] bg-[var(--an-background-tertiary)] px-[var(--an-spacing-md)] py-[var(--an-spacing-sm)] text-[0.7rem] font-medium text-[var(--an-tool-color-muted)]';
+const DIFF_VIEWER_PATH_BUTTON_CLASS =
+  'diff-file-header-link agent-elements-diff-viewer-path min-w-0 cursor-pointer overflow-hidden text-ellipsis whitespace-nowrap border-0 bg-transparent p-0 text-left font-mono text-[var(--an-primary-color)] no-underline hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--an-input-focus-outline)]';
+const DIFF_VIEWER_CONTENT_CLASS =
+  'diff-content agent-elements-diff-viewer-content min-h-0 flex-1 overflow-auto bg-[var(--an-code-background)] py-[var(--an-spacing-xs)] text-[var(--an-code-color)]';
+const DIFF_VIEWER_CONTENT_INNER_CLASS =
+  'diff-content-inner agent-elements-diff-viewer-content-inner inline-block min-w-full';
+const DIFF_LINE_BASE_CLASS =
+  'diff-line agent-elements-diff-viewer-line flex min-h-6 items-start whitespace-pre px-[var(--an-spacing-sm)] py-0.5 leading-normal motion-safe:transition-colors motion-safe:duration-150';
+const DIFF_LINE_MARKER_CLASS =
+  'diff-line-marker agent-elements-diff-viewer-line-marker inline-block w-6 shrink-0 select-none text-center font-semibold';
+const DIFF_LINE_CONTENT_CLASS =
+  'diff-line-content agent-elements-diff-viewer-line-content whitespace-pre pl-[var(--an-spacing-xs)] leading-normal';
+
+const getDiffLineToneClass = (type: 'added' | 'removed' | 'info') => {
+  if (type === 'removed') {
+    return 'removed bg-[var(--an-diff-removed-bg)] text-[var(--an-diff-removed-text)] hover:bg-[color-mix(in_srgb,var(--an-diff-removed-text)_16%,var(--an-code-background))]';
+  }
+  if (type === 'added') {
+    return 'added bg-[var(--an-diff-added-bg)] text-[var(--an-diff-added-text)] hover:bg-[color-mix(in_srgb,var(--an-diff-added-text)_16%,var(--an-code-background))]';
+  }
+  return 'info bg-[var(--an-background-secondary)] text-[var(--an-foreground-muted)] hover:bg-[var(--an-background-tertiary)]';
 };
 
 interface DiffViewerProps {
@@ -47,85 +57,104 @@ export const DiffViewer: React.FC<DiffViewerProps> = ({ edit, filePath: contextF
 
     if (isClickable) {
       return (
-        <div className="diff-file-header px-3 py-2 bg-[var(--nim-bg-tertiary)] text-[var(--nim-text-muted)] font-medium border-b border-[var(--nim-border)] text-[0.7rem] shrink-0">
+        <div
+          className={DIFF_VIEWER_HEADER_CLASS}
+          data-testid="agent-elements-diff-viewer-header"
+          data-agent-elements-shell="diff-viewer-header"
+        >
           <button
-            className="diff-file-header-link bg-transparent border-none p-0 m-0 font-inherit text-[var(--nim-link)] cursor-pointer no-underline text-left hover:underline"
+            className={DIFF_VIEWER_PATH_BUTTON_CLASS}
             onClick={handleClick}
+            aria-label={`Open ${displayPath}`}
             title={`Open ${pathToOpen}`}
+            type="button"
           >
             {displayPath}
           </button>
         </div>
       );
     }
-    return <div className="diff-file-header px-3 py-2 bg-[var(--nim-bg-tertiary)] text-[var(--nim-text-muted)] font-medium border-b border-[var(--nim-border)] text-[0.7rem] shrink-0">{displayPath}</div>;
+    return (
+      <div
+        className={DIFF_VIEWER_HEADER_CLASS}
+        data-testid="agent-elements-diff-viewer-header"
+        data-agent-elements-shell="diff-viewer-header"
+      >
+        <span className="agent-elements-diff-viewer-path min-w-0 overflow-hidden text-ellipsis whitespace-nowrap font-mono">
+          {displayPath}
+        </span>
+      </div>
+    );
   };
 
   // Render a diff line with appropriate styling
   const renderDiffLine = (type: 'added' | 'removed' | 'info', marker: string, content: string, key: string) => {
-    const [isHovered, setIsHovered] = React.useState(false);
-
-    let bgStyle: React.CSSProperties = {};
-    let markerColor = '';
-
-    if (type === 'removed') {
-      bgStyle = isHovered ? diffLineStyles.removedHover : diffLineStyles.removed;
-      markerColor = 'text-[var(--nim-error)]';
-    } else if (type === 'added') {
-      bgStyle = isHovered ? diffLineStyles.addedHover : diffLineStyles.added;
-      markerColor = 'text-[var(--nim-success)]';
-    } else {
-      bgStyle = isHovered ? { backgroundColor: 'var(--nim-bg-hover)' } : { backgroundColor: 'var(--nim-bg-secondary)' };
-      markerColor = 'text-[var(--nim-text-faint)]';
-    }
+    const lineKind = type === 'removed' ? 'removed' : type === 'added' ? 'added' : 'info';
 
     return (
       <div
         key={key}
-        className={`diff-line ${type} flex items-start px-3 py-0.5 min-h-6 whitespace-pre leading-normal text-[var(--nim-text)]`}
-        style={bgStyle}
-        onMouseEnter={() => setIsHovered(true)}
-        onMouseLeave={() => setIsHovered(false)}
+        className={`${DIFF_LINE_BASE_CLASS} ${getDiffLineToneClass(type)}`}
+        data-testid={`agent-elements-diff-viewer-line-${key}`}
+        data-agent-elements-shell="diff-viewer-line"
+        data-line-kind={lineKind}
       >
-        <span className={`diff-line-marker inline-block w-6 shrink-0 font-semibold select-none text-center ${markerColor}`}>{marker}</span>
-        <span className="diff-line-content pl-2 leading-normal whitespace-pre">{content || ' '}</span>
+        <span className={DIFF_LINE_MARKER_CLASS}>{marker}</span>
+        <span className={DIFF_LINE_CONTENT_CLASS}>{content || ' '}</span>
       </div>
     );
   };
+
+  const renderDiffFrame = (
+    displayPath: string,
+    children: React.ReactNode,
+    style?: React.CSSProperties
+  ) => (
+    <div
+      className={DIFF_VIEWER_ROOT_CLASS}
+      style={{ maxHeight, ...style }}
+      data-testid="agent-elements-diff-viewer"
+      data-component="DiffViewer"
+      data-agent-elements-shell="diff-viewer"
+    >
+      {renderFileHeader(displayPath)}
+      <div className={DIFF_VIEWER_CONTENT_CLASS}>
+        <div className={DIFF_VIEWER_CONTENT_INNER_CLASS}>
+          {children}
+        </div>
+      </div>
+    </div>
+  );
 
   // Handle single edit with old_string/new_string (Claude Code Edit tool format)
   if (!replacements.length && (edit.old_string || edit.new_string)) {
     const oldTextRaw = edit.old_string || edit.oldText || '';
     const newTextRaw = edit.new_string || edit.newText || '';
 
-    // TODO: Re-evaluate context stripping - for now show full context from LLM
-    // Strip common prefix and suffix to show only what changed
-    // const { oldText, newText } = stripCommonContext(oldTextRaw, newTextRaw);
+    // Keep the full context provided by the tool result so hunk boundaries stay visible.
     const oldText = oldTextRaw;
     const newText = newTextRaw;
 
     const oldLines = oldText.split('\n');
     const newLines = newText.split('\n');
 
-    return (
-      <div className="diff-viewer font-mono text-xs leading-normal bg-[var(--nim-bg-secondary)] rounded-md border border-[var(--nim-border)] flex flex-col" style={{ maxHeight }}>
-        {renderFileHeader(filePath)}
-        <div className="diff-content overflow-auto py-1 flex-1 min-h-0"><div className="diff-content-inner inline-block min-w-full">
-          {/* Show removed lines */}
-          {oldLines.length > 0 && oldLines.some((line: string) => line.trim()) && (
-            <>
-              {oldLines.map((line: string, i: number) => renderDiffLine('removed', '-', line, `old-${i}`))}
-            </>
-          )}
+    return renderDiffFrame(
+      filePath,
+      <>
+        {/* Show removed lines */}
+        {oldLines.length > 0 && oldLines.some((line: string) => line.trim()) && (
+          <>
+            {oldLines.map((line: string, i: number) => renderDiffLine('removed', '-', line, `old-${i}`))}
+          </>
+        )}
 
-          {/* Show added lines */}
-          {newLines.length > 0 && newLines.some((line: string) => line.trim()) && (
-            <>
-              {newLines.map((line: string, i: number) => renderDiffLine('added', '+', line, `new-${i}`))}
-            </>
-          )}
-        </div></div>
-      </div>
+        {/* Show added lines */}
+        {newLines.length > 0 && newLines.some((line: string) => line.trim()) && (
+          <>
+            {newLines.map((line: string, i: number) => renderDiffLine('added', '+', line, `new-${i}`))}
+          </>
+        )}
+      </>
     );
   }
 
@@ -137,9 +166,7 @@ export const DiffViewer: React.FC<DiffViewerProps> = ({ edit, filePath: contextF
           const oldTextRaw = replacement.oldText || replacement.old_text || '';
           const newTextRaw = replacement.newText || replacement.new_text || '';
 
-          // TODO: Re-evaluate context stripping - for now show full context from LLM
-          // Strip common prefix and suffix to show only what changed
-          // const { oldText, newText } = stripCommonContext(oldTextRaw, newTextRaw);
+          // Keep the full context provided by the tool result so hunk boundaries stay visible.
           const oldText = oldTextRaw;
           const newText = newTextRaw;
 
@@ -147,24 +174,27 @@ export const DiffViewer: React.FC<DiffViewerProps> = ({ edit, filePath: contextF
           const newLines = newText.split('\n');
 
           return (
-            <div key={idx} className="diff-viewer font-mono text-xs leading-normal bg-[var(--nim-bg-secondary)] rounded-md border border-[var(--nim-border)] flex flex-col" style={{ maxHeight, marginBottom: idx < replacements.length - 1 ? '0.5rem' : '0' }}>
-              {renderFileHeader(`${filePath}${replacements.length > 1 ? ` (${idx + 1}/${replacements.length})` : ''}`)}
-              <div className="diff-content overflow-auto py-1 flex-1 min-h-0"><div className="diff-content-inner inline-block min-w-full">
-                {/* Show removed lines */}
-                {oldLines.length > 0 && oldLines.some((line: string) => line.trim()) && (
-                  <>
-                    {oldLines.map((line: string, i: number) => renderDiffLine('removed', '-', line, `old-${i}`))}
-                  </>
-                )}
+            <React.Fragment key={idx}>
+              {renderDiffFrame(
+                `${filePath}${replacements.length > 1 ? ` (${idx + 1}/${replacements.length})` : ''}`,
+                <>
+                  {/* Show removed lines */}
+                  {oldLines.length > 0 && oldLines.some((line: string) => line.trim()) && (
+                    <>
+                      {oldLines.map((line: string, i: number) => renderDiffLine('removed', '-', line, `old-${i}`))}
+                    </>
+                  )}
 
-                {/* Show added lines */}
-                {newLines.length > 0 && newLines.some((line: string) => line.trim()) && (
-                  <>
-                    {newLines.map((line: string, i: number) => renderDiffLine('added', '+', line, `new-${i}`))}
-                  </>
-                )}
-              </div></div>
-            </div>
+                  {/* Show added lines */}
+                  {newLines.length > 0 && newLines.some((line: string) => line.trim()) && (
+                    <>
+                      {newLines.map((line: string, i: number) => renderDiffLine('added', '+', line, `new-${i}`))}
+                    </>
+                  )}
+                </>,
+                { marginBottom: idx < replacements.length - 1 ? '0.5rem' : '0' }
+              )}
+            </React.Fragment>
           );
         })}
       </>
@@ -174,24 +204,20 @@ export const DiffViewer: React.FC<DiffViewerProps> = ({ edit, filePath: contextF
   // If we only have content (insertion), show it as added lines
   if (edit.content) {
     const lines = edit.content.split('\n');
-    return (
-      <div className="diff-viewer font-mono text-xs leading-normal bg-[var(--nim-bg-secondary)] rounded-md border border-[var(--nim-border)] flex flex-col" style={{ maxHeight }}>
-        {renderFileHeader(filePath)}
-        <div className="diff-content overflow-auto py-1 flex-1 min-h-0"><div className="diff-content-inner inline-block min-w-full">
-          {lines.map((line: string, i: number) => renderDiffLine('added', '+', line, `add-${i}`))}
-        </div></div>
-      </div>
+    return renderDiffFrame(
+      filePath,
+      <>
+        {lines.map((line: string, i: number) => renderDiffLine('added', '+', line, `add-${i}`))}
+      </>
     );
   }
 
   // Fallback: show edit details in a simple format
-  return (
-    <div className="diff-viewer font-mono text-xs leading-normal bg-[var(--nim-bg-secondary)] rounded-md border border-[var(--nim-border)] flex flex-col" style={{ maxHeight }}>
-      {renderFileHeader(filePath)}
-      <div className="diff-content overflow-auto py-1 flex-1 min-h-0"><div className="diff-content-inner inline-block min-w-full">
-        {edit.operation && renderDiffLine('info', '\u2022', `Operation: ${edit.operation}`, 'operation')}
-        {edit.instruction && renderDiffLine('info', '\u2022', edit.instruction, 'instruction')}
-      </div></div>
-    </div>
+  return renderDiffFrame(
+    filePath,
+    <>
+      {edit.operation && renderDiffLine('info', '\u2022', `Operation: ${edit.operation}`, 'operation')}
+      {edit.instruction && renderDiffLine('info', '\u2022', edit.instruction, 'instruction')}
+    </>
   );
 };

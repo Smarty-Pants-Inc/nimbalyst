@@ -25,7 +25,7 @@ function WorkspaceIcon({
 
 const workspaceButtonBase =
   'inline-flex h-8 items-center justify-center gap-2 rounded-[var(--an-input-border-radius)] border px-3 text-sm font-medium transition-colors duration-150 disabled:cursor-not-allowed disabled:opacity-50';
-const workspacePrimaryButtonClass = `${workspaceButtonBase} border-[var(--an-primary-color)] bg-[var(--an-primary-color)] text-[var(--an-background)] hover:bg-[color-mix(in_srgb,var(--an-primary-color)_86%,var(--an-background))]`;
+const workspacePrimaryButtonClass = `${workspaceButtonBase} border-[var(--an-primary-color)] bg-[var(--an-primary-color)] text-[var(--an-button-primary-text)] hover:bg-[color-mix(in_srgb,var(--an-primary-color)_88%,var(--an-foreground))]`;
 const workspaceSecondaryButtonClass = `${workspaceButtonBase} border-[var(--an-border-color)] bg-[var(--an-background)] text-[var(--an-foreground-muted)] hover:bg-[var(--an-background-secondary)] hover:text-[var(--an-foreground)]`;
 const workspaceDangerButtonClass = `${workspaceButtonBase} border-[color-mix(in_srgb,var(--an-diff-removed-text)_26%,var(--an-border-color))] bg-[var(--an-background)] text-[var(--an-diff-removed-text)] hover:bg-[var(--an-diff-removed-bg)]`;
 const workspaceMenuItemClass =
@@ -943,8 +943,8 @@ export const WorkspaceManager: React.FC = () => {
             <h2 className="m-0 mb-3 text-lg font-medium text-[var(--an-foreground)]">Rename Project</h2>
 
             {/* Warning banner */}
-            <div className="mb-4 flex gap-2 rounded-[var(--an-input-border-radius)] border border-[color-mix(in_srgb,var(--nim-warning)_32%,var(--an-border-color))] bg-[color-mix(in_srgb,var(--nim-warning)_10%,var(--an-background))] p-3">
-              <WorkspaceIcon icon="warning" size={18} className="mt-0.5 text-[var(--nim-warning)]" />
+            <div className="mb-4 flex gap-2 rounded-[var(--an-input-border-radius)] border border-[color-mix(in_srgb,var(--an-warning-color)_32%,var(--an-border-color))] bg-[color-mix(in_srgb,var(--an-warning-color)_10%,var(--an-background))] p-3">
+              <WorkspaceIcon icon="warning" size={18} className="mt-0.5 text-[var(--an-warning-color)]" />
               <div className="text-xs text-[var(--an-foreground-muted)]">
                 <p className="m-0 mb-1 font-medium text-[var(--an-foreground)]">This will rename the project folder on disk</p>
                 <p className="m-0">All AI session history, file history, and settings will be migrated. This may take a while for large projects.</p>
@@ -1004,8 +1004,8 @@ export const WorkspaceManager: React.FC = () => {
             <h2 className="m-0 mb-3 text-lg font-medium text-[var(--an-foreground)]">Move Project</h2>
 
             {/* Warning banner */}
-            <div className="mb-4 flex gap-2 rounded-[var(--an-input-border-radius)] border border-[color-mix(in_srgb,var(--nim-warning)_32%,var(--an-border-color))] bg-[color-mix(in_srgb,var(--nim-warning)_10%,var(--an-background))] p-3">
-              <WorkspaceIcon icon="warning" size={18} className="mt-0.5 text-[var(--nim-warning)]" />
+            <div className="mb-4 flex gap-2 rounded-[var(--an-input-border-radius)] border border-[color-mix(in_srgb,var(--an-warning-color)_32%,var(--an-border-color))] bg-[color-mix(in_srgb,var(--an-warning-color)_10%,var(--an-background))] p-3">
+              <WorkspaceIcon icon="warning" size={18} className="mt-0.5 text-[var(--an-warning-color)]" />
               <div className="text-xs text-[var(--an-foreground-muted)]">
                 <p className="m-0 mb-1 font-medium text-[var(--an-foreground)]">This will move the entire project folder</p>
                 <p className="m-0">All project files will be copied to the new location, and all AI session history, file history, and settings will be migrated. This may take a while for large projects.</p>

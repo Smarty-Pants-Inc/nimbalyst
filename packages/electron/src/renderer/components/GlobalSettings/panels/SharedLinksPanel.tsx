@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { MaterialSymbol, copyToClipboard } from '@nimbalyst/runtime';
 import { buildShareUrl } from '../../../store/atoms/sessionShares';
+import { createProviderPanelChrome } from './providerPanelChrome';
 
 interface SharedLink {
   shareId: string;
@@ -13,6 +14,42 @@ interface SharedLink {
 }
 
 type PanelState = 'loading' | 'loaded' | 'unauthenticated' | 'error';
+
+const chrome = createProviderPanelChrome({
+  headerClassName: 'provider-panel-header shared-links-panel-header',
+  sectionClassName: 'provider-panel-section shared-links-section',
+  configCardClassName: 'shared-links-card',
+  inputClassName: 'shared-links-input',
+  loadingClassName: 'shared-links-loading-text',
+  modelRowClassName: 'shared-link-row',
+  testButtonClassName: 'shared-links-action-button',
+  testErrorClassName: 'shared-links-error-text',
+  emptyClassName: 'shared-links-empty-text',
+});
+
+const spaciousCardPaddingClass =
+  '[--agent-elements-card-block-padding:var(--an-spacing-xxl)] [--agent-elements-card-inline-padding:var(--an-spacing-xl)]';
+const compactCardPaddingClass =
+  '[--agent-elements-card-block-padding:var(--an-spacing-lg)] [--agent-elements-card-inline-padding:var(--an-spacing-lg)]';
+const loadingCardClass =
+  `shared-links-loading agent-elements-tool-card ${spaciousCardPaddingClass} flex min-h-32 items-center justify-center gap-[var(--an-spacing-sm)] text-sm text-[var(--an-foreground-muted)]`;
+const centeredStateCardClass =
+  `agent-elements-tool-card ${spaciousCardPaddingClass} flex min-h-32 flex-col items-center justify-center text-center`;
+const stateIconClass = 'mb-[var(--an-spacing-md)] text-[var(--an-foreground-subtle)]';
+const stateTextClass = 'mb-[var(--an-spacing-xs)] text-sm text-[var(--an-foreground-muted)]';
+const stateSubtextClass = 'text-xs text-[var(--an-foreground-subtle)]';
+const listClass = 'shared-links-list flex flex-col gap-[var(--an-spacing-sm)]';
+const rowClass =
+  `shared-link-row agent-elements-tool-card flex !flex-row items-start gap-[var(--an-spacing-lg)] ${compactCardPaddingClass}`;
+const shareTitleClass = 'truncate text-sm font-medium text-[var(--an-foreground)]';
+const shareBadgeClass =
+  'shrink-0 rounded-[var(--an-small-border-radius)] bg-[var(--an-background-tertiary)] px-[var(--an-spacing-xs)] py-[var(--an-spacing-xxs)] text-[10px] font-medium uppercase text-[var(--an-foreground-subtle)]';
+const shareMetaClass = 'shrink-0 text-xs text-[var(--an-foreground-subtle)]';
+const shareDetailClass = 'flex min-w-0 flex-wrap items-center gap-[var(--an-spacing-sm)] text-xs text-[var(--an-foreground-subtle)]';
+const iconButtonClass =
+  'inline-flex h-7 w-7 cursor-pointer items-center justify-center rounded-[var(--an-small-border-radius)] border-0 bg-transparent text-[var(--an-foreground-subtle)] transition-[background-color,color,opacity] duration-150 ease-out hover:bg-[var(--an-background-tertiary)] hover:text-[var(--an-foreground)] focus:outline-none focus:ring-2 focus:ring-[var(--an-focus-ring)] disabled:cursor-not-allowed disabled:opacity-50';
+const dangerIconButtonClass =
+  `${iconButtonClass} hover:text-[var(--an-error-color)]`;
 
 /**
  * Shared Links settings panel.
@@ -112,24 +149,24 @@ export const SharedLinksPanel: React.FC = () => {
 
   return (
     <div
-      className="provider-panel shared-links-panel agent-elements-settings-panel max-w-2xl"
+      className="provider-panel shared-links-panel agent-elements-settings-panel flex w-full flex-col"
       data-agent-elements-shell="shared-links-panel"
       data-component="SharedLinksPanel"
       data-testid="agent-elements-shared-links-panel"
     >
       <div
-        className="provider-panel-header shared-links-panel-header agent-elements-settings-panel-header flex items-center justify-between mb-4"
+        className={`${chrome.header} flex items-start justify-between gap-[var(--an-spacing-xl)]`}
         data-testid="agent-elements-shared-links-header"
       >
-        <div>
-          <h3 className="text-lg font-semibold text-[var(--nim-text)] m-0">Shared Links</h3>
-          <p className="text-[0.8125rem] text-[var(--nim-text-muted)] mt-1 mb-0">
+        <div className="min-w-0">
+          <h3 className={chrome.title}>Shared Links</h3>
+          <p className={chrome.description}>
             Manage links you've shared for files and sessions. Anyone with a link can view the content.
           </p>
         </div>
         {state === 'loaded' && shares.length > 0 && (
           <button
-            className="flex items-center gap-1.5 px-3 py-1.5 text-[0.8125rem] text-[var(--nim-text-muted)] bg-transparent border border-[var(--nim-border)] rounded-md cursor-pointer transition-colors duration-150 hover:bg-[var(--nim-bg-hover)] hover:text-[var(--nim-text)]"
+            className={`${chrome.secondaryButton} shrink-0 gap-[var(--an-spacing-xs)] px-[var(--an-spacing-md)] py-[var(--an-spacing-xs)] text-xs`}
             onClick={fetchShares}
             data-testid="agent-elements-shared-links-refresh"
           >
@@ -142,10 +179,10 @@ export const SharedLinksPanel: React.FC = () => {
       {/* Loading state */}
       {state === 'loading' && (
         <div
-          className="shared-links-loading agent-elements-tool-card flex items-center justify-center py-12 text-[var(--nim-text-muted)] rounded-lg border border-[var(--nim-border)] bg-[var(--nim-bg-secondary)]"
+          className={loadingCardClass}
           data-testid="agent-elements-shared-links-loading"
         >
-          <MaterialSymbol icon="progress_activity" size={20} className="animate-spin mr-2" />
+          <MaterialSymbol icon="progress_activity" size={20} className="animate-spin" />
           Loading shared links...
         </div>
       )}
@@ -153,14 +190,14 @@ export const SharedLinksPanel: React.FC = () => {
       {/* Unauthenticated state */}
       {state === 'unauthenticated' && (
         <div
-          className="shared-links-unauthenticated agent-elements-tool-card flex flex-col items-center justify-center py-12 text-center rounded-lg border border-[var(--nim-border)] bg-[var(--nim-bg-secondary)]"
+          className={`shared-links-unauthenticated ${centeredStateCardClass}`}
           data-testid="agent-elements-shared-links-unauthenticated"
         >
-          <MaterialSymbol icon="account_circle" size={32} className="text-[var(--nim-text-faint)] mb-3" />
-          <p className="text-[0.8125rem] text-[var(--nim-text-muted)] mb-2">
+          <MaterialSymbol icon="account_circle" size={32} className={stateIconClass} />
+          <p className={stateTextClass}>
             Sign in to share files and sessions.
           </p>
-          <p className="text-[0.75rem] text-[var(--nim-text-faint)]">
+          <p className={stateSubtextClass}>
             Go to Account & Sync to set up your account.
           </p>
         </div>
@@ -169,15 +206,15 @@ export const SharedLinksPanel: React.FC = () => {
       {/* Error state */}
       {state === 'error' && (
         <div
-          className="shared-links-error agent-elements-tool-card flex flex-col items-center justify-center py-12 text-center rounded-lg border border-[var(--nim-border)] bg-[var(--nim-bg-secondary)]"
+          className={`shared-links-error ${centeredStateCardClass}`}
           data-testid="agent-elements-shared-links-error"
         >
-          <MaterialSymbol icon="error" size={32} className="text-[var(--nim-error)] mb-3" />
-          <p className="text-[0.8125rem] text-[var(--nim-text-muted)] mb-2">
+          <MaterialSymbol icon="error" size={32} className="mb-[var(--an-spacing-md)] text-[var(--an-error-color)]" />
+          <p className={stateTextClass}>
             {errorMessage}
           </p>
           <button
-            className="flex items-center gap-1.5 px-3 py-1.5 text-[0.8125rem] text-[var(--nim-text)] bg-transparent border border-[var(--nim-border)] rounded-md cursor-pointer transition-colors duration-150 hover:bg-[var(--nim-bg-hover)]"
+            className={`${chrome.secondaryButton} gap-[var(--an-spacing-xs)] px-[var(--an-spacing-md)] py-[var(--an-spacing-xs)] text-xs`}
             onClick={fetchShares}
           >
             <MaterialSymbol icon="refresh" size={14} />
@@ -189,14 +226,14 @@ export const SharedLinksPanel: React.FC = () => {
       {/* Empty state */}
       {state === 'loaded' && shares.length === 0 && (
         <div
-          className="shared-links-empty agent-elements-tool-card flex flex-col items-center justify-center py-12 text-center rounded-lg border border-[var(--nim-border)] bg-[var(--nim-bg-secondary)]"
+          className={`shared-links-empty ${centeredStateCardClass}`}
           data-testid="agent-elements-shared-links-empty"
         >
-          <MaterialSymbol icon="link" size={32} className="text-[var(--nim-text-faint)] mb-3" />
-          <p className="text-[0.8125rem] text-[var(--nim-text-muted)] mb-1">
+          <MaterialSymbol icon="link" size={32} className={stateIconClass} />
+          <p className={stateTextClass}>
             No shared links yet.
           </p>
-          <p className="text-[0.75rem] text-[var(--nim-text-faint)]">
+          <p className={stateSubtextClass}>
             Right-click a file or session and select "Share link" to create one.
           </p>
         </div>
@@ -205,42 +242,42 @@ export const SharedLinksPanel: React.FC = () => {
       {/* Shares list */}
       {state === 'loaded' && shares.length > 0 && (
         <div
-          className="shared-links-list flex flex-col gap-0 border border-[var(--nim-border)] rounded-lg overflow-hidden"
+          className={listClass}
           data-section="shared-links-list"
           data-testid="agent-elements-shared-links-list"
         >
-          {shares.map((share, index) => (
+          {shares.map((share) => (
             <div
               key={share.shareId}
-              className={`shared-link-row agent-elements-tool-card flex !flex-row items-start gap-3 px-4 py-3 bg-[var(--nim-bg)] ${index < shares.length - 1 ? 'border-b border-[var(--nim-border)]' : ''}`}
+              className={rowClass}
               data-testid={`agent-elements-shared-link-row-${share.shareId}`}
             >
               <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 mb-1">
-                  <span className="text-[0.8125rem] font-medium text-[var(--nim-text)] truncate">
+                <div className="mb-[var(--an-spacing-xs)] flex min-w-0 flex-wrap items-center gap-[var(--an-spacing-sm)]">
+                  <span className={shareTitleClass}>
                     {share.title || 'Untitled'}
                   </span>
-                  <span className="shrink-0 px-1.5 py-0.5 rounded bg-[var(--nim-bg-hover)] text-[0.625rem] uppercase tracking-[0.04em] text-[var(--nim-text-faint)]">
+                  <span className={shareBadgeClass}>
                     {getShareKindLabel(share)}
                   </span>
-                  <span className="shrink-0 text-[0.6875rem] text-[var(--nim-text-faint)]">
+                  <span className={shareMetaClass}>
                     {share.viewCount} {share.viewCount === 1 ? 'view' : 'views'}
                   </span>
                 </div>
-                <div className="flex items-center gap-2 text-[0.6875rem] text-[var(--nim-text-faint)]">
+                <div className={shareDetailClass}>
                   <span className="truncate">sync-dev.smartypants.ai/share/{share.shareId.slice(0, 8)}...</span>
                   <span>{formatDate(share.createdAt)}</span>
                   <span>{formatSize(share.sizeBytes)}</span>
                   {formatExpiry(share.expiresAt) && (
-                    <span className={formatExpiry(share.expiresAt) === 'Expired' ? 'text-[var(--nim-error)]' : ''}>
+                    <span className={formatExpiry(share.expiresAt) === 'Expired' ? 'text-[var(--an-error-color)]' : ''}>
                       {formatExpiry(share.expiresAt)}
                     </span>
                   )}
                 </div>
               </div>
-              <div className="shrink-0 flex items-center gap-1">
+              <div className="flex shrink-0 items-center gap-[var(--an-spacing-xs)]">
                 <button
-                  className="flex items-center justify-center w-7 h-7 rounded-md bg-transparent border-none text-[var(--nim-text-faint)] cursor-pointer transition-colors duration-150 hover:text-[var(--nim-text)] hover:bg-[var(--nim-bg-hover)]"
+                  className={iconButtonClass}
                   title="Copy link"
                   onClick={() => handleCopyLink(share)}
                   data-testid={`agent-elements-shared-link-copy-${share.shareId}`}
@@ -248,7 +285,7 @@ export const SharedLinksPanel: React.FC = () => {
                   <MaterialSymbol icon={copiedId === share.shareId ? 'check' : 'content_copy'} size={14} />
                 </button>
                 <button
-                  className="flex items-center justify-center w-7 h-7 rounded-md bg-transparent border-none text-[var(--nim-text-faint)] cursor-pointer transition-colors duration-150 hover:text-[var(--nim-error)] hover:bg-[var(--nim-bg-hover)] disabled:opacity-50 disabled:cursor-default"
+                  className={dangerIconButtonClass}
                   title="Delete shared link"
                   onClick={() => handleDelete(share)}
                   disabled={deletingId === share.shareId}

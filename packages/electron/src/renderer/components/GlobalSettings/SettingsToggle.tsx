@@ -27,29 +27,43 @@ export function SettingsToggle({
   variant?: 'inline' | 'enable';
   testId?: string;
 }) {
+  const rowClassName = variant === 'enable'
+    ? 'provider-enable agent-elements-settings-toggle agent-elements-settings-toggle--enable flex items-center justify-between gap-[var(--an-spacing-lg)] border-b border-[var(--an-border-color)] py-[var(--an-spacing-lg)] mb-[var(--an-spacing-lg)]'
+    : 'settings-toggle agent-elements-settings-toggle agent-elements-settings-toggle--inline flex items-center justify-between gap-[var(--an-spacing-lg)] py-[var(--an-spacing-md)]';
+
   if (variant === 'enable') {
     return (
-      <div data-testid={testId} className="provider-enable flex items-center justify-between gap-4 py-4 mb-4 border-b border-[var(--nim-border)]">
-        <div>
-          <span className="provider-enable-label text-sm font-medium text-[var(--nim-text)]">{name}</span>
+      <div
+        className={rowClassName}
+        data-agent-elements-shell="settings-enable-toggle"
+        data-settings-toggle-variant="enable"
+        data-testid={testId}
+      >
+        <div className="settings-toggle-copy min-w-0 pr-[var(--an-spacing-lg)]">
+          <span className="provider-enable-label settings-toggle-label block truncate text-sm font-medium text-[var(--an-foreground)]">{name}</span>
           {description && (
-            <p className="text-xs text-[var(--nim-text-muted)] mt-1">{description}</p>
+            <p className="settings-toggle-description mt-[var(--an-spacing-xxs)] text-xs leading-snug text-[var(--an-foreground-muted)]">{description}</p>
           )}
         </div>
-        <ToggleSwitch checked={checked} onChange={onChange} disabled={disabled} />
+        <ToggleSwitch checked={checked} onChange={onChange} disabled={disabled} ariaLabel={name} />
       </div>
     );
   }
 
   return (
-    <div className="flex items-center justify-between gap-4 py-3">
-      <div>
-        <span className="text-sm font-medium text-[var(--nim-text)]">{name}</span>
+    <div
+      className={rowClassName}
+      data-agent-elements-shell="settings-inline-toggle"
+      data-settings-toggle-variant="inline"
+      data-testid={testId}
+    >
+      <div className="settings-toggle-copy min-w-0 pr-[var(--an-spacing-lg)]">
+        <span className="settings-toggle-label block truncate text-sm font-medium text-[var(--an-foreground)]">{name}</span>
         {description && (
-          <p className="text-xs text-[var(--nim-text-muted)] mt-0.5">{description}</p>
+          <p className="settings-toggle-description mt-[var(--an-spacing-xxs)] text-xs leading-snug text-[var(--an-foreground-muted)]">{description}</p>
         )}
       </div>
-      <ToggleSwitch checked={checked} onChange={onChange} disabled={disabled} />
+      <ToggleSwitch checked={checked} onChange={onChange} disabled={disabled} ariaLabel={name} />
     </div>
   );
 }
@@ -59,21 +73,31 @@ export function ToggleSwitch({
   checked,
   onChange,
   disabled,
+  ariaLabel,
 }: {
   checked: boolean;
   onChange: (checked: boolean) => void;
   disabled?: boolean;
+  ariaLabel?: string;
 }) {
   return (
-    <label className={`relative inline-block w-11 h-6 shrink-0 ${disabled ? 'opacity-50 pointer-events-none' : 'cursor-pointer'}`}>
+    <label
+      className={`toggle-switch agent-elements-toggle-switch relative inline-flex h-6 w-11 shrink-0 items-center ${disabled ? 'pointer-events-none opacity-60' : 'cursor-pointer'}`}
+      data-agent-elements-shell="toggle-switch"
+    >
       <input
         type="checkbox"
         checked={checked}
-        onChange={(e) => onChange(e.target.checked)}
+        onChange={(e) => {
+          if (disabled) return;
+          onChange(e.target.checked);
+        }}
         disabled={disabled}
-        className="hidden peer"
+        aria-label={ariaLabel}
+        className="peer sr-only"
       />
-      <span className="absolute cursor-pointer inset-0 rounded-full transition-all bg-[var(--nim-bg-tertiary)] before:absolute before:content-[''] before:h-5 before:w-5 before:left-0.5 before:bottom-0.5 before:rounded-full before:transition-all before:bg-white before:shadow-sm peer-checked:bg-[var(--nim-primary)] peer-checked:before:translate-x-5" />
+      <span className="agent-elements-toggle-track pointer-events-none absolute inset-0 rounded-[999px] border border-[var(--an-border-color)] bg-[var(--an-background-tertiary)] transition-[background-color,border-color,box-shadow] duration-150 ease-out peer-checked:border-[var(--an-primary-color)] peer-checked:bg-[var(--an-primary-color)] peer-focus-visible:ring-2 peer-focus-visible:ring-[var(--an-focus-ring)] peer-focus-visible:ring-offset-2 peer-focus-visible:ring-offset-[var(--an-background)]" />
+      <span className="agent-elements-toggle-thumb pointer-events-none relative ml-0.5 h-5 w-5 rounded-[999px] border border-[color-mix(in_srgb,var(--an-border-color)_62%,transparent)] bg-[var(--an-background)] transition-transform duration-150 ease-out peer-checked:translate-x-5" />
     </label>
   );
 }

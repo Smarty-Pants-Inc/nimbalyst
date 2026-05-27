@@ -467,7 +467,7 @@ export function renderCell(
   setEditingCell: (cell: { itemId: string; field: 'status' | 'priority' | 'title' } | null) => void,
   editingTitle: string,
   setEditingTitle: (title: string) => void,
-  titleInputRef: React.RefObject<HTMLInputElement>,
+  titleInputRef: React.RefObject<HTMLInputElement | null>,
   handleFieldUpdate: (item: TrackerRecord, field: string, value: string) => void,
 ): React.ReactNode {
   // Resolve field values via schema roles (generic for any schema)

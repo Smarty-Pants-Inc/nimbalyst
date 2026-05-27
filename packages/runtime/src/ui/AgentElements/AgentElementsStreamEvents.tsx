@@ -1,7 +1,13 @@
 import type { CSSProperties, HTMLAttributes, ReactNode } from 'react';
 import { useState } from 'react';
 import { MaterialSymbol } from '../icons/MaterialSymbol';
-import { AgentStatusPill, AgentToolCard, type AgentStatusTone, type AgentToolStatus } from './AgentElementsPrimitives';
+import {
+  AgentStatusPill,
+  AgentToolCard,
+  agentToolStatusToTone,
+  type AgentStatusTone,
+  type AgentToolStatus,
+} from './AgentElementsPrimitives';
 import './AgentElementsStreamEvents.css';
 
 type StreamEventDivProps = Omit<HTMLAttributes<HTMLDivElement>, 'content' | 'title'>;
@@ -12,14 +18,6 @@ interface DataTestIdAttribute {
 
 function classNames(...values: Array<string | false | null | undefined>): string {
   return values.filter(Boolean).join(' ');
-}
-
-function statusToTone(status: AgentToolStatus): AgentStatusTone {
-  if (status === 'running') return 'running';
-  if (status === 'completed') return 'success';
-  if (status === 'error') return 'error';
-  if (status === 'interrupted') return 'warning';
-  return 'neutral';
 }
 
 function formatStatus(status: AgentToolStatus): string {
@@ -33,6 +31,50 @@ export interface AgentProgressUpdate {
   detail?: ReactNode;
   timestamp?: ReactNode;
   tone?: AgentStatusTone;
+}
+
+export interface AgentProgressUpdateListProps extends StreamEventDivProps, DataTestIdAttribute {
+  updates: AgentProgressUpdate[];
+  emptyLabel?: ReactNode;
+  showEmpty?: boolean;
+}
+
+export function AgentProgressUpdateList({
+  updates,
+  emptyLabel = 'Waiting for the first update.',
+  showEmpty = true,
+  className,
+  'data-testid': dataTestId = 'agent-elements-progress-updates',
+  ...rest
+}: AgentProgressUpdateListProps) {
+  if (updates.length === 0 && !showEmpty) return null;
+
+  return (
+    <div
+      {...rest}
+      className={classNames('agent-elements-progress-updates', className)}
+      data-testid={dataTestId}
+    >
+      {updates.length > 0 ? updates.map((update, index) => (
+        <div
+          className="agent-elements-progress-update"
+          data-testid="agent-elements-progress-update"
+          data-tone={update.tone ?? 'neutral'}
+          key={update.id ?? index}
+          style={{ '--agent-elements-stream-index': index } as CSSProperties}
+        >
+          <span className="agent-elements-progress-update-dot" aria-hidden="true" />
+          <span className="agent-elements-progress-update-label">{update.label}</span>
+          {update.detail ? <small>{update.detail}</small> : null}
+          {update.timestamp ? <time>{update.timestamp}</time> : null}
+        </div>
+      )) : (
+        <div className="agent-elements-progress-empty" data-testid="agent-elements-progress-empty">
+          {emptyLabel}
+        </div>
+      )}
+    </div>
+  );
 }
 
 export interface AgentProgressCardProps extends StreamEventDivProps, DataTestIdAttribute {
@@ -68,28 +110,9 @@ export function AgentProgressCard({
       <div className="agent-elements-progress-shell" data-testid="agent-elements-progress-shell">
         <div className="agent-elements-stream-heading">
           <span>{label}</span>
-          <AgentStatusPill tone={statusToTone(status)}>{formatStatus(status)}</AgentStatusPill>
+          <AgentStatusPill tone={agentToolStatusToTone(status)}>{formatStatus(status)}</AgentStatusPill>
         </div>
-        <div className="agent-elements-progress-updates" data-testid="agent-elements-progress-updates">
-          {updates.length > 0 ? updates.map((update, index) => (
-            <div
-              className="agent-elements-progress-update"
-              data-testid="agent-elements-progress-update"
-              data-tone={update.tone ?? 'neutral'}
-              key={update.id ?? index}
-              style={{ '--agent-elements-stream-index': index } as CSSProperties}
-            >
-              <span className="agent-elements-progress-update-dot" aria-hidden="true" />
-              <span className="agent-elements-progress-update-label">{update.label}</span>
-              {update.detail ? <small>{update.detail}</small> : null}
-              {update.timestamp ? <time>{update.timestamp}</time> : null}
-            </div>
-          )) : (
-            <div className="agent-elements-progress-empty" data-testid="agent-elements-progress-empty">
-              Waiting for the first update.
-            </div>
-          )}
-        </div>
+        <AgentProgressUpdateList updates={updates} />
       </div>
     </AgentToolCard>
   );
@@ -138,7 +161,7 @@ export function AgentStateSnapshotCard({
       status={status}
       subtitle={namespace}
       title={title}
-      trailing={<AgentStatusPill tone={statusToTone(status)}>{hasChanges ? `${changedKeys.length} changed` : formatStatus(status)}</AgentStatusPill>}
+      trailing={<AgentStatusPill tone={agentToolStatusToTone(status)}>{hasChanges ? `${changedKeys.length} changed` : formatStatus(status)}</AgentStatusPill>}
     >
       <div className="agent-elements-state-shell" data-testid="agent-elements-state-shell">
         <button
@@ -236,7 +259,7 @@ export function AgentLifecycleCard({
       status={toolStatus}
       subtitle={detail}
       title={kind === 'checkpoint' ? 'Checkpoint' : kind === 'task' ? 'Task lifecycle' : 'Run lifecycle'}
-      trailing={<AgentStatusPill tone={statusToTone(toolStatus)}>{status}</AgentStatusPill>}
+      trailing={<AgentStatusPill tone={agentToolStatusToTone(toolStatus)}>{status}</AgentStatusPill>}
     >
       <div className="agent-elements-lifecycle-shell" data-testid="agent-elements-lifecycle-shell">
         <div className="agent-elements-stream-heading">
@@ -303,7 +326,7 @@ export function AgentTurnSummaryCard({
       icon={<MaterialSymbol icon="fact_check" size={14} />}
       status={status}
       title="Turn summary"
-      trailing={<AgentStatusPill tone={warnings.length > 0 ? 'warning' : statusToTone(status)}>{warnings.length > 0 ? `${warnings.length} warning${warnings.length === 1 ? '' : 's'}` : formatStatus(status)}</AgentStatusPill>}
+      trailing={<AgentStatusPill tone={warnings.length > 0 ? 'warning' : agentToolStatusToTone(status)}>{warnings.length > 0 ? `${warnings.length} warning${warnings.length === 1 ? '' : 's'}` : formatStatus(status)}</AgentStatusPill>}
     >
       <div className="agent-elements-turn-summary-shell" data-testid="agent-elements-turn-summary-shell">
         <dl className="agent-elements-turn-summary-metrics" data-testid="agent-elements-turn-summary-metrics">

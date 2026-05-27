@@ -237,6 +237,7 @@ export async function processDescriptor(
         cumulativeUsage: desc.cumulativeUsage,
         contextCompacted: desc.contextCompacted,
         subagentId: desc.subagentId,
+        createdAt: desc.createdAt,
       });
     }
 

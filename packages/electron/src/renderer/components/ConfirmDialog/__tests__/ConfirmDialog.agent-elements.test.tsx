@@ -3,8 +3,12 @@
 import '@testing-library/jest-dom/vitest';
 import React from 'react';
 import { fireEvent, render, screen } from '@testing-library/react';
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { describe, expect, it, vi } from 'vitest';
 import { ConfirmDialog } from '../ConfirmDialog';
+
+const sourcePath = resolve(__dirname, '../ConfirmDialog.tsx');
 
 describe('ConfirmDialog Agent Elements shell', () => {
   it('renders an Agent Elements confirmation shell while preserving callbacks and legacy selectors', () => {
@@ -32,6 +36,10 @@ describe('ConfirmDialog Agent Elements shell', () => {
     expect(dialog).toHaveClass('confirm-dialog', 'agent-elements-confirm-dialog', 'agent-elements-tool-card');
     expect(dialog).toHaveAttribute('data-component', 'ConfirmDialog');
     expect(dialog).toHaveAttribute('data-agent-elements-shell', 'confirm-dialog');
+    expect(dialog.className).toContain('!p-0');
+    expect(dialog.className).toContain('!gap-0');
+    expect(dialog.className).toContain('--agent-elements-card-inline-padding');
+    expect(dialog.className).toContain('--agent-elements-card-block-padding');
 
     expect(screen.getByTestId('agent-elements-confirm-dialog-header')).toHaveTextContent('Delete tracker');
     expect(screen.getByTestId('agent-elements-confirm-dialog-message')).toHaveTextContent(
@@ -81,5 +89,22 @@ describe('ConfirmDialog Agent Elements shell', () => {
     fireEvent.click(screen.getByTestId('agent-elements-confirm-dialog-backdrop'));
     expect(onCancel).toHaveBeenCalledTimes(1);
     expect(onConfirm).not.toHaveBeenCalled();
+  });
+
+  it('keeps ConfirmDialog visual chrome on Agent Elements aliases', () => {
+    const source = readFileSync(sourcePath, 'utf8');
+
+    expect(source).toContain('--an-error-color');
+    expect(source).toContain('--an-button-primary-text');
+    expect(source).toContain('--an-send-button-color');
+    expect(source).toContain('!p-0');
+    expect(source).toContain('!gap-0');
+    expect(source).toContain('--agent-elements-card-inline-padding');
+    expect(source).toContain('--agent-elements-card-block-padding');
+    expect(source).toContain('px-[var(--agent-elements-card-inline-padding)]');
+    expect(source).toContain('py-[var(--agent-elements-card-block-padding)]');
+    expect(source).not.toMatch(/var\(--nim-/);
+    expect(source).not.toMatch(/color-mix\(in_srgb,var\(--nim-/);
+    expect(source).not.toMatch(/agent-elements-confirm-dialog-header[^`'"]*\bp-\[var\(--an-spacing/);
   });
 });

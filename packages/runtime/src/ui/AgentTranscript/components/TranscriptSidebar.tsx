@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import type { PromptMarker } from '../types';
+import { MaterialSymbol } from '../../icons/MaterialSymbol';
 import { formatTimeAgo, formatDuration } from '../../../utils/dateUtils';
 
 interface TranscriptSidebarProps {
@@ -24,150 +25,88 @@ export const TranscriptSidebar: React.FC<TranscriptSidebarProps> = ({
     onNavigateToPrompt(marker);
   };
 
+  const promptRowClassName = (isSelected: boolean) => [
+    'agent-elements-prompt-history-row group block w-full box-border cursor-pointer border px-[var(--an-spacing-md)] py-[var(--an-spacing-md)] text-left font-inherit outline-none transition-colors duration-150 ease-out',
+    'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-[var(--an-focus-ring)]',
+    isSelected
+      ? 'border-[var(--an-border-color-strong)] bg-[var(--an-background-tertiary)] text-[var(--an-foreground)]'
+      : 'border-transparent border-t-[var(--an-tool-border-color)] bg-transparent text-[var(--an-foreground)] hover:border-[var(--an-tool-border-color)] hover:bg-[var(--an-background-tertiary)]',
+  ].join(' ');
+
   return (
-    <div className="transcript-sidebar" style={{
-      display: 'flex',
-      flex: 1,
-      height: '100%',
-      overflow: 'hidden'
-    }}>
+    <div
+      className="transcript-sidebar agent-elements-transcript-sidebar flex h-full flex-1 overflow-hidden"
+      data-testid="agent-elements-transcript-sidebar"
+      data-component="TranscriptSidebar"
+      data-agent-elements-shell="transcript-sidebar"
+      data-session-id={sessionId}
+      data-collapsed={isCollapsed ? 'true' : 'false'}
+    >
       {!isCollapsed && (
-        <div style={{
-          width: '100%',
-          backgroundColor: 'var(--nim-bg-secondary)',
-          borderLeft: '1px solid var(--nim-border)',
-          display: 'flex',
-          flexDirection: 'column',
-          height: '100%',
-          boxSizing: 'border-box'
-        }}>
-          <div style={{
-            padding: '0.75rem 1rem',
-          }}>
-            <h3 style={{
-              fontWeight: 600,
-              color: 'var(--nim-text)',
-              fontSize: '0.875rem',
-              margin: 0
-            }}>
+        <div
+          className="agent-elements-transcript-sidebar-panel box-border flex h-full w-full flex-col border-l border-[var(--an-tool-border-color)] bg-[var(--an-background-secondary)]"
+          data-testid="agent-elements-transcript-sidebar-panel"
+          data-agent-elements-shell="prompt-history-panel"
+        >
+          <div className="flex items-center gap-[var(--an-spacing-sm)] px-[var(--an-spacing-xl)] py-[var(--an-spacing-lg)] text-[var(--an-foreground)]">
+            <span
+              className="inline-flex h-[18px] w-[18px] shrink-0 items-center justify-center text-[var(--an-foreground-muted)]"
+              aria-hidden="true"
+            >
+              <MaterialSymbol icon="history" size={18} />
+            </span>
+            <h3 className="m-0 text-sm font-medium leading-tight">
               Prompt History
             </h3>
           </div>
 
-          <div style={{
-            flex: 1,
-            overflowY: 'auto',
-            paddingTop: '0.5rem',
-            paddingBottom: '0.5rem'
-          }}>
+          <div className="flex-1 overflow-y-auto py-[var(--an-spacing-sm)]">
             {prompts.length === 0 ? (
-              <div style={{
-                padding: '1rem',
-                color: 'var(--nim-text-faint)',
-                fontSize: '0.875rem'
-              }}>
+              <div
+                className="px-[var(--an-spacing-xl)] py-[var(--an-spacing-xl)] text-sm leading-normal text-[var(--an-foreground-subtle)]"
+                data-agent-elements-shell="prompt-history-empty"
+              >
                 No prompts yet. Start by entering a prompt.
               </div>
             ) : (
               <>
-                {prompts.map((marker, index) => (
-                  <button
-                    key={marker.id}
-                    onClick={() => handlePromptClick(marker)}
-                    style={{
-                      display: 'block',
-                      width: '100%',
-                      boxSizing: 'border-box',
-                      textAlign: 'left',
-                      padding: '0.875rem 1rem',
-                      margin: 0,
-                      borderRadius: 0,
-                      transition: 'all 0.2s ease',
-                      backgroundColor: selectedPromptId === marker.id
-                        ? 'var(--nim-bg-hover)'
-                        : 'transparent',
-                      borderTop: '1px solid var(--nim-border)',
-                      borderBottom: selectedPromptId === marker.id
-                        ? '1px solid var(--nim-primary)'
-                        : '1px solid transparent',
-                      borderLeft: selectedPromptId === marker.id
-                        ? '2px solid var(--nim-primary)'
-                        : '2px solid transparent',
-                      borderRight: 'none',
-                      cursor: 'pointer',
-                      color: 'inherit',
-                      fontFamily: 'inherit',
-                      outline: 'none'
-                    }}
-                    onMouseEnter={(e) => {
-                      if (selectedPromptId !== marker.id) {
-                        e.currentTarget.style.backgroundColor = 'var(--nim-bg-hover)';
-                        e.currentTarget.style.borderColor = 'var(--nim-border)';
-                      }
-                    }}
-                    onMouseLeave={(e) => {
-                      if (selectedPromptId !== marker.id) {
-                        e.currentTarget.style.backgroundColor = 'transparent';
-                        e.currentTarget.style.borderColor = 'var(--nim-border)';
-                      }
-                    }}
-                  >
-                    <div style={{
-                      display: 'flex',
-                      alignItems: 'flex-start',
-                      gap: '0.625rem',
-                      width: '100%'
-                    }}>
-                      <span style={{
-                        color: 'var(--nim-primary)',
-                        fontFamily: 'monospace',
-                        fontSize: '0.75rem',
-                        fontWeight: 600,
-                        flexShrink: 0
-                      }}>
-                        #{index + 1}
-                      </span>
-                      <div style={{
-                        flex: 1,
-                        minWidth: 0,
-                        overflow: 'hidden'
-                      }}>
-                        <div style={{
-                          fontSize: '0.875rem',
-                          color: 'var(--nim-text)',
-                          lineHeight: '1.5',
-                          marginBottom: '0.5rem',
-                          display: '-webkit-box',
-                          WebkitLineClamp: 3,
-                          WebkitBoxOrient: 'vertical',
-                          overflow: 'hidden',
-                          wordBreak: 'break-word'
-                        }}>
-                          {marker.promptText}
-                        </div>
-                        <div style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '0.5rem',
-                          fontSize: '0.75rem',
-                          color: 'var(--nim-text-faint)'
-                        }}>
-                          <span>{formatTimeAgo(marker.timestamp)}</span>
-                          {marker.completionTimestamp && (
-                            <>
-                              <span>•</span>
-                              <span style={{
-                                color: 'var(--nim-text-muted)'
-                              }}>
-                                {formatDuration(marker.timestamp, marker.completionTimestamp)}
-                              </span>
-                            </>
-                          )}
+                {prompts.map((marker, index) => {
+                  const isSelected = selectedPromptId === marker.id;
+
+                  return (
+                    <button
+                      key={marker.id}
+                      onClick={() => handlePromptClick(marker)}
+                      className={promptRowClassName(isSelected)}
+                      data-testid="agent-elements-prompt-history-row"
+                      data-agent-elements-shell="prompt-history-row"
+                      data-selected={isSelected ? 'true' : 'false'}
+                      type="button"
+                    >
+                      <div className="flex w-full items-start gap-[var(--an-spacing-sm)]">
+                        <span className="inline-flex min-h-5 shrink-0 items-center rounded-[var(--an-radius-sm)] bg-[var(--an-background-tertiary)] px-[var(--an-spacing-xs)] font-mono text-xs font-semibold leading-none text-[var(--an-primary-color)]">
+                          #{index + 1}
+                        </span>
+                        <div className="min-w-0 flex-1 overflow-hidden">
+                          <div className="line-clamp-3 break-words text-sm leading-normal text-[var(--an-foreground)]">
+                            {marker.promptText}
+                          </div>
+                          <div className="mt-[var(--an-spacing-sm)] flex flex-wrap items-center gap-[var(--an-spacing-xs)] text-xs leading-tight text-[var(--an-foreground-subtle)]">
+                            <span>{formatTimeAgo(marker.timestamp)}</span>
+                            {marker.completionTimestamp && (
+                              <>
+                                <span aria-hidden="true">/</span>
+                                <span className="text-[var(--an-foreground-muted)]">
+                                  {formatDuration(marker.timestamp, marker.completionTimestamp)}
+                                </span>
+                              </>
+                            )}
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  </button>
-                ))}
+                    </button>
+                  );
+                })}
               </>
             )}
           </div>

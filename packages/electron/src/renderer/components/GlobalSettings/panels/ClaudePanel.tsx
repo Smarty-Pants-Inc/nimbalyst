@@ -1,6 +1,7 @@
 import React from 'react';
 import { ProviderConfig, Model } from '../../Settings/SettingsView';
 import { SettingsToggle } from '../SettingsToggle';
+import { createProviderPanelChrome, getProviderTestButtonClass } from './providerPanelChrome';
 
 interface ClaudePanelProps {
   config: ProviderConfig;
@@ -16,6 +17,17 @@ interface ClaudePanelProps {
 }
 
 const getModelDomId = (modelId: string) => modelId.replace(/[^a-zA-Z0-9_-]+/g, '-');
+const chrome = createProviderPanelChrome({
+  headerClassName: 'provider-panel-header claude-panel-header',
+  sectionClassName: 'provider-panel-section claude-panel-section',
+  configCardClassName: 'api-key-section claude-api-card',
+  inputClassName: 'api-key-input claude-api-key-input',
+  loadingClassName: 'models-loading claude-models-loading',
+  modelRowClassName: 'model-checkbox claude-model-row',
+  testButtonClassName: 'test-button claude-test-button',
+  testErrorClassName: 'test-error claude-test-error',
+  emptyClassName: 'models-loading claude-models-empty',
+});
 
 export function ClaudePanel({
   config,
@@ -37,12 +49,12 @@ export function ClaudePanel({
       data-testid="agent-elements-claude-panel"
     >
       <div
-        className="provider-panel-header claude-panel-header agent-elements-settings-panel-header mb-6 pb-4 border-b border-[var(--nim-border)]"
+        className={chrome.header}
         data-agent-elements-shell="claude-header"
         data-testid="agent-elements-claude-header"
       >
-        <h3 className="provider-panel-title text-xl font-semibold leading-tight mb-2 text-[var(--nim-text)]">Claude Chat</h3>
-        <p className="provider-panel-description text-sm leading-relaxed text-[var(--nim-text-muted)]">
+        <h3 className={chrome.title}>Claude Chat</h3>
+        <p className={chrome.description}>
           Chat mode is a quicker, more focused tool that is limited to reading and writing your currently open file.
           Uses direct API calls with files attached as context for faster responses. Requires an Anthropic API key.
         </p>
@@ -59,14 +71,14 @@ export function ClaudePanel({
       {config.enabled && (
         <>
           <div
-            className="provider-panel-section claude-panel-section agent-elements-settings-section py-4 mb-4 border-b border-[var(--nim-border)] last:border-b-0 last:mb-0 last:pb-0"
+            className={chrome.section}
             data-agent-elements-shell="claude-api-section"
             data-section="api-configuration"
             data-testid="agent-elements-claude-api-section"
           >
-            <h4 className="provider-panel-section-title text-base font-semibold mb-3 text-[var(--nim-text)]">API Configuration</h4>
+            <h4 className={chrome.sectionTitle}>API Configuration</h4>
             <div
-              className="api-key-section claude-api-card agent-elements-tool-card mt-4 rounded-lg border border-[var(--nim-border)] bg-[var(--nim-bg-secondary)] p-3"
+              className={chrome.configCard}
               data-agent-elements-shell="claude-api-card"
               data-testid="agent-elements-claude-api-card"
             >
@@ -79,14 +91,10 @@ export function ClaudePanel({
                   onChange={(e) => onApiKeyChange('anthropic', e.target.value)}
                   onFocus={(e) => e.target.select()}
                   placeholder="sk-ant-..."
-                  className="api-key-input claude-api-key-input flex-1 py-2 px-3 rounded-md bg-[var(--nim-bg)] border border-[var(--nim-border)] text-[var(--nim-text)] outline-none font-mono focus:border-[var(--nim-primary)]"
+                  className={chrome.input}
                 />
                 <button
-                  className={`test-button claude-test-button inline-flex items-center justify-center py-2 px-4 rounded-md text-sm font-medium whitespace-nowrap cursor-pointer transition-all bg-[var(--nim-bg-tertiary)] text-[var(--nim-text)] border border-[var(--nim-border)] hover:bg-[var(--nim-bg-hover)] hover:border-[var(--nim-primary)] ${
-                    config.testStatus === 'testing' ? 'opacity-60 cursor-wait' : ''
-                  } ${config.testStatus === 'success' ? 'text-[var(--nim-success)] border-[var(--nim-success)]' : ''} ${
-                    config.testStatus === 'error' ? 'text-[var(--nim-error)] border-[var(--nim-error)]' : ''
-                  }`}
+                  className={getProviderTestButtonClass(config.testStatus, chrome)}
                   onClick={onTestConnection}
                   disabled={config.testStatus === 'testing'}
                   data-test-status={config.testStatus || 'idle'}
@@ -99,7 +107,7 @@ export function ClaudePanel({
               </div>
               {config.testMessage && config.testStatus === 'error' && (
                 <div
-                  className="test-error claude-test-error text-xs mt-2 text-[var(--nim-error)]"
+                  className={chrome.testError}
                   data-agent-elements-shell="claude-test-error"
                   data-testid="agent-elements-claude-test-error"
                 >
@@ -110,15 +118,15 @@ export function ClaudePanel({
           </div>
 
           <div
-            className="provider-panel-section claude-panel-section agent-elements-settings-section py-4 mb-4 border-b border-[var(--nim-border)] last:border-b-0 last:mb-0 last:pb-0"
+            className={chrome.section}
             data-agent-elements-shell="claude-models-section"
             data-section="available-models"
             data-testid="agent-elements-claude-models-section"
           >
-            <h4 className="provider-panel-section-title text-base font-semibold mb-3 text-[var(--nim-text)]">Available Models</h4>
+            <h4 className={chrome.sectionTitle}>Available Models</h4>
             {loading && (
               <div
-                className="models-loading claude-models-loading text-sm text-[var(--nim-text-muted)] py-2"
+                className={chrome.loadingText}
                 data-agent-elements-shell="claude-models-loading"
                 data-testid="agent-elements-claude-models-loading"
               >
@@ -133,20 +141,20 @@ export function ClaudePanel({
                 data-testid="agent-elements-claude-models-list"
               >
                 <div className="models-header flex items-center justify-between mb-3">
-                  <span className="text-sm text-[var(--nim-text-muted)]">Select models to enable:</span>
+                  <span className={chrome.modelsHeaderText}>Select models to enable:</span>
                   <div
                     className="models-actions claude-model-actions flex gap-2"
                     data-agent-elements-shell="claude-model-actions"
                     data-testid="agent-elements-claude-model-actions"
                   >
                     <button
-                      className="models-action-btn text-xs py-1 px-2 rounded bg-[var(--nim-bg-secondary)] border border-[var(--nim-border)] text-[var(--nim-text-muted)] hover:text-[var(--nim-text)] hover:bg-[var(--nim-bg-hover)] cursor-pointer transition-all"
+                      className={chrome.modelActionButton}
                       onClick={() => onSelectAllModels(true)}
                     >
                       Select All
                     </button>
                     <button
-                      className="models-action-btn text-xs py-1 px-2 rounded bg-[var(--nim-bg-secondary)] border border-[var(--nim-border)] text-[var(--nim-text-muted)] hover:text-[var(--nim-text)] hover:bg-[var(--nim-bg-hover)] cursor-pointer transition-all"
+                      className={chrome.modelActionButton}
                       onClick={() => onSelectAllModels(false)}
                     >
                       Deselect All
@@ -157,7 +165,7 @@ export function ClaudePanel({
                   {availableModels.map(model => (
                     <label
                       key={model.id}
-                      className="model-checkbox claude-model-row agent-elements-tool-card flex items-center gap-3 py-2 px-3 rounded-md bg-[var(--nim-bg-secondary)] border border-[var(--nim-border)] cursor-pointer hover:bg-[var(--nim-bg-hover)]"
+                      className={chrome.modelRow}
                       data-agent-elements-shell="claude-model-row"
                       data-model-id={model.id}
                       data-testid={`agent-elements-claude-model-row-${getModelDomId(model.id)}`}
@@ -166,9 +174,9 @@ export function ClaudePanel({
                         type="checkbox"
                         checked={config.models?.includes(model.id) ?? false}
                         onChange={(e) => onModelToggle(model.id, e.target.checked)}
-                        className="w-4 h-4 cursor-pointer accent-[var(--nim-primary)]"
+                        className={chrome.checkbox}
                       />
-                      <span className="text-sm text-[var(--nim-text)]">{model.name}</span>
+                      <span className={chrome.modelName}>{model.name}</span>
                     </label>
                   ))}
                 </div>
@@ -177,7 +185,7 @@ export function ClaudePanel({
 
             {!loading && availableModels.length === 0 && apiKeys.anthropic && (
               <div
-                className="models-loading claude-models-empty text-sm text-[var(--nim-text-muted)] py-2"
+                className={chrome.emptyText}
                 data-agent-elements-shell="claude-models-empty"
                 data-testid="agent-elements-claude-models-empty"
               >

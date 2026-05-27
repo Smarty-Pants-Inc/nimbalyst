@@ -7,10 +7,10 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: var(--an-spacing-lg, 12px) var(--an-spacing-sm, 8px) var(--an-spacing-sm, 8px);
-  gap: 8px;
-  background-color: var(--an-background-secondary, var(--nim-bg-secondary, #1a1a1a));
-  border-right: 1px solid var(--an-border-color, var(--nim-border, rgba(255, 255, 255, 0.06)));
+  padding: var(--an-spacing-lg) var(--an-spacing-sm) var(--an-spacing-sm);
+  gap: var(--an-spacing-sm);
+  background-color: var(--an-background-secondary);
+  border-right: 1px solid var(--an-border-color);
   overflow-y: auto;
   overflow-x: hidden;
   -webkit-app-region: no-drag;
@@ -21,7 +21,7 @@
    * --rail-item-accent is set inline per project (see ProjectRail.tsx:
    * style={{ '--rail-item-accent': accentColor }}). It comes from
    * generateWorkspaceAccentColor(path) so the rail icon shares its color
-   * with the workspace summary header bar. Falls back to --nim-primary so
+   * with the workspace summary header bar. Falls back to --an-primary-color so
    * the rail still looks correct if the inline variable is ever missing.
    */
   position: relative;
@@ -30,24 +30,24 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: var(--an-tool-border-radius, 10px);
+  border-radius: var(--an-tool-border-radius);
 }
 
 .project-rail-item-main {
   position: relative;
   width: 38px;
   height: 38px;
-  border-radius: 12px;
+  border-radius: var(--an-tool-border-radius);
   display: flex;
   align-items: center;
   justify-content: center;
-  background-color: var(--an-tool-background, var(--nim-bg-tertiary, #2a2a2a));
-  color: var(--rail-item-accent, var(--nim-primary, #3b82f6));
+  background-color: var(--an-tool-background);
+  color: var(--rail-item-accent, var(--an-primary-color));
   font-size: 14px;
   font-weight: 600;
   cursor: pointer;
   user-select: none;
-  border: 1px solid var(--an-tool-border-color, var(--nim-border, rgba(255, 255, 255, 0.12)));
+  border: 1px solid var(--an-tool-border-color);
   padding: 0;
   transition: background-color 180ms cubic-bezier(0.16, 1, 0.3, 1),
     border-color 180ms cubic-bezier(0.16, 1, 0.3, 1),
@@ -57,9 +57,9 @@
 }
 
 .project-rail-item-main:hover {
-  background-color: var(--an-background-tertiary, var(--nim-bg-tertiary, #2a2a2a));
-  border-color: var(--rail-item-accent, var(--nim-primary, #3b82f6));
-  box-shadow: 0 0 0 2px color-mix(in srgb, var(--rail-item-accent, var(--nim-primary, #3b82f6)) 16%, transparent);
+  background-color: var(--an-background-tertiary);
+  border-color: var(--rail-item-accent, var(--an-primary-color));
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--rail-item-accent, var(--an-primary-color)) 16%, transparent);
   transform: translateY(-1px);
 }
 
@@ -67,15 +67,15 @@
 .project-rail-add:focus-visible,
 .project-rail-item-close:focus-visible,
 .project-rail-context-menu-item:focus-visible {
-  outline: 2px solid var(--an-input-focus-outline, var(--nim-border-focus));
+  outline: 2px solid var(--an-input-focus-outline);
   outline-offset: 2px;
 }
 
 .project-rail-item.is-active .project-rail-item-main {
-  background-color: var(--an-background-tertiary, var(--nim-bg-tertiary, #2a2a2a));
-  color: var(--rail-item-accent, var(--nim-primary, #3b82f6));
-  border-color: var(--rail-item-accent, var(--nim-primary, #3b82f6));
-  box-shadow: 0 0 0 2px color-mix(in srgb, var(--rail-item-accent, var(--nim-primary, #3b82f6)) 22%, transparent);
+  background-color: var(--an-background-tertiary);
+  color: var(--rail-item-accent, var(--an-primary-color));
+  border-color: var(--rail-item-accent, var(--an-primary-color));
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--rail-item-accent, var(--an-primary-color)) 22%, transparent);
 }
 
 .project-rail-item-badge {
@@ -87,12 +87,12 @@
   box-sizing: border-box;
   padding: 0;
   border-radius: 50%;
-  background-color: var(--an-primary-color, var(--nim-primary, #3b82f6));
-  border: 2px solid var(--an-background-secondary, var(--nim-bg-secondary, #1a1a1a));
+  background-color: var(--an-primary-color);
+  border: 2px solid var(--an-background-secondary);
   font-size: 9px;
   font-weight: 700;
   line-height: 1;
-  color: var(--nim-bg, #f8fafc);
+  color: var(--an-button-primary-text);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -106,9 +106,9 @@
   width: 18px;
   height: 18px;
   border-radius: 50%;
-  background-color: var(--an-background-secondary, var(--nim-bg-secondary, #1a1a1a));
-  color: var(--an-foreground, var(--nim-text, #111827));
-  border: 1px solid var(--an-tool-border-color, var(--nim-border, rgba(255, 255, 255, 0.12)));
+  background-color: var(--an-background-secondary);
+  color: var(--an-foreground);
+  border: 1px solid var(--an-tool-border-color);
   display: none;
   align-items: center;
   justify-content: center;
@@ -123,30 +123,30 @@
 }
 
 .project-rail-item-close:hover {
-  background-color: var(--nim-error, #ef4444);
-  color: var(--nim-bg, #f8fafc);
+  background-color: var(--an-error-color);
+  color: var(--an-button-primary-text);
 }
 
 .project-rail-divider {
   width: 36px;
   height: 1px;
-  background-color: var(--an-tool-border-color, var(--nim-border, rgba(255, 255, 255, 0.06)));
+  background-color: var(--an-tool-border-color);
   margin: 4px 0;
 }
 
 .project-rail-add {
   width: 38px;
   height: 38px;
-  border-radius: 12px;
+  border-radius: var(--an-tool-border-radius);
   display: flex;
   align-items: center;
   justify-content: center;
   background-color: transparent;
-  color: var(--an-foreground-muted, var(--nim-text-muted, #6b7280));
+  color: var(--an-foreground-muted);
   font-size: 22px;
   line-height: 1;
   cursor: pointer;
-  border: 1px dashed var(--an-tool-border-color, var(--nim-border, rgba(255, 255, 255, 0.18)));
+  border: 1px dashed var(--an-tool-border-color);
   padding: 0;
   transition: background-color 180ms cubic-bezier(0.16, 1, 0.3, 1),
     border-color 180ms cubic-bezier(0.16, 1, 0.3, 1),
@@ -155,8 +155,8 @@
 
 .project-rail-add:hover:not(:disabled) {
   border-style: solid;
-  background-color: var(--an-background-tertiary, var(--nim-bg-tertiary, #2a2a2a));
-  color: var(--an-foreground, var(--nim-text, #111827));
+  background-color: var(--an-background-tertiary);
+  color: var(--an-foreground);
 }
 
 .project-rail-add:disabled {
@@ -167,11 +167,11 @@
 .project-rail-context-menu {
   position: fixed;
   min-width: 180px;
-  background-color: var(--an-tool-background, var(--nim-bg-secondary, #1a1a1a));
-  border: 1px solid var(--an-tool-border-color, var(--nim-border, rgba(255, 255, 255, 0.12)));
-  border-radius: var(--an-tool-border-radius, 10px);
-  padding: var(--an-spacing-xs, 4px);
-  box-shadow: 0 8px 24px color-mix(in srgb, var(--nim-text, #111827) 18%, transparent);
+  background-color: var(--an-tool-background);
+  border: 1px solid var(--an-tool-border-color);
+  border-radius: var(--an-tool-border-radius);
+  padding: var(--an-spacing-xs);
+  box-shadow: 0 8px 24px color-mix(in srgb, var(--an-foreground) 18%, transparent);
   z-index: 2000;
   display: flex;
   flex-direction: column;
@@ -184,20 +184,20 @@
   padding: 7px 10px;
   text-align: left;
   font-size: 13px;
-  color: var(--an-tool-color, var(--nim-text, #111827));
-  border-radius: 7px;
+  color: var(--an-tool-color);
+  border-radius: calc(var(--an-tool-border-radius) - 3px);
   cursor: pointer;
   white-space: nowrap;
 }
 
 .project-rail-context-menu-item:hover {
-  background-color: var(--an-background-tertiary, var(--nim-bg-tertiary, #2a2a2a));
-  color: var(--an-tool-color, var(--nim-text, #111827));
+  background-color: var(--an-background-tertiary);
+  color: var(--an-tool-color);
 }
 
 .project-rail-context-menu-divider {
   height: 1px;
-  background-color: var(--an-tool-border-color, var(--nim-border, rgba(255, 255, 255, 0.08)));
+  background-color: var(--an-tool-border-color);
   margin: 4px 6px;
 }
 
@@ -207,7 +207,7 @@
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0;
-  color: var(--an-foreground-muted, var(--nim-text-muted, #6b7280));
+  color: var(--an-foreground-muted);
 }
 
 .project-rail-add-menu {
@@ -229,7 +229,7 @@
 
 .project-rail-context-menu-item-path {
   font-size: 11px;
-  color: var(--an-foreground-muted, var(--nim-text-muted, #6b7280));
+  color: var(--an-foreground-muted);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -237,7 +237,7 @@
 }
 
 .project-rail-context-menu-item-recent:hover .project-rail-context-menu-item-path {
-  color: var(--an-foreground-muted, var(--nim-text-muted, #6b7280));
+  color: var(--an-foreground-muted);
 }
 
 /*
@@ -248,31 +248,31 @@
  */
 .project-rail-tooltip {
   padding: 7px 10px;
-  background-color: var(--an-tool-background, var(--nim-bg-tertiary, #2a2a2a));
-  color: var(--an-tool-color, var(--nim-text, #111827));
+  background-color: var(--an-tool-background);
+  color: var(--an-tool-color);
   font-size: 12px;
   font-weight: 500;
   white-space: nowrap;
-  border-radius: var(--an-tool-border-radius, 10px);
-  border: 1px solid var(--an-tool-border-color, var(--nim-border, rgba(255, 255, 255, 0.12)));
+  border-radius: var(--an-tool-border-radius);
+  border: 1px solid var(--an-tool-border-color);
   pointer-events: none;
   z-index: 1000;
   display: flex;
   flex-direction: column;
   gap: 2px;
   max-width: 320px;
-  box-shadow: 0 8px 24px color-mix(in srgb, var(--nim-text, #111827) 14%, transparent);
+  box-shadow: 0 8px 24px color-mix(in srgb, var(--an-foreground) 14%, transparent);
 }
 
 .project-rail-tooltip-name {
   font-weight: 600;
-  color: var(--an-tool-color, var(--nim-text, #111827));
+  color: var(--an-tool-color);
 }
 
 .project-rail-tooltip-path {
   font-size: 11px;
   font-weight: 400;
-  color: var(--an-foreground-muted, var(--nim-text-muted, #6b7280));
+  color: var(--an-foreground-muted);
   overflow: hidden;
   text-overflow: ellipsis;
 }

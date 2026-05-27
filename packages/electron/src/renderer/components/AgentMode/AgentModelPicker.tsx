@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useId, useMemo } from 'react';
 import { MaterialSymbol } from '@nimbalyst/runtime';
 import { getClaudeCodeModelLabel } from '../../utils/modelUtils';
 
@@ -22,6 +22,29 @@ const providerLabels: Record<string, string> = {
   'openai-codex-acp': 'OpenAI Codex (ACP)',
   'smarty-server': 'Smarty Server',
 };
+
+const rootClass = [
+  'merge-conflict-dialog-model',
+  'agent-elements-agent-model-picker',
+  'mb-4 flex flex-col gap-[var(--an-spacing-sm)] rounded-[var(--an-tool-border-radius)]',
+  'border border-[var(--an-border-color)] bg-[var(--an-background-secondary)] p-[var(--an-spacing-lg)]',
+  'text-[var(--an-foreground)]',
+].join(' ');
+
+const labelClass = [
+  'agent-elements-agent-model-picker-label',
+  'flex items-center gap-[var(--an-spacing-sm)] text-[13px] font-medium text-[var(--an-foreground)]',
+].join(' ');
+
+const selectClass = [
+  'agent-elements-agent-model-picker-select',
+  'w-full rounded-[calc(var(--an-input-border-radius)_-_4px)] border border-[var(--an-input-border-color)]',
+  'bg-[var(--an-input-background)] px-[var(--an-spacing-sm)] py-[var(--an-spacing-xs)]',
+  'text-xs text-[var(--an-input-color)] outline-none',
+  'transition-[background-color,border-color,color] duration-150 ease-out',
+  'focus:border-[var(--an-input-focus-outline)] focus:ring-2 focus:ring-[var(--an-input-focus-outline)]',
+  'disabled:cursor-not-allowed disabled:opacity-60',
+].join(' ');
 
 function getModelLabel(model: AgentModelOption): string {
   if (model.name) return model.name;
@@ -49,15 +72,33 @@ export function AgentModelPicker({
   const hasModels = models.length > 0;
   const selectValue = hasModels ? selectedModel : '';
   const isDisabled = disabled || (!hasModels && !isLoading);
+  const selectId = useId();
 
   return (
-    <div className="merge-conflict-dialog-model flex flex-col gap-2 p-3 mb-4 rounded-lg bg-[var(--nim-bg-secondary)]">
-      <div className="flex items-center gap-2 text-[13px] font-medium text-[var(--nim-text)]">
-        <MaterialSymbol icon="memory" size={16} />
+    <div
+      className={rootClass}
+      data-agent-elements-shell="agent-model-picker"
+      data-component="AgentModelPicker"
+      data-loading={isLoading ? 'true' : 'false'}
+      data-model-count={models.length}
+      data-testid="agent-elements-agent-model-picker"
+    >
+      <label
+        className={labelClass}
+        data-agent-elements-shell="agent-model-picker-label"
+        data-testid="agent-elements-agent-model-picker-label"
+        htmlFor={selectId}
+      >
+        <span aria-hidden="true" className="flex shrink-0">
+          <MaterialSymbol icon="memory" size={16} className="text-[var(--an-foreground-muted)]" />
+        </span>
         <span>Model</span>
-      </div>
+      </label>
       <select
-        className="w-full border border-[var(--nim-border)] rounded bg-[var(--nim-bg)] text-[var(--nim-text)] text-xs px-2 py-1.5 focus:outline-none focus:border-[var(--nim-primary)]"
+        className={selectClass}
+        data-agent-elements-shell="agent-model-picker-select"
+        data-testid="agent-elements-agent-model-picker-select"
+        id={selectId}
         value={selectValue}
         onChange={(e) => onModelChange(e.target.value)}
         disabled={isDisabled}

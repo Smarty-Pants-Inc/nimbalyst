@@ -104,6 +104,36 @@ const CATEGORY_ORDER = [
 ];
 
 const getPluginDomId = (value: string) => value.replace(/[^a-zA-Z0-9_-]+/g, '-');
+const cardPaddingClass =
+  '[--agent-elements-card-block-padding:var(--an-spacing-lg)] [--agent-elements-card-inline-padding:var(--an-spacing-lg)]';
+const compactCardPaddingClass =
+  '[--agent-elements-card-block-padding:var(--an-spacing-md)] [--agent-elements-card-inline-padding:var(--an-spacing-md)]';
+const spaciousCardPaddingClass =
+  '[--agent-elements-card-block-padding:var(--an-spacing-xxl)] [--agent-elements-card-inline-padding:var(--an-spacing-xl)]';
+const panelClassName =
+  'provider-panel claude-code-plugins-panel agent-elements-settings-panel flex w-full flex-col';
+const loadingCardClass =
+  `plugin-loading agent-elements-tool-card ${spaciousCardPaddingClass} text-center text-[var(--an-foreground-muted)]`;
+const errorCardClass =
+  `plugin-error agent-elements-tool-card ${spaciousCardPaddingClass} border-[color-mix(in_srgb,var(--an-error-color)_44%,var(--an-border-color))] bg-[var(--an-background-secondary)] text-center text-[var(--an-error-color)]`;
+const searchCardClass =
+  `plugin-search agent-elements-tool-card ${compactCardPaddingClass} relative mb-6 bg-[var(--an-background-secondary)]`;
+const pluginCardBaseClass =
+  `plugin-card agent-elements-tool-card ${cardPaddingClass} flex flex-col cursor-pointer transition-[background-color,border-color,opacity] duration-150 ease-out hover:border-[var(--an-primary-color)] hover:bg-[var(--an-background-tertiary)]`;
+const emptyStateCardClass =
+  `plugin-empty-state agent-elements-tool-card ${spaciousCardPaddingClass} flex flex-col items-center justify-center text-center text-[var(--an-foreground-subtle)]`;
+const installedItemClass =
+  `plugin-installed-item agent-elements-tool-card ${cardPaddingClass} !flex-row items-center justify-between bg-[var(--an-background-secondary)]`;
+const detailsModalClass =
+  `plugin-details-modal agent-elements-tool-card ${spaciousCardPaddingClass} relative max-h-[80vh] w-full max-w-[500px] overflow-y-auto bg-[var(--an-background)] shadow-[0_20px_40px_color-mix(in_srgb,var(--an-foreground)_18%,transparent)]`;
+const statusMessageClass =
+  `plugin-status-message agent-elements-tool-card ${compactCardPaddingClass} mb-4 border-[color-mix(in_srgb,var(--an-primary-color)_30%,var(--an-border-color))] bg-[color-mix(in_srgb,var(--an-primary-color)_10%,var(--an-background))] text-sm text-[var(--an-foreground)]`;
+
+function getPluginCardClass(installed: boolean): string {
+  return installed
+    ? `${pluginCardBaseClass} installed border-[color-mix(in_srgb,var(--an-success-color)_30%,var(--an-border-color))] bg-[color-mix(in_srgb,var(--an-success-color)_7%,var(--an-background))]`
+    : `${pluginCardBaseClass} border-[var(--an-border-color)] bg-[var(--an-background-secondary)]`;
+}
 
 // Component to render plugin icon
 function PluginIcon({ pluginName, category, isDark }: { pluginName: string; category: string; isDark: boolean }) {
@@ -288,13 +318,13 @@ function ClaudeCodePluginsPanelInner({ scope = 'user', workspacePath }: ClaudeCo
   if (loading) {
     return (
       <div
-        className="provider-panel claude-code-plugins-panel agent-elements-settings-panel flex flex-col"
+        className={panelClassName}
         data-agent-elements-shell="claude-plugins-panel"
         data-component="ClaudeCodePluginsPanel"
         data-testid="agent-elements-claude-plugins-panel"
       >
         <div
-          className="plugin-loading agent-elements-tool-card rounded-lg border border-[var(--nim-border)] bg-[var(--nim-bg-secondary)] p-8 text-center text-[var(--nim-text-muted)]"
+          className={loadingCardClass}
           data-agent-elements-shell="claude-plugins-loading"
           data-testid="agent-elements-claude-plugins-loading"
         >
@@ -307,13 +337,13 @@ function ClaudeCodePluginsPanelInner({ scope = 'user', workspacePath }: ClaudeCo
   if (error) {
     return (
       <div
-        className="provider-panel claude-code-plugins-panel agent-elements-settings-panel flex flex-col"
+        className={panelClassName}
         data-agent-elements-shell="claude-plugins-panel"
         data-component="ClaudeCodePluginsPanel"
         data-testid="agent-elements-claude-plugins-panel"
       >
         <div
-          className="plugin-error agent-elements-tool-card rounded-lg border border-[var(--nim-error)] bg-[var(--nim-bg-secondary)] p-8 text-center text-[#e74c3c]"
+          className={errorCardClass}
           data-agent-elements-shell="claude-plugins-error"
           data-testid="agent-elements-claude-plugins-error"
         >
@@ -334,7 +364,7 @@ function ClaudeCodePluginsPanelInner({ scope = 'user', workspacePath }: ClaudeCo
     >
       {/* Search Bar */}
       <div
-        className="plugin-search agent-elements-tool-card relative mb-6 rounded-lg border border-[var(--nim-border)] bg-[var(--nim-bg-secondary)] p-3"
+        className={searchCardClass}
         role="search"
         data-agent-elements-shell="claude-plugins-search"
         data-testid="agent-elements-claude-plugins-search"
@@ -384,7 +414,7 @@ function ClaudeCodePluginsPanelInner({ scope = 'user', workspacePath }: ClaudeCo
                 return (
                   <div
                     key={plugin.name}
-                    className={`plugin-card agent-elements-tool-card flex flex-col p-4 border rounded-lg cursor-pointer transition-all duration-150 ${installed ? 'installed border-[rgba(39,174,96,0.3)] bg-[rgba(39,174,96,0.05)]' : 'border-[var(--nim-border)] bg-[var(--nim-bg-secondary)]'} hover:border-[var(--nim-primary)] hover:bg-[var(--nim-bg-hover)]`}
+                    className={getPluginCardClass(installed)}
                     onClick={() => setSelectedPlugin(plugin)}
                     onKeyDown={(e) => {
                       if (e.key === 'Enter' || e.key === ' ') {
@@ -451,7 +481,7 @@ function ClaudeCodePluginsPanelInner({ scope = 'user', workspacePath }: ClaudeCo
     >
       {installedPlugins.length === 0 ? (
         <div
-          className="plugin-empty-state agent-elements-tool-card flex flex-col items-center justify-center rounded-lg border border-[var(--nim-border)] bg-[var(--nim-bg-secondary)] py-12 px-6 text-center text-[var(--nim-text-faint)]"
+          className={emptyStateCardClass}
           data-agent-elements-shell="claude-plugins-empty"
           data-testid="agent-elements-claude-plugins-empty"
         >
@@ -472,7 +502,7 @@ function ClaudeCodePluginsPanelInner({ scope = 'user', workspacePath }: ClaudeCo
             return (
               <div
                 key={plugin.name}
-                className="plugin-installed-item agent-elements-tool-card flex items-center justify-between p-4 border border-[var(--nim-border)] rounded-lg bg-[var(--nim-bg-secondary)]"
+                className={installedItemClass}
                 role="listitem"
                 data-agent-elements-shell="claude-plugins-installed-item"
                 data-plugin-enabled={plugin.enabled ? 'true' : 'false'}
@@ -519,7 +549,7 @@ function ClaudeCodePluginsPanelInner({ scope = 'user', workspacePath }: ClaudeCo
         onClick={() => setSelectedPlugin(null)}
       >
         <div
-          className="plugin-details-modal agent-elements-tool-card bg-[var(--nim-bg)] rounded-xl p-6 max-w-[500px] w-full max-h-[80vh] overflow-y-auto relative shadow-[0_20px_40px_rgba(0,0,0,0.3)]"
+          className={detailsModalClass}
           data-agent-elements-shell="claude-plugins-details-modal"
           data-testid="agent-elements-claude-plugins-details-modal"
           onClick={(e) => e.stopPropagation()}
@@ -596,7 +626,7 @@ function ClaudeCodePluginsPanelInner({ scope = 'user', workspacePath }: ClaudeCo
 
   return (
     <div
-      className="provider-panel claude-code-plugins-panel agent-elements-settings-panel flex flex-col"
+      className={panelClassName}
       data-agent-elements-shell="claude-plugins-panel"
       data-component="ClaudeCodePluginsPanel"
       data-scope={scope}
@@ -646,7 +676,7 @@ function ClaudeCodePluginsPanelInner({ scope = 'user', workspacePath }: ClaudeCo
       {/* Status Message */}
       {installMessage && (
         <div
-          className="plugin-status-message agent-elements-tool-card py-3 px-4 mb-4 bg-[rgba(52,152,219,0.1)] border border-[rgba(52,152,219,0.3)] rounded-md text-sm text-[var(--nim-text)]"
+          className={statusMessageClass}
           role="status"
           aria-live="polite"
           data-agent-elements-shell="claude-plugins-status-message"

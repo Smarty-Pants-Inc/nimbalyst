@@ -8,7 +8,7 @@ import * as path from 'path';
 import { join } from 'path';
 import * as fs from 'fs';
 import { appendFileSync, existsSync, renameSync, unlinkSync, writeFileSync } from 'fs';
-import { createWindow, findWindowByFilePath, findWindowByWorkspace, getMostRecentlyFocusedWorkspaceWindow } from './window/WindowManager';
+import { createWindow, findWindowByFilePath, findWindowByWorkspace, getMostRecentlyFocusedWorkspaceWindow, revealWindow } from './window/WindowManager';
 import { loadFileIntoWindow } from './file/FileOperations';
 import { createApplicationMenu } from './menu/ApplicationMenu';
 import { updateNativeTheme, updateWindowTitleBars } from './theme/ThemeManager';
@@ -503,7 +503,9 @@ if (process.defaultApp) {
 // Ensures only one instance runs at a time. When a second instance launches
 // (e.g., from a file double-click), it forwards its context to the primary instance.
 // Skip for multi-instance dev mode and Playwright tests.
-const allowMultipleInstances = !!process.env.NIMBALYST_USER_DATA_DIR || !!process.env.PLAYWRIGHT;
+const allowMultipleInstances =
+    process.env.NIMBALYST_ALLOW_MULTIPLE_INSTANCES === '1' ||
+    process.env.PLAYWRIGHT === '1';
 
 if (!allowMultipleInstances) {
     const gotTheLock = app.requestSingleInstanceLock();
@@ -583,9 +585,7 @@ if (!allowMultipleInstances) {
             // Focus an existing window so the user sees the result
             const windows = BrowserWindow.getAllWindows();
             if (windows.length > 0) {
-                const win = windows[0];
-                if (win.isMinimized()) win.restore();
-                win.focus();
+                revealWindow(windows[0]);
             }
         });
     }
@@ -890,8 +890,7 @@ async function openSharedDocumentFromDeepLink(documentId: string, orgId: string)
         logger.main.warn('[DeepLink] Cannot route shared doc:', { reason, orgId, documentId });
         const fallback = getMostRecentlyFocusedWorkspaceWindow();
         if (fallback) {
-            if (fallback.isMinimized()) fallback.restore();
-            fallback.focus();
+            revealWindow(fallback);
             fallback.webContents.send('deep-link:shared-document-not-available', { documentId, orgId, reason });
         }
         return;
@@ -904,8 +903,7 @@ async function openSharedDocumentFromDeepLink(documentId: string, orgId: string)
 
     const existing = findWindowByWorkspace(workspacePath);
     if (existing && !existing.isDestroyed()) {
-        if (existing.isMinimized()) existing.restore();
-        existing.focus();
+        revealWindow(existing);
         existing.webContents.send('deep-link:open-shared-document', {
             documentId,
             orgId,
@@ -933,8 +931,7 @@ async function openTrackerFromDeepLink(trackerId: string, orgId: string): Promis
         logger.main.warn('[DeepLink] Cannot route tracker:', { reason, orgId, trackerId });
         const fallback = getMostRecentlyFocusedWorkspaceWindow();
         if (fallback) {
-            if (fallback.isMinimized()) fallback.restore();
-            fallback.focus();
+            revealWindow(fallback);
             fallback.webContents.send('deep-link:tracker-not-available', { trackerId, orgId, reason });
         }
         return;
@@ -944,8 +941,7 @@ async function openTrackerFromDeepLink(trackerId: string, orgId: string): Promis
 
     const existing = findWindowByWorkspace(workspacePath);
     if (existing && !existing.isDestroyed()) {
-        if (existing.isMinimized()) existing.restore();
-        existing.focus();
+        revealWindow(existing);
         existing.webContents.send('deep-link:open-tracker', {
             trackerId,
             orgId,
@@ -1169,7 +1165,7 @@ app.whenReady().then(async () => {
     // Show splash screen immediately so the user sees something while we initialize
     // Skip splash in Playwright tests - the splash window would be returned by firstWindow()
     // instead of the actual workspace window, causing tests to fail
-    if (!process.env.PLAYWRIGHT) {
+    if (!process.env.PLAYWRIGHT && process.env.NIMBALYST_DISABLE_SPLASH !== '1') {
         showSplashScreen();
     }
 
@@ -2240,7 +2236,7 @@ app.whenReady().then(async () => {
             if (showInactive) {
                 window.showInactive();
             } else {
-                window.show();
+                revealWindow(window);
             }
             // Notify renderer to ensure workspace UI syncs with the selected path
             window.webContents.send('open-workspace-from-cli', workspacePath);
@@ -2302,12 +2298,13 @@ app.whenReady().then(async () => {
     // Set initial native theme
     updateNativeTheme();
 
-    // Initialize auto-updater (only in production)
-    if (app.isPackaged) {
+    // Initialize auto-updater (only in production). Local Smarty Code bundles
+    // are repo-linked dev installs and must not pull upstream Nimbalyst builds.
+    if (app.isPackaged && process.env.NIMBALYST_DISABLE_AUTO_UPDATE !== '1') {
         logger.main.info('Starting auto-updater service');
         autoUpdaterService.startAutoUpdateCheck(60); // Check every hour
     } else {
-        logger.main.info('Skipping auto-updater in development mode');
+        logger.main.info('Skipping auto-updater in development/local mode');
     }
 
     // Start performance monitoring
@@ -2399,10 +2396,16 @@ app.on('activate', () => {
     if (isAppQuitting) return;
     // Only create window if app is ready (screen module requires app to be ready)
     if (!app.isReady()) return;
-    // On macOS, show WorkspaceManager when dock icon is clicked and no windows are open
-    if (BrowserWindow.getAllWindows().length === 0) {
-        createWorkspaceManagerWindow();
+    // On macOS, app activation should reveal an existing hidden/minimized
+    // window. A hidden BrowserWindow still counts in getAllWindows(), so only
+    // checking length can leave the app apparently launched with no UI.
+    const existingWindow = getMostRecentlyFocusedWorkspaceWindow()
+        ?? BrowserWindow.getAllWindows().find(window => !window.isDestroyed());
+    if (existingWindow) {
+        revealWindow(existingWindow);
+        return;
     }
+    createWorkspaceManagerWindow();
 });
 
 // Before quit handler

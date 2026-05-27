@@ -9,6 +9,35 @@ interface Snapshot {
   metadata?: any;
 }
 
+const windowShellClass =
+  'history-window agent-elements-history-window flex h-screen flex-col overflow-hidden bg-[var(--an-background)] font-sans text-[var(--an-foreground)]';
+const centeredStateClass =
+  `${windowShellClass} items-center justify-center gap-[var(--an-spacing-md)] text-[var(--an-foreground-muted)]`;
+const headerClass =
+  'history-header agent-elements-history-window-header border-b border-[var(--an-border-color)] bg-[var(--an-background)] px-[var(--an-spacing-xxl)] py-[var(--an-spacing-xl)]';
+const panelTitleClass =
+  'm-0 text-xs font-medium uppercase text-[var(--an-foreground-muted)]';
+const snapshotItemBaseClass =
+  'snapshot-item agent-elements-history-window-snapshot group relative flex cursor-pointer items-center gap-[var(--an-spacing-md)] border-b border-[var(--an-border-color)] px-[var(--an-spacing-xl)] py-[var(--an-spacing-md)] transition-[background-color,border-color,box-shadow] duration-150 ease-out last:border-b-0 hover:bg-[var(--an-background-tertiary)] focus-visible:outline-2 focus-visible:outline-[var(--an-focus-ring)] focus-visible:outline-offset-[-2px]';
+const snapshotItemSelectedClass =
+  'selected border-[color-mix(in_srgb,var(--an-primary-color)_22%,var(--an-border-color))] bg-[color-mix(in_srgb,var(--an-primary-color)_8%,var(--an-background))] shadow-[inset_0_0_0_1px_color-mix(in_srgb,var(--an-primary-color)_12%,transparent)]';
+const snapshotIconBaseClass =
+  'snapshot-icon flex h-7 w-7 shrink-0 items-center justify-center rounded-[var(--an-small-border-radius)] border';
+const snapshotIconSelectedClass =
+  'border-[color-mix(in_srgb,var(--an-primary-color)_34%,var(--an-border-color))] bg-[color-mix(in_srgb,var(--an-primary-color)_10%,var(--an-background))] text-[var(--an-primary-color)]';
+const snapshotIconIdleClass =
+  'border-[var(--an-border-color)] bg-[var(--an-background)] text-[var(--an-foreground-muted)]';
+const snapshotBadgeBaseClass =
+  'snapshot-type inline-flex items-center rounded-[var(--an-small-border-radius)] border px-1.5 py-0.5 text-[11px] font-medium';
+const snapshotBadgeSelectedClass =
+  'border-[color-mix(in_srgb,var(--an-primary-color)_28%,var(--an-border-color))] bg-[color-mix(in_srgb,var(--an-primary-color)_9%,var(--an-background))] text-[var(--an-primary-color)]';
+const snapshotBadgeIdleClass =
+  'border-[var(--an-border-color)] bg-[var(--an-background-tertiary)] text-[var(--an-foreground-muted)]';
+const iconButtonClass =
+  'snapshot-delete absolute right-[var(--an-spacing-sm)] top-1/2 inline-flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-[var(--an-input-border-radius)] border border-transparent bg-transparent p-0 text-[var(--an-foreground-subtle)] opacity-0 transition-[background-color,border-color,color,opacity] duration-150 ease-out hover:border-[color-mix(in_srgb,var(--an-error-color)_26%,var(--an-border-color))] hover:bg-[var(--an-diff-removed-bg)] hover:text-[var(--an-error-color)] focus:opacity-100 focus:outline-none focus:ring-2 focus:ring-[var(--an-focus-ring)] group-hover:opacity-100';
+const primaryButtonClass =
+  'btn-restore agent-elements-history-window-restore inline-flex min-h-8 cursor-pointer items-center justify-center gap-[var(--an-spacing-xs)] whitespace-nowrap rounded-[var(--an-input-border-radius)] border border-[var(--an-primary-color)] bg-[var(--an-primary-color)] px-3.5 py-1.5 text-xs font-medium text-[var(--an-send-button-color)] transition-[background-color,border-color,color,opacity] duration-150 ease-out hover:border-[color-mix(in_srgb,var(--an-primary-color)_82%,var(--an-foreground))] hover:bg-[color-mix(in_srgb,var(--an-primary-color)_88%,var(--an-foreground))] focus-visible:outline-2 focus-visible:outline-[var(--an-focus-ring)] focus-visible:outline-offset-2';
+
 export function HistoryWindow() {
   const [filePath, setFilePath] = useState<string>('');
   const [snapshots, setSnapshots] = useState<Snapshot[]>([]);
@@ -167,93 +196,119 @@ export function HistoryWindow() {
 
   if (loading) {
     return (
-      <div className="history-window flex flex-col items-center justify-center h-screen bg-[var(--nim-bg)] font-sans text-[var(--nim-text-muted)]">
-        <MaterialSymbol icon="hourglass_empty" size={48} />
-        <p className="mt-3 text-sm">Loading history...</p>
+      <div
+        className={centeredStateClass}
+        data-testid="agent-elements-history-window"
+        data-component="HistoryWindow"
+        data-agent-elements-shell="history-window"
+      >
+        <span className="agent-elements-history-window-loading-spinner h-6 w-6 rounded-[999px] border-2 border-[var(--an-border-color)] border-t-[var(--an-primary-color)] motion-safe:animate-spin" />
+        <p className="m-0 text-sm">Loading history...</p>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="history-window flex flex-col items-center justify-center h-screen bg-[var(--nim-bg)] font-sans text-[var(--nim-error)]">
-        <MaterialSymbol icon="error" size={48} />
-        <p className="mt-3 text-sm">{error}</p>
+      <div
+        className={`${centeredStateClass} text-[var(--an-error-color)]`}
+        data-testid="agent-elements-history-window"
+        data-component="HistoryWindow"
+        data-agent-elements-shell="history-window"
+      >
+        <MaterialSymbol icon="error" size={32} />
+        <p className="m-0 select-text text-sm">{error}</p>
       </div>
     );
   }
 
   return (
-    <div className="history-window flex flex-col h-screen bg-[var(--nim-bg)] font-sans">
-      <div className="history-header p-5 border-b border-[var(--nim-border)] bg-[var(--nim-bg-secondary)]">
-        <h1 className="m-0 text-2xl font-semibold text-[var(--nim-text)]">File History</h1>
-        <p className="file-path mt-2 text-[13px] text-[var(--nim-text-muted)] font-mono">{filePath}</p>
+    <div
+      className={windowShellClass}
+      data-testid="agent-elements-history-window"
+      data-component="HistoryWindow"
+      data-agent-elements-shell="history-window"
+    >
+      <div className={headerClass} data-agent-elements-shell="history-window-header">
+        <h1 className="m-0 text-base font-medium leading-snug text-[var(--an-foreground)]">File History</h1>
+        <p className="file-path m-0 mt-1 select-text truncate font-mono text-xs text-[var(--an-foreground-muted)]">{filePath}</p>
       </div>
 
       <div className="history-content flex flex-1 overflow-hidden">
-        <div className="snapshots-list w-80 border-r border-[var(--nim-border)] flex flex-col">
-          <div className="snapshots-header px-5 py-4 border-b border-[var(--nim-border)]">
-            <h2 className="m-0 text-sm font-semibold text-[var(--nim-text-muted)] uppercase tracking-wide">Snapshots ({snapshots.length})</h2>
+        <div className="snapshots-list agent-elements-history-window-snapshot-panel flex w-80 flex-col border-r border-[var(--an-border-color)] bg-[var(--an-background-secondary)]">
+          <div className="snapshots-header flex min-h-11 items-center border-b border-[var(--an-border-color)] px-[var(--an-spacing-xl)] py-[var(--an-spacing-sm)]">
+            <h2 className={panelTitleClass}>Snapshots ({snapshots.length})</h2>
           </div>
 
           {snapshots.length === 0 ? (
-            <div className="no-snapshots flex flex-col items-center justify-center p-10 text-[var(--nim-text-faint)]">
-              <MaterialSymbol icon="history_toggle_off" size={48} />
-              <p className="mt-3 text-sm">No snapshots available</p>
+            <div className="no-snapshots agent-elements-history-window-empty flex flex-1 flex-col items-center justify-center gap-[var(--an-spacing-md)] p-10 text-[var(--an-foreground-subtle)]">
+              <MaterialSymbol icon="history_toggle_off" size={32} />
+              <p className="m-0 text-sm">No snapshots available</p>
             </div>
           ) : (
-            <div className="snapshots flex-1 overflow-y-auto">
-              {snapshots.map((snapshot) => (
-                <div
-                  key={snapshot.timestamp}
-                  className={`snapshot-item flex items-center px-5 py-3 cursor-pointer border-b border-[var(--nim-border-subtle)] transition-colors duration-150 relative hover:bg-[var(--nim-bg-hover)] ${
-                    selectedSnapshot?.timestamp === snapshot.timestamp
-                      ? 'selected bg-[var(--nim-bg-selected)] border-l-[3px] border-l-[var(--nim-primary)] !pl-[17px]'
-                      : ''
-                  }`}
-                  onClick={() => handleSnapshotSelect(snapshot)}
-                >
-                  <div className={`snapshot-icon mr-3 flex items-center ${
-                    selectedSnapshot?.timestamp === snapshot.timestamp
-                      ? 'text-[var(--nim-primary)]'
-                      : 'text-[var(--nim-text-muted)]'
-                  }`}>
-                    <MaterialSymbol icon={getTypeIcon(snapshot.type)} size={20} />
-                  </div>
-                  <div className="snapshot-info flex-1 min-w-0">
-                    <div className="snapshot-date text-sm text-[var(--nim-text)] mb-1">{formatDate(snapshot.timestamp)}</div>
-                    <div className="snapshot-meta flex gap-3 text-xs text-[var(--nim-text-muted)]">
-                      <span className={`snapshot-type inline-flex items-center px-1.5 py-0.5 rounded font-medium ${
-                        selectedSnapshot?.timestamp === snapshot.timestamp
-                          ? 'bg-[var(--nim-accent-subtle)] text-[var(--nim-primary)]'
-                          : 'bg-[var(--nim-bg-tertiary)]'
-                      }`}>{getTypeLabel(snapshot.type)}</span>
-                      <span className="snapshot-size">{formatSize(snapshot.size)}</span>
-                    </div>
-                  </div>
-                  <button
-                    className="snapshot-delete absolute right-3 top-1/2 -translate-y-1/2 p-1 bg-transparent border-none text-[var(--nim-text-faint)] cursor-pointer rounded opacity-0 transition-all duration-150 hover:bg-[var(--nim-error-subtle)] hover:text-[var(--nim-error)] group-hover:opacity-100 [.snapshot-item:hover_&]:opacity-100"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleDelete(snapshot);
+            <div
+              className="snapshots agent-elements-history-window-snapshots nim-scrollbar flex-1 overflow-y-auto bg-[var(--an-background)]"
+              data-testid="agent-elements-history-window-snapshots"
+              data-agent-elements-shell="history-window-snapshots"
+            >
+              {snapshots.map((snapshot) => {
+                const isSelected = selectedSnapshot?.timestamp === snapshot.timestamp;
+
+                return (
+                  <div
+                    key={snapshot.timestamp}
+                    className={`${snapshotItemBaseClass} ${isSelected ? snapshotItemSelectedClass : ''}`}
+                    data-testid={`agent-elements-history-window-snapshot-${snapshot.timestamp}`}
+                    data-agent-elements-shell="history-window-snapshot"
+                    data-snapshot-selected={isSelected ? 'true' : 'false'}
+                    role="button"
+                    tabIndex={0}
+                    aria-label={`Select snapshot from ${formatDate(snapshot.timestamp)}`}
+                    onClick={() => handleSnapshotSelect(snapshot)}
+                    onKeyDown={(event) => {
+                      if (event.key === 'Enter' || event.key === ' ') {
+                        event.preventDefault();
+                        handleSnapshotSelect(snapshot);
+                      }
                     }}
-                    title="Delete snapshot"
                   >
-                    <MaterialSymbol icon="delete" size={18} />
-                  </button>
-                </div>
-              ))}
+                    <div className={`${snapshotIconBaseClass} ${isSelected ? snapshotIconSelectedClass : snapshotIconIdleClass}`}>
+                      <MaterialSymbol icon={getTypeIcon(snapshot.type)} size={18} />
+                    </div>
+                    <div className="snapshot-info min-w-0 flex-1 pr-7">
+                      <div className="snapshot-date mb-1 truncate text-sm font-medium text-[var(--an-foreground)]">{formatDate(snapshot.timestamp)}</div>
+                      <div className="snapshot-meta flex min-w-0 items-center gap-[var(--an-spacing-sm)] text-xs text-[var(--an-foreground-muted)]">
+                        <span className={`${snapshotBadgeBaseClass} ${isSelected ? snapshotBadgeSelectedClass : snapshotBadgeIdleClass}`}>
+                          {getTypeLabel(snapshot.type)}
+                        </span>
+                        <span className="snapshot-size whitespace-nowrap">{formatSize(snapshot.size)}</span>
+                      </div>
+                    </div>
+                    <button
+                      className={iconButtonClass}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDelete(snapshot);
+                      }}
+                      title="Delete snapshot"
+                      aria-label={`Delete snapshot from ${formatDate(snapshot.timestamp)}`}
+                    >
+                      <MaterialSymbol icon="delete" size={18} />
+                    </button>
+                  </div>
+                );
+              })}
             </div>
           )}
         </div>
 
-        <div className="snapshot-preview flex-1 flex flex-col overflow-hidden">
-          <div className="preview-header flex items-center justify-between px-5 py-4 border-b border-[var(--nim-border)]">
-            <h2 className="m-0 text-sm font-semibold text-[var(--nim-text-muted)] uppercase tracking-wide">Preview</h2>
+        <div className="snapshot-preview agent-elements-history-window-preview flex min-w-0 flex-1 flex-col overflow-hidden bg-[var(--an-background)]">
+          <div className="preview-header flex min-h-11 items-center justify-between gap-[var(--an-spacing-lg)] border-b border-[var(--an-border-color)] bg-[var(--an-background-secondary)] px-[var(--an-spacing-xl)] py-[var(--an-spacing-sm)]">
+            <h2 className={panelTitleClass}>Preview</h2>
             {selectedSnapshot && (
-              <div className="preview-actions flex gap-2">
-                <button className="btn-restore nim-btn-primary flex items-center gap-1.5 px-4 py-2 text-sm font-medium rounded-md" onClick={handleRestore}>
-                  <MaterialSymbol icon="restore" size={18} />
+              <div className="preview-actions flex gap-[var(--an-spacing-sm)]">
+                <button className={primaryButtonClass} onClick={handleRestore}>
+                  <MaterialSymbol icon="restore" size={16} />
                   Restore This Version
                 </button>
               </div>
@@ -261,13 +316,19 @@ export function HistoryWindow() {
           </div>
 
           {selectedSnapshot ? (
-            <div className="preview-content flex-1 overflow-auto p-5 bg-[var(--nim-bg-secondary)]">
-              <pre className="m-0 font-mono text-[13px] leading-relaxed text-[var(--nim-text)] whitespace-pre-wrap break-words">{previewContent}</pre>
+            <div className="preview-content agent-elements-history-window-preview-content nim-scrollbar flex-1 overflow-auto bg-[var(--an-background)] p-[var(--an-spacing-xl)]">
+              <pre
+                className="m-0 select-text whitespace-pre-wrap break-words rounded-[var(--an-tool-border-radius)] border border-[var(--an-border-color)] bg-[var(--an-code-background)] p-[var(--an-spacing-xl)] font-mono text-xs leading-relaxed text-[var(--an-code-foreground)]"
+                data-testid="agent-elements-history-window-preview-content"
+                data-agent-elements-shell="history-window-preview-content"
+              >
+                {previewContent}
+              </pre>
             </div>
           ) : (
-            <div className="no-preview flex-1 flex flex-col items-center justify-center text-[var(--nim-text-faint)]">
-              <MaterialSymbol icon="preview_off" size={48} />
-              <p className="mt-3 text-sm">Select a snapshot to preview</p>
+            <div className="no-preview agent-elements-history-window-no-preview flex flex-1 flex-col items-center justify-center gap-[var(--an-spacing-md)] text-[var(--an-foreground-subtle)]">
+              <MaterialSymbol icon="preview_off" size={32} />
+              <p className="m-0 text-sm">Select a snapshot to preview</p>
             </div>
           )}
         </div>

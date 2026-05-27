@@ -2,9 +2,22 @@
 
 import '@testing-library/jest-dom/vitest';
 import React from 'react';
+import { readFileSync } from 'node:fs';
+import path from 'node:path';
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { OpenAICodexPanel } from '../OpenAICodexPanel';
+
+const sourcePath = path.join(
+  process.cwd(),
+  'packages/electron/src/renderer/components/GlobalSettings/panels/OpenAICodexPanel.tsx',
+);
+const chromeSourcePath = path.join(
+  process.cwd(),
+  'packages/electron/src/renderer/components/GlobalSettings/panels/providerPanelChrome.ts',
+);
+const legacyVisualChromePattern =
+  /bg-nim|text-nim|border-nim|bg-\[var\(--nim|text-\[var\(--nim|border-\[var\(--nim|--nim-|rgba\(|#[0-9a-fA-F]{3,8}\b|bg-white|rounded-lg|transition-all/;
 
 const mockState = vi.hoisted(() => ({
   tokens: {
@@ -111,6 +124,7 @@ describe('OpenAICodexPanel Agent Elements shell', () => {
     expect(screen.getByTestId('agent-elements-openai-codex-usage-toggle')).toHaveClass('provider-enable');
     expect(screen.getByTestId('agent-elements-openai-codex-acp-section')).toHaveAttribute('data-section', 'legacy-acp-transport');
     expect(screen.getByTestId('codex-auth-section')).toHaveAttribute('data-section', 'sign-in');
+    expect(screen.getByTestId('codex-auth-section')).toHaveAttribute('data-agent-elements-shell', 'openai-codex-auth-section');
 
     await waitFor(() => {
       expect((window as any).electronAPI.invoke).toHaveBeenCalledWith('openai-codex:check-login');
@@ -130,6 +144,7 @@ describe('OpenAICodexPanel Agent Elements shell', () => {
     });
 
     expect(screen.getByTestId('agent-elements-openai-codex-chatgpt-card')).toHaveClass('agent-elements-tool-card');
+    expect(screen.getByTestId('agent-elements-openai-codex-chatgpt-card')).toHaveAttribute('data-agent-elements-shell', 'openai-codex-chatgpt-card');
     fireEvent.click(screen.getByTestId('codex-login-chatgpt'));
     await waitFor(() => {
       expect((window as any).electronAPI.invoke).toHaveBeenCalledWith('openai-codex:login-chatgpt');
@@ -137,6 +152,7 @@ describe('OpenAICodexPanel Agent Elements shell', () => {
 
     fireEvent.click(screen.getByTestId('codex-auth-method-apikey'));
     expect(screen.getByTestId('agent-elements-openai-codex-apikey-card')).toHaveClass('agent-elements-tool-card');
+    expect(screen.getByTestId('agent-elements-openai-codex-apikey-card')).toHaveAttribute('data-agent-elements-shell', 'openai-codex-apikey-card');
     fireEvent.change(screen.getByTestId('codex-apikey-input'), {
       target: { value: 'sk-test-codex' },
     });
@@ -144,5 +160,19 @@ describe('OpenAICodexPanel Agent Elements shell', () => {
     await waitFor(() => {
       expect((window as any).electronAPI.invoke).toHaveBeenCalledWith('openai-codex:login-apikey', 'sk-test-codex');
     });
+  });
+
+  it('keeps OpenAI Codex chrome on Agent Elements aliases instead of legacy visual tokens', () => {
+    const panelSource = readFileSync(sourcePath, 'utf8');
+    const chromeSource = readFileSync(chromeSourcePath, 'utf8');
+    const source = `${panelSource}\n${chromeSource}`;
+
+    expect(panelSource).toContain('createProviderPanelChrome');
+    expect(source).toContain('--an-border-color');
+    expect(source).toContain('--an-background-tertiary');
+    expect(source).toContain('--an-primary-color');
+    expect(source).toContain('--an-send-button-color');
+    expect(source).toContain('--agent-elements-card-inline-padding');
+    expect(source).not.toMatch(legacyVisualChromePattern);
   });
 });

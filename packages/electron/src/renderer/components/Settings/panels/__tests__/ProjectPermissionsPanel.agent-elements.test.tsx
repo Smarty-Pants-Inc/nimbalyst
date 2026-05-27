@@ -3,6 +3,8 @@
 import '@testing-library/jest-dom/vitest';
 import React from 'react';
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mockState = vi.hoisted(() => ({
@@ -56,6 +58,8 @@ vi.mock('../../../../store/atoms/appSettings', () => ({
 }));
 
 import { ProjectPermissionsPanel } from '../ProjectPermissionsPanel';
+
+const sourcePath = resolve(__dirname, '../ProjectPermissionsPanel.tsx');
 
 describe('ProjectPermissionsPanel Agent Elements shell', () => {
   beforeEach(() => {
@@ -141,5 +145,16 @@ describe('ProjectPermissionsPanel Agent Elements shell', () => {
     expect(mockState.posthog.capture).toHaveBeenCalledWith('agent_permissions_opened', expect.objectContaining({
       permissionMode: 'ask',
     }));
+  });
+
+  it('keeps project permissions cards on shared Agent Elements gutters and full settings width', () => {
+    const source = readFileSync(sourcePath, 'utf8');
+
+    expect(source).toContain('project-permissions-panel agent-elements-settings-panel flex h-full w-full flex-col');
+    expect(source).toContain('--agent-elements-card-inline-padding');
+    expect(source).toContain('--agent-elements-card-block-padding');
+    expect(source).not.toMatch(/agent-elements-tool-card[^`'"]*\b(?:p-|p-\[|px-|px-\[|py-|py-\[|max-w-)/);
+    expect(source).not.toMatch(/--nim-|bg-nim|border-nim|text-nim|text-white|rgba\(/);
+    expect(source).not.toMatch(/rounded-lg|rounded-md|tracking-wide|shadow-lg/);
   });
 });

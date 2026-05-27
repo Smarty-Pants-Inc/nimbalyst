@@ -1,7 +1,13 @@
 import '@testing-library/jest-dom/vitest';
 import React from 'react';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
+const sourcePath = resolve(__dirname, '../FilesEditedSidebar.tsx');
+const legacyVisualTokenPattern =
+  /bg-\[var\(--nim|text-\[var\(--nim|border-\[var\(--nim|--nim-|bg-nim|text-nim|border-nim|text-white|bg-white|bg-black|rounded(?:\s|")|rounded-\[3px\]|rounded-md|rounded-lg|rounded-xl|rounded-2xl|rounded-full|shadow(?:-|\\b)|transition-all|rgba\(|rgb\(/;
 
 const mockState = vi.hoisted(() => {
   const tokens = {
@@ -371,5 +377,18 @@ describe('AgentMode FilesEditedSidebar Agent Elements shell', () => {
         true,
       );
     });
+  });
+
+  it('keeps the Electron Files Edited source on Agent Elements-compatible visual rules', () => {
+    const source = readFileSync(sourcePath, 'utf8');
+
+    expect(source).toContain('agent-elements-files-edited-agent-mode');
+    expect(source).toContain('data-agent-elements-shell="agent-mode-files-edited"');
+    expect(source).toContain('--an-tool-background');
+    expect(source).toContain('--an-border-color');
+    expect(source).toContain('--an-warning-color');
+    expect(source).toContain('--an-radius-sm');
+    expect(source).not.toMatch(legacyVisualTokenPattern);
+    expect(source).not.toMatch(/<MaterialSymbol[^>]*aria-hidden/);
   });
 });

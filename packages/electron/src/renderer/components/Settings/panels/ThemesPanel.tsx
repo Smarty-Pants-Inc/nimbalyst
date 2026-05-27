@@ -5,6 +5,7 @@ import type { ThemeManifest } from '@nimbalyst/extension-sdk';
 import { useTheme } from '../../../hooks/useTheme';
 import { pendingThemeFallbackAtom } from '../../../store/atoms/themeFallback';
 import { themeListChangedVersionAtom } from '../../../store/atoms/themeList';
+import { createProviderPanelChrome } from '../../GlobalSettings/panels/providerPanelChrome';
 
 interface ThemesPanelProps {
   scope: 'user' | 'project';
@@ -18,13 +19,43 @@ interface ThemeWithState extends ThemeManifest {
   isActive: boolean;
 }
 
-const getThemeCardClassName = (isSelected: boolean) => (
-  `agent-elements-theme-card flex items-center gap-3 p-3 border rounded-lg cursor-pointer transition-colors duration-150 ${
-    isSelected
-      ? 'border-nim-primary bg-nim-primary/5'
-      : 'border-nim bg-nim-secondary hover:bg-nim-tertiary'
-  }`
-);
+const chrome = createProviderPanelChrome({
+  headerClassName: 'themes-panel-header agent-elements-settings-panel-header',
+  sectionClassName: 'themes-group agent-elements-settings-section',
+  configCardClassName: 'agent-elements-themes-card',
+  inputClassName: 'agent-elements-themes-input',
+  loadingClassName: 'agent-elements-themes-loading',
+  modelRowClassName: 'agent-elements-theme-card',
+  testButtonClassName: 'agent-elements-themes-button',
+  testErrorClassName: 'themes-message',
+  emptyClassName: 'agent-elements-themes-empty',
+});
+
+const compactCardPaddingClass =
+  '[--agent-elements-card-block-padding:var(--an-spacing-lg)] [--agent-elements-card-inline-padding:var(--an-spacing-lg)]';
+const emptyCardPaddingClass =
+  '[--agent-elements-card-block-padding:var(--an-spacing-xxl)] [--agent-elements-card-inline-padding:var(--an-spacing-xxl)]';
+const themeCardBaseClass =
+  `agent-elements-theme-card agent-elements-tool-card flex !flex-row items-center gap-[var(--an-spacing-lg)] cursor-pointer border ${compactCardPaddingClass} transition-[background-color,border-color,color] duration-150 ease-out`;
+const themeCardSelectedClass =
+  'border-[var(--an-primary-color)] bg-[color-mix(in_srgb,var(--an-primary-color)_8%,var(--an-background))]';
+const themeCardIdleClass =
+  'border-[var(--an-border-color)] bg-[var(--an-background-secondary)] hover:border-[var(--an-primary-color)] hover:bg-[var(--an-background-tertiary)]';
+const themeIconBoxClass =
+  'flex h-10 w-10 items-center justify-center rounded-[var(--an-small-border-radius)] bg-[var(--an-background-tertiary)] text-[var(--an-foreground-muted)]';
+const themeTitleClass = 'text-sm font-medium text-[var(--an-foreground)]';
+const themeMetaClass = 'text-xs text-[var(--an-foreground-muted)]';
+const iconButtonClass =
+  'rounded-[var(--an-small-border-radius)] p-[var(--an-spacing-xs)] text-[var(--an-foreground-muted)] transition-colors duration-150 hover:bg-[var(--an-background-tertiary)] hover:text-[var(--an-foreground)]';
+const applyButtonClass =
+  'agent-elements-theme-apply rounded-[var(--an-small-border-radius)] px-[var(--an-spacing-lg)] py-[var(--an-spacing-xs)] text-xs text-[var(--an-foreground-muted)] transition-colors duration-150 hover:bg-[var(--an-background-tertiary)] hover:text-[var(--an-foreground)]';
+const uninstallButtonClass =
+  'agent-elements-theme-uninstall rounded-[var(--an-small-border-radius)] p-[var(--an-spacing-sm)] text-[var(--an-foreground-muted)] transition-colors duration-150 hover:bg-[var(--an-diff-removed-bg)] hover:text-[var(--an-diff-removed-text)]';
+const activePillClass =
+  'flex items-center gap-[var(--an-spacing-xs)] rounded-[var(--an-small-border-radius)] bg-[color-mix(in_srgb,var(--an-primary-color)_14%,var(--an-background))] px-[var(--an-spacing-sm)] py-[var(--an-spacing-xs)] text-xs text-[var(--an-primary-color)]';
+
+const getThemeCardClassName = (isSelected: boolean) =>
+  `${themeCardBaseClass} ${isSelected ? themeCardSelectedClass : themeCardIdleClass}`;
 
 export const ThemesPanel: React.FC<ThemesPanelProps> = ({ scope, workspacePath }) => {
   const { themeId } = useTheme();
@@ -170,7 +201,7 @@ export const ThemesPanel: React.FC<ThemesPanelProps> = ({ scope, workspacePath }
         data-testid="agent-elements-themes-panel"
       >
         <div
-          className="agent-elements-themes-loading text-nim-muted"
+          className={chrome.loadingText}
           data-agent-elements-shell="themes-loading"
         >
           Loading themes...
@@ -191,19 +222,19 @@ export const ThemesPanel: React.FC<ThemesPanelProps> = ({ scope, workspacePath }
     >
       {/* Header */}
       <div
-        className="themes-panel-header agent-elements-settings-panel-header flex items-center justify-between mb-4 pb-4 border-b border-nim"
+        className={`${chrome.header} flex items-center justify-between`}
         data-agent-elements-shell="themes-header"
         data-testid="agent-elements-themes-header"
       >
         <div>
-          <h2 className="text-lg font-semibold text-nim">Themes</h2>
-          <p className="text-sm text-nim-muted mt-1">
+          <h2 className={chrome.title}>Themes</h2>
+          <p className={chrome.description}>
             Manage color themes for the editor
           </p>
         </div>
         <button
           onClick={handleRefresh}
-          className="agent-elements-themes-refresh flex items-center gap-2 px-3 py-1.5 text-sm text-nim-muted hover:text-nim hover:bg-nim-hover rounded-md transition-colors"
+          className={`${chrome.secondaryButton} agent-elements-themes-refresh gap-[var(--an-spacing-sm)]`}
           data-agent-elements-shell="themes-refresh"
           data-testid="agent-elements-themes-refresh"
           title="Refresh theme list"
@@ -216,7 +247,7 @@ export const ThemesPanel: React.FC<ThemesPanelProps> = ({ scope, workspacePath }
       {/* Error message */}
       {error && (
         <div
-          className="themes-message agent-elements-tool-card mb-4 p-3 bg-nim-error/10 border border-nim-error/30 rounded-lg text-nim-error text-sm"
+          className={`themes-message agent-elements-tool-card mb-[var(--an-spacing-xl)] border-[color-mix(in_srgb,var(--an-error-color)_36%,var(--an-border-color))] bg-[var(--an-diff-removed-bg)] text-sm text-[var(--an-error-color)] ${compactCardPaddingClass}`}
           data-agent-elements-shell="themes-message"
           data-tone="error"
         >
@@ -227,19 +258,19 @@ export const ThemesPanel: React.FC<ThemesPanelProps> = ({ scope, workspacePath }
       {/* Pending fallback banner */}
       {pendingFallback && (
         <div
-          className="theme-fallback-banner agent-elements-tool-card agent-elements-themes-fallback mb-4 p-3 bg-nim-warning/10 border border-nim-warning/30 rounded-lg flex items-start gap-2"
+          className={`theme-fallback-banner agent-elements-tool-card agent-elements-themes-fallback mb-[var(--an-spacing-xl)] flex !flex-row items-start gap-[var(--an-spacing-sm)] border-[color-mix(in_srgb,var(--an-warning-color)_34%,var(--an-border-color))] bg-[color-mix(in_srgb,var(--an-warning-color)_10%,var(--an-background))] ${compactCardPaddingClass}`}
           data-agent-elements-shell="themes-fallback"
           data-tone="warning"
           data-testid="agent-elements-themes-fallback"
         >
-          <MaterialSymbol icon="info" size={18} className="text-nim-warning shrink-0 mt-0.5" />
-          <div className="flex-1 text-sm text-nim">
+          <MaterialSymbol icon="info" size={18} className="mt-0.5 shrink-0 text-[var(--an-warning-color)]" />
+          <div className="flex-1 text-sm text-[var(--an-foreground)]">
             The theme <span className="font-semibold">{pendingFallback.missingId}</span> is no longer available. Switched to <span className="font-semibold">{pendingFallback.appliedId}</span>.
           </div>
           <button
             data-testid="dismiss-theme-fallback"
             onClick={handleDismissFallback}
-            className="p-1 text-nim-muted hover:text-nim hover:bg-nim-hover rounded transition-colors"
+            className={iconButtonClass}
             title="Dismiss"
           >
             <MaterialSymbol icon="close" size={16} />
@@ -253,22 +284,22 @@ export const ThemesPanel: React.FC<ThemesPanelProps> = ({ scope, workspacePath }
         data-agent-elements-shell="themes-active-section"
         data-testid="agent-elements-themes-active-section"
       >
-        <h3 className="text-sm font-medium text-nim mb-3">Active Theme</h3>
-        <div className="agent-elements-tool-card flex items-center gap-3 p-3 bg-nim-secondary border border-nim rounded-lg">
+        <h3 className={chrome.sectionTitle}>Active Theme</h3>
+        <div className={`${chrome.configCard} flex !flex-row items-center gap-[var(--an-spacing-lg)] border-[var(--an-border-color)] bg-[var(--an-background-secondary)]`}>
           {(() => {
             const activeTheme = themes.find(t => t.isActive);
-            if (!activeTheme) return <div className="text-nim-muted text-sm">No theme selected</div>;
+            if (!activeTheme) return <div className="text-sm text-[var(--an-foreground-muted)]">No theme selected</div>;
 
             return (
               <>
-                <div className="flex items-center justify-center w-10 h-10 bg-nim-tertiary rounded-md">
+                <div className={themeIconBoxClass}>
                   <MaterialSymbol icon={getThemeIcon(activeTheme)} size={20} />
                 </div>
                 <div className="flex-1">
-                  <div className="text-sm font-medium text-nim">{activeTheme.name}</div>
-                  <div className="text-xs text-nim-muted">{activeTheme.description || 'No description'}</div>
+                  <div className={themeTitleClass}>{activeTheme.name}</div>
+                  <div className={themeMetaClass}>{activeTheme.description || 'No description'}</div>
                 </div>
-                <div className="flex items-center gap-1 px-2 py-1 bg-nim-primary/20 text-nim-primary text-xs rounded">
+                <div className={activePillClass}>
                   <MaterialSymbol icon="check" size={14} />
                   <span>Active</span>
                 </div>
@@ -290,7 +321,7 @@ export const ThemesPanel: React.FC<ThemesPanelProps> = ({ scope, workspacePath }
           data-theme-origin="builtin"
           data-testid="agent-elements-themes-group-builtin"
         >
-          <h3 className="text-sm font-medium text-nim mb-3">Built-in Themes</h3>
+          <h3 className={chrome.sectionTitle}>Built-in Themes</h3>
           <div className="space-y-2">
             {builtInThemes.map((theme) => (
               <div
@@ -303,15 +334,15 @@ export const ThemesPanel: React.FC<ThemesPanelProps> = ({ scope, workspacePath }
                 data-testid={`agent-elements-theme-card-${theme.id}`}
                 onClick={() => setSelectedThemeId(theme.id)}
               >
-                <div className="flex items-center justify-center w-10 h-10 bg-nim-tertiary rounded-md">
+                <div className={themeIconBoxClass}>
                   <MaterialSymbol icon={getThemeIcon(theme)} size={20} />
                 </div>
                 <div className="flex-1">
-                  <div className="text-sm font-medium text-nim">{theme.name}</div>
-                  <div className="text-xs text-nim-muted">{theme.description || 'No description'}</div>
+                  <div className={themeTitleClass}>{theme.name}</div>
+                  <div className={themeMetaClass}>{theme.description || 'No description'}</div>
                 </div>
                 {theme.isActive && (
-                  <div className="flex items-center gap-1 text-nim-primary text-xs">
+                  <div className="flex items-center gap-[var(--an-spacing-xs)] text-xs text-[var(--an-primary-color)]">
                     <MaterialSymbol icon="check" size={14} />
                   </div>
                 )}
@@ -321,7 +352,7 @@ export const ThemesPanel: React.FC<ThemesPanelProps> = ({ scope, workspacePath }
                       e.stopPropagation();
                       handleThemeSelect(theme.id);
                     }}
-                    className="agent-elements-theme-apply px-3 py-1 text-xs text-nim-muted hover:text-nim hover:bg-nim-hover rounded-md transition-colors"
+                    className={applyButtonClass}
                   >
                     Apply
                   </button>
@@ -339,7 +370,7 @@ export const ThemesPanel: React.FC<ThemesPanelProps> = ({ scope, workspacePath }
             data-theme-origin="user"
             data-testid="agent-elements-themes-group-user"
           >
-            <h3 className="text-sm font-medium text-nim mb-3">User Themes</h3>
+            <h3 className={chrome.sectionTitle}>User Themes</h3>
             <div className="space-y-2">
               {userThemes.map((theme) => (
                 <div
@@ -352,15 +383,15 @@ export const ThemesPanel: React.FC<ThemesPanelProps> = ({ scope, workspacePath }
                   data-testid={`agent-elements-theme-card-${theme.id}`}
                   onClick={() => setSelectedThemeId(theme.id)}
                 >
-                  <div className="flex items-center justify-center w-10 h-10 bg-nim-tertiary rounded-md">
+                  <div className={themeIconBoxClass}>
                     <MaterialSymbol icon={getThemeIcon(theme)} size={20} />
                   </div>
                   <div className="flex-1">
-                    <div className="text-sm font-medium text-nim">{theme.name}</div>
-                    <div className="text-xs text-nim-muted">{theme.description || 'No description'}</div>
+                    <div className={themeTitleClass}>{theme.name}</div>
+                    <div className={themeMetaClass}>{theme.description || 'No description'}</div>
                   </div>
                   {theme.isActive && (
-                    <div className="flex items-center gap-1 text-nim-primary text-xs">
+                    <div className="flex items-center gap-[var(--an-spacing-xs)] text-xs text-[var(--an-primary-color)]">
                       <MaterialSymbol icon="check" size={14} />
                     </div>
                   )}
@@ -371,7 +402,7 @@ export const ThemesPanel: React.FC<ThemesPanelProps> = ({ scope, workspacePath }
                           e.stopPropagation();
                           handleThemeSelect(theme.id);
                         }}
-                        className="agent-elements-theme-apply px-3 py-1 text-xs text-nim-muted hover:text-nim hover:bg-nim-hover rounded-md transition-colors"
+                        className={applyButtonClass}
                       >
                         Apply
                       </button>
@@ -381,7 +412,7 @@ export const ThemesPanel: React.FC<ThemesPanelProps> = ({ scope, workspacePath }
                         e.stopPropagation();
                         handleUninstall(theme.id);
                       }}
-                      className="agent-elements-theme-uninstall p-1.5 text-nim-muted hover:text-nim-error hover:bg-nim-error/10 rounded-md transition-colors"
+                      className={uninstallButtonClass}
                       title="Uninstall theme"
                     >
                       <MaterialSymbol icon="delete" size={16} />
@@ -401,7 +432,7 @@ export const ThemesPanel: React.FC<ThemesPanelProps> = ({ scope, workspacePath }
             data-theme-origin="extension"
             data-testid="agent-elements-themes-group-extension"
           >
-            <h3 className="text-sm font-medium text-nim mb-3">Extension Themes</h3>
+            <h3 className={chrome.sectionTitle}>Extension Themes</h3>
             <div className="space-y-2">
               {extensionThemes.map((theme) => (
                 <div
@@ -414,17 +445,17 @@ export const ThemesPanel: React.FC<ThemesPanelProps> = ({ scope, workspacePath }
                   data-theme-origin="extension"
                   onClick={() => setSelectedThemeId(theme.id)}
                 >
-                  <div className="flex items-center justify-center w-10 h-10 bg-nim-tertiary rounded-md">
+                  <div className={themeIconBoxClass}>
                     <MaterialSymbol icon={getThemeIcon(theme)} size={20} />
                   </div>
                   <div className="flex-1">
-                    <div className="text-sm font-medium text-nim">{theme.name}</div>
-                    <div className="text-xs text-nim-muted">
+                    <div className={themeTitleClass}>{theme.name}</div>
+                    <div className={themeMetaClass}>
                       {theme.contributedBy ? `Contributed by ${theme.contributedBy}` : 'Extension theme'}
                     </div>
                   </div>
                   {theme.isActive && (
-                    <div className="flex items-center gap-1 text-nim-primary text-xs">
+                    <div className="flex items-center gap-[var(--an-spacing-xs)] text-xs text-[var(--an-primary-color)]">
                       <MaterialSymbol icon="check" size={14} />
                     </div>
                   )}
@@ -434,7 +465,7 @@ export const ThemesPanel: React.FC<ThemesPanelProps> = ({ scope, workspacePath }
                         e.stopPropagation();
                         handleThemeSelect(theme.id);
                       }}
-                      className="agent-elements-theme-apply px-3 py-1 text-xs text-nim-muted hover:text-nim hover:bg-nim-hover rounded-md transition-colors"
+                      className={applyButtonClass}
                     >
                       Apply
                     </button>
@@ -452,16 +483,17 @@ export const ThemesPanel: React.FC<ThemesPanelProps> = ({ scope, workspacePath }
             data-agent-elements-shell="themes-group"
             data-theme-origin="installed"
           >
-            <h3 className="text-sm font-medium text-nim mb-3">Installed Themes</h3>
+            <h3 className={chrome.sectionTitle}>Installed Themes</h3>
             <div
-              className="agent-elements-themes-empty flex flex-col items-center justify-center p-8 bg-nim-secondary border border-nim border-dashed rounded-lg"
+              className={`${chrome.emptyText} agent-elements-tool-card flex flex-col items-center justify-center border-dashed bg-[var(--an-background-secondary)] text-center ${emptyCardPaddingClass}`}
               data-agent-elements-shell="themes-empty-state"
+              data-testid="agent-elements-themes-empty-state"
             >
-              <MaterialSymbol icon="palette" size={32} className="text-nim-muted mb-2" />
-              <p className="text-sm text-nim-muted text-center">
+              <MaterialSymbol icon="palette" size={32} className="mb-[var(--an-spacing-sm)] text-[var(--an-foreground-muted)]" />
+              <p className="text-center text-sm text-[var(--an-foreground-muted)]">
                 No user or extension themes installed yet
               </p>
-              <p className="text-xs text-nim-faint text-center mt-1">
+              <p className="mt-[var(--an-spacing-xs)] text-center text-xs text-[var(--an-foreground-subtle)]">
                 Install themes from files, the marketplace, or via theme extensions
               </p>
             </div>
@@ -472,19 +504,19 @@ export const ThemesPanel: React.FC<ThemesPanelProps> = ({ scope, workspacePath }
       {/* Theme details panel */}
       {selectedTheme && (
         <div
-          className="agent-elements-themes-detail mt-4 pt-4 border-t border-nim"
+          className="agent-elements-themes-detail mt-[var(--an-spacing-xl)] border-t border-[var(--an-border-color)] pt-[var(--an-spacing-xl)]"
           data-agent-elements-shell="themes-detail"
           data-theme-id={selectedTheme.id}
           data-testid="agent-elements-themes-detail"
         >
           <div className="flex items-start justify-between mb-3">
             <div>
-              <h3 className="text-sm font-medium text-nim">{selectedTheme.name}</h3>
-              <p className="text-xs text-nim-muted mt-0.5">{selectedTheme.description || 'No description'}</p>
+              <h3 className={themeTitleClass}>{selectedTheme.name}</h3>
+              <p className={`mt-0.5 ${themeMetaClass}`}>{selectedTheme.description || 'No description'}</p>
             </div>
             <button
               onClick={() => setSelectedThemeId(null)}
-              className="agent-elements-themes-detail-close p-1 text-nim-muted hover:text-nim rounded-md transition-colors"
+              className={`agent-elements-themes-detail-close ${iconButtonClass}`}
             >
               <MaterialSymbol icon="close" size={16} />
             </button>
@@ -493,25 +525,25 @@ export const ThemesPanel: React.FC<ThemesPanelProps> = ({ scope, workspacePath }
           {/* Theme metadata */}
           <div className="space-y-2 text-xs">
             <div className="flex items-center justify-between">
-              <span className="text-nim-muted">Version:</span>
-              <span className="text-nim">{selectedTheme.version}</span>
+              <span className="text-[var(--an-foreground-muted)]">Version:</span>
+              <span className="text-[var(--an-foreground)]">{selectedTheme.version}</span>
             </div>
             {selectedTheme.author && (
               <div className="flex items-center justify-between">
-                <span className="text-nim-muted">Author:</span>
-                <span className="text-nim">{selectedTheme.author}</span>
+                <span className="text-[var(--an-foreground-muted)]">Author:</span>
+                <span className="text-[var(--an-foreground)]">{selectedTheme.author}</span>
               </div>
             )}
             <div className="flex items-center justify-between">
-              <span className="text-nim-muted">Type:</span>
-              <span className="text-nim">{selectedTheme.isDark ? 'Dark' : 'Light'}</span>
+              <span className="text-[var(--an-foreground-muted)]">Type:</span>
+              <span className="text-[var(--an-foreground)]">{selectedTheme.isDark ? 'Dark' : 'Light'}</span>
             </div>
             {selectedTheme.tags && selectedTheme.tags.length > 0 && (
               <div className="flex items-start justify-between">
-                <span className="text-nim-muted">Tags:</span>
+                <span className="text-[var(--an-foreground-muted)]">Tags:</span>
                 <div className="flex flex-wrap gap-1 justify-end">
                   {selectedTheme.tags.map(tag => (
-                    <span key={tag} className="px-1.5 py-0.5 bg-nim-tertiary text-nim-muted rounded text-xs">
+                    <span key={tag} className="rounded-[var(--an-radius-xs)] bg-[var(--an-background-tertiary)] px-1.5 py-0.5 text-xs text-[var(--an-foreground-muted)]">
                       {tag}
                     </span>
                   ))}
@@ -519,9 +551,9 @@ export const ThemesPanel: React.FC<ThemesPanelProps> = ({ scope, workspacePath }
               </div>
             )}
             {(['solarized-dark', 'solarized-light', 'monokai'].includes(selectedTheme.id)) && (
-              <div className="flex items-start justify-between pt-2 border-t border-nim mt-2">
-                <span className="text-nim-muted">License:</span>
-                <span className="text-nim text-right max-w-[60%]">
+              <div className="mt-[var(--an-spacing-sm)] flex items-start justify-between border-t border-[var(--an-border-color)] pt-[var(--an-spacing-sm)]">
+                <span className="text-[var(--an-foreground-muted)]">License:</span>
+                <span className="max-w-[60%] text-right text-[var(--an-foreground)]">
                   {selectedTheme.id.startsWith('solarized')
                     ? 'MIT License © 2011 Ethan Schoonover'
                     : 'MIT License © 2006 Wimer Hazenberg'}
@@ -532,7 +564,7 @@ export const ThemesPanel: React.FC<ThemesPanelProps> = ({ scope, workspacePath }
 
           {/* Color preview */}
           <div className="mt-4">
-            <div className="text-xs font-medium text-nim mb-2">Colors</div>
+            <div className="mb-[var(--an-spacing-sm)] text-xs font-medium text-[var(--an-foreground)]">Colors</div>
             <div
               className="agent-elements-themes-color-preview grid grid-cols-4 gap-2"
               data-agent-elements-shell="themes-color-preview"
@@ -541,16 +573,16 @@ export const ThemesPanel: React.FC<ThemesPanelProps> = ({ scope, workspacePath }
               {Object.entries(selectedTheme.colors).slice(0, 8).map(([key, value]) => (
                 <div key={key} className="flex flex-col items-center gap-1">
                   <div
-                    className="w-full h-8 rounded border border-nim"
+                    className="h-8 w-full rounded-[var(--an-small-border-radius)] border border-[var(--an-border-color)]"
                     style={{ backgroundColor: value }}
                     title={`${key}: ${value}`}
                   />
-                  <span className="text-xs text-nim-muted">{key}</span>
+                  <span className="text-xs text-[var(--an-foreground-muted)]">{key}</span>
                 </div>
               ))}
             </div>
             {Object.keys(selectedTheme.colors).length > 8 && (
-              <div className="text-xs text-nim-muted text-center mt-2">
+              <div className="mt-[var(--an-spacing-sm)] text-center text-xs text-[var(--an-foreground-muted)]">
                 +{Object.keys(selectedTheme.colors).length - 8} more colors
               </div>
             )}

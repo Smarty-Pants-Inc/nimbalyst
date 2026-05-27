@@ -4,11 +4,11 @@ import { errorNotificationService, type ErrorNotification } from '../../services
 
 const severityStyles: Record<ErrorNotification['severity'], string> = {
   error:
-    'border-[color-mix(in_srgb,var(--nim-error)_34%,var(--an-border-color))] bg-[color-mix(in_srgb,var(--nim-error)_7%,var(--an-background))] text-[var(--nim-error)]',
+    'border-[color-mix(in_srgb,var(--an-error-color)_34%,var(--an-border-color))] bg-[color-mix(in_srgb,var(--an-error-color)_7%,var(--an-background))] text-[var(--an-error-color)]',
   warning:
-    'border-[color-mix(in_srgb,var(--nim-warning)_34%,var(--an-border-color))] bg-[color-mix(in_srgb,var(--nim-warning)_7%,var(--an-background))] text-[var(--nim-warning)]',
+    'border-[color-mix(in_srgb,var(--an-warning-color)_34%,var(--an-border-color))] bg-[color-mix(in_srgb,var(--an-warning-color)_7%,var(--an-background))] text-[var(--an-warning-color)]',
   info:
-    'border-[color-mix(in_srgb,var(--nim-info)_34%,var(--an-border-color))] bg-[color-mix(in_srgb,var(--nim-info)_7%,var(--an-background))] text-[var(--nim-info)]',
+    'border-[color-mix(in_srgb,var(--an-info-color)_34%,var(--an-border-color))] bg-[color-mix(in_srgb,var(--an-info-color)_7%,var(--an-background))] text-[var(--an-info-color)]',
 };
 
 const severityIcons: Record<ErrorNotification['severity'], string> = {
@@ -126,7 +126,7 @@ ${JSON.stringify(notification.context, null, 2)}
       {notifications.map(notification => (
         <div
           key={notification.id}
-          className={`error-toast error-toast--${notification.severity} agent-elements-error-toast agent-elements-tool-card pointer-events-auto flex flex-col gap-[var(--an-spacing-md)] rounded-[var(--an-tool-border-radius)] border p-[var(--an-spacing-xl)] text-[var(--an-foreground)] shadow-[0_16px_48px_color-mix(in_srgb,var(--nim-text)_16%,transparent)] transition-[opacity,transform] duration-200 ease-out ${severityStyles[notification.severity]}`}
+          className={`error-toast error-toast--${notification.severity} agent-elements-error-toast agent-elements-tool-card pointer-events-auto flex flex-col gap-[var(--an-spacing-md)] rounded-[var(--an-tool-border-radius)] border p-[var(--an-spacing-xl)] text-[var(--an-foreground)] shadow-[0_16px_48px_color-mix(in_srgb,var(--an-foreground)_16%,transparent)] transition-[opacity,transform] duration-200 ease-out ${severityStyles[notification.severity]}`}
           role="alert"
           data-agent-elements-shell="error-toast"
           data-severity={notification.severity}
@@ -187,7 +187,7 @@ ${JSON.stringify(notification.context, null, 2)}
               )}
               {(notification.details || notification.stack || notification.context) && (
                 <button
-                  className="error-toast-copy-btn agent-elements-error-toast-copy cursor-pointer rounded-[var(--an-input-border-radius)] border border-[var(--an-send-button-bg)] bg-[var(--an-send-button-bg)] px-[var(--an-spacing-lg)] py-[var(--an-spacing-sm)] text-xs font-medium text-[var(--an-send-button-color)] transition-colors duration-150 ease-out hover:bg-[var(--nim-primary-hover)] focus:outline-none focus:ring-2 focus:ring-[var(--an-input-focus-outline)]"
+                  className="error-toast-copy-btn agent-elements-error-toast-copy cursor-pointer rounded-[var(--an-input-border-radius)] border border-[var(--an-send-button-bg)] bg-[var(--an-send-button-bg)] px-[var(--an-spacing-lg)] py-[var(--an-spacing-sm)] text-xs font-medium text-[var(--an-send-button-color)] transition-colors duration-150 ease-out hover:bg-[color-mix(in_srgb,var(--an-primary-color)_88%,var(--an-foreground))] focus:outline-none focus:ring-2 focus:ring-[var(--an-input-focus-outline)]"
                   onClick={() => handleCopyDetails(notification)}
                 >
                   Copy Details

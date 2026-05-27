@@ -4,6 +4,9 @@
  */
 
 .agent-elements-transcript-row {
+  --agent-elements-card-inline-padding: var(--an-spacing-md);
+  --agent-elements-card-block-padding: var(--an-spacing-md);
+  --agent-elements-wide-max-width: 44rem;
   container-type: inline-size;
   container-name: agent-elements-transcript-row;
   display: flex;
@@ -12,8 +15,50 @@
   gap: var(--an-spacing-xs);
   width: 100%;
   max-width: min(100%, var(--an-max-width));
+  box-sizing: border-box;
   color: var(--an-foreground);
   text-align: left;
+}
+
+.agent-elements-live-bridge {
+  --agent-elements-wide-max-width: 44rem;
+  box-sizing: border-box;
+  max-width: 100%;
+  animation: agent-elements-live-bridge-in 180ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  transform-origin: 50% 0;
+}
+
+.agent-elements-renderer-boundary {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+.agent-elements-live-bridge .agent-elements-renderer-boundary,
+.agent-elements-live-bridge .agent-elements-tool-card.agent-elements-tool-card,
+.agent-elements-live-bridge .agent-elements-plan-card,
+.agent-elements-live-bridge .agent-elements-todo-list {
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+.agent-elements-live-bridge[data-agent-elements-padding="aligned"] {
+  padding-inline: 0;
+}
+
+.agent-elements-live-bridge[data-agent-elements-width="full"] {
+  width: 100%;
+}
+
+.agent-elements-live-bridge[data-agent-elements-width="wide"] {
+  width: min(100%, var(--agent-elements-wide-max-width));
+  margin-inline: auto;
+}
+
+.agent-elements-live-bridge[data-agent-elements-width="content"] {
+  width: min(100%, var(--an-max-width));
 }
 
 .agent-elements-identity-row {
@@ -67,6 +112,7 @@
 
 .agent-elements-transcript-content {
   max-width: 100%;
+  box-sizing: border-box;
   color: var(--an-foreground);
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
   font-size: 14px;
@@ -88,13 +134,25 @@
   gap: var(--an-spacing-sm);
   width: 100%;
   max-width: 100%;
+  box-sizing: border-box;
   padding: var(--an-spacing-md);
+  padding-block: var(--agent-elements-card-block-padding, var(--an-spacing-md));
+  padding-inline: var(--agent-elements-card-inline-padding, var(--an-spacing-md));
+  padding-left: var(--agent-elements-card-inline-padding, var(--an-spacing-md));
+  padding-right: var(--agent-elements-card-inline-padding, var(--an-spacing-md));
   color: var(--an-tool-color);
   background: var(--an-tool-background);
   border: 1px solid var(--an-tool-border-color);
   border-radius: var(--an-tool-border-radius);
   overflow: hidden;
   text-align: left;
+}
+
+.agent-elements-tool-card.agent-elements-tool-card {
+  padding-block: var(--agent-elements-card-block-padding, var(--an-spacing-md));
+  padding-inline: var(--agent-elements-card-inline-padding, var(--an-spacing-md));
+  padding-left: var(--agent-elements-card-inline-padding, var(--an-spacing-md));
+  padding-right: var(--agent-elements-card-inline-padding, var(--an-spacing-md));
 }
 
 .agent-elements-tool-header {
@@ -155,7 +213,7 @@
 }
 
 .agent-elements-debug-disclosure summary:focus-visible {
-  outline: 2px solid var(--an-input-focus-outline, var(--nim-border-focus));
+  outline: 2px solid var(--an-input-focus-outline);
   outline-offset: 2px;
 }
 
@@ -171,6 +229,92 @@
   font-size: 12px;
   line-height: 1.333;
   user-select: text;
+}
+
+.agent-elements-json-viewer {
+  max-height: 16rem;
+  overflow-y: auto;
+  white-space: pre;
+}
+
+.agent-elements-json-viewer--max-12rem {
+  max-height: 12rem;
+}
+
+.agent-elements-json-viewer--max-16rem {
+  max-height: 16rem;
+}
+
+.agent-elements-json-viewer--max-20rem {
+  max-height: 20rem;
+}
+
+.agent-elements-json-viewer--max-24rem {
+  max-height: 24rem;
+}
+
+.agent-elements-json-viewer .json-key {
+  color: var(--an-primary-color);
+  font-weight: 500;
+}
+
+.agent-elements-json-viewer .json-string {
+  color: color-mix(in srgb, var(--an-code-color) 70%, var(--an-success-color));
+}
+
+.agent-elements-json-viewer .json-number {
+  color: var(--an-success-color);
+}
+
+.agent-elements-json-viewer .json-boolean,
+.agent-elements-json-viewer .json-null {
+  color: var(--an-primary-color);
+  font-weight: 600;
+}
+
+.agent-elements-json-viewer .json-null {
+  font-style: italic;
+}
+
+.agent-elements-json-viewer .json-bracket {
+  color: var(--an-foreground-muted);
+  font-weight: 600;
+}
+
+.agent-elements-json-viewer .json-punctuation {
+  color: var(--an-foreground-subtle);
+}
+
+.agent-elements-visual-display-tooltip-swatch[data-color-index="0"] {
+  background: var(--an-primary-color);
+}
+
+.agent-elements-visual-display-tooltip-swatch[data-color-index="1"] {
+  background: var(--an-success-color);
+}
+
+.agent-elements-visual-display-tooltip-swatch[data-color-index="2"] {
+  background: var(--an-warning-color);
+}
+
+.agent-elements-visual-display-tooltip-swatch[data-color-index="3"] {
+  background: var(--an-diff-removed-text);
+}
+
+.agent-elements-visual-display-tooltip-swatch[data-color-index="4"] {
+  background: var(--an-foreground-muted);
+}
+
+.agent-elements-visual-display-tooltip-swatch[data-color-index="5"] {
+  background: color-mix(in srgb, var(--an-primary-color) 70%, var(--an-success-color));
+}
+
+.agent-elements-visual-display-tooltip-swatch[data-color-index="6"] {
+  background: color-mix(in srgb, var(--an-primary-color) 70%, var(--an-warning-color));
+}
+
+.agent-elements-visual-display-tooltip-swatch[data-color-index="7"] {
+  background: color-mix(in srgb, var(--an-success-color) 70%, var(--an-diff-removed-text));
 }
 
 .agent-elements-status-pill {
@@ -202,7 +346,7 @@
 }
 
 .agent-elements-status-pill[data-tone="warning"] {
-  color: var(--nim-warning);
+  color: var(--an-warning-color);
 }
 
 .agent-elements-status-pill[data-tone="error"],
@@ -227,6 +371,17 @@
   }
 }
 
+@keyframes agent-elements-live-bridge-in {
+  0% {
+    opacity: 0;
+    transform: translate3d(0, 6px, 0) scale(0.992);
+  }
+  100% {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+}
+
 @container agent-elements-transcript-row (max-width: 360px) {
   .agent-elements-identity-row {
     flex-wrap: wrap;
@@ -238,6 +393,10 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .agent-elements-live-bridge {
+    animation: none;
+  }
+
   .agent-elements-status-pill[data-tone="running"]::after,
   .agent-elements-tool-card[data-tool-status="running"] .agent-elements-tool-title::after {
     animation: none;

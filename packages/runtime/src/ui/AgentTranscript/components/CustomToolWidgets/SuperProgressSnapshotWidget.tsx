@@ -2,10 +2,12 @@
  * SuperProgressSnapshotWidget - Displays a progress.json snapshot in the chat transcript.
  *
  * Injected by SuperLoopService at the start and end of each Super Loop iteration.
- * Shows formatted progress data (phase, status, learnings, blockers) with collapsible raw JSON.
+ * Shows formatted progress data (phase, status, learnings, blockers) with debug-only JSON.
  */
 
-import React, { useState } from 'react';
+import React from 'react';
+import { AgentStatusPill, AgentToolCard, type AgentStatusTone, type AgentToolStatus } from '../../../AgentElements/AgentElementsPrimitives';
+import { MaterialSymbol } from '../../../icons/MaterialSymbol';
 import type { CustomToolWidgetProps } from './index';
 
 interface ProgressSnapshot {
@@ -24,19 +26,58 @@ interface ProgressSnapshot {
   capturedAt: number;
 }
 
-const PHASE_COLORS: Record<string, { bg: string; text: string }> = {
-  planning: { bg: 'rgba(168,85,247,0.15)', text: '#c084fc' },
-  building: { bg: 'rgba(59,130,246,0.15)', text: 'var(--nim-primary)' },
-};
+function classNames(...values: Array<string | false | null | undefined>) {
+  return values.filter(Boolean).join(' ');
+}
 
-const STATUS_COLORS: Record<string, { bg: string; text: string }> = {
-  running: { bg: 'rgba(59,130,246,0.15)', text: 'var(--nim-primary)' },
-  completed: { bg: 'rgba(74,222,128,0.15)', text: '#4ade80' },
-  blocked: { bg: 'rgba(249,115,22,0.15)', text: '#f97316' },
-};
+function phaseTone(phase: string): AgentStatusTone {
+  if (phase === 'building') return 'running';
+  if (phase === 'planning') return 'neutral';
+  return 'neutral';
+}
+
+function statusTone(status: string): AgentStatusTone {
+  if (status === 'completed') return 'success';
+  if (status === 'blocked') return 'warning';
+  if (status === 'running') return 'running';
+  return 'neutral';
+}
+
+function toolStatus(status: string): AgentToolStatus {
+  if (status === 'completed') return 'completed';
+  if (status === 'blocked') return 'interrupted';
+  if (status === 'running') return 'running';
+  return 'idle';
+}
+
+const SnapshotRow: React.FC<{
+  className?: string;
+  icon: string;
+  label: string;
+  testId: string;
+  children: React.ReactNode;
+}> = ({ className, icon, label, testId, children }) => (
+  <div
+    className={classNames(
+      'agent-elements-super-progress-snapshot-row grid grid-cols-[1rem_4.5rem_minmax(0,1fr)] items-start gap-[var(--an-spacing-xs)] text-sm text-[var(--an-tool-color)]',
+      className
+    )}
+    data-agent-elements-shell="super-progress-snapshot-row"
+    data-testid={testId}
+  >
+    <span className="agent-elements-super-progress-snapshot-row-icon mt-0.5 text-[var(--an-tool-color-muted)]" aria-hidden="true">
+      <MaterialSymbol icon={icon} size={14} />
+    </span>
+    <span className="agent-elements-super-progress-snapshot-row-label text-xs font-medium text-[var(--an-tool-color-muted)]">
+      {label}
+    </span>
+    <span className="agent-elements-super-progress-snapshot-row-value min-w-0 break-words select-text">
+      {children}
+    </span>
+  </div>
+);
 
 export const SuperProgressSnapshotWidget: React.FC<CustomToolWidgetProps> = ({ message }) => {
-  const [showRawJson, setShowRawJson] = useState(false);
   const tool = message.toolCall;
   if (!tool?.arguments) return null;
 
@@ -47,179 +88,104 @@ export const SuperProgressSnapshotWidget: React.FC<CustomToolWidgetProps> = ({ m
 
   const isStart = timing === 'iteration-start';
   const timingLabel = isStart ? 'Iteration Start' : 'Iteration End';
-  const timingIcon = isStart ? '\u25B6' : '\u25A0'; // play / stop symbols
-
-  const phaseStyle = PHASE_COLORS[progress.phase] ?? { bg: 'rgba(156,163,175,0.15)', text: 'var(--nim-text-faint)' };
-  const statusStyle = STATUS_COLORS[progress.status] ?? { bg: 'rgba(156,163,175,0.15)', text: 'var(--nim-text-faint)' };
+  const status = toolStatus(progress.status);
 
   return (
-    <div
-      style={{
-        border: '1px solid var(--nim-border)',
-        borderRadius: '6px',
-        overflow: 'hidden',
-        fontSize: '11px',
-      }}
+    <AgentToolCard
+      className="agent-elements-super-progress-snapshot-card"
+      data-agent-elements-shell="super-progress-snapshot-card"
+      data-component="RichTranscriptAgentElementsSuperProgressSnapshot"
+      data-testid="agent-elements-super-progress-snapshot-card"
+      debugPayload={progress}
+      icon={<MaterialSymbol icon={isStart ? 'play_arrow' : 'stop_circle'} size={14} />}
+      status={status}
+      subtitle={`iteration ${progress.currentIteration}`}
+      title={`${timingLabel} #${iterationNumber}`}
+      trailing={(
+        <div className="agent-elements-super-progress-snapshot-badges flex min-w-0 flex-wrap justify-end gap-[var(--an-spacing-xs)]">
+          <span
+            className="agent-elements-super-progress-snapshot-phase"
+            data-testid="agent-elements-super-progress-snapshot-phase"
+          >
+            <AgentStatusPill
+              tone={phaseTone(progress.phase)}
+            >
+              {progress.phase}
+            </AgentStatusPill>
+          </span>
+          <span
+            className="agent-elements-super-progress-snapshot-status"
+            data-testid="agent-elements-super-progress-snapshot-status"
+          >
+            <AgentStatusPill
+              tone={statusTone(progress.status)}
+            >
+              {progress.status}
+            </AgentStatusPill>
+          </span>
+          {progress.completionSignal ? (
+            <AgentStatusPill tone="success">complete</AgentStatusPill>
+          ) : null}
+        </div>
+      )}
     >
-      {/* Header */}
       <div
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '8px',
-          padding: '6px 10px',
-          background: 'var(--nim-bg-tertiary)',
-          borderBottom: '1px solid var(--nim-border)',
-        }}
+        className="agent-elements-super-progress-snapshot-body flex flex-col gap-[var(--an-spacing-sm)]"
+        data-agent-elements-shell="super-progress-snapshot-body"
+        data-testid="agent-elements-super-progress-snapshot-body"
       >
-        <span style={{ fontSize: '10px', opacity: 0.6 }}>{timingIcon}</span>
-        <span style={{ fontWeight: 600, color: 'var(--nim-text)' }}>
-          {timingLabel} #{iterationNumber}
-        </span>
-        <Badge label={progress.phase} bg={phaseStyle.bg} color={phaseStyle.text} />
-        <Badge label={progress.status} bg={statusStyle.bg} color={statusStyle.text} />
-        {progress.completionSignal && (
-          <Badge label="complete" bg="rgba(74,222,128,0.15)" color="#4ade80" />
-        )}
-        <span
-          style={{
-            marginLeft: 'auto',
-            fontSize: '10px',
-            color: 'var(--nim-text-faint)',
-            fontFamily: 'monospace',
-          }}
-        >
-          iter {progress.currentIteration}
-        </span>
-      </div>
+        {progress.userFeedback ? (
+          <SnapshotRow
+            icon="forum"
+            label="Feedback"
+            testId="agent-elements-super-progress-snapshot-feedback"
+          >
+            {progress.userFeedback}
+          </SnapshotRow>
+        ) : null}
 
-      {/* Body */}
-      <div style={{ padding: '8px 10px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
-        {/* User feedback */}
-        {progress.userFeedback && (
-          <div style={{ display: 'flex', alignItems: 'flex-start', gap: '6px', fontSize: '10px' }}>
-            <span style={{ color: 'var(--nim-primary)', flexShrink: 0 }}>feedback:</span>
-            <span style={{ color: 'var(--nim-text)' }}>{progress.userFeedback}</span>
-          </div>
-        )}
-
-        {/* Blockers */}
-        {progress.blockers.length > 0 && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
-            {progress.blockers.map((blocker, i) => (
-              <div
-                key={i}
-                style={{
-                  display: 'flex',
-                  alignItems: 'flex-start',
-                  gap: '6px',
-                  fontSize: '10px',
-                  color: '#f97316',
-                }}
+        {progress.blockers.length > 0 ? (
+          <div className="agent-elements-super-progress-snapshot-blockers flex flex-col gap-[var(--an-spacing-xs)]">
+            {progress.blockers.map((blocker, index) => (
+              <SnapshotRow
+                className="text-[var(--an-warning-color,var(--an-tool-color))]"
+                icon="report"
+                key={`${blocker}-${index}`}
+                label="Blocker"
+                testId={`agent-elements-super-progress-snapshot-blocker-${index}`}
               >
-                <span style={{ flexShrink: 0 }}>&#9888;</span>
-                <span>{blocker}</span>
-              </div>
+                {blocker}
+              </SnapshotRow>
             ))}
           </div>
-        )}
+        ) : null}
 
-        {/* Learnings */}
-        {progress.learnings.length > 0 && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
-            <span style={{ fontSize: '10px', fontWeight: 500, color: 'var(--nim-text-muted)' }}>
+        {progress.learnings.length > 0 ? (
+          <div className="agent-elements-super-progress-snapshot-learnings flex flex-col gap-[var(--an-spacing-xs)]">
+            <span className="agent-elements-super-progress-snapshot-section-label text-xs font-medium text-[var(--an-tool-color-muted)]">
               Learnings ({progress.learnings.length})
             </span>
-            {progress.learnings.map((learning, i) => (
-              <div
-                key={i}
-                style={{
-                  display: 'flex',
-                  alignItems: 'flex-start',
-                  gap: '6px',
-                  fontSize: '10px',
-                  color: 'var(--nim-text)',
-                  lineHeight: 1.4,
-                }}
+            {progress.learnings.map((learning, index) => (
+              <SnapshotRow
+                icon="psychology"
+                key={`${learning.iteration}-${index}`}
+                label={`#${learning.iteration}`}
+                testId={`agent-elements-super-progress-snapshot-learning-${index}`}
               >
-                <span
-                  style={{
-                    color: 'var(--nim-text-faint)',
-                    fontFamily: 'monospace',
-                    flexShrink: 0,
-                  }}
-                >
-                  #{learning.iteration}
-                </span>
-                <span style={{ wordBreak: 'break-word' }}>{learning.summary}</span>
-              </div>
+                {learning.summary}
+              </SnapshotRow>
             ))}
           </div>
-        )}
+        ) : null}
 
-        {/* No data indicator when empty */}
-        {progress.blockers.length === 0 && progress.learnings.length === 0 && !progress.userFeedback && (
-          <span style={{ fontSize: '10px', color: 'var(--nim-text-faint)', fontStyle: 'italic' }}>
+        {progress.blockers.length === 0 && progress.learnings.length === 0 && !progress.userFeedback ? (
+          <span className="agent-elements-super-progress-snapshot-empty text-sm italic text-[var(--an-tool-color-muted)]">
             No learnings or blockers recorded yet
           </span>
-        )}
-
-        {/* Raw JSON toggle */}
-        <button
-          onClick={() => setShowRawJson(!showRawJson)}
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '4px',
-            background: 'none',
-            border: 'none',
-            cursor: 'pointer',
-            padding: '2px 0',
-            fontSize: '10px',
-            color: 'var(--nim-text-muted)',
-          }}
-        >
-          <span style={{ fontSize: '8px' }}>{showRawJson ? '\u25BC' : '\u25B6'}</span>
-          Raw JSON
-        </button>
-        {showRawJson && (
-          <pre
-            style={{
-              margin: 0,
-              padding: '8px',
-              background: 'var(--nim-bg-tertiary)',
-              border: '1px solid var(--nim-border)',
-              borderRadius: '4px',
-              fontSize: '10px',
-              lineHeight: 1.5,
-              color: 'var(--nim-text-muted)',
-              overflow: 'auto',
-              maxHeight: '200px',
-              whiteSpace: 'pre-wrap',
-              wordBreak: 'break-word',
-            }}
-          >
-            {JSON.stringify(progress, null, 2)}
-          </pre>
-        )}
+        ) : null}
       </div>
-    </div>
+    </AgentToolCard>
   );
 };
 
 SuperProgressSnapshotWidget.displayName = 'SuperProgressSnapshotWidget';
-
-const Badge: React.FC<{ label: string; bg: string; color: string }> = ({ label, bg, color }) => (
-  <span
-    style={{
-      fontSize: '9px',
-      padding: '1px 6px',
-      borderRadius: '10px',
-      fontWeight: 500,
-      background: bg,
-      color,
-    }}
-  >
-    {label}
-  </span>
-);

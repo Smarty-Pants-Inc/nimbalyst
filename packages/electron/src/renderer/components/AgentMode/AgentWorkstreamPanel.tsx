@@ -101,6 +101,48 @@ export interface AgentWorkstreamPanelProps {
   onOpenSessionInChat?: (sessionId: string) => void;
 }
 
+const TAGS_KEY_SEPARATOR = String.fromCharCode(0);
+
+const iconButtonClass = [
+  'inline-flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center',
+  'rounded-[var(--an-radius-sm)] border border-transparent bg-transparent text-[var(--an-foreground-subtle)]',
+  'outline-none transition-[background-color,border-color,color] duration-150 ease-out',
+  'hover:border-[var(--an-border-color)] hover:bg-[var(--an-background-tertiary)] hover:text-[var(--an-foreground-muted)]',
+  'focus-visible:ring-2 focus-visible:ring-[var(--an-focus-ring)]',
+].join(' ');
+
+const agentWorkstreamPanelClass = [
+  'agent-workstream-panel agent-elements-agent-workstream-panel flex h-full flex-row overflow-hidden',
+  'bg-[var(--an-background)] text-[var(--an-foreground)] [container-type:inline-size]',
+].join(' ');
+
+const agentWorkstreamMainClass = [
+  'agent-workstream-panel-main agent-elements-agent-workstream-main',
+  'flex min-w-0 flex-1 flex-col overflow-hidden bg-[var(--an-background)]',
+].join(' ');
+
+const agentWorkstreamContentClass = [
+  'agent-workstream-panel-content agent-elements-agent-workstream-content',
+  'flex min-h-0 flex-1 flex-col overflow-hidden bg-[var(--an-background)]',
+].join(' ');
+
+const agentWorkstreamEditorAreaClass = [
+  'agent-workstream-editor-area agent-elements-agent-workstream-editor-area',
+  'flex min-h-0 shrink-0 flex-col border-b border-[var(--an-border-color)] bg-[var(--an-background)]',
+].join(' ');
+
+const agentWorkstreamSessionAreaClass = [
+  'agent-workstream-session-area agent-elements-agent-workstream-session-area',
+  'flex flex-col overflow-hidden bg-[var(--an-background)]',
+].join(' ');
+
+const resizerClass = [
+  'agent-elements-agent-workstream-resizer shrink-0 bg-[var(--an-border-color)]',
+  'transition-[background-color] duration-150 ease-out hover:bg-[var(--an-primary-color)]',
+].join(' ');
+
+const resizerDraggingClass = 'dragging bg-[var(--an-primary-color)]';
+
 /**
  * Tag pill row that fits as many tags as the container allows on a single line.
  * Overflowing tags collapse into a "+N" pill that opens a floating dropdown.
@@ -108,8 +150,142 @@ export interface AgentWorkstreamPanelProps {
  * Measurement runs in a hidden layer that mirrors the real pill widths, so the
  * visible row never has to render-then-clip the overflowing pills.
  */
-const TAG_PILL_CLASS = "group flex items-center gap-0.5 text-[10px] font-medium leading-none pl-1.5 pr-1 py-0.5 rounded-full whitespace-nowrap cursor-default text-nim-faint bg-[color-mix(in_srgb,var(--nim-text)_8%,transparent)]";
-const TAG_OVERFLOW_PILL_CLASS = "flex items-center gap-0.5 text-[10px] font-medium leading-none px-1.5 py-0.5 rounded-full whitespace-nowrap cursor-pointer text-nim-faint bg-[color-mix(in_srgb,var(--nim-text)_8%,transparent)] hover:bg-[color-mix(in_srgb,var(--nim-text)_14%,transparent)] border-none";
+const TAG_PILL_CLASS = [
+  'agent-elements-workstream-tag-pill group flex cursor-default items-center gap-0.5 whitespace-nowrap',
+  'rounded-[999px] bg-[color-mix(in_srgb,var(--an-foreground)_8%,transparent)]',
+  'py-0.5 pl-1.5 pr-1 text-[10px] font-medium leading-none text-[var(--an-foreground-subtle)]',
+].join(' ');
+
+const TAG_OVERFLOW_PILL_CLASS = [
+  'agent-elements-workstream-tag-overflow flex cursor-pointer items-center gap-0.5 whitespace-nowrap border-none',
+  'rounded-[999px] bg-[color-mix(in_srgb,var(--an-foreground)_8%,transparent)]',
+  'px-1.5 py-0.5 text-[10px] font-medium leading-none text-[var(--an-foreground-subtle)]',
+  'outline-none transition-[background-color,color] duration-150 ease-out',
+  'hover:bg-[color-mix(in_srgb,var(--an-foreground)_14%,transparent)] hover:text-[var(--an-foreground-muted)]',
+  'focus-visible:ring-2 focus-visible:ring-[var(--an-focus-ring)]',
+].join(' ');
+
+const tagInputClass = [
+  'agent-elements-workstream-tag-input w-[80px] rounded-[999px] border border-[var(--an-border-color)]',
+  'bg-[var(--an-background-secondary)] px-1.5 py-0.5 text-[10px] leading-none text-[var(--an-foreground)]',
+  'outline-none focus-visible:ring-2 focus-visible:ring-[var(--an-focus-ring)]',
+].join(' ');
+
+const tagDropdownClass = [
+  'agent-elements-workstream-tag-menu absolute left-0 top-full z-[10000] mt-1 min-w-[120px]',
+  'rounded-[var(--an-radius-sm)] border border-[var(--an-border-color)] bg-[var(--an-background)]',
+  'py-0.5 text-[11px] text-[var(--an-foreground-muted)]',
+].join(' ');
+
+const tagDropdownItemClass = [
+  'agent-elements-workstream-tag-menu-item cursor-pointer px-[var(--an-spacing-sm)] py-[var(--an-spacing-xs)]',
+  'text-[var(--an-foreground-muted)] transition-[background-color,color] duration-150 ease-out',
+  'hover:bg-[var(--an-background-tertiary)] hover:text-[var(--an-foreground)]',
+].join(' ');
+
+const addTagButtonClass = [
+  'agent-elements-workstream-add-tag flex h-4 w-4 cursor-pointer items-center justify-center rounded-[999px]',
+  'border border-dashed border-[var(--an-border-color)] bg-transparent text-[var(--an-foreground-subtle)]',
+  'outline-none transition-[border-color,color] duration-150 ease-out',
+  'hover:border-[var(--an-border-color-strong)] hover:text-[var(--an-foreground-muted)]',
+  'focus-visible:ring-2 focus-visible:ring-[var(--an-focus-ring)]',
+].join(' ');
+
+const tagCloseButtonClass = [
+  'flex h-3 w-3 cursor-pointer items-center justify-center rounded-[999px] border-none bg-transparent',
+  'text-[var(--an-foreground-subtle)] opacity-0 transition-opacity duration-150 ease-out',
+  'hover:text-[var(--an-foreground)] group-hover:opacity-100 focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-[var(--an-focus-ring)]',
+].join(' ');
+
+const overflowMenuClass = [
+  'agent-elements-workstream-tag-overflow-menu z-[10000] max-h-[300px] min-w-[140px] overflow-y-auto',
+  'rounded-[var(--an-radius-sm)] border border-[var(--an-border-color)] bg-[var(--an-background)] py-[var(--an-spacing-xs)]',
+].join(' ');
+
+const overflowMenuRowClass = [
+  'group flex items-center justify-between gap-[var(--an-spacing-sm)]',
+  'px-[var(--an-spacing-sm)] py-[var(--an-spacing-xs)] text-[11px]',
+  'text-[var(--an-foreground-muted)] transition-[background-color,color] duration-150 ease-out',
+  'hover:bg-[var(--an-background-tertiary)] hover:text-[var(--an-foreground)]',
+].join(' ');
+
+const overflowMenuRemoveButtonClass = [
+  'flex h-4 w-4 cursor-pointer items-center justify-center rounded-[999px] border-none bg-transparent',
+  'text-[var(--an-foreground-subtle)] opacity-0 transition-opacity duration-150 ease-out',
+  'hover:text-[var(--an-foreground)] group-hover:opacity-100 focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-[var(--an-focus-ring)]',
+].join(' ');
+
+const headerClass = [
+  'workstream-header agent-elements-workstream-header shrink-0',
+  'border-b border-[var(--an-border-color)] bg-[var(--an-background-secondary)]',
+  'px-[var(--an-spacing-xxl)] py-0 text-[var(--an-foreground)]',
+].join(' ');
+
+const headerMainClass = [
+  'workstream-header-main agent-elements-workstream-header-main flex h-14 items-center gap-[var(--an-spacing-lg)]',
+].join(' ');
+
+const headerIconClass = [
+  'workstream-header-icon agent-elements-workstream-header-icon shrink-0 text-[var(--an-foreground-muted)]',
+].join(' ');
+
+const headerContentClass = [
+  'workstream-header-content agent-elements-workstream-header-content flex min-w-0 flex-1 flex-col items-start gap-0.5',
+].join(' ');
+
+const titleInputClass = [
+  'workstream-header-title-input agent-elements-workstream-title-input m-0 w-full min-w-[150px] max-w-[500px]',
+  'rounded-[var(--an-radius-sm)] border border-[var(--an-border-color-strong)] bg-[var(--an-background)]',
+  'px-[var(--an-spacing-xs)] py-0.5 text-sm font-semibold text-[var(--an-foreground)] outline-none',
+  'focus-visible:ring-2 focus-visible:ring-[var(--an-focus-ring)]',
+].join(' ');
+
+const titleRowClass = [
+  'workstream-header-title-row agent-elements-workstream-title-row flex min-w-0 max-w-full items-baseline gap-[var(--an-spacing-sm)]',
+].join(' ');
+
+const titleClass = [
+  'workstream-header-title agent-elements-workstream-title m-0 min-w-0 cursor-pointer overflow-hidden text-ellipsis whitespace-nowrap',
+  'rounded-[var(--an-radius-xs)] px-[var(--an-spacing-xs)] py-0.5 text-sm font-semibold leading-tight text-[var(--an-foreground)]',
+  'transition-[background-color,color] duration-150 ease-out hover:bg-[var(--an-background-tertiary)]',
+].join(' ');
+
+const headerContextClass = [
+  'workstream-header-context agent-elements-workstream-context whitespace-nowrap text-[10px] leading-tight text-[var(--an-foreground-muted)] opacity-70',
+].join(' ');
+
+const spinnerClass = [
+  'workstream-header-spinner h-4 w-4 rounded-[999px] border-2 border-[var(--an-border-color)] border-t-[var(--an-primary-color)] animate-spin',
+].join(' ');
+
+const terminalMenuClass = [
+  'agent-elements-workstream-terminal-menu fixed z-[10000] min-w-[140px]',
+  'rounded-[var(--an-radius-sm)] border border-[var(--an-border-color)] bg-[var(--an-background)]',
+  'p-[var(--an-spacing-xs)] text-[13px] text-[var(--an-foreground)]',
+].join(' ');
+
+const terminalMenuItemClass = [
+  'agent-elements-workstream-terminal-menu-item flex cursor-pointer items-center gap-2.5',
+  'rounded-[var(--an-radius-xs)] px-[var(--an-spacing-lg)] py-1.5',
+  'text-[var(--an-foreground)] transition-[background-color,color] duration-150 ease-out',
+  'hover:bg-[var(--an-background-tertiary)]',
+].join(' ');
+
+const archiveButtonClass = [
+  'workstream-archive-button agent-elements-workstream-archive-button',
+  'flex h-8 cursor-pointer items-center gap-1.5 rounded-[var(--an-radius-sm)] border border-transparent bg-transparent px-[var(--an-spacing-sm)]',
+  'text-[11px] font-medium text-[var(--an-foreground-subtle)] outline-none',
+  'transition-[background-color,border-color,color] duration-150 ease-out',
+  'hover:border-[var(--an-border-color)] hover:bg-[var(--an-background-tertiary)] hover:text-[var(--an-foreground-muted)]',
+  'focus-visible:ring-2 focus-visible:ring-[var(--an-focus-ring)]',
+].join(' ');
+
+const sidebarToggleClass = [
+  'workstream-sidebar-toggle agent-elements-workstream-sidebar-toggle ml-[var(--an-spacing-sm)]',
+  iconButtonClass,
+].join(' ');
+
+const sidebarToggleActiveClass = 'active border-[var(--an-border-color)] bg-[var(--an-background-tertiary)] text-[var(--an-primary-color)]';
 
 const WorkstreamHeaderTagsRow: React.FC<{ workstreamId: string }> = ({ workstreamId }) => {
   const tags = useAtomValue(workstreamTagsAtom(workstreamId));
@@ -205,7 +381,7 @@ const WorkstreamHeaderTagsRow: React.FC<{ workstreamId: string }> = ({ workstrea
   }, [tagInput, allTags, tags]);
 
   // Content key so the layout effect only re-runs when tag contents change.
-  const tagsKey = tags.join(' ');
+  const tagsKey = tags.join(TAGS_KEY_SEPARATOR);
 
   useLayoutEffect(() => {
     const container = containerRef.current;
@@ -255,7 +431,7 @@ const WorkstreamHeaderTagsRow: React.FC<{ workstreamId: string }> = ({ workstrea
         <input
           ref={tagInputRef}
           type="text"
-          className="text-[10px] leading-none py-0.5 px-1.5 rounded-full border border-[var(--nim-border)] bg-[var(--nim-bg-secondary)] text-[var(--nim-text)] outline-none w-[80px]"
+          className={tagInputClass}
           placeholder="add tag..."
           value={tagInput}
           onChange={(e) => setTagInput(e.target.value)}
@@ -270,15 +446,15 @@ const WorkstreamHeaderTagsRow: React.FC<{ workstreamId: string }> = ({ workstrea
         {filteredSuggestions.length > 0 && (
           <div
             ref={tagDropdownRef}
-            className="absolute top-full left-0 mt-1 min-w-[120px] rounded-md z-[10000] py-0.5 text-[11px] bg-nim border border-nim shadow-[0_4px_12px_rgba(0,0,0,0.3)]"
+            className={tagDropdownClass}
           >
             {filteredSuggestions.map(s => (
               <div
                 key={s.name}
-                className="px-2 py-1 cursor-pointer text-[var(--nim-text-muted)] hover:bg-[var(--nim-bg-hover)] hover:text-[var(--nim-text)]"
+                className={tagDropdownItemClass}
                 onMouseDown={(e) => { e.preventDefault(); handleAddTag(s.name); }}
               >
-                {s.name} <span className="text-[var(--nim-text-faint)]">({s.count})</span>
+                {s.name} <span className="text-[var(--an-foreground-subtle)]">({s.count})</span>
               </div>
             ))}
           </div>
@@ -286,7 +462,8 @@ const WorkstreamHeaderTagsRow: React.FC<{ workstreamId: string }> = ({ workstrea
       </div>
     ) : (
       <button
-        className="flex items-center justify-center w-4 h-4 rounded-full border border-dashed border-[var(--nim-border)] bg-transparent cursor-pointer text-[var(--nim-text-faint)] hover:border-[var(--nim-text-faint)] hover:text-[var(--nim-text-muted)] transition-colors duration-100"
+        type="button"
+        className={addTagButtonClass}
         onClick={() => setIsEditingTags(true)}
         title="Add tag"
       >
@@ -321,9 +498,9 @@ const WorkstreamHeaderTagsRow: React.FC<{ workstreamId: string }> = ({ workstrea
         )}
         <div data-measure-trailing>
           {isEditingTags ? (
-            <span className="inline-block w-[80px] h-[18px] rounded-full border border-[var(--nim-border)]" />
+            <span className="inline-block h-[18px] w-[80px] rounded-[999px] border border-[var(--an-border-color)]" />
           ) : (
-            <span className="flex items-center justify-center w-4 h-4 rounded-full border border-dashed border-[var(--nim-border)]">
+            <span className="flex h-4 w-4 items-center justify-center rounded-[999px] border border-dashed border-[var(--an-border-color)]">
               <MaterialSymbol icon="add" size={10} />
             </span>
           )}
@@ -334,7 +511,8 @@ const WorkstreamHeaderTagsRow: React.FC<{ workstreamId: string }> = ({ workstrea
         <span key={tag} className={TAG_PILL_CLASS}>
           {tag}
           <button
-            className="opacity-0 group-hover:opacity-100 flex items-center justify-center w-3 h-3 rounded-full border-none bg-transparent cursor-pointer text-[var(--nim-text-faint)] hover:text-[var(--nim-text)] transition-opacity duration-100"
+            type="button"
+            className={tagCloseButtonClass}
             onClick={() => handleRemoveTag(tag)}
             title={`Remove tag "${tag}"`}
           >
@@ -359,16 +537,17 @@ const WorkstreamHeaderTagsRow: React.FC<{ workstreamId: string }> = ({ workstrea
                 ref={overflowRefs.setFloating}
                 style={overflowFloatingStyles}
                 {...getOverflowFloatingProps()}
-                className="z-[10000] min-w-[140px] max-h-[300px] overflow-y-auto rounded-md py-1 bg-nim border border-nim shadow-[0_4px_12px_rgba(0,0,0,0.3)]"
+                className={overflowMenuClass}
               >
                 {hiddenTags.map(tag => (
                   <div
                     key={tag}
-                    className="group flex items-center justify-between gap-2 px-2 py-1 text-[11px] text-[var(--nim-text-muted)] hover:bg-[var(--nim-bg-hover)] hover:text-[var(--nim-text)]"
+                    className={overflowMenuRowClass}
                   >
                     <span className="truncate">{tag}</span>
                     <button
-                      className="flex items-center justify-center w-4 h-4 rounded-full opacity-0 group-hover:opacity-100 text-[var(--nim-text-faint)] hover:text-[var(--nim-text)] bg-transparent border-none cursor-pointer"
+                      type="button"
+                      className={overflowMenuRemoveButtonClass}
                       onClick={() => handleRemoveTag(tag)}
                       title={`Remove tag "${tag}"`}
                     >
@@ -558,15 +737,17 @@ const WorkstreamHeader: React.FC<{
 
   return (
     <div
-      className="workstream-header shrink-0 h-14 px-4 border-b border-[var(--nim-border)] bg-[var(--nim-bg)]"
+      className={headerClass}
+      data-agent-elements-shell="workstream-header"
+      data-component="WorkstreamHeader"
       data-testid="workstream-execution-context"
       data-session-id={workstreamId}
       data-workspace-path={workspacePath}
       data-worktree-id={worktreeId || ''}
       data-worktree-path={worktreePath || ''}
     >
-      <div className="workstream-header-main flex items-center gap-3 h-full">
-        <div className="workstream-header-icon shrink-0 text-[var(--nim-text-muted)]">
+      <div className={headerMainClass}>
+        <div className={headerIconClass}>
           {hasChildren ? (
             <MaterialSymbol icon="account_tree" size={20} />
           ) : (
@@ -574,28 +755,28 @@ const WorkstreamHeader: React.FC<{
           )}
         </div>
 
-        <div className="workstream-header-content flex flex-col min-w-0 flex-1 gap-0.5 items-start">
+        <div className={headerContentClass}>
           {isEditing ? (
             <input
               ref={inputRef}
               type="text"
-              className="workstream-header-title-input text-sm font-semibold text-[var(--nim-text)] bg-[var(--nim-bg-secondary)] border border-[var(--nim-border-accent)] rounded py-0.5 px-1 m-0 outline-none w-full min-w-[150px] max-w-[500px]"
+              className={titleInputClass}
               value={editValue}
               onChange={(e) => setEditValue(e.target.value)}
               onBlur={handleRenameSubmit}
               onKeyDown={handleKeyDown}
             />
           ) : (
-            <div className="workstream-header-title-row flex items-baseline gap-2 min-w-0 max-w-full">
+            <div className={titleRowClass}>
               <h2
-                className="workstream-header-title min-w-0 m-0 text-sm font-semibold text-[var(--nim-text)] whitespace-nowrap overflow-hidden text-ellipsis leading-tight cursor-pointer py-0.5 px-1 rounded transition-colors duration-150 hover:bg-[var(--nim-bg-hover)]"
+                className={titleClass}
                 onClick={handleTitleClick}
                 title="Click to rename"
               >
                 {title}
               </h2>
               <span
-                className="workstream-header-context text-[10px] leading-tight text-[var(--nim-text-muted)] opacity-70 whitespace-nowrap"
+                className={headerContextClass}
                 title={contextPath}
                 data-testid="workstream-context-label"
               >
@@ -608,14 +789,15 @@ const WorkstreamHeader: React.FC<{
 
         {isProcessing && (
           <div className="workstream-header-processing shrink-0 flex items-center justify-center">
-            <span className="workstream-header-spinner w-4 h-4 border-2 border-[var(--nim-border)] border-t-[var(--nim-primary)] rounded-full animate-spin" />
+            <span className={spinnerClass} />
           </div>
         )}
 
         {/* Terminal button - only show for worktree sessions, positioned before layout controls */}
         {worktreeId && onOpenTerminal && (
           <button
-            className="workstream-terminal-btn w-8 h-8 flex items-center justify-center rounded text-[var(--nim-text-faint)] cursor-pointer border-none bg-transparent hover:bg-[var(--nim-bg-hover)] hover:text-[var(--nim-text-muted)] mr-2"
+            type="button"
+            className={`workstream-terminal-btn agent-elements-workstream-terminal-button mr-[var(--an-spacing-sm)] ${iconButtonClass}`}
             onClick={onOpenTerminal}
             onContextMenu={handleTerminalContextMenu}
             title="Open terminal in worktree"
@@ -628,16 +810,14 @@ const WorkstreamHeader: React.FC<{
         {terminalContextMenu && (
           <div
             ref={terminalContextMenuRef}
-            className="fixed p-1 min-w-[140px] rounded-md z-[10000] text-[13px] backdrop-blur-[10px] shadow-[0_4px_12px_rgba(0,0,0,0.15)] dark:shadow-[0_4px_20px_rgba(0,0,0,0.5)]"
+            className={terminalMenuClass}
             style={{
               left: terminalContextMenu.x,
               top: terminalContextMenu.y,
-              background: 'var(--nim-bg)',
-              border: '1px solid var(--nim-border)',
             }}
           >
             <div
-              className="flex items-center gap-2.5 px-3 py-1.5 rounded cursor-pointer transition-colors text-[var(--nim-text)] hover:bg-[var(--nim-bg-hover)]"
+              className={terminalMenuItemClass}
               onClick={handleNewTerminalClick}
             >
               <MaterialSymbol icon="add" size={18} />
@@ -655,7 +835,8 @@ const WorkstreamHeader: React.FC<{
 
         {/* Archive/Unarchive button */}
         <button
-          className="workstream-archive-button flex items-center gap-1.5 h-8 px-2 rounded text-[var(--nim-text-faint)] text-[11px] font-medium cursor-pointer border-none bg-transparent hover:bg-[var(--nim-bg-hover)] hover:text-[var(--nim-text-muted)]"
+          type="button"
+          className={archiveButtonClass}
           onClick={isArchived ? handleUnarchive : handleArchive}
           title={isArchived ? `Unarchive ${getSessionTypeLabel().toLowerCase()}` : `Archive ${getSessionTypeLabel().toLowerCase()}`}
         >
@@ -665,7 +846,8 @@ const WorkstreamHeader: React.FC<{
 
         {/* Toggle files sidebar */}
         <button
-          className={`workstream-sidebar-toggle w-8 h-8 flex items-center justify-center rounded cursor-pointer border-none bg-transparent ml-2 hover:bg-[var(--nim-bg-hover)] hover:text-[var(--nim-text-muted)] ${sidebarVisible ? 'active text-[var(--nim-primary)]' : 'text-[var(--nim-text-faint)]'}`}
+          type="button"
+          className={`${sidebarToggleClass} ${sidebarVisible ? sidebarToggleActiveClass : ''}`}
           onClick={onToggleSidebar}
           title={sidebarVisible ? 'Hide edited files' : 'Show edited files'}
         >
@@ -1267,9 +1449,26 @@ export const AgentWorkstreamPanel = React.memo(React.forwardRef<AgentWorkstreamP
   }), []);
 
   return (
-    <div className="agent-workstream-panel flex flex-row h-full overflow-hidden">
+    <div
+      className={agentWorkstreamPanelClass}
+      data-active-session-id={activeSessionId ?? ''}
+      data-agent-elements-shell="agent-workstream-panel"
+      data-component="AgentWorkstreamPanel"
+      data-layout-mode={layoutMode}
+      data-sidebar-visible={String(sidebarVisible)}
+      data-testid="agent-elements-agent-workstream-panel"
+      data-workspace-path={workspacePath}
+      data-workstream-id={workstreamId}
+      data-workstream-type={workstreamType}
+      data-worktree-id={sessionWorktreeId ?? ''}
+      data-worktree-path={worktreePath ?? ''}
+    >
       {/* Main column - header + content */}
-      <div className="agent-workstream-panel-main flex flex-col flex-1 min-w-0 overflow-hidden">
+      <div
+        className={agentWorkstreamMainClass}
+        data-agent-elements-shell="agent-workstream-main"
+        data-testid="agent-elements-agent-workstream-main"
+      >
         <WorkstreamHeader
           workstreamId={workstreamId}
           workspacePath={workspacePath}
@@ -1283,12 +1482,20 @@ export const AgentWorkstreamPanel = React.memo(React.forwardRef<AgentWorkstreamP
           onArchiveStatusChange={onWorktreeArchived}
         />
 
-        <div ref={contentRef} className="agent-workstream-panel-content flex-1 min-h-0 flex flex-col overflow-hidden">
+        <div
+          ref={contentRef}
+          className={agentWorkstreamContentClass}
+          data-agent-elements-shell="agent-workstream-content"
+          data-testid="agent-elements-agent-workstream-content"
+        >
           {/* Editor tabs for the entire workstream */}
           {showEditorTabs && (
             <div
               ref={editorAreaRef}
-              className={`agent-workstream-editor-area shrink-0 border-b border-[var(--nim-border)] min-h-0 flex flex-col ${layoutMode === 'editor' ? 'maximized flex-1 border-b-0' : ''}`}
+              className={`${agentWorkstreamEditorAreaClass} ${layoutMode === 'editor' ? 'maximized flex-1 border-b-0' : ''}`}
+              data-agent-elements-shell="agent-workstream-editor-area"
+              data-layout-mode={layoutMode}
+              data-testid="agent-elements-agent-workstream-editor-area"
               style={layoutMode === 'split' ? { height: `${splitRatio * 100}%`, minHeight: '100px' } : undefined}
             >
               <WorkstreamEditorTabs
@@ -1307,14 +1514,22 @@ export const AgentWorkstreamPanel = React.memo(React.forwardRef<AgentWorkstreamP
           {/* Vertical resizer between editor and session */}
           {layoutMode === 'split' && (
             <div
-              className={`agent-workstream-vertical-resizer h-1 shrink-0 cursor-ns-resize bg-[var(--nim-border)] transition-colors duration-150 hover:bg-[var(--nim-primary)] ${isDraggingVertical ? 'dragging bg-[var(--nim-primary)]' : ''}`}
+              className={`agent-workstream-vertical-resizer h-1 cursor-ns-resize ${resizerClass} ${isDraggingVertical ? resizerDraggingClass : ''}`}
+              data-agent-elements-shell="agent-workstream-vertical-resizer"
+              data-testid="agent-elements-agent-workstream-vertical-resizer"
               onMouseDown={handleVerticalResizeStart}
             />
           )}
 
           {/* Session tabs + active session panel */}
           {showSessionTabs && (
-            <div ref={sessionAreaRef} className={`agent-workstream-session-area flex flex-col overflow-hidden ${collapseTranscript ? 'shrink-0' : 'flex-1 min-h-0'} ${layoutMode === 'transcript' ? 'maximized' : ''}`}>
+            <div
+              ref={sessionAreaRef}
+              className={`${agentWorkstreamSessionAreaClass} ${collapseTranscript ? 'shrink-0' : 'flex-1 min-h-0'} ${layoutMode === 'transcript' ? 'maximized' : ''}`}
+              data-agent-elements-shell="agent-workstream-session-area"
+              data-collapse-transcript={String(collapseTranscript)}
+              data-testid="agent-elements-agent-workstream-session-area"
+            >
               <WorkstreamSessionTabs
                 workspacePath={workspacePath}
                 workstreamId={workstreamId}
@@ -1339,7 +1554,9 @@ export const AgentWorkstreamPanel = React.memo(React.forwardRef<AgentWorkstreamP
       {/* Sidebar resizer */}
       {sidebarVisible && activeSessionId && (
         <div
-          className={`agent-workstream-sidebar-resizer w-1 shrink-0 cursor-ew-resize bg-[var(--nim-border)] transition-colors duration-150 hover:bg-[var(--nim-primary)] ${isDraggingSidebar ? 'dragging bg-[var(--nim-primary)]' : ''}`}
+          className={`agent-workstream-sidebar-resizer w-1 cursor-ew-resize ${resizerClass} ${isDraggingSidebar ? resizerDraggingClass : ''}`}
+          data-agent-elements-shell="agent-workstream-sidebar-resizer"
+          data-testid="agent-elements-agent-workstream-sidebar-resizer"
           onMouseDown={handleSidebarResizeStart}
         />
       )}

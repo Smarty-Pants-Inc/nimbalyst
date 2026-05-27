@@ -9,6 +9,7 @@ import {
   getAgentElementsRendererDescriptor,
 } from '../AgentElementsRendererRegistry';
 import {
+  filterAgentElementsModelsForNormalTranscript,
   projectTranscriptEventsToAgentElementsModels,
   projectFrameworkStreamEventsToAgentElementsModels,
   projectTranscriptViewMessagesToAgentElementsModels,
@@ -335,10 +336,13 @@ describe('Agent Elements transcript projection adapter', () => {
     expect(planCard).not.toHaveTextContent('"steps"');
   });
 
-  it('keeps serialized MCP and generic tool results out of primary UI', () => {
+  it('summarizes structured MCP and generic tool results without primary raw JSON', () => {
     const serializedResult = JSON.stringify({
       foo: 'bar',
-      rows: [{ id: 1, title: 'raw payload row' }],
+      rows: [
+        { id: 1, title: 'Issue 42', status: 'open' },
+        { id: 2, title: 'Issue 43', status: 'triage' },
+      ],
     });
     const mcp = makeMessage({
       type: 'tool_call',
@@ -374,25 +378,145 @@ describe('Agent Elements transcript projection adapter', () => {
         progress: [],
       },
     });
+    const scalarGeneric = makeMessage({
+      id: 3,
+      sequence: 3,
+      type: 'tool_call',
+      toolCall: {
+        toolName: 'workspace_status',
+        toolDisplayName: 'Workspace status',
+        status: 'completed',
+        description: 'Summarize workspace status',
+        arguments: {},
+        targetFilePath: null,
+        mcpServer: null,
+        mcpTool: null,
+        result: JSON.stringify({ ok: true, filesChanged: 3, empty: null }),
+        providerToolCallId: 'tool-generic-scalar-json',
+        progress: [],
+      },
+    });
 
-    const models = projectTranscriptViewMessagesToAgentElementsModels([mcp, generic]);
+    const models = projectTranscriptViewMessagesToAgentElementsModels([mcp, generic, scalarGeneric]);
 
-    expect(models.map((model) => model.kind)).toEqual(['mcp', 'genericTool']);
-    expect(models[0].result).toBe('Structured result available in debug details.');
-    expect(models[1].result).toBe('Structured result available in debug details.');
+    expect(models.map((model) => model.kind)).toEqual(['mcp', 'genericTool', 'genericTool']);
+    expect(models[0].result).toBe('2 results: Issue 42 (open); Issue 43 (triage)');
+    expect(models[1].result).toBe('2 results: Issue 42 (open); Issue 43 (triage)');
+    expect(models[2].result).toBe('ok true; filesChanged 3');
 
     const { unmount } = render(<AgentElementsEventRenderer model={models[0]} />);
-    expect(screen.getByTestId('agent-elements-mcp-result')).toHaveTextContent('Structured result available in debug details.');
+    expect(screen.getByTestId('agent-elements-mcp-result')).toHaveTextContent('2 results: Issue 42 (open); Issue 43 (triage)');
     expect(screen.getByTestId('agent-elements-tool-primary')).not.toHaveTextContent('"foo"');
-    expect(screen.getByTestId('agent-elements-tool-primary')).not.toHaveTextContent('raw payload row');
+    expect(screen.getByTestId('agent-elements-tool-primary')).not.toHaveTextContent('"rows"');
     expect(screen.getByTestId('agent-elements-debug-payload')).toHaveTextContent('foo');
     unmount();
 
     render(<AgentElementsEventRenderer model={models[1]} />);
-    expect(screen.getByTestId('agent-elements-generic-result')).toHaveTextContent('Structured result available in debug details.');
+    expect(screen.getByTestId('agent-elements-generic-result')).toHaveTextContent('2 results: Issue 42 (open); Issue 43 (triage)');
     expect(screen.getByTestId('agent-elements-tool-primary')).not.toHaveTextContent('"foo"');
-    expect(screen.getByTestId('agent-elements-tool-primary')).not.toHaveTextContent('raw payload row');
+    expect(screen.getByTestId('agent-elements-tool-primary')).not.toHaveTextContent('"rows"');
     expect(screen.getByTestId('agent-elements-debug-payload')).toHaveTextContent('foo');
+  });
+
+  it('maps structured search, read, and list JSON results to readable search rows', () => {
+    const grep = makeMessage({
+      type: 'tool_call',
+      toolCall: {
+        toolName: 'Grep',
+        toolDisplayName: 'Grep',
+        status: 'completed',
+        description: 'Find projection references',
+        arguments: { pattern: 'AgentElementsEventRenderer', path: 'packages/runtime/src' },
+        targetFilePath: null,
+        mcpServer: null,
+        mcpTool: null,
+        result: JSON.stringify({
+          matches: [
+            {
+              path: 'packages/runtime/src/ui/AgentElements/AgentElementsRendererRegistry.tsx',
+              line: 214,
+              text: 'export function AgentElementsEventRenderer',
+            },
+          ],
+        }),
+        providerToolCallId: 'tool-structured-grep',
+        progress: [],
+      },
+    });
+
+    const read = makeMessage({
+      id: 2,
+      sequence: 2,
+      type: 'tool_call',
+      toolCall: {
+        toolName: 'Read',
+        toolDisplayName: 'Read',
+        status: 'completed',
+        description: 'Read source file',
+        arguments: { file_path: '/repo/src/app.ts' },
+        targetFilePath: null,
+        mcpServer: null,
+        mcpTool: null,
+        result: JSON.stringify({
+          path: '/repo/src/app.ts',
+          content: 'export const value = 1;\nexport const next = 2;',
+        }),
+        providerToolCallId: 'tool-structured-read',
+        progress: [],
+      },
+    });
+
+    const list = makeMessage({
+      id: 3,
+      sequence: 3,
+      type: 'tool_call',
+      toolCall: {
+        toolName: 'list',
+        toolDisplayName: 'List files',
+        status: 'completed',
+        description: 'List source files',
+        arguments: { path: '/repo/src' },
+        targetFilePath: null,
+        mcpServer: null,
+        mcpTool: null,
+        result: JSON.stringify({
+          files: [
+            { path: '/repo/src/app.ts', type: 'file' },
+            { path: '/repo/src/components', type: 'directory' },
+          ],
+        }),
+        providerToolCallId: 'tool-structured-list',
+        progress: [],
+      },
+    });
+
+    const models = projectTranscriptViewMessagesToAgentElementsModels([grep, read, list]);
+
+    expect(models.map((model) => model.kind)).toEqual(['search', 'search', 'search']);
+    expect(models[0].searchResults?.[0]).toMatchObject({
+      title: 'AgentElementsRendererRegistry.tsx',
+      path: 'packages/runtime/src/ui/AgentElements/AgentElementsRendererRegistry.tsx',
+      line: 214,
+      excerpt: 'export function AgentElementsEventRenderer',
+    });
+    expect(models[1].searchResults?.[0]).toMatchObject({
+      title: 'app.ts',
+      path: '/repo/src/app.ts',
+      excerpt: 'export const value = 1;',
+    });
+    expect(models[2].searchResults?.map((result) => result.path)).toEqual([
+      '/repo/src/app.ts',
+      '/repo/src/components',
+    ]);
+
+    render(<AgentElementsEventRenderer model={models[0]} />);
+
+    expect(screen.getByTestId('agent-elements-renderer-boundary')).toHaveAttribute('data-renderer-kind', 'search');
+    expect(screen.getByTestId('agent-elements-search-results')).toHaveTextContent('AgentElementsRendererRegistry.tsx');
+    expect(screen.getByTestId('agent-elements-search-results')).toHaveTextContent('export function AgentElementsEventRenderer');
+    expect(screen.getByTestId('agent-elements-tool-primary')).not.toHaveTextContent('"matches"');
+    expect(screen.getByTestId('agent-elements-tool-primary')).not.toHaveTextContent('"content"');
+    expect(screen.getByTestId('agent-elements-debug-disclosure')).toHaveAttribute('data-debug-only', 'true');
   });
 
   it('maps prompts, subagents, turn summaries, and system status without unsupported fallbacks', () => {
@@ -853,6 +977,43 @@ describe('Agent Elements transcript projection adapter', () => {
     expect(screen.getByTestId('agent-elements-extension-event-card')).toHaveTextContent('retrieval.progress');
     expect(screen.getByTestId('agent-elements-tool-primary')).not.toHaveTextContent('"eventName"');
     expect(screen.getByTestId('agent-elements-debug-disclosure')).toHaveAttribute('data-debug-only', 'true');
+  });
+
+  it('filters framework internals out of the normal transcript card stream', () => {
+    const normalModels = filterAgentElementsModelsForNormalTranscript([
+      { kind: 'userMessage', body: 'hellow there' },
+      { kind: 'assistantMessage', body: 'Hello.' },
+      { kind: 'todo', todos: [{ content: 'Reply concisely', status: 'completed' }] },
+      { kind: 'humanInput', body: 'Allow Bash?' },
+      { kind: 'bash', command: 'npm test' },
+      { kind: 'fileEdit', filePath: 'src/app.ts' },
+      { kind: 'search', query: 'renderer' },
+      { kind: 'mcp', toolName: 'mcp__github__list_issues' },
+      { kind: 'genericTool', title: 'workspace_summary' },
+      { kind: 'subagent', title: 'reviewer' },
+      { kind: 'systemStatus', body: 'Runtime health is degraded.' },
+      { kind: 'toolLifecycle', title: 'LangGraph tool started' },
+      { kind: 'toolProgress', body: 'Standalone progress update' },
+      { kind: 'stateUpdate', title: 'Graph update' },
+      { kind: 'checkpointTaskDebug', title: 'Task lifecycle' },
+      { kind: 'turnSummary', title: 'Turn summary' },
+      { kind: 'extensionEvent', eventName: 'retrieval.progress' },
+      { kind: 'rawDebug', title: 'raw event' },
+    ]);
+
+    expect(normalModels.map((model) => model.kind)).toEqual([
+      'userMessage',
+      'assistantMessage',
+      'todo',
+      'humanInput',
+      'bash',
+      'fileEdit',
+      'search',
+      'mcp',
+      'genericTool',
+      'subagent',
+      'systemStatus',
+    ]);
   });
 
   it('projects framework message and DeepAgents subagent stream events', () => {

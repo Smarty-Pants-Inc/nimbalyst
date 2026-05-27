@@ -7,7 +7,9 @@
   display: flex;
   flex-direction: column;
   gap: var(--an-spacing-sm);
+  width: 100%;
   max-width: 100%;
+  box-sizing: border-box;
   color: var(--an-foreground);
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
   font-size: 14px;
@@ -76,7 +78,9 @@
 .agent-elements-plan-card {
   display: flex;
   flex-direction: column;
+  width: 100%;
   max-width: 100%;
+  box-sizing: border-box;
   color: var(--an-tool-color);
   background: var(--an-tool-background);
   border: 1px solid var(--an-tool-border-color);
@@ -90,9 +94,12 @@
   align-items: center;
   justify-content: space-between;
   gap: var(--an-spacing-sm);
+  width: 100%;
   min-width: 0;
   height: 28px;
-  padding: 0 var(--an-spacing-md);
+  box-sizing: border-box;
+  padding: 0;
+  padding-inline: var(--agent-elements-card-inline-padding, var(--an-spacing-md));
   color: var(--an-tool-color-muted);
   user-select: none;
 }
@@ -139,15 +146,18 @@
 .agent-elements-plan-toggle:focus-visible,
 .agent-elements-plan-secondary-action:focus-visible,
 .agent-elements-plan-approve:focus-visible {
-  outline: 2px solid var(--an-input-focus-outline, var(--nim-border-focus));
+  outline: 2px solid var(--an-input-focus-outline);
   outline-offset: 2px;
 }
 
 .agent-elements-plan-body {
   display: flex;
   flex-direction: column;
+  width: 100%;
   gap: var(--an-spacing-sm);
-  padding: var(--an-spacing-sm) var(--an-spacing-md);
+  box-sizing: border-box;
+  padding-block: var(--an-spacing-sm);
+  padding-inline: var(--agent-elements-card-inline-padding, var(--an-spacing-md));
   background: var(--an-background);
   border-top: 1px solid var(--an-border);
 }
@@ -182,8 +192,11 @@
   align-items: center;
   justify-content: space-between;
   gap: var(--an-spacing-sm);
+  width: 100%;
   min-height: 32px;
-  padding: var(--an-spacing-xs) var(--an-spacing-md);
+  box-sizing: border-box;
+  padding-block: var(--an-spacing-xs);
+  padding-inline: var(--agent-elements-card-inline-padding, var(--an-spacing-md));
   background: var(--an-tool-background);
   border-top: 1px solid var(--an-border);
   user-select: none;

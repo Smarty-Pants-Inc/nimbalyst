@@ -86,6 +86,42 @@ interface DirectoryNode {
   fileCount: number;
 }
 
+type SelectionState = 'none' | 'some' | 'all';
+
+const checkboxBaseClass = 'file-edits-sidebar__checkbox w-4 h-4 shrink-0 rounded-[var(--an-radius-xs)] border-[1.5px] cursor-pointer flex items-center justify-center transition-colors';
+const selectedCheckboxClass = 'bg-[var(--an-primary-color)] border-[var(--an-primary-color)]';
+const emptyCheckboxClass = 'border-[var(--an-foreground-subtle)] bg-transparent hover:border-[var(--an-foreground-muted)]';
+
+const DecorativeMaterialSymbol: React.FC<React.ComponentProps<typeof MaterialSymbol>> = (props) => (
+  <span aria-hidden="true" className="inline-flex shrink-0 items-center justify-center">
+    <MaterialSymbol {...props} />
+  </span>
+);
+
+type FileEditCheckboxProps = {
+  state: SelectionState;
+  testId?: string;
+  onClick?: (event: React.MouseEvent) => void;
+};
+
+const FileEditCheckbox: React.FC<FileEditCheckboxProps> = ({ state, testId, onClick }) => (
+  <div
+    onClick={onClick}
+    data-testid={testId}
+    role="checkbox"
+    aria-checked={state === 'all' ? 'true' : state === 'some' ? 'mixed' : 'false'}
+    className={`${checkboxBaseClass} ${state === 'none' ? emptyCheckboxClass : selectedCheckboxClass} ${state === 'some' ? 'opacity-70' : ''}`}
+  >
+    {state === 'all' ? (
+      <svg width="8" height="6" viewBox="0 0 8 6" fill="none" className="text-[var(--an-send-button-color)]">
+        <path d="M1 3L3 5L7 1" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+      </svg>
+    ) : state === 'some' ? (
+      <div className="w-2 h-0.5 rounded-[var(--an-radius-xs)] bg-[var(--an-send-button-color)]" />
+    ) : null}
+  </div>
+);
+
 export const FileEditsSidebar: React.FC<FileEditsSidebarProps> = ({
   fileEdits,
   onFileClick,
@@ -454,18 +490,18 @@ export const FileEditsSidebar: React.FC<FileEditsSidebarProps> = ({
     const isCommitted = !status || status.status === 'unchanged';
 
     if (isCommitted) {
-      return 'text-[var(--nim-file-committed)]';
+      return 'text-[color-mix(in_srgb,var(--an-foreground-muted)_85%,var(--an-foreground))]';
     }
 
     // File has uncommitted changes - color by operation type
     if (operation === 'delete') {
-      return 'text-[var(--nim-file-deleted)]';
+      return 'text-[var(--an-diff-removed-text)]';
     }
     if (operation === 'create') {
-      return 'text-[var(--nim-file-new)]';
+      return 'text-[var(--an-diff-added-text)]';
     }
     // edit, rename, or unknown operation
-    return 'text-[var(--nim-file-edited)]';
+    return 'text-[var(--an-primary-color)]';
   };
 
   // Get tooltip text for file status
@@ -540,70 +576,70 @@ export const FileEditsSidebar: React.FC<FileEditsSidebarProps> = ({
 
     return (
       <div
-        className="file-edits-sidebar__context-menu fixed z-50 bg-[var(--nim-bg-secondary)] border border-[var(--nim-border)] rounded-md shadow-lg py-1 min-w-[180px]"
+        className="file-edits-sidebar__context-menu fixed z-50 min-w-[180px] rounded-[var(--an-radius-sm)] border border-[var(--an-border-color)] bg-[var(--an-tool-background)] py-1"
         style={{ left: contextMenu.x, top: contextMenu.y }}
         onClick={(e) => e.stopPropagation()}
       >
         {onOpenInFiles && (
           <button
-            className="file-edits-sidebar__context-menu-item w-full flex items-center gap-2 px-3 py-1.5 text-[0.8125rem] text-[var(--nim-text)] hover:bg-[var(--nim-bg-hover)] text-left"
+            className="file-edits-sidebar__context-menu-item flex w-full items-center gap-2 px-3 py-1.5 text-left text-[0.8125rem] text-[var(--an-tool-color)] hover:bg-[var(--an-background-tertiary)]"
             onClick={() => {
               onOpenInFiles(contextMenu.filePath);
               closeContextMenu();
             }}
           >
-            <MaterialSymbol icon="open_in_new" size={16} className="text-[var(--nim-text-muted)]" />
+            <DecorativeMaterialSymbol icon="open_in_new" size={16} className="text-[var(--an-tool-color-muted)]" />
             Open in Files
           </button>
         )}
         {onViewDiff && (
           <button
-            className="file-edits-sidebar__context-menu-item w-full flex items-center gap-2 px-3 py-1.5 text-[0.8125rem] text-[var(--nim-text)] hover:bg-[var(--nim-bg-hover)] text-left"
+            className="file-edits-sidebar__context-menu-item flex w-full items-center gap-2 px-3 py-1.5 text-left text-[0.8125rem] text-[var(--an-tool-color)] hover:bg-[var(--an-background-tertiary)]"
             onClick={() => {
               onViewDiff(contextMenu.filePath);
               closeContextMenu();
             }}
           >
-            <MaterialSymbol icon="difference" size={16} className="text-[var(--nim-text-muted)]" />
+            <DecorativeMaterialSymbol icon="difference" size={16} className="text-[var(--an-tool-color-muted)]" />
             View Diff
           </button>
         )}
         {onOpenInExternalEditor && externalEditorName && (
           <button
-            className="file-edits-sidebar__context-menu-item w-full flex items-center gap-2 px-3 py-1.5 text-[0.8125rem] text-[var(--nim-text)] hover:bg-[var(--nim-bg-hover)] text-left"
+            className="file-edits-sidebar__context-menu-item flex w-full items-center gap-2 px-3 py-1.5 text-left text-[0.8125rem] text-[var(--an-tool-color)] hover:bg-[var(--an-background-tertiary)]"
             onClick={() => {
               onOpenInExternalEditor(contextMenu.filePath);
               closeContextMenu();
             }}
           >
-            <MaterialSymbol icon="open_in_new" size={16} className="text-[var(--nim-text-muted)]" />
+            <DecorativeMaterialSymbol icon="open_in_new" size={16} className="text-[var(--an-tool-color-muted)]" />
             Open in {externalEditorName}
           </button>
         )}
         {(onOpenInFiles || onViewDiff || onOpenInExternalEditor) && (onCopyPath || onRevealInFinder) && (
-          <div className="file-edits-sidebar__context-menu-divider h-px bg-[var(--nim-border)] my-1" />
+          <div className="file-edits-sidebar__context-menu-divider my-1 h-px bg-[var(--an-border-color)]" />
         )}
         {onCopyPath && (
           <button
-            className="file-edits-sidebar__context-menu-item w-full flex items-center gap-2 px-3 py-1.5 text-[0.8125rem] text-[var(--nim-text)] hover:bg-[var(--nim-bg-hover)] text-left"
+            className="file-edits-sidebar__context-menu-item flex w-full items-center gap-2 px-3 py-1.5 text-left text-[0.8125rem] text-[var(--an-tool-color)] hover:bg-[var(--an-background-tertiary)]"
             onClick={() => {
               onCopyPath(contextMenu.filePath);
               closeContextMenu();
             }}
           >
-            <MaterialSymbol icon="content_copy" size={16} className="text-[var(--nim-text-muted)]" />
+            <DecorativeMaterialSymbol icon="content_copy" size={16} className="text-[var(--an-tool-color-muted)]" />
             Copy Path
           </button>
         )}
         {onRevealInFinder && (
           <button
-            className="file-edits-sidebar__context-menu-item w-full flex items-center gap-2 px-3 py-1.5 text-[0.8125rem] text-[var(--nim-text)] hover:bg-[var(--nim-bg-hover)] text-left"
+            className="file-edits-sidebar__context-menu-item flex w-full items-center gap-2 px-3 py-1.5 text-left text-[0.8125rem] text-[var(--an-tool-color)] hover:bg-[var(--an-background-tertiary)]"
             onClick={() => {
               onRevealInFinder(contextMenu.filePath);
               closeContextMenu();
             }}
           >
-            <MaterialSymbol icon="folder_open" size={16} className="text-[var(--nim-text-muted)]" />
+            <DecorativeMaterialSymbol icon="folder_open" size={16} className="text-[var(--an-tool-color-muted)]" />
             Reveal in Finder
           </button>
         )}
@@ -649,9 +685,9 @@ export const FileEditsSidebar: React.FC<FileEditsSidebarProps> = ({
           draggable
         onDragStart={handleDragStart}
         onContextMenu={(e) => handleContextMenu(e, filePath)}
-        className={`file-edits-sidebar__file agent-elements-files-edited-row agent-elements-search-result group w-full flex items-center gap-1 px-2 py-1 rounded border border-transparent transition-all bg-transparent hover:bg-[var(--nim-bg-hover)] hover:border-[var(--nim-border)] ${
-          isPinned ? 'bg-[var(--nim-bg-hover)] border-[var(--nim-primary)]' : ''
-        } ${hasPendingReview ? 'bg-[rgba(251,191,36,0.08)] border-[rgba(251,191,36,0.2)] hover:bg-[rgba(251,191,36,0.12)] hover:border-[rgba(251,191,36,0.3)]' : ''}`}
+        className={`file-edits-sidebar__file agent-elements-files-edited-row agent-elements-search-result group flex w-full items-center gap-1 rounded-[var(--an-radius-sm)] border border-transparent bg-transparent px-[var(--an-spacing-sm)] py-[var(--an-spacing-xs)] transition-colors hover:border-[var(--an-border-color)] hover:bg-[var(--an-background-tertiary)] ${
+          isPinned ? 'border-[var(--an-primary-color)] bg-[var(--an-background-tertiary)]' : ''
+        } ${hasPendingReview ? 'border-[color-mix(in_srgb,var(--an-warning-color)_35%,transparent)] bg-[color-mix(in_srgb,var(--an-warning-color)_10%,var(--an-background))] hover:border-[color-mix(in_srgb,var(--an-warning-color)_45%,transparent)] hover:bg-[color-mix(in_srgb,var(--an-warning-color)_14%,var(--an-background))]' : ''}`}
         title={tooltip}
       >
         <button
@@ -664,39 +700,23 @@ export const FileEditsSidebar: React.FC<FileEditsSidebarProps> = ({
           }}
           className="file-edits-sidebar__file-main flex-1 min-w-0 flex items-center gap-1 text-left bg-transparent border-0 p-0 cursor-pointer"
         >
-          {/* Placeholder for expand caret (to align with folder rows) - only in directory tree */}
           {isInDirectory && (
             <div className="file-edits-sidebar__caret-placeholder w-4 h-4 shrink-0" />
           )}
-          {/* Checkbox for commit selection - only show when in checkbox mode */}
           {showCheckboxes && (
             !selectable ? (
-              // Placeholder for non-selectable files (committed or outside commit scope)
               <div className="file-edits-sidebar__checkbox-placeholder w-4 h-4 shrink-0" />
             ) : (
-              // Checkbox for selectable files
-                <div
+                <FileEditCheckbox
                   onClick={handleCheckboxClick}
-                  data-testid="files-edited-file-checkbox"
-                  role="checkbox"
-                  aria-checked={isSelected}
-                  className={`file-edits-sidebar__checkbox w-4 h-4 shrink-0 rounded-[3px] border-[1.5px] cursor-pointer flex items-center justify-center transition-all ${
-                  isSelected
-                    ? 'bg-[var(--nim-file-edited)] border-[var(--nim-file-edited)]'
-                    : 'border-[var(--nim-text-faint)] bg-transparent hover:border-[var(--nim-text-muted)]'
-                }`}
-              >
-                {isSelected && (
-                  <svg width="8" height="6" viewBox="0 0 8 6" fill="none" className="text-white">
-                    <path d="M1 3L3 5L7 1" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                  </svg>
-                )}
-              </div>
+                  state={isSelected ? 'all' : 'none'}
+                  testId="files-edited-file-checkbox"
+                />
             )
           )}
           <div className="file-edits-sidebar__file-info flex-1 min-w-0 flex items-center gap-1">
             <div
-              className={`file-edits-sidebar__file-name text-[0.8125rem] font-medium overflow-hidden text-ellipsis whitespace-nowrap ${isDeleted ? 'line-through text-[var(--nim-text-muted)]' : fileColorClass}`}
+              className={`file-edits-sidebar__file-name overflow-hidden text-ellipsis whitespace-nowrap text-[0.8125rem] font-medium ${isDeleted ? 'line-through text-[var(--an-foreground-muted)]' : fileColorClass}`}
             >
               {formatFileName(filePath)}
             </div>
@@ -714,8 +734,8 @@ export const FileEditsSidebar: React.FC<FileEditsSidebarProps> = ({
           <button
             type="button"
             data-testid="files-edited-file-peek"
-            className={`file-edits-sidebar__peek-btn shrink-0 w-5 h-5 flex items-center justify-center rounded text-[var(--nim-text-faint)] hover:text-[var(--nim-primary)] hover:bg-[var(--nim-bg-tertiary)] transition-opacity bg-transparent border-0 cursor-pointer ${
-              isPinned ? 'opacity-100 text-[var(--nim-primary)]' : 'opacity-0 group-hover:opacity-100 focus:opacity-100'
+            className={`file-edits-sidebar__peek-btn flex h-5 w-5 shrink-0 cursor-pointer items-center justify-center rounded-[var(--an-radius-xs)] border-0 bg-transparent text-[var(--an-foreground-subtle)] transition-opacity hover:bg-[var(--an-background-tertiary)] hover:text-[var(--an-primary-color)] ${
+              isPinned ? 'text-[var(--an-primary-color)] opacity-100' : 'opacity-0 group-hover:opacity-100 focus:opacity-100'
             }`}
             title={isPinned ? 'Hide diff' : 'Show diff'}
             onClick={(e) => {
@@ -723,7 +743,7 @@ export const FileEditsSidebar: React.FC<FileEditsSidebarProps> = ({
               togglePeek(filePath);
             }}
           >
-            <MaterialSymbol icon="difference" size={14} />
+            <DecorativeMaterialSymbol icon="difference" size={14} />
           </button>
         )}
       </div>
@@ -788,52 +808,31 @@ export const FileEditsSidebar: React.FC<FileEditsSidebarProps> = ({
         {node.displayPath && (
           <button
             onClick={() => toggleFolder(node.path)}
-            className="file-edits-sidebar__directory-header w-full flex items-center gap-1 px-2 py-0.5 text-[0.8125rem] font-medium text-[var(--nim-text-muted)] bg-transparent border border-transparent rounded transition-all cursor-pointer text-left hover:bg-[var(--nim-bg-hover)] hover:text-[var(--nim-text)]"
+            className="file-edits-sidebar__directory-header flex w-full cursor-pointer items-center gap-1 rounded-[var(--an-radius-sm)] border border-transparent bg-transparent px-[var(--an-spacing-sm)] py-[var(--an-spacing-xxs)] text-left text-[0.8125rem] font-medium text-[var(--an-foreground-muted)] transition-colors hover:bg-[var(--an-background-tertiary)] hover:text-[var(--an-foreground)]"
           >
-            <MaterialSymbol
+            <DecorativeMaterialSymbol
               icon={isExpanded ? "expand_more" : "chevron_right"}
               size={16}
-              className="file-edits-sidebar__directory-chevron shrink-0 transition-transform text-[var(--nim-text-faint)]"
+              className="file-edits-sidebar__directory-chevron shrink-0 text-[var(--an-foreground-subtle)] transition-transform"
             />
-            {/* Directory checkbox - between caret and folder icon */}
             {showCheckboxes && (
               hasUncommittedFiles ? (
-                <div
+                <FileEditCheckbox
                   onClick={(e) => handleDirectoryCheckboxClick(e, node)}
-                  data-testid="files-edited-directory-checkbox"
-                  role="checkbox"
-                  aria-checked={selectionState === 'all' ? 'true' : selectionState === 'some' ? 'mixed' : 'false'}
-                  className={`file-edits-sidebar__checkbox w-4 h-4 shrink-0 rounded-[3px] border-[1.5px] cursor-pointer flex items-center justify-center transition-all ${
-                    selectionState === 'all'
-                      ? 'bg-[var(--nim-file-edited)] border-[var(--nim-file-edited)]'
-                      : selectionState === 'some'
-                        ? 'bg-[var(--nim-file-edited)] border-[var(--nim-file-edited)] opacity-60'
-                        : 'border-[var(--nim-text-faint)] bg-transparent hover:border-[var(--nim-text-muted)]'
-                  }`}
-                >
-                  {selectionState !== 'none' && (
-                    selectionState === 'all' ? (
-                      <svg width="8" height="6" viewBox="0 0 8 6" fill="none" className="text-white">
-                        <path d="M1 3L3 5L7 1" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                      </svg>
-                    ) : (
-                      // Indeterminate state (dash)
-                      <div className="w-2 h-0.5 bg-white rounded-full" />
-                    )
-                  )}
-                </div>
+                  state={selectionState}
+                  testId="files-edited-directory-checkbox"
+                />
               ) : (
-                // Placeholder when no uncommitted files
                 <div className="file-edits-sidebar__checkbox-placeholder w-4 h-4 shrink-0" />
               )
             )}
-            <MaterialSymbol
+            <DecorativeMaterialSymbol
               icon={isExpanded ? "folder_open" : "folder"}
               size={16}
-              className="file-edits-sidebar__directory-icon shrink-0 text-[var(--nim-text-muted)]"
+              className="file-edits-sidebar__directory-icon shrink-0 text-[var(--an-foreground-muted)]"
             />
             <span className="file-edits-sidebar__directory-path flex-1 min-w-0 overflow-hidden text-ellipsis whitespace-nowrap">{node.displayPath}</span>
-            <span className="file-edits-sidebar__directory-count shrink-0 px-1 py-0.5 bg-[var(--nim-bg-tertiary)] rounded text-[9px] text-[var(--nim-text-faint)]">{node.fileCount}</span>
+            <span className="file-edits-sidebar__directory-count shrink-0 rounded-[var(--an-radius-xs)] bg-[var(--an-background-tertiary)] px-1 py-0.5 text-[9px] text-[var(--an-foreground-subtle)]">{node.fileCount}</span>
           </button>
         )}
 
@@ -854,70 +853,54 @@ export const FileEditsSidebar: React.FC<FileEditsSidebarProps> = ({
 
   return (
     <div
-      className="file-edits-sidebar agent-elements-files-edited-sidebar agent-elements-edit-panel flex flex-col h-full bg-[var(--nim-bg-secondary)]"
+      className="file-edits-sidebar agent-elements-files-edited-sidebar agent-elements-edit-panel flex h-full flex-col bg-[var(--an-tool-background)] text-[var(--an-tool-color)]"
       data-agent-elements-shell="files-edited"
       data-component="FileEditsSidebar"
       data-testid="agent-elements-files-edited-sidebar"
     >
       {!hideControls && editedFiles.length > 0 && (
-        <div className="file-edits-sidebar__controls flex items-center gap-1 p-2 border-b border-[var(--nim-border)] bg-[var(--nim-bg-secondary)]">
+        <div className="file-edits-sidebar__controls flex items-center gap-1 border-b border-[var(--an-border-color)] bg-[var(--an-tool-background)] p-[var(--an-spacing-sm)]">
           <button
             onClick={() => setGroupByDirectory(!groupByDirectory)}
-            className={`file-edits-sidebar__control-button flex items-center justify-center w-7 h-7 p-0 border border-[var(--nim-border)] rounded bg-[var(--nim-bg)] text-[var(--nim-text-muted)] cursor-pointer transition-all hover:bg-[var(--nim-bg-hover)] hover:text-[var(--nim-text)] disabled:opacity-40 disabled:cursor-not-allowed ${groupByDirectory ? 'bg-[var(--nim-primary)] text-white border-[var(--nim-primary)]' : ''}`}
+            className={`file-edits-sidebar__control-button flex h-7 w-7 cursor-pointer items-center justify-center rounded-[var(--an-radius-sm)] border border-[var(--an-border-color)] bg-[var(--an-background)] p-0 text-[var(--an-tool-color-muted)] transition-colors hover:bg-[var(--an-background-tertiary)] hover:text-[var(--an-tool-color)] disabled:cursor-not-allowed disabled:opacity-40 ${groupByDirectory ? 'border-[var(--an-primary-color)] bg-[var(--an-primary-color)] text-[var(--an-send-button-color)]' : ''}`}
             title="Group by directory"
           >
-            <MaterialSymbol icon="folder" size={18} />
+            <DecorativeMaterialSymbol icon="folder" size={18} />
           </button>
           <button
             onClick={expandAll}
             disabled={!groupByDirectory}
-            className="file-edits-sidebar__control-button flex items-center justify-center w-7 h-7 p-0 border border-[var(--nim-border)] rounded bg-[var(--nim-bg)] text-[var(--nim-text-muted)] cursor-pointer transition-all hover:bg-[var(--nim-bg-hover)] hover:text-[var(--nim-text)] disabled:opacity-40 disabled:cursor-not-allowed"
+            className="file-edits-sidebar__control-button flex h-7 w-7 cursor-pointer items-center justify-center rounded-[var(--an-radius-sm)] border border-[var(--an-border-color)] bg-[var(--an-background)] p-0 text-[var(--an-tool-color-muted)] transition-colors hover:bg-[var(--an-background-tertiary)] hover:text-[var(--an-tool-color)] disabled:cursor-not-allowed disabled:opacity-40"
             title="Expand all"
           >
-            <MaterialSymbol icon="unfold_more" size={18} />
+            <DecorativeMaterialSymbol icon="unfold_more" size={18} />
           </button>
           <button
             onClick={collapseAll}
             disabled={!groupByDirectory}
-            className="file-edits-sidebar__control-button flex items-center justify-center w-7 h-7 p-0 border border-[var(--nim-border)] rounded bg-[var(--nim-bg)] text-[var(--nim-text-muted)] cursor-pointer transition-all hover:bg-[var(--nim-bg-hover)] hover:text-[var(--nim-text)] disabled:opacity-40 disabled:cursor-not-allowed"
+            className="file-edits-sidebar__control-button flex h-7 w-7 cursor-pointer items-center justify-center rounded-[var(--an-radius-sm)] border border-[var(--an-border-color)] bg-[var(--an-background)] p-0 text-[var(--an-tool-color-muted)] transition-colors hover:bg-[var(--an-background-tertiary)] hover:text-[var(--an-tool-color)] disabled:cursor-not-allowed disabled:opacity-40"
             title="Collapse all"
           >
-            <MaterialSymbol icon="unfold_less" size={18} />
+            <DecorativeMaterialSymbol icon="unfold_less" size={18} />
           </button>
         </div>
       )}
       <div className="file-edits-sidebar__files flex-1 overflow-y-auto p-1">
         {/* Root "Select All" checkbox */}
         {shouldShowRootCheckbox && editedFiles.length > 0 && rootSelectionInfo.uncommittedCount > 0 && (
-          <div className="file-edits-sidebar__root-checkbox flex items-center gap-2 px-2 py-1.5 mb-1 border-b border-[var(--nim-border)]">
-            <div
+          <div className="file-edits-sidebar__root-checkbox mb-1 flex items-center gap-2 border-b border-[var(--an-border-color)] px-[var(--an-spacing-sm)] py-1.5">
+            <FileEditCheckbox
               onClick={() => onSelectAll?.(rootSelectionInfo.state !== 'all')}
-              data-testid="files-edited-select-all"
-              className={`w-4 h-4 shrink-0 rounded-[3px] border-[1.5px] cursor-pointer flex items-center justify-center transition-all ${
-                rootSelectionInfo.state === 'all'
-                  ? 'bg-[var(--nim-file-edited)] border-[var(--nim-file-edited)]'
-                  : rootSelectionInfo.state === 'some'
-                    ? 'bg-[var(--nim-file-edited)] border-[var(--nim-file-edited)] opacity-60'
-                    : 'border-[var(--nim-text-faint)] bg-transparent hover:border-[var(--nim-text-muted)]'
-              }`}
-            >
-              {rootSelectionInfo.state !== 'none' && (
-                rootSelectionInfo.state === 'all' ? (
-                  <svg width="8" height="6" viewBox="0 0 8 6" fill="none" className="text-white">
-                    <path d="M1 3L3 5L7 1" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                  </svg>
-                ) : (
-                  <div className="w-2 h-0.5 bg-white rounded-full" />
-                )
-              )}
-            </div>
-            <span className="text-[0.8125rem] text-[var(--nim-text-muted)]">
+              state={rootSelectionInfo.state}
+              testId="files-edited-select-all"
+            />
+            <span className="text-[0.8125rem] text-[var(--an-foreground-muted)]">
               Select all ({rootSelectionInfo.uncommittedCount} uncommitted)
             </span>
           </div>
         )}
         {editedFiles.length === 0 ? (
-          <div className="file-edits-sidebar__empty p-4 text-[var(--nim-text-faint)] text-sm text-center">
+          <div className="file-edits-sidebar__empty p-4 text-center text-sm text-[var(--an-foreground-subtle)]">
             {scopeMode === 'current-changes' && totalSessionFilesCount && totalSessionFilesCount > 0 ? (
               // Uncommitted Session Edits mode with no uncommitted changes
               <div className="flex flex-col items-center">
@@ -925,7 +908,7 @@ export const FileEditsSidebar: React.FC<FileEditsSidebarProps> = ({
                 {onShowSessionFiles && (
                   <button
                     onClick={onShowSessionFiles}
-                    className="mt-2 text-[var(--nim-primary)] hover:underline cursor-pointer bg-transparent border-none text-sm"
+                    className="mt-2 cursor-pointer border-none bg-transparent text-sm text-[var(--an-primary-color)] hover:underline"
                   >
                     Show all session edits ({totalSessionFilesCount})
                   </button>
@@ -933,7 +916,7 @@ export const FileEditsSidebar: React.FC<FileEditsSidebarProps> = ({
                 {onShowAllUncommitted && totalUncommittedCount && totalUncommittedCount > 0 && (
                   <button
                     onClick={onShowAllUncommitted}
-                    className="mt-2 text-[var(--nim-primary)] hover:underline cursor-pointer bg-transparent border-none text-sm"
+                    className="mt-2 cursor-pointer border-none bg-transparent text-sm text-[var(--an-primary-color)] hover:underline"
                   >
                     Show all uncommitted files ({totalUncommittedCount})
                   </button>
@@ -946,7 +929,7 @@ export const FileEditsSidebar: React.FC<FileEditsSidebarProps> = ({
                 {onShowAllUncommitted && totalUncommittedCount && totalUncommittedCount > 0 && (
                   <button
                     onClick={onShowAllUncommitted}
-                    className="mt-2 text-[var(--nim-primary)] hover:underline cursor-pointer bg-transparent border-none text-sm"
+                    className="mt-2 cursor-pointer border-none bg-transparent text-sm text-[var(--an-primary-color)] hover:underline"
                   >
                     Show all uncommitted files ({totalUncommittedCount})
                   </button>
@@ -959,7 +942,7 @@ export const FileEditsSidebar: React.FC<FileEditsSidebarProps> = ({
                 {onShowAllUncommitted && totalUncommittedCount && totalUncommittedCount > 0 && (
                   <button
                     onClick={onShowAllUncommitted}
-                    className="mt-2 text-[var(--nim-primary)] hover:underline cursor-pointer bg-transparent border-none text-sm"
+                    className="mt-2 cursor-pointer border-none bg-transparent text-sm text-[var(--an-primary-color)] hover:underline"
                   >
                     Show all uncommitted files ({totalUncommittedCount})
                   </button>
@@ -972,7 +955,7 @@ export const FileEditsSidebar: React.FC<FileEditsSidebarProps> = ({
                 {onShowSessionFiles && totalSessionFilesCount && totalSessionFilesCount > 0 && (
                   <button
                     onClick={onShowSessionFiles}
-                    className="mt-2 text-[var(--nim-primary)] hover:underline cursor-pointer bg-transparent border-none text-sm"
+                    className="mt-2 cursor-pointer border-none bg-transparent text-sm text-[var(--an-primary-color)] hover:underline"
                   >
                     Show session edits ({totalSessionFilesCount})
                   </button>
@@ -994,7 +977,7 @@ export const FileEditsSidebar: React.FC<FileEditsSidebarProps> = ({
               <div className="file-edits-sidebar__uncommitted-hint px-2 py-3 text-center">
                 <button
                   onClick={onShowAllUncommitted}
-                  className="text-[var(--nim-primary)] hover:underline cursor-pointer bg-transparent border-none text-sm"
+                  className="cursor-pointer border-none bg-transparent text-sm text-[var(--an-primary-color)] hover:underline"
                 >
                   Show all uncommitted files ({totalUncommittedCount})
                 </button>

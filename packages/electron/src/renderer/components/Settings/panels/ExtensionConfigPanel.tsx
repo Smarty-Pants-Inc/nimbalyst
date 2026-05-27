@@ -9,6 +9,19 @@ interface ExtensionConfigPanelProps {
   onConfigChange?: () => void;
 }
 
+const panelClass =
+  'extension-config-panel agent-elements-extension-config-panel flex flex-col gap-[var(--an-spacing-xl)] text-[var(--an-foreground)]';
+const statusShellClass =
+  'agent-elements-tool-card extension-config-status-card [--agent-elements-card-block-padding:var(--an-spacing-xl)] [--agent-elements-card-inline-padding:var(--an-spacing-xl)] text-center text-sm text-[var(--an-foreground-muted)]';
+const fieldShellClass =
+  'config-field agent-elements-extension-config-field rounded-[var(--an-tool-border-radius)] border border-[var(--an-border-color)] bg-[var(--an-background-secondary)] p-[var(--an-spacing-lg)]';
+const fieldLabelClass =
+  'config-field-label text-sm font-medium text-[var(--an-foreground)]';
+const fieldInputClass =
+  'rounded-[var(--an-input-border-radius)] border border-[var(--an-input-border-color)] bg-[var(--an-input-background)] px-[var(--an-spacing-md)] py-[var(--an-spacing-sm)] text-sm text-[var(--an-input-color)] outline-none transition-[background-color,border-color,color] duration-150 ease-out placeholder:text-[var(--an-input-placeholder-color)] focus:border-[var(--an-input-focus-border)] focus:ring-2 focus:ring-[var(--an-focus-ring)] disabled:cursor-not-allowed disabled:opacity-60';
+const fieldHintClass =
+  'config-field-hint text-xs text-[var(--an-foreground-subtle)]';
+
 /**
  * Renders a dynamic configuration panel for an extension based on its
  * configuration contribution in the manifest.
@@ -20,22 +33,23 @@ export const ExtensionConfigPanel: React.FC<ExtensionConfigPanelProps> = ({
   workspacePath,
   onConfigChange,
 }) => {
-  const [values, setValues] = useState<Record<string, unknown>>({});
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-
   const config = manifest.contributions?.configuration;
   const properties = config?.properties ?? {};
+  const hasConfigurableProperties = !!config && Object.keys(properties).length > 0;
+
+  const [values, setValues] = useState<Record<string, unknown>>({});
+  const [loading, setLoading] = useState(hasConfigurableProperties);
+  const [saving, setSaving] = useState(false);
 
   // Load configuration values
   useEffect(() => {
+    if (!hasConfigurableProperties) return;
     loadConfig();
   }, [extensionId, scope, workspacePath]);
 
   const loadConfig = async () => {
     setLoading(true);
     try {
-      const apiScope = scope === 'project' ? 'workspace' : 'user';
       const userConfig = await window.electronAPI.extensions.getConfig(extensionId, 'user');
 
       // If in project scope, also get workspace config which overrides user
@@ -90,7 +104,11 @@ export const ExtensionConfigPanel: React.FC<ExtensionConfigPanelProps> = ({
 
   if (!config || Object.keys(properties).length === 0) {
     return (
-      <div className="extension-config-empty py-8 text-center text-[var(--nim-text-muted)]">
+      <div
+        className={`extension-config-empty agent-elements-extension-config-empty ${statusShellClass}`}
+        data-agent-elements-shell="extension-config-empty"
+        data-testid="agent-elements-extension-config-empty"
+      >
         <p>This extension has no configurable settings.</p>
       </div>
     );
@@ -98,7 +116,11 @@ export const ExtensionConfigPanel: React.FC<ExtensionConfigPanelProps> = ({
 
   if (loading) {
     return (
-      <div className="extension-config-loading py-8 text-center text-[var(--nim-text-muted)]">
+      <div
+        className={`extension-config-loading agent-elements-extension-config-loading ${statusShellClass}`}
+        data-agent-elements-shell="extension-config-loading"
+        data-testid="agent-elements-extension-config-loading"
+      >
         <p>Loading configuration...</p>
       </div>
     );
@@ -110,13 +132,26 @@ export const ExtensionConfigPanel: React.FC<ExtensionConfigPanelProps> = ({
   );
 
   return (
-    <div className="extension-config-panel flex flex-col gap-4">
+    <div
+      className={panelClass}
+      data-agent-elements-shell="extension-config-panel"
+      data-component="ExtensionConfigPanel"
+      data-testid="agent-elements-extension-config-panel"
+    >
       {config.title && (
-        <div className="extension-config-header mb-2">
-          <h4 className="text-base font-medium text-[var(--nim-text)]">{config.title}</h4>
+        <div
+          className="extension-config-header agent-elements-extension-config-header"
+          data-agent-elements-shell="extension-config-header"
+          data-testid="agent-elements-extension-config-header"
+        >
+          <h4 className="text-base font-semibold text-[var(--an-foreground)]">{config.title}</h4>
         </div>
       )}
-      <div className="extension-config-fields flex flex-col gap-4">
+      <div
+        className="extension-config-fields agent-elements-extension-config-fields flex flex-col gap-[var(--an-spacing-lg)]"
+        data-agent-elements-shell="extension-config-fields"
+        data-testid="agent-elements-extension-config-fields"
+      >
         {sortedProperties.map(([key, prop]) => (
           <ConfigField
             key={key}
@@ -153,16 +188,21 @@ const ConfigField: React.FC<ConfigFieldProps> = ({
   switch (type) {
     case 'boolean':
       return (
-        <div className="config-field config-field-boolean py-2">
-          <label className="config-field-toggle flex items-center gap-3 cursor-pointer">
+        <div
+          className={`${fieldShellClass} config-field-boolean`}
+          data-agent-elements-shell="extension-config-field"
+          data-field-type="boolean"
+          data-testid={`agent-elements-extension-config-field-${propertyKey}`}
+        >
+          <label className="config-field-toggle flex cursor-pointer items-center gap-[var(--an-spacing-md)]">
             <input
               type="checkbox"
               checked={Boolean(value)}
               onChange={(e) => onChange(e.target.checked)}
               disabled={disabled}
-              className="w-4 h-4 rounded border-[var(--nim-border)] accent-[var(--nim-primary)]"
+              className="h-4 w-4 rounded-[var(--an-radius-xs)] border-[var(--an-input-border-color)] accent-[var(--an-primary-color)]"
             />
-            <span className="config-field-label text-sm text-[var(--nim-text)]">{description || propertyKey}</span>
+            <span className={fieldLabelClass}>{description || propertyKey}</span>
           </label>
         </div>
       );
@@ -171,14 +211,19 @@ const ConfigField: React.FC<ConfigFieldProps> = ({
       // If has enum, render as select
       if (property.enum && property.enum.length > 0) {
         return (
-          <div className="config-field config-field-select py-2">
-            <label className="config-field-label-block flex flex-col gap-1.5">
-              <span className="text-sm font-medium text-[var(--nim-text)]">{description || propertyKey}</span>
+          <div
+            className={`${fieldShellClass} config-field-select`}
+            data-agent-elements-shell="extension-config-field"
+            data-field-type="select"
+            data-testid={`agent-elements-extension-config-field-${propertyKey}`}
+          >
+            <label className="config-field-label-block flex flex-col gap-[var(--an-spacing-xs)]">
+              <span className={fieldLabelClass}>{description || propertyKey}</span>
               <select
                 value={String(value ?? '')}
                 onChange={(e) => onChange(e.target.value)}
                 disabled={disabled}
-                className="px-3 py-1.5 rounded border border-[var(--nim-border)] bg-[var(--nim-bg-secondary)] text-[var(--nim-text)] text-sm"
+                className={fieldInputClass}
               >
                 {property.enum.map((opt, idx) => (
                   <option key={String(opt)} value={String(opt)}>
@@ -193,9 +238,14 @@ const ConfigField: React.FC<ConfigFieldProps> = ({
 
       // Regular text input
       return (
-        <div className="config-field config-field-text py-2">
-          <label className="config-field-label-block flex flex-col gap-1.5">
-            <span className="text-sm font-medium text-[var(--nim-text)]">{description || propertyKey}</span>
+        <div
+          className={`${fieldShellClass} config-field-text`}
+          data-agent-elements-shell="extension-config-field"
+          data-field-type="text"
+          data-testid={`agent-elements-extension-config-field-${propertyKey}`}
+        >
+          <label className="config-field-label-block flex flex-col gap-[var(--an-spacing-xs)]">
+            <span className={fieldLabelClass}>{description || propertyKey}</span>
             <input
               type="text"
               value={String(value ?? '')}
@@ -203,7 +253,7 @@ const ConfigField: React.FC<ConfigFieldProps> = ({
               placeholder={placeholder}
               pattern={property.pattern}
               disabled={disabled}
-              className="px-3 py-1.5 rounded border border-[var(--nim-border)] bg-[var(--nim-bg-secondary)] text-[var(--nim-text)] text-sm placeholder:text-[var(--nim-text-faint)]"
+              className={fieldInputClass}
             />
           </label>
         </div>
@@ -211,9 +261,14 @@ const ConfigField: React.FC<ConfigFieldProps> = ({
 
     case 'number':
       return (
-        <div className="config-field config-field-number py-2">
-          <label className="config-field-label-block flex flex-col gap-1.5">
-            <span className="text-sm font-medium text-[var(--nim-text)]">{description || propertyKey}</span>
+        <div
+          className={`${fieldShellClass} config-field-number`}
+          data-agent-elements-shell="extension-config-field"
+          data-field-type="number"
+          data-testid={`agent-elements-extension-config-field-${propertyKey}`}
+        >
+          <label className="config-field-label-block flex flex-col gap-[var(--an-spacing-xs)]">
+            <span className={fieldLabelClass}>{description || propertyKey}</span>
             <input
               type="number"
               value={value !== undefined ? Number(value) : ''}
@@ -222,7 +277,7 @@ const ConfigField: React.FC<ConfigFieldProps> = ({
               max={property.maximum}
               placeholder={placeholder}
               disabled={disabled}
-              className="px-3 py-1.5 rounded border border-[var(--nim-border)] bg-[var(--nim-bg-secondary)] text-[var(--nim-text)] text-sm placeholder:text-[var(--nim-text-faint)]"
+              className={fieldInputClass}
             />
           </label>
         </div>
@@ -231,10 +286,15 @@ const ConfigField: React.FC<ConfigFieldProps> = ({
     default:
       // Fallback for unsupported types
       return (
-        <div className="config-field config-field-unsupported py-2 flex flex-col gap-1">
-          <span className="config-field-label text-sm font-medium text-[var(--nim-text)]">{description || propertyKey}</span>
-          <span className="config-field-value text-sm text-[var(--nim-text-muted)] font-mono">{JSON.stringify(value)}</span>
-          <span className="config-field-hint text-xs text-[var(--nim-text-faint)]">Type "{type}" not supported in UI</span>
+        <div
+          className={`${fieldShellClass} config-field-unsupported flex flex-col gap-[var(--an-spacing-xs)]`}
+          data-agent-elements-shell="extension-config-field"
+          data-field-type="unsupported"
+          data-testid={`agent-elements-extension-config-unsupported-${propertyKey}`}
+        >
+          <span className={fieldLabelClass}>{description || propertyKey}</span>
+          <span className="config-field-value font-mono text-sm text-[var(--an-foreground-muted)]">{JSON.stringify(value)}</span>
+          <span className={fieldHintClass}>Type "{type}" not supported in UI</span>
         </div>
       );
   }

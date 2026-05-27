@@ -14,6 +14,14 @@ function formatDebugPayload(value: unknown): string {
   return JSON.stringify(value, null, 2);
 }
 
+export function agentToolStatusToTone(status: AgentToolStatus): AgentStatusTone {
+  if (status === 'running') return 'running';
+  if (status === 'completed') return 'success';
+  if (status === 'error') return 'error';
+  if (status === 'interrupted') return 'warning';
+  return 'neutral';
+}
+
 export interface AgentStatusPillProps {
   tone?: AgentStatusTone;
   children: ReactNode;
@@ -26,6 +34,11 @@ interface DataTestIdAttribute {
 
 interface DataComponentAttribute {
   'data-component'?: string;
+}
+
+export interface AgentElementsCardAttributes {
+  'data-agent-elements-card-padding'?: string;
+  'data-agent-elements-card-width'?: string;
 }
 
 export function AgentStatusPill({
@@ -97,7 +110,7 @@ export function AgentTranscriptRow({
   );
 }
 
-export interface AgentToolCardProps extends HTMLAttributes<HTMLDivElement>, DataTestIdAttribute, DataComponentAttribute {
+export interface AgentToolCardProps extends HTMLAttributes<HTMLDivElement>, DataTestIdAttribute, DataComponentAttribute, AgentElementsCardAttributes {
   title: string;
   subtitle?: ReactNode;
   status?: AgentToolStatus;
@@ -120,6 +133,8 @@ export function AgentToolCard({
   defaultDebugOpen = false,
   children,
   className,
+  'data-agent-elements-card-padding': dataCardPadding = 'symmetric-inline',
+  'data-agent-elements-card-width': dataCardWidth = 'bridge-fill',
   'data-component': dataComponent = 'AgentToolCard',
   'data-testid': dataTestId = 'agent-elements-tool-card',
   ...rest
@@ -128,6 +143,8 @@ export function AgentToolCard({
     <section
       {...rest}
       className={classNames('agent-elements-tool-card', className)}
+      data-agent-elements-card-padding={dataCardPadding}
+      data-agent-elements-card-width={dataCardWidth}
       data-component={dataComponent}
       data-testid={dataTestId}
       data-tool-status={status}

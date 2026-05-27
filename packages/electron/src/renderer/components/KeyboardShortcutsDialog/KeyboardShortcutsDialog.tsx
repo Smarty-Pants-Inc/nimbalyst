@@ -248,13 +248,13 @@ export function KeyboardShortcutsDialog({ isOpen, onClose }: KeyboardShortcutsDi
 
   return (
     <div
-      className="keyboard-shortcuts-dialog-overlay nim-overlay agent-elements-keyboard-shortcuts-dialog-backdrop bg-[color-mix(in_srgb,var(--nim-text)_36%,transparent)]"
+      className="keyboard-shortcuts-dialog-overlay nim-overlay agent-elements-keyboard-shortcuts-dialog-backdrop bg-[color-mix(in_srgb,var(--an-foreground)_36%,transparent)]"
       data-testid="agent-elements-keyboard-shortcuts-dialog-backdrop"
       data-agent-elements-shell="keyboard-shortcuts-dialog-backdrop"
       onClick={onClose}
     >
       <div
-        className="keyboard-shortcuts-dialog agent-elements-keyboard-shortcuts-dialog agent-elements-tool-card flex h-[85vh] w-[90vw] max-w-[900px] flex-col overflow-hidden rounded-[var(--an-border-radius)] border border-[var(--an-border-color)] bg-[var(--an-background)] text-[var(--an-foreground)] shadow-[0_20px_60px_color-mix(in_srgb,var(--nim-text)_18%,transparent)]"
+        className="keyboard-shortcuts-dialog agent-elements-keyboard-shortcuts-dialog agent-elements-tool-card flex h-[85vh] w-[90vw] max-w-[900px] flex-col overflow-hidden rounded-[var(--an-border-radius)] border border-[var(--an-border-color)] bg-[var(--an-background)] text-[var(--an-foreground)] shadow-[0_20px_60px_color-mix(in_srgb,var(--an-foreground)_18%,transparent)]"
         data-testid="agent-elements-keyboard-shortcuts-dialog"
         data-component="KeyboardShortcutsDialog"
         data-agent-elements-shell="keyboard-shortcuts-dialog"
@@ -303,7 +303,7 @@ export function KeyboardShortcutsDialog({ isOpen, onClose }: KeyboardShortcutsDi
               className={`agent-elements-keyboard-shortcuts-tab inline-flex items-center gap-2 rounded-[var(--an-input-border-radius)] border px-3 py-2 text-sm font-medium transition-[background-color,border-color,color] duration-150 ease-out focus:outline-none focus:ring-2 focus:ring-[var(--an-input-focus-outline)] ${
                 activeTab === tab.id
                   ? 'border-[var(--an-border-color)] bg-[var(--an-background-secondary)] text-[var(--an-foreground)]'
-                  : 'text-[var(--nim-text-muted)] hover:text-[var(--nim-text)] hover:bg-[var(--nim-bg-hover)]'
+                  : 'text-[var(--an-foreground-muted)] hover:bg-[var(--an-background-tertiary)] hover:text-[var(--an-foreground)]'
               }`}
               data-testid={`agent-elements-keyboard-shortcuts-tab-${tab.id}`}
               data-agent-elements-shell="keyboard-shortcuts-dialog-tab"

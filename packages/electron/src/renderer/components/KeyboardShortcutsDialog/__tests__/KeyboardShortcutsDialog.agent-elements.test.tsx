@@ -3,6 +3,8 @@
 import '@testing-library/jest-dom/vitest';
 import React from 'react';
 import { fireEvent, render, screen, within } from '@testing-library/react';
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { KeyboardShortcutsDialog } from '../KeyboardShortcutsDialog';
 
@@ -48,6 +50,8 @@ vi.mock('@nimbalyst/runtime', async () => {
     }),
   };
 });
+
+const sourcePath = resolve(__dirname, '../KeyboardShortcutsDialog.tsx');
 
 describe('KeyboardShortcutsDialog Agent Elements shell', () => {
   beforeEach(() => {
@@ -120,5 +124,14 @@ describe('KeyboardShortcutsDialog Agent Elements shell', () => {
     expect(within(extensionGroup).getByTestId('agent-elements-keyboard-shortcut-key')).toHaveTextContent(
       /G$/
     );
+  });
+
+  it('keeps KeyboardShortcutsDialog visual chrome on Agent Elements aliases', () => {
+    const source = readFileSync(sourcePath, 'utf8');
+
+    expect(source).toContain('--an-foreground');
+    expect(source).toContain('--an-background-tertiary');
+    expect(source).not.toMatch(/var\(--nim-/);
+    expect(source).not.toMatch(/color-mix\(in_srgb,var\(--nim-/);
   });
 });

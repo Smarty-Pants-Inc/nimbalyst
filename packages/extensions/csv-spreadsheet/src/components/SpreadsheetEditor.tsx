@@ -1602,7 +1602,7 @@ export function SpreadsheetEditor({ host }: EditorHostProps) {
         ref={gridContainerRef}
         className="flex-1 overflow-hidden relative"
         tabIndex={0}
-        {...(!isActive ? { inert: '' } : {})}
+        {...(!isActive ? { inert: true } : {})}
         data-is-active={isActive}
         onContextMenu={handleContextMenu}
         onMouseDown={handleHeaderMouseDown}

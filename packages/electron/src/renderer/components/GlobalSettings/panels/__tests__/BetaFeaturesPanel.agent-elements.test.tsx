@@ -2,8 +2,21 @@
 
 import '@testing-library/jest-dom/vitest';
 import React from 'react';
+import { readFileSync } from 'node:fs';
+import path from 'node:path';
 import { fireEvent, render, screen, within } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+const sourcePath = path.join(
+  process.cwd(),
+  'packages/electron/src/renderer/components/GlobalSettings/panels/BetaFeaturesPanel.tsx',
+);
+const chromeSourcePath = path.join(
+  process.cwd(),
+  'packages/electron/src/renderer/components/GlobalSettings/panels/providerPanelChrome.ts',
+);
+const legacyVisualChromePattern =
+  /bg-nim|text-nim|border-nim|bg-\[var\(--nim|text-\[var\(--nim|border-\[var\(--nim|--nim-|rgba\(|#[0-9a-fA-F]{3,8}\b|bg-white|rounded-lg|transition-all|text-white/;
 
 const mockState = vi.hoisted(() => ({
   tokens: {
@@ -70,6 +83,7 @@ describe('BetaFeaturesPanel Agent Elements shell', () => {
     expect(screen.getByTestId('agent-elements-beta-features-header')).toHaveClass('agent-elements-settings-panel-header');
     expect(screen.getByTestId('agent-elements-beta-features-section')).toHaveAttribute('data-agent-elements-shell', 'beta-features-section');
     expect(screen.getByTestId('agent-elements-beta-features-master-card')).toHaveClass('agent-elements-tool-card');
+    expect(screen.getByTestId('agent-elements-beta-features-master-card')).toHaveAttribute('data-agent-elements-shell', 'beta-features-master-card');
     expect(screen.getByTestId('agent-elements-beta-feature-row-quickReview')).toHaveAttribute('data-beta-feature-tag', 'quickReview');
     expect(screen.getByTestId('agent-elements-beta-features-note')).toHaveAttribute('data-tone', 'warning');
 
@@ -92,5 +106,19 @@ describe('BetaFeaturesPanel Agent Elements shell', () => {
       feature_tag: 'quickReview',
       enabled: true,
     });
+  });
+
+  it('keeps beta feature chrome on Agent Elements aliases instead of legacy visual tokens', () => {
+    const panelSource = readFileSync(sourcePath, 'utf8');
+    const chromeSource = readFileSync(chromeSourcePath, 'utf8');
+    const source = `${panelSource}\n${chromeSource}`;
+
+    expect(panelSource).toContain('createProviderPanelChrome');
+    expect(source).toContain('--an-border-color');
+    expect(source).toContain('--an-foreground');
+    expect(source).toContain('--an-foreground-muted');
+    expect(source).toContain('--an-primary-color');
+    expect(source).toContain('--agent-elements-card-inline-padding');
+    expect(source).not.toMatch(legacyVisualChromePattern);
   });
 });

@@ -4,6 +4,8 @@ import '@testing-library/jest-dom/vitest';
 import React from 'react';
 import { fireEvent, render, screen, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import fs from 'node:fs';
+import path from 'node:path';
 import { CustomEditorWrapper } from '../CustomEditorWrapper';
 
 vi.mock('@nimbalyst/runtime', async () => {
@@ -57,6 +59,10 @@ describe('CustomEditorWrapper Agent Elements shell', () => {
 
     const content = screen.getByTestId('agent-elements-custom-editor-error-content');
     expect(content).toHaveClass('agent-elements-tool-card');
+    expect(content).toHaveAttribute('data-agent-elements-card-padding', 'symmetric-inline');
+    expect(content).toHaveAttribute('data-agent-elements-card-width', 'bounded-fallback');
+    expect(content.className).toContain('--agent-elements-card-inline-padding');
+    expect(content.className).toContain('--agent-elements-card-block-padding');
     expect(content.className).not.toMatch(/rounded-md|rounded-lg|shadow-lg|shadow-xl|text-white/);
 
     const meta = screen.getByTestId('agent-elements-custom-editor-error-meta');
@@ -71,5 +77,18 @@ describe('CustomEditorWrapper Agent Elements shell', () => {
     shouldThrow = false;
     fireEvent.click(screen.getByRole('button', { name: /try again/i }));
     expect(screen.getByTestId('custom-editor-recovered')).toHaveTextContent('Recovered custom editor');
+  });
+
+  it('keeps the custom editor fallback card off legacy one-off gutters', () => {
+    const source = fs.readFileSync(
+      path.join(process.cwd(), 'packages/electron/src/renderer/components/CustomEditors/CustomEditorWrapper.tsx'),
+      'utf8',
+    );
+
+    expect(source).toContain('CUSTOM_EDITOR_ERROR_CARD_PADDING_CLASS');
+    expect(source).toContain('data-agent-elements-card-width="bounded-fallback"');
+    expect(source).not.toMatch(/custom-editor-error-content[^`]*\bp-4\b/s);
+    expect(source).not.toMatch(/custom-editor-error-content[^`]*(?:border-nim|bg-nim|text-nim)/s);
+    expect(source).not.toMatch(/custom-editor-error-content[^`]*var\(--nim-/s);
   });
 });

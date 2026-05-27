@@ -5,6 +5,9 @@ interface WorkspaceWelcomeProps {
   workspaceName: string;
 }
 
+const WORKSPACE_WELCOME_CARD_PADDING_CLASS =
+  '[--agent-elements-card-block-padding:var(--an-spacing-xl)] [--agent-elements-card-inline-padding:var(--an-spacing-xl)] px-[var(--agent-elements-card-inline-padding)] py-[var(--agent-elements-card-block-padding)]';
+
 // Try to import the icon if it exists in the build
 let iconUrl: string | undefined;
 try {
@@ -73,9 +76,11 @@ export function WorkspaceWelcome({ workspaceName }: WorkspaceWelcomeProps) {
         </div>
 
         <div
-          className="workspace-welcome-tips agent-elements-workspace-welcome-tips agent-elements-tool-card rounded-[var(--an-tool-border-radius)] border border-[var(--an-border-color)] bg-[var(--an-background-secondary)] p-[var(--an-spacing-xl)]"
+          className={`workspace-welcome-tips agent-elements-workspace-welcome-tips agent-elements-tool-card rounded-[var(--an-tool-border-radius)] border border-[var(--an-border-color)] bg-[var(--an-background-secondary)] ${WORKSPACE_WELCOME_CARD_PADDING_CLASS}`}
           data-testid="agent-elements-workspace-welcome-tips"
           data-agent-elements-shell="workspace-welcome-tips"
+          data-agent-elements-card-padding="symmetric-inline"
+          data-agent-elements-card-width="bounded-fallback"
         >
           <h2 className="m-0 mb-[var(--an-spacing-lg)] text-sm font-medium leading-snug text-[var(--an-foreground)]">
             Quick tips

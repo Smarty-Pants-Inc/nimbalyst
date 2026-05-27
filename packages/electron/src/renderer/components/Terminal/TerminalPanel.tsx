@@ -318,7 +318,7 @@ export const TerminalPanel: React.FC<TerminalPanelProps> = ({
 
   // Handle terminal restart after exit
   // Use a ref to store the restart function to avoid effect re-runs
-  const handleRestartRef = useRef<() => Promise<void>>();
+  const handleRestartRef = useRef<(() => Promise<void>) | null>(null);
   handleRestartRef.current = async () => {
     hasExitedRef.current = false; // Reset ref for callbacks
     setHasExited(false);

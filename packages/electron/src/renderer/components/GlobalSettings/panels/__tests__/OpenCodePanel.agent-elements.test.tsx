@@ -4,7 +4,12 @@ import '@testing-library/jest-dom/vitest';
 import React from 'react';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { readFileSync } from 'node:fs';
+import path from 'node:path';
 import { OpenCodePanel } from '../OpenCodePanel';
+
+const openCodePanelSourcePath = path.join(__dirname, '../OpenCodePanel.tsx');
+const providerChromeSourcePath = path.join(__dirname, '../providerPanelChrome.ts');
 
 const baseProps = () => ({
   config: {
@@ -158,5 +163,23 @@ describe('OpenCodePanel Agent Elements shell', () => {
 
     fireEvent.click(screen.getByText('Test'));
     expect(props.onTestConnection).toHaveBeenCalled();
+  });
+
+  it('keeps OpenCode visual chrome on Agent Elements provider panel aliases', () => {
+    const source = readFileSync(openCodePanelSourcePath, 'utf8');
+    const providerChromeSource = readFileSync(providerChromeSourcePath, 'utf8');
+
+    expect(source).toContain("import { createProviderPanelChrome, getProviderTestButtonClass } from './providerPanelChrome';");
+    expect(source).toContain('const chrome = createProviderPanelChrome({');
+    expect(source).toContain('chrome.header');
+    expect(source).toContain('chrome.section');
+    expect(source).toContain('chrome.configCard');
+    expect(source).toContain('chrome.input');
+    expect(source).toContain('getProviderTestButtonClass(config.testStatus, chrome)');
+    expect(providerChromeSource).toContain('--agent-elements-card-inline-padding');
+    expect(source).not.toMatch(/bg-nim|text-nim|border-nim/);
+    expect(source).not.toMatch(/bg-\[var\(--nim|text-\[var\(--nim|border-\[var\(--nim|--nim-/);
+    expect(source).not.toMatch(/#[0-9a-fA-F]{3,8}\b|rgba\(/);
+    expect(source).not.toMatch(/bg-white|text-white|rounded-lg|transition-all/);
   });
 });

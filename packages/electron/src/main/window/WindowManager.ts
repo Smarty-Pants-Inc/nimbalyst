@@ -154,6 +154,22 @@ export function getFocusedOrNewWindow(): BrowserWindow {
     return createWindow();
 }
 
+export function revealWindow(window: BrowserWindow): void {
+    if (window.isDestroyed()) return;
+    if (process.platform === 'darwin') {
+        app.show();
+    }
+    if (window.isMinimized()) {
+        window.restore();
+    }
+    window.show();
+    window.moveTop();
+    if (process.platform === 'darwin') {
+        app.focus({ steal: true });
+    }
+    window.focus();
+}
+
 export interface CreateWindowOptions {
     /** Show the window without activating the app (no focus steal). */
     showInactive?: boolean;
@@ -269,6 +285,24 @@ export function createWindow(
         }
 
         const window = new BrowserWindow(windowOptions);
+        let didRevealWindow = false;
+        const revealCreatedWindow = (source: string) => {
+            if (didRevealWindow || window.isDestroyed()) return;
+            didRevealWindow = true;
+            if (shouldShowInactive(options)) {
+                window.showInactive();
+            } else {
+                revealWindow(window);
+            }
+            console.log(`[WindowManager] Revealed window via ${source}:`, {
+                id: window.id,
+                title: window.getTitle(),
+                visible: window.isVisible(),
+                focused: window.isFocused(),
+                minimized: window.isMinimized(),
+                bounds: window.getBounds(),
+            });
+        };
 
         // Generate a unique window ID
         const windowId = ++windowIdCounter;
@@ -571,12 +605,18 @@ export function createWindow(
         // Show window when ready
         window.once('ready-to-show', () => {
             // console.log('[MAIN] Window ready to show at', new Date().toISOString(), 'elapsed:', Date.now() - startTime, 'ms');
-            if (shouldShowInactive(options)) {
-                window.showInactive();
-            } else {
-                window.show();
-            }
+            revealCreatedWindow('ready-to-show');
         });
+
+        window.webContents.once('did-finish-load', () => {
+            setTimeout(() => {
+                revealCreatedWindow('did-finish-load-fallback');
+            }, 100);
+        });
+
+        setTimeout(() => {
+            revealCreatedWindow('startup-timeout-fallback');
+        }, 2500);
 
         // Handle renderer process crashes
         window.webContents.on('render-process-gone', (event, details) => {
@@ -844,7 +884,7 @@ safeHandle('window:is-focused', (event) => {
 safeHandle('window:force-focus', (event) => {
     const window = BrowserWindow.fromWebContents(event.sender);
     if (window) {
-        window.focus();
+        revealWindow(window);
         return true;
     }
     return false;

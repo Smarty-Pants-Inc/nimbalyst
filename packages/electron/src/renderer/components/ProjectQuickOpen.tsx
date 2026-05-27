@@ -142,13 +142,13 @@ export const ProjectQuickOpen: React.FC<ProjectQuickOpenProps> = ({
   return (
     <>
       <div
-        className="project-quick-open-backdrop agent-elements-project-quick-open-backdrop fixed inset-0 z-[99998] nim-animate-fade-in bg-[color-mix(in_srgb,var(--nim-text)_36%,transparent)]"
+        className="project-quick-open-backdrop agent-elements-project-quick-open-backdrop fixed inset-0 z-[99998] nim-animate-fade-in bg-[color-mix(in_srgb,var(--an-foreground)_36%,transparent)]"
         onClick={onClose}
         data-testid="agent-elements-project-quick-open-backdrop"
         data-agent-elements-shell="project-quick-open-backdrop"
       />
       <div
-        className="project-quick-open-modal agent-elements-project-quick-open agent-elements-tool-card fixed top-[18%] left-1/2 -translate-x-1/2 w-[90vw] max-w-[640px] max-h-[62vh] !gap-0 !p-0 flex flex-col overflow-hidden rounded-[var(--an-border-radius)] z-[99999] bg-[var(--an-background)] border border-[var(--an-border-color)] shadow-[0_20px_60px_color-mix(in_srgb,var(--nim-text)_18%,transparent)]"
+        className="project-quick-open-modal agent-elements-project-quick-open agent-elements-tool-card fixed top-[18%] left-1/2 -translate-x-1/2 w-[90vw] max-w-[640px] max-h-[62vh] !gap-0 !p-0 flex flex-col overflow-hidden rounded-[var(--an-border-radius)] z-[99999] bg-[var(--an-background)] border border-[var(--an-border-color)] shadow-[0_20px_60px_color-mix(in_srgb,var(--an-foreground)_18%,transparent)]"
         data-testid="agent-elements-project-quick-open"
         data-component="ProjectQuickOpen"
         data-agent-elements-shell="project-quick-open"

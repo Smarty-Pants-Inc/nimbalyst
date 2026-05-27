@@ -1,7 +1,13 @@
 import type { CSSProperties, HTMLAttributes, ReactNode } from 'react';
 import { useMemo, useState } from 'react';
 import { MaterialSymbol } from '../icons/MaterialSymbol';
-import { AgentStatusPill, AgentToolCard, type AgentToolStatus } from './AgentElementsPrimitives';
+import {
+  AgentStatusPill,
+  AgentToolCard,
+  agentToolStatusToTone,
+  type AgentToolStatus,
+} from './AgentElementsPrimitives';
+import { AgentProgressUpdateList, type AgentProgressUpdate } from './AgentElementsStreamEvents';
 import './AgentElementsFrameworkEvents.css';
 
 type EventCardDivProps = Omit<HTMLAttributes<HTMLDivElement>, 'content' | 'onSubmit' | 'title'>;
@@ -12,14 +18,6 @@ interface DataTestIdAttribute {
 
 function classNames(...values: Array<string | false | null | undefined>): string {
   return values.filter(Boolean).join(' ');
-}
-
-function statusToTone(status: AgentToolStatus) {
-  if (status === 'running') return 'running';
-  if (status === 'completed') return 'success';
-  if (status === 'error') return 'error';
-  if (status === 'interrupted') return 'warning';
-  return 'neutral';
 }
 
 function formatStatus(status: AgentToolStatus): string {
@@ -62,7 +60,7 @@ export function AgentThinkingCard({
       status={status}
       subtitle={detail}
       title={isRunning ? 'Thinking' : 'Thought'}
-      trailing={<AgentStatusPill tone={statusToTone(status)}>{formatStatus(status)}</AgentStatusPill>}
+      trailing={<AgentStatusPill tone={agentToolStatusToTone(status)}>{formatStatus(status)}</AgentStatusPill>}
     >
       <div className="agent-elements-thinking-shell" data-testid="agent-elements-thinking-shell">
         <button
@@ -101,6 +99,7 @@ export interface AgentMcpToolCardProps extends EventCardDivProps, DataTestIdAttr
   result?: ReactNode;
   error?: ReactNode;
   status?: AgentToolStatus;
+  progressUpdates?: AgentProgressUpdate[];
   defaultExpanded?: boolean;
   debugPayload?: unknown;
 }
@@ -121,6 +120,7 @@ export function AgentMcpToolCard({
   result,
   error,
   status = 'completed',
+  progressUpdates = [],
   defaultExpanded = true,
   debugPayload,
   className,
@@ -130,7 +130,7 @@ export function AgentMcpToolCard({
   const [isExpanded, setIsExpanded] = useState(defaultExpanded);
   const identity = useMemo(() => parseMcpIdentity(toolName, serverName), [serverName, toolName]);
   const title = status === 'running' ? `Running ${displayName ?? identity.tool}` : displayName ?? identity.tool;
-  const hasBody = args.length > 0 || result !== undefined || error !== undefined;
+  const hasBody = args.length > 0 || progressUpdates.length > 0 || result !== undefined || error !== undefined;
 
   return (
     <AgentToolCard
@@ -143,7 +143,7 @@ export function AgentMcpToolCard({
       status={status}
       subtitle={`${identity.server} / ${identity.tool}`}
       title={title}
-      trailing={<AgentStatusPill tone={statusToTone(status)}>{formatStatus(status)}</AgentStatusPill>}
+      trailing={<AgentStatusPill tone={agentToolStatusToTone(status)}>{formatStatus(status)}</AgentStatusPill>}
     >
       <div className="agent-elements-mcp-shell" data-testid="agent-elements-mcp-shell">
         <button
@@ -172,6 +172,7 @@ export function AgentMcpToolCard({
                 ))}
               </dl>
             ) : null}
+            <AgentProgressUpdateList updates={progressUpdates} showEmpty={false} />
             {result !== undefined ? (
               <div className="agent-elements-mcp-result" data-testid="agent-elements-mcp-result">
                 {result}
@@ -415,7 +416,7 @@ export function AgentSubagentCard({
           type="button"
         >
           <span className="agent-elements-framework-label">{name}</span>
-          <AgentStatusPill tone={statusToTone(status)}>{formatStatus(status)}</AgentStatusPill>
+          <AgentStatusPill tone={agentToolStatusToTone(status)}>{formatStatus(status)}</AgentStatusPill>
           {hasItems ? <MaterialSymbol icon={isExpanded ? 'keyboard_arrow_down' : 'chevron_right'} size={16} /> : null}
         </button>
         {isExpanded && hasItems ? (

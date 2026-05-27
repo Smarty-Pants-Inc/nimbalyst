@@ -213,24 +213,32 @@ export const UnifiedOnboarding: React.FC<UnifiedOnboardingProps> = ({
   const isEmailValid = email.trim() === '' || isValidEmail(email.trim());
 
   return (
-    <div className="unified-onboarding-overlay">
-      <div className="unified-onboarding-dialog unified-onboarding-single-screen">
-        <div className="unified-onboarding-logo">
+    <div
+      className="unified-onboarding-overlay agent-elements-unified-onboarding-backdrop nim-animate-fade-in"
+      data-agent-elements-shell="unified-onboarding-backdrop"
+    >
+      <div
+        className="unified-onboarding-dialog unified-onboarding-single-screen agent-elements-unified-onboarding agent-elements-tool-card nim-animate-slide-up"
+        data-component="UnifiedOnboarding"
+        data-agent-elements-shell="unified-onboarding"
+      >
+        <div className="unified-onboarding-logo" data-agent-elements-shell="unified-onboarding-logo">
           <img src="./icon.png" alt="Nimbalyst" className="unified-onboarding-logo-image" />
         </div>
-        <div className="unified-onboarding-header">
+        <div className="unified-onboarding-header" data-agent-elements-shell="unified-onboarding-header">
           <h2>Welcome to Nimbalyst</h2>
         </div>
 
-        <div className="unified-onboarding-content">
+        <div className="unified-onboarding-content" data-agent-elements-shell="unified-onboarding-content">
           {/* Mode Selection - Always shown at top */}
           <div className="unified-onboarding-section">
             <label className="unified-onboarding-label unified-onboarding-label-centered">
               Choose Your Mode<span className="required-asterisk">*</span>
             </label>
-            <div className="mode-selection">
+            <div className="mode-selection" data-agent-elements-shell="unified-onboarding-mode-selection">
               <label
                 className={`mode-option ${developerMode === false ? 'selected' : ''}`}
+                data-agent-elements-shell="unified-onboarding-mode-option"
                 onClick={() => handleModeChange(false)}
               >
                 <input
@@ -254,6 +262,7 @@ export const UnifiedOnboarding: React.FC<UnifiedOnboardingProps> = ({
 
               <label
                 className={`mode-option ${developerMode === true ? 'selected' : ''}`}
+                data-agent-elements-shell="unified-onboarding-mode-option"
                 onClick={() => handleModeChange(true)}
               >
                 <input
@@ -431,7 +440,10 @@ export const UnifiedOnboarding: React.FC<UnifiedOnboardingProps> = ({
           )}
         </div>
 
-        <div className="unified-onboarding-footer unified-onboarding-footer-single">
+        <div
+          className="unified-onboarding-footer unified-onboarding-footer-single"
+          data-agent-elements-shell="unified-onboarding-footer"
+        >
           <button
             className="unified-onboarding-submit"
             onClick={handleComplete}

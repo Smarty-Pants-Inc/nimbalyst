@@ -3,8 +3,12 @@
 import '@testing-library/jest-dom/vitest';
 import React from 'react';
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ProjectRail } from '../ProjectRail';
+
+const projectRailCssPath = resolve(__dirname, '../ProjectRail.css');
 
 const mockState = vi.hoisted(() => ({
   tokens: {
@@ -184,5 +188,19 @@ describe('ProjectRail Agent Elements shell', () => {
     expect(mockState.electronInvoke).not.toHaveBeenCalledWith('workspace:unregister-additional', {
       workspacePath: '/workspace/api',
     });
+  });
+
+  it('keeps ProjectRail CSS on Agent Elements aliases instead of legacy visual fallbacks', () => {
+    const source = readFileSync(projectRailCssPath, 'utf8');
+
+    expect(source).toContain('--an-background-secondary');
+    expect(source).toContain('--an-tool-border-radius');
+    expect(source).toContain('--an-primary-color');
+    expect(source).toContain('--an-error-color');
+    expect(source).toContain('--an-button-primary-text');
+    expect(source).not.toMatch(/var\(--nim-/);
+    expect(source).not.toMatch(/#[0-9a-fA-F]{3,8}\b|rgba\(/);
+    expect(source).not.toMatch(/border-radius:\s*(?:12px|7px)/);
+    expect(source).not.toMatch(/color-mix\(in srgb,\s*var\(--nim-/);
   });
 });

@@ -96,6 +96,8 @@ describe('UserMenuPopover Agent Elements shell', () => {
     expect(menu).toHaveClass('user-menu-popover', 'agent-elements-user-menu-popover', 'agent-elements-tool-card');
     expect(menu).toHaveAttribute('data-component', 'UserMenuPopover');
     expect(menu).toHaveAttribute('data-agent-elements-shell', 'user-menu-popover');
+    expect(menu).toHaveAttribute('data-agent-elements-card-padding', 'symmetric-inline');
+    expect(menu).toHaveAttribute('data-agent-elements-card-width', 'floating-popover');
     expect(menu.className).not.toMatch(/rounded-lg|shadow-lg|bg-nim|border-nim|text-white/);
 
     const userSettings = screen.getByTestId('user-menu-user-settings');
@@ -138,6 +140,9 @@ describe('UserMenuPopover Agent Elements shell', () => {
     expect(source).toContain('MaterialSymbol');
     expect(source).toContain('agent-elements-user-menu-popover');
     expect(source).toContain('data-agent-elements-shell="user-menu-popover"');
+    expect(source).toContain('data-agent-elements-card-padding="symmetric-inline"');
+    expect(source).toContain('data-agent-elements-card-width="floating-popover"');
+    expect(source).toContain('--agent-elements-card-inline-padding');
     expect(source).not.toMatch(/bg-nim|text-nim|border-nim|var\(--nim/);
     expect(source).not.toMatch(/rounded-md|rounded-lg|rounded-xl|rounded-2xl/);
     expect(source).not.toMatch(/text-white|uppercase|tracking-|hover:shadow|active:scale|transition-all/);

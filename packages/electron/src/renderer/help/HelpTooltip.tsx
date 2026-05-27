@@ -68,11 +68,13 @@ function parseBoldText(text: string): React.ReactNode {
   });
 }
 
+type HelpTooltipChildProps = React.HTMLAttributes<HTMLElement> & React.RefAttributes<HTMLElement>;
+
 interface HelpTooltipProps {
   /** The data-testid to look up help content for */
   testId: string;
   /** The element to wrap with tooltip functionality */
-  children: React.ReactElement;
+  children: React.ReactElement<HelpTooltipChildProps>;
   /** Override placement (default: auto) */
   placement?: 'top' | 'bottom' | 'left' | 'right' | 'auto';
   /** Delay before showing tooltip in ms (default: 500) */
@@ -305,33 +307,33 @@ export function HelpTooltip({
     ref: (el: HTMLElement | null) => {
       targetRef.current = el;
       // Preserve existing ref if any
-      const originalRef = (children as any).ref;
+      const originalRef = children.props.ref;
       if (typeof originalRef === 'function') {
         originalRef(el);
       } else if (originalRef && 'current' in originalRef) {
         originalRef.current = el;
       }
     },
-    onMouseEnter: (e: React.MouseEvent) => {
+    onMouseEnter: (e: React.MouseEvent<HTMLElement>) => {
       handleMouseEnter();
       children.props.onMouseEnter?.(e);
     },
-    onMouseLeave: (e: React.MouseEvent) => {
+    onMouseLeave: (e: React.MouseEvent<HTMLElement>) => {
       handleMouseLeave();
       children.props.onMouseLeave?.(e);
     },
-    onMouseDown: (e: React.MouseEvent) => {
+    onMouseDown: (e: React.MouseEvent<HTMLElement>) => {
       // Hide tooltip immediately on click and start cooldown
       lastClickTimeRef.current = Date.now();
       hideTooltip();
       children.props.onMouseDown?.(e);
     },
-    onFocus: (e: React.FocusEvent) => {
+    onFocus: (e: React.FocusEvent<HTMLElement>) => {
       // console.log('[HelpTooltip] onFocus', testId);
       handleMouseEnter();
       children.props.onFocus?.(e);
     },
-    onBlur: (e: React.FocusEvent) => {
+    onBlur: (e: React.FocusEvent<HTMLElement>) => {
       handleMouseLeave();
       children.props.onBlur?.(e);
     },

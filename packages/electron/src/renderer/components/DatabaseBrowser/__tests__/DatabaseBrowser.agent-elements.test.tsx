@@ -23,6 +23,8 @@ vi.mock('@nimbalyst/runtime', () => ({
 }));
 
 const browserSourcePath = resolve(__dirname, '../DatabaseBrowser.tsx');
+const legacyVisualTokenPattern =
+  /\b(?:bg|text|border|hover:bg|hover:text|hover:border)-nim(?:-[\w-]+)?\b|var\(--nim-|rgba\(|#(?:[0-9a-fA-F]{3}){1,2}\b|rounded-md|rounded-lg|rounded-xl|tracking-\[/;
 
 function installElectronApi() {
   const invoke = vi.fn(async (channel: string, ...args: any[]) => {
@@ -178,10 +180,13 @@ describe('DatabaseBrowser Agent Elements shell', () => {
     expect(source).toContain('agent-elements-database-browser-table-view');
     expect(source).toContain('agent-elements-database-browser-query-results');
     expect(source).toContain('agent-elements-database-browser-cell-modal');
+    expect(source).toContain('--an-tool-background');
+    expect(source).toContain('--an-foreground-muted');
 
     expect(source).not.toMatch(/rounded-md|rounded-lg|rounded-xl/);
     expect(source).not.toMatch(/#(?:[0-9a-fA-F]{3}){1,2}\b|rgba\(/);
     expect(source).not.toMatch(/bg-white|text-white|bg-black|hover:scale|tracking-\[/);
     expect(source).not.toMatch(/--nim-accent|--nim-surface|text-nim-fg|<svg/);
+    expect(source).not.toMatch(legacyVisualTokenPattern);
   });
 });

@@ -29,27 +29,27 @@ export const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
 
   return (
     <div
-      className="confirm-dialog-overlay nim-overlay agent-elements-confirm-dialog-backdrop bg-[color-mix(in_srgb,var(--nim-text)_36%,transparent)]"
+      className="confirm-dialog-overlay nim-overlay agent-elements-confirm-dialog-backdrop bg-[color-mix(in_srgb,var(--an-foreground)_36%,transparent)]"
       data-testid="agent-elements-confirm-dialog-backdrop"
       data-agent-elements-shell="confirm-dialog-backdrop"
       onClick={onCancel}
     >
       <div
-        className="confirm-dialog agent-elements-confirm-dialog agent-elements-tool-card w-[420px] max-w-[90vw] overflow-hidden rounded-[var(--an-border-radius)] border border-[var(--an-border-color)] bg-[var(--an-background)] text-[var(--an-foreground)] shadow-[0_20px_60px_color-mix(in_srgb,var(--nim-text)_18%,transparent)]"
+        className="confirm-dialog agent-elements-confirm-dialog agent-elements-tool-card w-[420px] max-w-[90vw] !gap-0 !p-0 [--agent-elements-card-block-padding:var(--an-spacing-xl)] [--agent-elements-card-inline-padding:var(--an-spacing-xl)] overflow-hidden rounded-[var(--an-border-radius)] border border-[var(--an-border-color)] bg-[var(--an-background)] text-[var(--an-foreground)] shadow-[0_20px_60px_color-mix(in_srgb,var(--an-foreground)_18%,transparent)]"
         data-testid="agent-elements-confirm-dialog"
         data-component="ConfirmDialog"
         data-agent-elements-shell="confirm-dialog"
         onClick={(e) => e.stopPropagation()}
       >
         <div
-          className="confirm-dialog-header agent-elements-confirm-dialog-header flex items-center gap-3 border-b border-[var(--an-border-color)] p-[var(--an-spacing-xl)]"
+          className="confirm-dialog-header agent-elements-confirm-dialog-header flex items-center gap-3 border-b border-[var(--an-border-color)] px-[var(--agent-elements-card-inline-padding)] py-[var(--agent-elements-card-block-padding)]"
           data-testid="agent-elements-confirm-dialog-header"
           data-agent-elements-shell="confirm-dialog-header"
         >
           <span
             className={`confirm-dialog-icon agent-elements-confirm-dialog-icon inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-[var(--an-tool-border-radius)] border ${
               destructive
-                ? 'border-[color-mix(in_srgb,var(--nim-error)_30%,var(--an-border-color))] bg-[color-mix(in_srgb,var(--nim-error)_10%,var(--an-background))] text-[var(--nim-error)]'
+                ? 'border-[color-mix(in_srgb,var(--an-error-color)_30%,var(--an-border-color))] bg-[color-mix(in_srgb,var(--an-error-color)_10%,var(--an-background))] text-[var(--an-error-color)]'
                 : 'border-[var(--an-border-color)] bg-[var(--an-background-secondary)] text-[var(--an-foreground-muted)]'
             }`}
             data-agent-elements-shell="confirm-dialog-icon"
@@ -63,7 +63,7 @@ export const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
         </div>
 
         <div
-          className="confirm-dialog-body agent-elements-confirm-dialog-body p-[var(--an-spacing-xl)]"
+          className="confirm-dialog-body agent-elements-confirm-dialog-body px-[var(--agent-elements-card-inline-padding)] py-[var(--agent-elements-card-block-padding)]"
           data-agent-elements-shell="confirm-dialog-body"
         >
           <p
@@ -76,7 +76,7 @@ export const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
         </div>
 
         <div
-          className="confirm-dialog-buttons agent-elements-confirm-dialog-footer flex justify-end gap-2 border-t border-[var(--an-border-color)] p-[var(--an-spacing-xl)]"
+          className="confirm-dialog-buttons agent-elements-confirm-dialog-footer flex justify-end gap-2 border-t border-[var(--an-border-color)] px-[var(--agent-elements-card-inline-padding)] py-[var(--agent-elements-card-block-padding)]"
           data-agent-elements-shell="confirm-dialog-footer"
         >
           <button
@@ -88,8 +88,8 @@ export const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
           <button
             className={`${confirmDialogButtonBase} confirm-dialog-button-confirm ${
               destructive
-                ? 'nim-btn-danger !border-[var(--nim-error)] !bg-[var(--nim-error)] !text-[var(--an-background)] hover:!bg-[color-mix(in_srgb,var(--nim-error)_88%,var(--nim-text))]'
-                : 'nim-btn-primary !border-[var(--an-primary-color)] !bg-[var(--an-primary-color)] !text-[var(--an-background)] hover:!bg-[var(--nim-primary-hover)] hover:!border-[var(--nim-primary-hover)]'
+                ? 'nim-btn-danger !border-[var(--an-error-color)] !bg-[var(--an-error-color)] !text-[var(--an-button-primary-text)] hover:!bg-[color-mix(in_srgb,var(--an-error-color)_88%,var(--an-foreground))]'
+                : 'nim-btn-primary !border-[var(--an-primary-color)] !bg-[var(--an-primary-color)] !text-[var(--an-send-button-color)] hover:!bg-[color-mix(in_srgb,var(--an-primary-color)_88%,var(--an-foreground))] hover:!border-[color-mix(in_srgb,var(--an-primary-color)_82%,var(--an-foreground))]'
             }`}
             onClick={onConfirm}
           >

@@ -2,6 +2,8 @@
 
 import '@testing-library/jest-dom/vitest';
 import React from 'react';
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { fireEvent, render, screen, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import {
@@ -35,6 +37,22 @@ const extensionFileTypes: ExtensionFileType[] = [
 ];
 
 describe('NewFileMenu Agent Elements shell', () => {
+  it('keeps menu chrome on Agent Elements aliases instead of legacy Nimbalyst visual tokens', () => {
+    const source = readFileSync(
+      resolve(process.cwd(), 'packages/electron/src/renderer/components/NewFileMenu.tsx'),
+      'utf8'
+    );
+
+    expect(source).toContain('--an-');
+    expect(source).toContain('data-agent-elements-card-width="floating-menu"');
+    expect(source).toContain('px-[var(--agent-elements-card-inline-padding)]');
+    expect(source).toContain('py-[var(--agent-elements-card-block-padding)]');
+    expect(source).not.toMatch(/\b(?:text|border|bg)-nim(?:\b|-)/);
+    expect(source).not.toMatch(/--nim-(?:primary|border|bg|text)/);
+    expect(source).not.toMatch(/agent-elements-new-file-menu[^\n"]*\bp-1\b/);
+    expect(source).not.toMatch(/rounded-\[(?:8|10)px\]/);
+  });
+
   it('renders an Agent Elements floating menu shell while preserving file-type selection', () => {
     const onSelect = vi.fn();
     const onClose = vi.fn();
@@ -53,6 +71,8 @@ describe('NewFileMenu Agent Elements shell', () => {
     expect(menu).toHaveClass('new-file-menu', 'agent-elements-new-file-menu', 'agent-elements-tool-card');
     expect(menu).toHaveAttribute('data-component', 'NewFileMenu');
     expect(menu).toHaveAttribute('data-agent-elements-shell', 'new-file-menu');
+    expect(menu).toHaveAttribute('data-agent-elements-card-padding', 'symmetric-inline');
+    expect(menu).toHaveAttribute('data-agent-elements-card-width', 'floating-menu');
     expect(menu.className).not.toMatch(/backdrop.*blur/);
 
     const markdownItem = screen.getByTestId('agent-elements-new-file-menu-markdown');

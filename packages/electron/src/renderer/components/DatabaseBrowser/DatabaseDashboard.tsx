@@ -48,25 +48,53 @@ interface Props {
 }
 
 const dashboardShellClass =
-  'agent-elements-database-dashboard flex-1 overflow-auto p-6 bg-nim text-nim';
+  'agent-elements-database-dashboard flex-1 overflow-auto bg-[var(--an-background)] p-6 text-[var(--an-foreground)]';
 const dashboardInnerClass =
   'mx-auto flex max-w-4xl flex-col gap-5';
+const dashboardCardPaddingClass =
+  '[--agent-elements-card-block-padding:var(--an-spacing-xl)] [--agent-elements-card-inline-padding:var(--an-spacing-xl)]';
+const dashboardZeroCardPaddingClass =
+  '[--agent-elements-card-block-padding:0px] [--agent-elements-card-inline-padding:0px]';
 const dashboardPanelClass =
-  'rounded-[10px] border border-[var(--nim-border)] bg-nim-secondary';
+  `agent-elements-tool-card gap-0 ${dashboardCardPaddingClass}`;
+const dashboardTablePanelClass =
+  `agent-elements-tool-card gap-0 ${dashboardZeroCardPaddingClass}`;
 const dashboardStatCardClass =
-  'agent-elements-database-stat-card rounded-[10px] border border-[var(--nim-border)] bg-nim-secondary p-4';
+  `agent-elements-database-stat-card ${dashboardPanelClass}`;
 const dashboardSectionHeaderClass =
-  'border-b border-[var(--nim-border)] px-4 py-3';
+  'border-b border-[var(--an-border-color)] px-4 py-3';
 const dashboardMetricLabelClass =
-  'mb-1 text-sm text-[var(--nim-text-muted)]';
+  'mb-1 text-sm text-[var(--an-foreground-muted)]';
 const dashboardProgressTrackClass =
-  'h-1.5 overflow-hidden rounded-full bg-[var(--nim-bg-tertiary)]';
+  'h-1.5 overflow-hidden rounded-full bg-[var(--an-background-tertiary)]';
 const dashboardProgressFillClass =
   'h-full rounded-full transition-[width] duration-200 ease-out';
 const dashboardButtonClass =
-  'rounded-[6px] border border-[var(--nim-border)] bg-[var(--nim-bg-tertiary)] px-3 py-1 text-sm text-[var(--nim-text)] transition-colors duration-150 hover:bg-[var(--nim-bg-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--nim-primary)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--nim-bg)]';
+  'rounded-[var(--an-small-border-radius)] border border-[var(--an-border-color)] bg-[var(--an-background-tertiary)] px-3 py-1 text-sm text-[var(--an-foreground)] transition-colors duration-150 hover:bg-[var(--an-background-secondary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--an-focus-ring)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--an-background)]';
 const dashboardRowClass =
   'flex items-center justify-between gap-3 text-sm';
+
+function DashboardStatCard({
+  label,
+  value,
+  valueClassName = 'text-2xl',
+}: {
+  label: string;
+  value: string | number;
+  valueClassName?: string;
+}) {
+  return (
+    <div
+      className={dashboardStatCardClass}
+      data-agent-elements-card-padding="symmetric-inline"
+      data-agent-elements-card-width="grid-cell"
+      data-testid="agent-elements-database-stat-card"
+    >
+      <div className={dashboardMetricLabelClass}>{label}</div>
+      <div className={`${valueClassName} font-semibold`}>{value}</div>
+    </div>
+  );
+}
 
 function formatBytes(bytes: number): string {
   if (bytes === 0) return '0 B';
@@ -144,7 +172,7 @@ export function DatabaseDashboard({ onTableSelect }: Props) {
   if (loading) {
     return (
       <div
-        className={`${dashboardShellClass} flex items-center justify-center text-[var(--nim-text-muted)]`}
+        className={`${dashboardShellClass} flex items-center justify-center text-[var(--an-foreground-muted)]`}
         data-agent-elements-shell="database-dashboard"
         data-testid="agent-elements-database-dashboard"
       >
@@ -160,7 +188,7 @@ export function DatabaseDashboard({ onTableSelect }: Props) {
         data-agent-elements-shell="database-dashboard"
         data-testid="agent-elements-database-dashboard"
       >
-        <div className="agent-elements-database-error text-sm text-[var(--nim-error)]">{error}</div>
+        <div className="agent-elements-database-error text-sm text-[var(--an-diff-removed-text)]">{error}</div>
         <button
           onClick={loadStats}
           className={dashboardButtonClass}
@@ -196,46 +224,39 @@ export function DatabaseDashboard({ onTableSelect }: Props) {
         </div>
 
         <div className="grid grid-cols-3 gap-4">
-          <div className={dashboardStatCardClass} data-testid="agent-elements-database-stat-card">
-            <div className={dashboardMetricLabelClass}>Total Size</div>
-            <div className="text-2xl font-semibold">{stats.totalSize}</div>
-          </div>
-          <div className={dashboardStatCardClass} data-testid="agent-elements-database-stat-card">
-            <div className={dashboardMetricLabelClass}>Tables</div>
-            <div className="text-2xl font-semibold">{stats.tableStats.length}</div>
-          </div>
-          <div className={dashboardStatCardClass} data-testid="agent-elements-database-stat-card">
-            <div className={dashboardMetricLabelClass}>Total Rows</div>
-            <div className="text-2xl font-semibold">{totalRows.toLocaleString()}</div>
-          </div>
+          <DashboardStatCard label="Total Size" value={stats.totalSize} />
+          <DashboardStatCard label="Tables" value={stats.tableStats.length} />
+          <DashboardStatCard label="Total Rows" value={totalRows.toLocaleString()} />
         </div>
 
         {stats.backupStatus && (
           <div
-            className={`agent-elements-database-backup-status ${dashboardPanelClass} p-4`}
+            className={`agent-elements-database-backup-status ${dashboardPanelClass}`}
+            data-agent-elements-card-padding="symmetric-inline"
+            data-agent-elements-card-width="section-row"
             data-agent-elements-shell="database-backup-status"
             data-testid="agent-elements-database-backup-status"
           >
             <h3 className="text-sm font-semibold mb-3">Backup Status</h3>
             <div className="space-y-2">
               <div className={dashboardRowClass}>
-                <span className="text-[var(--nim-text-muted)]">Available Backups</span>
+                <span className="text-[var(--an-foreground-muted)]">Available Backups</span>
                 <span>{backupCount} of 3</span>
               </div>
               {stats.backupStatus.lastSuccessfulBackup && (
                 <div className={dashboardRowClass}>
-                  <span className="text-[var(--nim-text-muted)]">Last Successful Backup</span>
+                  <span className="text-[var(--an-foreground-muted)]">Last Successful Backup</span>
                   <span>{formatRelativeTime(stats.backupStatus.lastSuccessfulBackup)}</span>
                 </div>
               )}
               {stats.backupStatus.currentBackup && (
                 <div className={dashboardRowClass}>
-                  <span className="text-[var(--nim-text-muted)]">Current Backup Size</span>
+                  <span className="text-[var(--an-foreground-muted)]">Current Backup Size</span>
                   <span>{formatBytes(stats.backupStatus.currentBackup.size)}</span>
                 </div>
               )}
               {backupCount === 0 && (
-                <div className="text-sm text-[var(--nim-text-faint)]">
+                <div className="text-sm text-[var(--an-foreground-subtle)]">
                   No backups have been created yet. Backups are created automatically every 4 hours.
                 </div>
               )}
@@ -254,33 +275,35 @@ export function DatabaseDashboard({ onTableSelect }: Props) {
           const overFloor = cur > minBytes * 1.05;
           return (
             <div
-              className={`database-dashboard-wal agent-elements-database-wal-status ${dashboardPanelClass} p-4`}
+              className={`database-dashboard-wal agent-elements-database-wal-status ${dashboardPanelClass}`}
+              data-agent-elements-card-padding="symmetric-inline"
+              data-agent-elements-card-width="section-row"
               data-agent-elements-shell="database-wal-status"
               data-testid="agent-elements-database-wal-status"
             >
               <h3 className="text-sm font-semibold mb-3">Write-Ahead Log</h3>
               <div className="space-y-2 text-sm">
                 <div className={dashboardRowClass}>
-                  <span className="text-[var(--nim-text-muted)]">Current size</span>
+                  <span className="text-[var(--an-foreground-muted)]">Current size</span>
                   <span data-testid="wal-current-size">
                     {stats.walStats.totalSize} ({stats.walStats.fileCount} {stats.walStats.fileCount === 1 ? 'segment' : 'segments'})
                   </span>
                 </div>
                 <div className={dashboardProgressTrackClass}>
                   <div
-                    className={`${dashboardProgressFillClass} ${overFloor ? 'bg-[var(--nim-warning)]' : 'bg-[var(--nim-primary)]'}`}
+                    className={`${dashboardProgressFillClass} ${overFloor ? 'bg-[var(--an-warning-color)]' : 'bg-[var(--an-primary-color)]'}`}
                     style={{ width: `${Math.max(pct, 1)}%` }}
                   />
                 </div>
-                <div className="flex items-center justify-between text-xs text-[var(--nim-text-faint)]">
+                <div className="flex items-center justify-between text-xs text-[var(--an-foreground-subtle)]">
                   <span>min {stats.walStats.minWalSize}</span>
                   <span>max {stats.walStats.maxWalSize}</span>
                 </div>
                 <div className={`${dashboardRowClass} pt-2`}>
-                  <span className="text-[var(--nim-text-muted)]">Checkpoint timeout</span>
+                  <span className="text-[var(--an-foreground-muted)]">Checkpoint timeout</span>
                   <span>{stats.walStats.checkpointTimeout}</span>
                 </div>
-                <div className="text-xs text-[var(--nim-text-faint)] pt-1">
+                <div className="pt-1 text-xs text-[var(--an-foreground-subtle)]">
                   PGLite has no background checkpointer; WAL is trimmed by explicit CHECKPOINT after init, before close, and when size exceeds 200 MB.
                 </div>
               </div>
@@ -289,16 +312,18 @@ export function DatabaseDashboard({ onTableSelect }: Props) {
         })()}
 
         <div
-          className={`agent-elements-database-table-list ${dashboardPanelClass} overflow-hidden`}
+          className={`agent-elements-database-table-list ${dashboardTablePanelClass} overflow-hidden`}
+          data-agent-elements-card-padding="sectioned-symmetric"
+          data-agent-elements-card-width="section-row"
           data-agent-elements-shell="database-table-list"
           data-testid="agent-elements-database-table-list"
         >
           <div className={dashboardSectionHeaderClass}>
             <h3 className="text-sm font-semibold">Tables by Size</h3>
           </div>
-          <div className="divide-y divide-[var(--nim-border)]">
+          <div className="divide-y divide-[var(--an-border-color)]">
             {stats.tableStats.length === 0 ? (
-              <div className="p-4 text-sm text-[var(--nim-text-muted)]">No tables found</div>
+              <div className="p-4 text-sm text-[var(--an-foreground-muted)]">No tables found</div>
             ) : (
               stats.tableStats.map((table) => {
                 const percentage = stats.totalSizeBytes > 0
@@ -308,7 +333,7 @@ export function DatabaseDashboard({ onTableSelect }: Props) {
                 return (
                   <div
                     key={table.name}
-                    className="agent-elements-database-table-row cursor-pointer p-3 transition-colors duration-150 hover:bg-[var(--nim-bg-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--nim-primary)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--nim-bg)]"
+                    className="agent-elements-database-table-row cursor-pointer p-3 transition-colors duration-150 hover:bg-[var(--an-background-tertiary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--an-focus-ring)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--an-background)]"
                     data-agent-elements-shell="database-table-row"
                     data-testid="agent-elements-database-table-row"
                     onClick={() => onTableSelect(table.name)}
@@ -323,14 +348,14 @@ export function DatabaseDashboard({ onTableSelect }: Props) {
                   >
                     <div className="flex items-center justify-between mb-2">
                       <span className="font-medium text-sm">{table.name}</span>
-                      <div className="flex items-center gap-4 text-sm text-[var(--nim-text-muted)]">
+                      <div className="flex items-center gap-4 text-sm text-[var(--an-foreground-muted)]">
                         <span>{table.rowCount.toLocaleString()} rows</span>
                         <span className="w-20 text-right">{table.size}</span>
                       </div>
                     </div>
                     <div className={dashboardProgressTrackClass}>
                       <div
-                        className={`${dashboardProgressFillClass} bg-[var(--nim-primary)]`}
+                        className={`${dashboardProgressFillClass} bg-[var(--an-primary-color)]`}
                         style={{ width: `${Math.max(percentage, 1)}%` }}
                       />
                     </div>
@@ -342,18 +367,16 @@ export function DatabaseDashboard({ onTableSelect }: Props) {
         </div>
 
         <div className="grid grid-cols-2 gap-4">
-          <div className={dashboardStatCardClass} data-testid="agent-elements-database-stat-card">
-            <div className={dashboardMetricLabelClass}>AI Sessions</div>
-            <div className="text-xl font-semibold">
-              {parseInt(stats.basicStats?.ai_sessions_count || '0').toLocaleString()}
-            </div>
-          </div>
-          <div className={dashboardStatCardClass} data-testid="agent-elements-database-stat-card">
-            <div className={dashboardMetricLabelClass}>Document History Entries</div>
-            <div className="text-xl font-semibold">
-              {parseInt(stats.basicStats?.history_count || '0').toLocaleString()}
-            </div>
-          </div>
+          <DashboardStatCard
+            label="AI Sessions"
+            value={parseInt(stats.basicStats?.ai_sessions_count || '0').toLocaleString()}
+            valueClassName="text-xl"
+          />
+          <DashboardStatCard
+            label="Document History Entries"
+            value={parseInt(stats.basicStats?.history_count || '0').toLocaleString()}
+            valueClassName="text-xl"
+          />
         </div>
       </div>
     </div>

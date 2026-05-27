@@ -50,7 +50,7 @@ export const HistoricalGraph: React.FC<HistoricalGraphProps> = ({ workspaceId })
 
   if (loading) {
     return (
-      <div className="historical-graph-loading agent-elements-ai-usage-loading flex min-h-[400px] items-center justify-center text-base text-nim-muted">
+      <div className="historical-graph-loading agent-elements-ai-usage-loading flex min-h-[400px] items-center justify-center text-base text-[var(--an-foreground-muted)]">
         Loading...
       </div>
     );
@@ -70,15 +70,15 @@ export const HistoricalGraph: React.FC<HistoricalGraphProps> = ({ workspaceId })
       data-agent-elements-shell="ai-usage-chart"
     >
       <div className="historical-graph-controls flex items-center justify-between gap-4">
-        <h3 className="m-0 text-base font-semibold leading-6 text-nim">Token Usage Over Time</h3>
-        <div className="time-range-selector flex gap-1 rounded-[10px] border border-nim bg-nim-tertiary p-1">
+        <h3 className="m-0 text-base font-semibold leading-6 text-[var(--an-foreground)]">Token Usage Over Time</h3>
+        <div className="time-range-selector flex gap-1 rounded-[10px] border border-[var(--an-border-color)] bg-[var(--an-background-tertiary)] p-1">
           {(['week', 'month', 'quarter', 'year'] as const).map((range) => (
             <button
               key={range}
-              className={`rounded-[8px] border px-3.5 py-1.5 text-[13px] leading-5 cursor-pointer transition-[background-color,border-color,color] duration-150 focus-visible:outline-2 focus-visible:outline-[var(--nim-primary)] focus-visible:outline-offset-2 ${
+              className={`rounded-[8px] border px-3.5 py-1.5 text-[13px] leading-5 cursor-pointer transition-[background-color,border-color,color] duration-150 focus-visible:outline-2 focus-visible:outline-[var(--an-focus-ring)] focus-visible:outline-offset-2 ${
                 timeRange === range
-                  ? 'border-[var(--nim-primary)] bg-[var(--nim-primary)] text-[var(--nim-bg)]'
-                  : 'bg-nim-secondary border-nim text-nim-muted hover:bg-nim-hover hover:text-nim'
+                  ? 'border-[var(--an-primary-color)] bg-[var(--an-primary-color)] text-[var(--an-background)]'
+                  : 'bg-[var(--an-tool-background)] border-[var(--an-tool-border-color)] text-[var(--an-foreground-muted)] hover:bg-[var(--an-background-tertiary)] hover:text-[var(--an-foreground)]'
               }`}
               onClick={() => setTimeRange(range)}
             >
@@ -91,24 +91,24 @@ export const HistoricalGraph: React.FC<HistoricalGraphProps> = ({ workspaceId })
       {chartData.length > 0 ? (
         <ResponsiveContainer width="100%" height={400}>
           <LineChart data={chartData}>
-            <CartesianGrid strokeDasharray="3 3" stroke="var(--nim-border)" />
-            <XAxis dataKey="date" stroke="var(--nim-text-muted)" />
-            <YAxis stroke="var(--nim-text-muted)" />
+            <CartesianGrid strokeDasharray="3 3" stroke="var(--an-border-color)" />
+            <XAxis dataKey="date" stroke="var(--an-foreground-muted)" />
+            <YAxis stroke="var(--an-foreground-muted)" />
             <Tooltip
               contentStyle={{
-                background: 'var(--nim-bg-secondary)',
-                border: '1px solid var(--nim-border)',
+                background: 'var(--an-tool-background)',
+                border: '1px solid var(--an-tool-border-color)',
                 borderRadius: '8px',
-                color: 'var(--nim-text)',
+                color: 'var(--an-foreground)',
               }}
             />
             <Legend />
-            <Line type="monotone" dataKey="Input Tokens" stroke="var(--nim-info)" strokeWidth={2} />
-            <Line type="monotone" dataKey="Output Tokens" stroke="var(--nim-success)" strokeWidth={2} />
+            <Line type="monotone" dataKey="Input Tokens" stroke="var(--an-primary-color)" strokeWidth={2} />
+            <Line type="monotone" dataKey="Output Tokens" stroke="var(--an-success-color)" strokeWidth={2} />
           </LineChart>
         </ResponsiveContainer>
       ) : (
-        <div className="no-data agent-elements-ai-usage-empty flex min-h-[400px] items-center justify-center text-base text-nim-muted">No data available for this time range</div>
+        <div className="no-data agent-elements-ai-usage-empty flex min-h-[400px] items-center justify-center text-base text-[var(--an-foreground-muted)]">No data available for this time range</div>
       )}
     </div>
   );

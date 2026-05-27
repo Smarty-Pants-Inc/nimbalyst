@@ -9,6 +9,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { DatabaseDashboard } from '../DatabaseDashboard';
 
 const dashboardSourcePath = resolve(__dirname, '../DatabaseDashboard.tsx');
+const legacyVisualTokenPattern =
+  /\b(?:bg|text|border|hover:bg|hover:text|hover:border)-nim(?:-[\w-]+)?\b|var\(--nim-|rgba\(|#(?:[0-9a-fA-F]{3}){1,2}\b|rounded-md|rounded-lg|rounded-xl|tracking-\[/;
 
 function installElectronApi() {
   const invoke = vi.fn(async (channel: string) => {
@@ -99,6 +101,27 @@ describe('DatabaseDashboard Agent Elements shell', () => {
       'data-agent-elements-shell',
       'database-table-list'
     );
+    const statCards = screen.getAllByTestId('agent-elements-database-stat-card');
+    for (const card of statCards) {
+      expect(card).toHaveClass('agent-elements-tool-card');
+      expect(card).toHaveAttribute('data-agent-elements-card-width', 'grid-cell');
+      expect(card).toHaveAttribute('data-agent-elements-card-padding', 'symmetric-inline');
+      expect(card.className).toContain('--agent-elements-card-inline-padding');
+      expect(card.className).toContain('--agent-elements-card-block-padding');
+      expect(card.className).not.toMatch(/\b(?:p-|px-|py-|pl-|pr-|rounded-\[10px\])/);
+    }
+    for (const [card, expectedPadding] of [
+      [screen.getByTestId('agent-elements-database-backup-status'), 'symmetric-inline'],
+      [screen.getByTestId('agent-elements-database-wal-status'), 'symmetric-inline'],
+      [screen.getByTestId('agent-elements-database-table-list'), 'sectioned-symmetric'],
+    ] as const) {
+      expect(card).toHaveClass('agent-elements-tool-card');
+      expect(card).toHaveAttribute('data-agent-elements-card-width', 'section-row');
+      expect(card).toHaveAttribute('data-agent-elements-card-padding', expectedPadding);
+      expect(card.className).toContain('--agent-elements-card-inline-padding');
+      expect(card.className).toContain('--agent-elements-card-block-padding');
+      expect(card.className).not.toMatch(/\b(?:p-|px-|py-|pl-|pr-|rounded-\[10px\])/);
+    }
 
     fireEvent.click(screen.getByText('ai_sessions'));
     await waitFor(() => expect(onTableSelect).toHaveBeenCalledWith('ai_sessions'));
@@ -117,10 +140,22 @@ describe('DatabaseDashboard Agent Elements shell', () => {
     expect(source).toContain('agent-elements-database-backup-status');
     expect(source).toContain('agent-elements-database-wal-status');
     expect(source).toContain('agent-elements-database-table-row');
+    expect(source).toContain('agent-elements-tool-card');
+    expect(source).toContain('--agent-elements-card-inline-padding');
+    expect(source).toContain('--agent-elements-card-block-padding');
+    expect(source).toContain('data-agent-elements-card-width="grid-cell"');
+    expect(source).toContain('data-agent-elements-card-width="section-row"');
+    expect(source).toContain('data-agent-elements-card-padding="symmetric-inline"');
+    expect(source).toContain('data-agent-elements-card-padding="sectioned-symmetric"');
+    expect(source).toContain('--an-foreground-muted');
 
+    expect(source).not.toMatch(
+      /agent-elements-database-(?:stat-card|backup-status|wal-status|table-list)[^`'"]*\b(?:p-|p-\[|px-|px-\[|py-|py-\[|pl-|pl-\[|pr-|pr-\[|rounded-\[10px\]|rounded-md|rounded-lg|rounded-xl)/
+    );
     expect(source).not.toMatch(/rounded-md|rounded-lg|rounded-xl/);
     expect(source).not.toMatch(/#(?:[0-9a-fA-F]{3}){1,2}\b|rgba\(/);
     expect(source).not.toMatch(/bg-white|text-white|bg-black|hover:scale|tracking-\[/);
     expect(source).not.toMatch(/--nim-accent|--nim-surface|text-nim-fg|<svg/);
+    expect(source).not.toMatch(legacyVisualTokenPattern);
   });
 });

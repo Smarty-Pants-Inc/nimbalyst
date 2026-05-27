@@ -56,13 +56,13 @@ export function InputModal({
 
   return (
     <div
-      className="input-modal-overlay nim-overlay agent-elements-input-modal-backdrop bg-[color-mix(in_srgb,var(--nim-text)_36%,transparent)]"
+      className="input-modal-overlay nim-overlay agent-elements-input-modal-backdrop bg-[color-mix(in_srgb,var(--an-foreground)_36%,transparent)]"
       data-testid="agent-elements-input-modal-backdrop"
       data-agent-elements-shell="input-modal-backdrop"
       onClick={onCancel}
     >
       <div
-        className="input-modal agent-elements-input-modal agent-elements-tool-card w-[400px] max-w-[90vw] !gap-0 !p-0 overflow-hidden rounded-[var(--an-border-radius)] bg-[var(--an-background)] border border-[var(--an-border-color)] text-[var(--an-foreground)] shadow-[0_20px_60px_color-mix(in_srgb,var(--nim-text)_18%,transparent)]"
+        className="input-modal agent-elements-input-modal agent-elements-tool-card w-[400px] max-w-[90vw] !gap-0 !p-0 overflow-hidden rounded-[var(--an-border-radius)] bg-[var(--an-background)] border border-[var(--an-border-color)] text-[var(--an-foreground)] shadow-[0_20px_60px_color-mix(in_srgb,var(--an-foreground)_18%,transparent)]"
         data-testid="agent-elements-input-modal"
         data-component="InputModal"
         data-agent-elements-shell="input-modal"
@@ -124,7 +124,7 @@ export function InputModal({
             </button>
             <button
               type="submit"
-              className={`${inputModalButtonBase} input-modal-confirm border-[var(--an-primary-color)] bg-[var(--an-primary-color)] text-[var(--an-background)] hover:bg-[var(--nim-primary-hover)] hover:border-[var(--nim-primary-hover)]`}
+              className={`${inputModalButtonBase} input-modal-confirm border-[var(--an-primary-color)] bg-[var(--an-primary-color)] text-[var(--an-send-button-color)] hover:bg-[color-mix(in_srgb,var(--an-primary-color)_88%,var(--an-foreground))] hover:border-[color-mix(in_srgb,var(--an-primary-color)_82%,var(--an-foreground))]`}
               disabled={!value.trim()}
             >
               <span aria-hidden="true">

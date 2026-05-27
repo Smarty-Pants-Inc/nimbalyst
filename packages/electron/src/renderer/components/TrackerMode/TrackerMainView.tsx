@@ -41,6 +41,33 @@ import { store } from '../../store';
 export type ViewMode = 'list' | 'table' | 'kanban';
 
 const SMARTY_SERVER_DEFAULT_MODEL = DEFAULT_MODELS['smarty-server'];
+const trackerToolbarButtonClass = [
+  'inline-flex h-7 items-center gap-1 rounded-[var(--an-input-border-radius)] border',
+  'border-[var(--an-border-color)] bg-[var(--an-background)] px-2 text-xs font-medium',
+  'text-[var(--an-foreground-muted)] transition-[background-color,border-color,color] duration-150 ease-out',
+  'hover:border-[var(--an-primary-color)] hover:bg-[var(--an-background-tertiary)] hover:text-[var(--an-foreground)]',
+  'focus:outline-none focus:ring-2 focus:ring-[var(--an-input-focus-outline)]',
+].join(' ');
+const trackerPrimaryButtonClass = [
+  'inline-flex h-7 items-center gap-1 rounded-[var(--an-input-border-radius)] border',
+  'border-[var(--an-primary-color)] bg-[var(--an-primary-color)] px-2 text-xs font-medium',
+  'text-[var(--an-button-primary-text)] transition-[background-color,border-color,opacity] duration-150 ease-out',
+  'hover:border-[color-mix(in_srgb,var(--an-primary-color)_84%,var(--an-foreground))]',
+  'hover:bg-[color-mix(in_srgb,var(--an-primary-color)_88%,var(--an-foreground))]',
+  'focus:outline-none focus:ring-2 focus:ring-[var(--an-input-focus-outline)] disabled:cursor-not-allowed disabled:opacity-50',
+].join(' ');
+const trackerInputClass = [
+  'h-7 rounded-[var(--an-input-border-radius)] border border-[var(--an-input-border-color)]',
+  'bg-[var(--an-input-background)] text-sm text-[var(--an-input-color)] placeholder:text-[var(--an-input-placeholder-color)]',
+  'transition-[background-color,border-color] duration-150 ease-out focus:border-[var(--an-input-focus-border)]',
+  'focus:outline-none focus:ring-2 focus:ring-[var(--an-input-focus-outline)]',
+].join(' ');
+const trackerImportMenuItemClass = [
+  'flex w-full items-center gap-2 rounded-[var(--an-radius-sm)] border-0 bg-transparent px-3 py-1.5',
+  'text-left text-xs text-[var(--an-foreground-muted)] transition-[background-color,color] duration-150 ease-out',
+  'hover:bg-[var(--an-background-tertiary)] hover:text-[var(--an-foreground)]',
+  'focus:outline-none focus:ring-2 focus:ring-[var(--an-input-focus-outline)]',
+].join(' ');
 
 interface TrackerMainViewProps {
   filterType: TrackerItemType | 'all';
@@ -519,32 +546,49 @@ export const TrackerMainView: React.FC<TrackerMainViewProps> = ({
   }, [filterType, activeFilters, trackerTypes]);
 
   return (
-    <div className="tracker-main-view flex-1 flex flex-col overflow-hidden min-h-0">
+    <div
+      className="tracker-main-view agent-elements-tracker-main-view flex-1 flex flex-col overflow-hidden min-h-0 bg-[var(--an-background)] text-[var(--an-foreground)]"
+      data-component="TrackerMainView"
+      data-agent-elements-shell="tracker-main-view"
+      data-testid="agent-elements-tracker-main-view"
+    >
       {/* Sync rejection banner -- key rotation / stale-envelope feedback */}
       <TrackerSyncRejectionBanner workspacePath={workspacePath} />
       {/* Toolbar */}
-      <div className="tracker-toolbar flex items-center gap-2 px-3 py-2 border-b border-nim bg-nim shrink-0">
+      <div
+        className="tracker-toolbar agent-elements-tracker-toolbar flex items-center gap-2 border-b border-[var(--an-border-color)] bg-[var(--an-background)] px-[var(--an-spacing-lg)] py-[var(--an-spacing-sm)] shrink-0"
+        data-agent-elements-shell="tracker-toolbar"
+        data-testid="agent-elements-tracker-toolbar"
+      >
         {/* Title */}
-        <span className="text-sm font-semibold text-nim shrink-0">{title}</span>
+        <span
+          className="agent-elements-tracker-toolbar-title text-sm font-medium text-[var(--an-foreground)] shrink-0"
+          data-testid="agent-elements-tracker-toolbar-title"
+        >
+          {title}
+        </span>
 
         {/* Search */}
         <div className="relative flex-1 max-w-[360px] min-w-0">
           <MaterialSymbol
             icon="search"
             size={16}
-            className="absolute left-2 top-1/2 -translate-y-1/2 text-nim-faint pointer-events-none"
+            className="absolute left-2 top-1/2 -translate-y-1/2 text-[var(--an-foreground-subtle)] pointer-events-none"
           />
           <input
             type="text"
             placeholder="Search items..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-7 pr-2 py-1 text-xs bg-nim-secondary border border-nim rounded text-nim placeholder:text-nim-faint focus:outline-none focus:border-[var(--nim-primary)]"
+            className={`agent-elements-tracker-search-input w-full pl-7 pr-7 text-xs ${trackerInputClass}`}
           />
           {searchQuery && (
             <button
-              className="absolute right-1.5 top-1/2 -translate-y-1/2 text-nim-faint hover:text-nim"
+              type="button"
+              aria-label="Clear tracker search"
+              className="agent-elements-tracker-search-clear absolute right-1.5 top-1/2 inline-flex h-5 w-5 -translate-y-1/2 items-center justify-center rounded-[var(--an-radius-sm)] border-0 bg-transparent p-0 text-[var(--an-foreground-subtle)] transition-colors duration-150 ease-out hover:bg-[var(--an-background-tertiary)] hover:text-[var(--an-foreground)] focus:outline-none focus:ring-2 focus:ring-[var(--an-input-focus-outline)]"
               onClick={() => setSearchQuery('')}
+              data-testid="agent-elements-tracker-search-clear"
             >
               <MaterialSymbol icon="close" size={14} />
             </button>
@@ -555,31 +599,40 @@ export const TrackerMainView: React.FC<TrackerMainViewProps> = ({
 
         <div className="relative" ref={importMenuRef}>
           <button
-            className="flex items-center gap-1 px-2 py-1 text-xs font-medium text-nim-muted border border-nim rounded hover:bg-nim-tertiary hover:text-nim transition-colors"
+            type="button"
+            className={`agent-elements-tracker-import-button ${trackerToolbarButtonClass}`}
             onClick={() => setImportMenuOpen(!importMenuOpen)}
             title="Import from files"
+            data-testid="agent-elements-tracker-import-button"
           >
             <MaterialSymbol icon="upload_file" size={14} />
             Import
           </button>
           {importMenuOpen && (
-            <div className="absolute right-0 top-full mt-1 w-[220px] bg-nim border border-nim rounded-md shadow-lg z-50 py-1">
+            <div
+              className="agent-elements-tracker-import-menu absolute right-0 top-full mt-1 z-50 w-[220px] rounded-[var(--an-tool-border-radius)] border border-[var(--an-border-color)] bg-[var(--an-background)] p-1 text-[var(--an-foreground)] shadow-[0_12px_32px_color-mix(in_srgb,var(--an-foreground)_10%,transparent)]"
+              data-agent-elements-shell="tracker-import-menu"
+              data-testid="agent-elements-tracker-import-menu"
+            >
               <button
-                className="w-full flex items-center gap-2 px-3 py-1.5 text-xs text-nim-muted hover:bg-nim-tertiary hover:text-nim text-left"
+                type="button"
+                className={trackerImportMenuItemClass}
                 onClick={() => handleBulkImport('nimbalyst-local/plans')}
               >
                 <MaterialSymbol icon="folder_open" size={14} />
                 Import from nimbalyst-local/plans
               </button>
               <button
-                className="w-full flex items-center gap-2 px-3 py-1.5 text-xs text-nim-muted hover:bg-nim-tertiary hover:text-nim text-left"
+                type="button"
+                className={trackerImportMenuItemClass}
                 onClick={() => handleBulkImport('plans')}
               >
                 <MaterialSymbol icon="folder_open" size={14} />
                 Import from plans/
               </button>
               <button
-                className="w-full flex items-center gap-2 px-3 py-1.5 text-xs text-nim-muted hover:bg-nim-tertiary hover:text-nim text-left"
+                type="button"
+                className={trackerImportMenuItemClass}
                 onClick={() => handleBulkImport('design')}
               >
                 <MaterialSymbol icon="folder_open" size={14} />
@@ -591,7 +644,10 @@ export const TrackerMainView: React.FC<TrackerMainViewProps> = ({
 
         {/* Import status toast */}
         {importStatus && (
-          <span className="text-[11px] text-nim-muted bg-nim-secondary px-2 py-0.5 rounded">
+          <span
+            className="agent-elements-tracker-import-status rounded-[var(--an-radius-sm)] border border-[var(--an-border-color)] bg-[var(--an-background-secondary)] px-2 py-0.5 text-[11px] text-[var(--an-foreground-muted)]"
+            data-testid="agent-elements-tracker-import-status"
+          >
             {importStatus}
           </span>
         )}
@@ -603,7 +659,8 @@ export const TrackerMainView: React.FC<TrackerMainViewProps> = ({
           return model?.creatable !== false;
         })() && (
           <button
-            className="flex items-center gap-1 px-2 py-1 text-xs font-medium text-white bg-[var(--nim-primary)] rounded hover:opacity-90 transition-opacity"
+            type="button"
+            className={`agent-elements-tracker-new-button ${trackerPrimaryButtonClass}`}
             onClick={() => handleNewItem(filterType !== 'all' ? filterType : 'task')}
             data-testid="tracker-toolbar-new-button"
           >
@@ -614,7 +671,7 @@ export const TrackerMainView: React.FC<TrackerMainViewProps> = ({
       </div>
 
       {/* Content area: table/kanban + optional detail panel */}
-      <div className="flex-1 flex flex-row overflow-hidden min-h-0">
+      <div className="agent-elements-tracker-content flex-1 flex flex-row overflow-hidden min-h-0">
         {/* Table/Kanban (flex-1, shrinks when detail is open) */}
         <div className="flex-1 overflow-hidden min-h-0 min-w-0 relative">
           {viewMode === 'list' ? (
@@ -759,9 +816,13 @@ const DetailPanelResizable: React.FC<{
   }, [isDragging, currentWidth, onWidthChange]);
 
   return (
-    <div className="flex shrink-0" style={{ width: `${currentWidth}px` }}>
+    <div
+      className="agent-elements-tracker-detail-shell flex shrink-0"
+      style={{ width: `${currentWidth}px` }}
+      data-agent-elements-shell="tracker-detail-resizable"
+    >
       <div
-        className={`relative w-0.5 cursor-ew-resize bg-nim-border shrink-0 transition-colors duration-150 hover:bg-nim-accent ${isDragging ? 'bg-nim-accent' : ''}`}
+        className={`agent-elements-tracker-detail-resizer relative w-0.5 cursor-ew-resize shrink-0 bg-[var(--an-border-color)] transition-colors duration-150 ease-out hover:bg-[var(--an-primary-color)] ${isDragging ? 'bg-[var(--an-primary-color)]' : ''}`}
         onMouseDown={handleMouseDown}
         role="separator"
         aria-orientation="vertical"
@@ -808,14 +869,22 @@ const QuickAddOverlay: React.FC<QuickAddOverlayProps> = ({ type, tracker, onSubm
     }
   };
 
-  const color = tracker?.color || '#6b7280';
+  const color = tracker?.color || 'var(--an-foreground-muted)';
   const displayName = tracker?.displayName || type.charAt(0).toUpperCase() + type.slice(1);
   const icon = tracker?.icon || 'label';
 
   return (
-    <div className="absolute top-0 left-0 right-0 bg-nim-secondary border-b border-nim shadow-sm z-20">
-      <form onSubmit={handleSubmit} className="flex items-center gap-3 px-4 py-2">
-        <span className="material-symbols-outlined text-lg shrink-0" style={{ color }}>
+    <div
+      className="agent-elements-tracker-quick-add absolute left-0 right-0 top-0 z-20 border-b border-[var(--an-border-color)] bg-[var(--an-background-secondary)] shadow-[0_8px_24px_color-mix(in_srgb,var(--an-foreground)_8%,transparent)]"
+      data-agent-elements-shell="tracker-quick-add"
+      data-testid="agent-elements-tracker-quick-add"
+    >
+      <form onSubmit={handleSubmit} className="flex items-center gap-3 px-[var(--an-spacing-xl)] py-[var(--an-spacing-sm)]">
+        <span
+          className="material-symbols-outlined text-lg shrink-0"
+          style={{ color }}
+          aria-hidden="true"
+        >
           {icon}
         </span>
 
@@ -829,14 +898,15 @@ const QuickAddOverlay: React.FC<QuickAddOverlayProps> = ({ type, tracker, onSubm
             e.stopPropagation();
           }}
           placeholder={`New ${displayName.toLowerCase()}...`}
-          className="flex-1 min-w-0 px-3 py-1.5 bg-nim border border-nim rounded text-sm text-nim placeholder:text-nim-faint focus:outline-none focus:border-[var(--nim-primary)]"
+          className={`agent-elements-tracker-quick-add-input flex-1 min-w-0 px-3 ${trackerInputClass}`}
           data-testid="tracker-quick-add-input"
         />
 
         <select
           value={priority}
           onChange={(e) => setPriority(e.target.value)}
-          className="px-2 py-1.5 bg-nim border border-nim rounded text-sm text-nim focus:outline-none focus:border-[var(--nim-primary)] shrink-0"
+          className={`agent-elements-tracker-quick-add-priority shrink-0 px-2 ${trackerInputClass}`}
+          data-testid="agent-elements-tracker-quick-add-priority"
         >
           <option value="low">Low</option>
           <option value="medium">Medium</option>
@@ -847,8 +917,8 @@ const QuickAddOverlay: React.FC<QuickAddOverlayProps> = ({ type, tracker, onSubm
         <button
           type="submit"
           disabled={!title.trim()}
-          className="px-3 py-1.5 rounded text-sm font-medium text-white border-none cursor-pointer transition-all disabled:opacity-50 disabled:cursor-not-allowed hover:opacity-90 shrink-0"
-          style={{ backgroundColor: color }}
+          className={`agent-elements-tracker-quick-add-submit shrink-0 ${trackerPrimaryButtonClass}`}
+          data-testid="agent-elements-tracker-quick-add-submit"
         >
           Add
         </button>
@@ -856,7 +926,7 @@ const QuickAddOverlay: React.FC<QuickAddOverlayProps> = ({ type, tracker, onSubm
         <button
           type="button"
           onClick={onClose}
-          className="p-1 rounded hover:bg-nim-tertiary text-nim-muted shrink-0"
+          className="agent-elements-tracker-quick-add-cancel inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-[var(--an-input-border-radius)] border border-transparent bg-transparent p-0 text-[var(--an-foreground-muted)] transition-[background-color,border-color,color] duration-150 ease-out hover:border-[var(--an-border-color)] hover:bg-[var(--an-background-tertiary)] hover:text-[var(--an-foreground)] focus:outline-none focus:ring-2 focus:ring-[var(--an-input-focus-outline)]"
           title="Cancel (Esc)"
         >
           <MaterialSymbol icon="close" size={18} />

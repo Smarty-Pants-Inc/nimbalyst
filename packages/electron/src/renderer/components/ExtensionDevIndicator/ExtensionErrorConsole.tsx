@@ -173,31 +173,31 @@ export const ExtensionErrorConsole: React.FC<ExtensionErrorConsoleProps> = ({
       data-agent-elements-shell="extension-error-console-overlay"
     >
       <div
-        className="extension-error-console agent-elements-extension-error-console agent-elements-tool-card flex h-[70vh] max-h-[600px] w-[min(1000px,80vw)] flex-col rounded-[12px] border border-nim bg-nim shadow-[0_16px_48px_color-mix(in_srgb,var(--nim-text)_14%,transparent)] nim-animate-slide-up"
+        className="extension-error-console agent-elements-extension-error-console agent-elements-tool-card flex h-[70vh] max-h-[600px] w-[min(1000px,80vw)] flex-col rounded-[12px] border border-[var(--an-border-color)] bg-[var(--an-background)] text-[var(--an-foreground)] shadow-[0_16px_48px_color-mix(in_srgb,var(--an-foreground)_14%,transparent)] nim-animate-slide-up"
         onClick={(e) => e.stopPropagation()}
         data-testid="agent-elements-extension-error-console"
         data-agent-elements-shell="extension-error-console"
       >
         <div
-          className="extension-error-console-header agent-elements-extension-error-console-header flex items-center gap-4 rounded-t-[12px] border-b border-nim bg-nim-secondary px-5 py-4"
+          className="extension-error-console-header agent-elements-extension-error-console-header flex items-center gap-4 rounded-t-[12px] border-b border-[var(--an-border-color)] bg-[var(--an-background-secondary)] px-5 py-4"
           data-testid="agent-elements-extension-error-console-header"
           data-agent-elements-shell="extension-error-console-header"
         >
-          <h2 className="m-0 text-base font-semibold text-nim">
+          <h2 className="m-0 text-base font-semibold text-[var(--an-foreground)]">
             Extension Logs
           </h2>
           <div className="extension-error-console-stats flex gap-3 ml-auto">
             {stats && (
               <>
-                <span className="stat stat-error flex items-center gap-1 text-xs font-medium text-nim-error">
+                <span className="stat stat-error flex items-center gap-1 text-xs font-medium text-[var(--an-diff-removed-text)]">
                   <MaterialSymbol icon="error" size={14} />
                   {stats.byLevel.error}
                 </span>
-                <span className="stat stat-warn flex items-center gap-1 text-xs font-medium text-nim-warning">
+                <span className="stat stat-warn flex items-center gap-1 text-xs font-medium text-[var(--an-warning-color)]">
                   <MaterialSymbol icon="warning" size={14} />
                   {stats.byLevel.warn}
                 </span>
-                <span className="stat stat-info flex items-center gap-1 text-xs font-medium text-nim-info">
+                <span className="stat stat-info flex items-center gap-1 text-xs font-medium text-[var(--an-primary-color)]">
                   <MaterialSymbol icon="info" size={14} />
                   {stats.byLevel.info}
                 </span>
@@ -206,7 +206,7 @@ export const ExtensionErrorConsole: React.FC<ExtensionErrorConsoleProps> = ({
           </div>
           <button
             type="button"
-            className="extension-error-console-close agent-elements-extension-error-console-close flex h-8 w-8 items-center justify-center rounded-[8px] border-0 bg-transparent text-nim-muted cursor-pointer transition-[background-color,color] duration-150 hover:bg-nim-hover hover:text-nim focus-visible:outline-2 focus-visible:outline-[var(--nim-primary)] focus-visible:outline-offset-2"
+            className="extension-error-console-close agent-elements-extension-error-console-close flex h-8 w-8 items-center justify-center rounded-[8px] border-0 bg-transparent text-[var(--an-foreground-muted)] cursor-pointer transition-[background-color,color] duration-150 hover:bg-[var(--an-background-tertiary)] hover:text-[var(--an-foreground)] focus-visible:outline-2 focus-visible:outline-[var(--an-focus-ring)] focus-visible:outline-offset-2"
             onClick={onClose}
             aria-label="Close"
             data-agent-elements-shell="extension-error-console-close"
@@ -216,13 +216,13 @@ export const ExtensionErrorConsole: React.FC<ExtensionErrorConsoleProps> = ({
         </div>
 
         <div
-          className="extension-error-console-toolbar agent-elements-extension-error-console-toolbar flex items-center justify-between gap-3 border-b border-nim bg-nim-secondary px-4 py-2"
+          className="extension-error-console-toolbar agent-elements-extension-error-console-toolbar flex items-center justify-between gap-3 border-b border-[var(--an-border-color)] bg-[var(--an-background-secondary)] px-4 py-2"
           data-testid="agent-elements-extension-error-console-toolbar"
           data-agent-elements-shell="extension-error-console-toolbar"
         >
           <div className="extension-error-console-filters flex gap-2">
             <select
-              className="agent-elements-extension-error-console-select rounded-[8px] border border-nim bg-nim px-2 py-1.5 text-xs text-nim cursor-pointer transition-colors duration-150 hover:border-[var(--nim-border-hover)] focus-visible:outline-2 focus-visible:outline-[var(--nim-primary)] focus-visible:outline-offset-2"
+              className="agent-elements-extension-error-console-select rounded-[8px] border border-[var(--an-border-color)] bg-[var(--an-background)] px-2 py-1.5 text-xs text-[var(--an-foreground)] cursor-pointer transition-colors duration-150 hover:border-[var(--an-primary-color)] focus-visible:outline-2 focus-visible:outline-[var(--an-focus-ring)] focus-visible:outline-offset-2"
               value={filter.logLevel}
               onChange={(e) =>
                 setFilter((f) => ({
@@ -240,7 +240,7 @@ export const ExtensionErrorConsole: React.FC<ExtensionErrorConsoleProps> = ({
             </select>
 
             <select
-              className="agent-elements-extension-error-console-select rounded-[8px] border border-nim bg-nim px-2 py-1.5 text-xs text-nim cursor-pointer transition-colors duration-150 hover:border-[var(--nim-border-hover)] focus-visible:outline-2 focus-visible:outline-[var(--nim-primary)] focus-visible:outline-offset-2"
+              className="agent-elements-extension-error-console-select rounded-[8px] border border-[var(--an-border-color)] bg-[var(--an-background)] px-2 py-1.5 text-xs text-[var(--an-foreground)] cursor-pointer transition-colors duration-150 hover:border-[var(--an-primary-color)] focus-visible:outline-2 focus-visible:outline-[var(--an-focus-ring)] focus-visible:outline-offset-2"
               value={filter.source}
               onChange={(e) =>
                 setFilter((f) => ({
@@ -257,7 +257,7 @@ export const ExtensionErrorConsole: React.FC<ExtensionErrorConsoleProps> = ({
             </select>
 
             <select
-              className="agent-elements-extension-error-console-select rounded-[8px] border border-nim bg-nim px-2 py-1.5 text-xs text-nim cursor-pointer transition-colors duration-150 hover:border-[var(--nim-border-hover)] focus-visible:outline-2 focus-visible:outline-[var(--nim-primary)] focus-visible:outline-offset-2"
+              className="agent-elements-extension-error-console-select rounded-[8px] border border-[var(--an-border-color)] bg-[var(--an-background)] px-2 py-1.5 text-xs text-[var(--an-foreground)] cursor-pointer transition-colors duration-150 hover:border-[var(--an-primary-color)] focus-visible:outline-2 focus-visible:outline-[var(--an-focus-ring)] focus-visible:outline-offset-2"
               value={filter.extensionId}
               onChange={(e) =>
                 setFilter((f) => ({ ...f, extensionId: e.target.value }))
@@ -274,7 +274,7 @@ export const ExtensionErrorConsole: React.FC<ExtensionErrorConsoleProps> = ({
           </div>
 
           <div className="extension-error-console-actions flex items-center gap-2">
-            <label className="auto-refresh-toggle flex items-center gap-1.5 text-xs cursor-pointer text-nim-muted">
+            <label className="auto-refresh-toggle flex items-center gap-1.5 text-xs cursor-pointer text-[var(--an-foreground-muted)]">
               <input
                 type="checkbox"
                 className="cursor-pointer"
@@ -285,7 +285,7 @@ export const ExtensionErrorConsole: React.FC<ExtensionErrorConsoleProps> = ({
             </label>
             <button
               type="button"
-              className="toolbar-button agent-elements-extension-error-console-action nim-btn-icon"
+              className="toolbar-button agent-elements-extension-error-console-action flex h-8 w-8 items-center justify-center rounded-[8px] border border-transparent bg-transparent p-0 text-[var(--an-foreground-muted)] cursor-pointer transition-[background-color,border-color,color] duration-150 hover:border-[var(--an-border-color)] hover:bg-[var(--an-background-tertiary)] hover:text-[var(--an-foreground)] disabled:cursor-not-allowed disabled:text-[var(--an-foreground-subtle)] focus-visible:outline-2 focus-visible:outline-[var(--an-focus-ring)] focus-visible:outline-offset-2"
               onClick={fetchLogs}
               disabled={isLoading}
               title="Refresh"
@@ -295,7 +295,7 @@ export const ExtensionErrorConsole: React.FC<ExtensionErrorConsoleProps> = ({
             </button>
             <button
               type="button"
-              className="toolbar-button agent-elements-extension-error-console-action nim-btn-icon"
+              className="toolbar-button agent-elements-extension-error-console-action flex h-8 w-8 items-center justify-center rounded-[8px] border border-transparent bg-transparent p-0 text-[var(--an-foreground-muted)] cursor-pointer transition-[background-color,border-color,color] duration-150 hover:border-[var(--an-border-color)] hover:bg-[var(--an-background-tertiary)] hover:text-[var(--an-foreground)] focus-visible:outline-2 focus-visible:outline-[var(--an-focus-ring)] focus-visible:outline-offset-2"
               onClick={handleClearLogs}
               title="Clear logs"
               data-agent-elements-shell="extension-error-console-action"
@@ -312,7 +312,7 @@ export const ExtensionErrorConsole: React.FC<ExtensionErrorConsoleProps> = ({
         >
           {logs.length === 0 ? (
             <div
-              className="extension-error-console-empty agent-elements-extension-error-console-empty flex h-full flex-col items-center justify-center text-center text-nim-faint"
+              className="extension-error-console-empty agent-elements-extension-error-console-empty flex h-full flex-col items-center justify-center text-center text-[var(--an-foreground-subtle)]"
               data-agent-elements-shell="extension-error-console-empty"
             >
               <MaterialSymbol icon="check_circle" size={48} />
@@ -326,8 +326,8 @@ export const ExtensionErrorConsole: React.FC<ExtensionErrorConsoleProps> = ({
             logs.map((log, index) => (
               <div
                 key={`${log.timestamp}-${index}`}
-                className={`log-entry agent-elements-extension-log-entry log-${log.level} mb-0.5 rounded-[8px] px-2 py-1.5 transition-colors duration-150 hover:bg-[var(--nim-bg-hover)] ${
-                  expandedLogs.has(index) ? 'expanded bg-[var(--nim-bg-secondary)]' : ''
+                className={`log-entry agent-elements-extension-log-entry log-${log.level} mb-0.5 rounded-[8px] px-2 py-1.5 transition-colors duration-150 hover:bg-[var(--an-background-tertiary)] ${
+                  expandedLogs.has(index) ? 'expanded bg-[var(--an-tool-background)]' : ''
                 } ${log.stack ? 'cursor-pointer' : 'cursor-default'}`}
                 onClick={() => log.stack && toggleExpand(index)}
                 data-testid="agent-elements-extension-log-entry"
@@ -337,12 +337,12 @@ export const ExtensionErrorConsole: React.FC<ExtensionErrorConsoleProps> = ({
                   <span
                     className={
                       log.level === 'error'
-                        ? 'text-nim-error'
+                        ? 'text-[var(--an-diff-removed-text)]'
                         : log.level === 'warn'
-                          ? 'text-nim-warning'
+                          ? 'text-[var(--an-warning-color)]'
                           : log.level === 'info'
-                            ? 'text-nim-info'
-                            : 'text-nim-faint'
+                            ? 'text-[var(--an-primary-color)]'
+                            : 'text-[var(--an-foreground-subtle)]'
                     }
                   >
                     <MaterialSymbol
@@ -350,16 +350,16 @@ export const ExtensionErrorConsole: React.FC<ExtensionErrorConsoleProps> = ({
                       size={16}
                     />
                   </span>
-                  <span className="log-time shrink-0 text-nim-faint">
+                  <span className="log-time shrink-0 text-[var(--an-foreground-subtle)]">
                     {formatTime(log.timestamp)}
                   </span>
-                  <span className="log-source shrink-0 text-nim-faint">
+                  <span className="log-source shrink-0 text-[var(--an-foreground-subtle)]">
                     [{log.source}]
                   </span>
                   {log.extensionId && (
                     <button
                       type="button"
-                      className="log-extension agent-elements-extension-log-badge shrink-0 rounded-[6px] border-0 bg-[color-mix(in_srgb,var(--nim-info)_10%,transparent)] px-1 text-[var(--nim-info)] font-inherit cursor-pointer transition-[background-color,color] duration-150 hover:bg-[color-mix(in_srgb,var(--nim-info)_16%,transparent)] hover:text-[var(--nim-text)] focus-visible:outline-2 focus-visible:outline-[var(--nim-primary)] focus-visible:outline-offset-2"
+                      className="log-extension agent-elements-extension-log-badge shrink-0 rounded-[6px] border-0 bg-[color-mix(in_srgb,var(--an-primary-color)_10%,transparent)] px-1 text-[var(--an-primary-color)] font-inherit cursor-pointer transition-[background-color,color] duration-150 hover:bg-[color-mix(in_srgb,var(--an-primary-color)_16%,transparent)] hover:text-[var(--an-foreground)] focus-visible:outline-2 focus-visible:outline-[var(--an-focus-ring)] focus-visible:outline-offset-2"
                       onClick={(e) => {
                         e.stopPropagation();
                         setFilter((f) => ({ ...f, extensionId: log.extensionId! }));
@@ -374,10 +374,10 @@ export const ExtensionErrorConsole: React.FC<ExtensionErrorConsoleProps> = ({
                   <span
                     className={`log-message flex-1 break-words ${
                       log.level === 'error'
-                        ? 'text-nim-error'
+                        ? 'text-[var(--an-diff-removed-text)]'
                         : log.level === 'warn'
-                          ? 'text-nim-warning'
-                          : 'text-nim'
+                          ? 'text-[var(--an-warning-color)]'
+                          : 'text-[var(--an-foreground)]'
                     }`}
                   >
                     {log.message}
@@ -386,17 +386,17 @@ export const ExtensionErrorConsole: React.FC<ExtensionErrorConsoleProps> = ({
                     <MaterialSymbol
                       icon={expandedLogs.has(index) ? 'expand_less' : 'expand_more'}
                       size={16}
-                      className="log-expand-icon shrink-0 text-nim-faint"
+                      className="log-expand-icon shrink-0 text-[var(--an-foreground-subtle)]"
                     />
                   )}
                 </div>
                 {expandedLogs.has(index) && log.stack && (
-                  <pre className="log-stack agent-elements-extension-log-stack mt-2 ml-6 overflow-x-auto rounded-[8px] border border-nim bg-nim p-2 text-[11px] whitespace-pre-wrap break-words text-nim-muted">
+                  <pre className="log-stack agent-elements-extension-log-stack mt-2 ml-6 overflow-x-auto rounded-[8px] border border-[var(--an-border-color)] bg-[var(--an-background)] p-2 text-[11px] whitespace-pre-wrap break-words text-[var(--an-foreground-muted)]">
                     {log.stack}
                   </pre>
                 )}
                 {log.sourceFile && log.line && (
-                  <div className="log-location mt-1 ml-6 text-[11px] text-nim-faint">
+                  <div className="log-location mt-1 ml-6 text-[11px] text-[var(--an-foreground-subtle)]">
                     {log.sourceFile}:{log.line}
                   </div>
                 )}

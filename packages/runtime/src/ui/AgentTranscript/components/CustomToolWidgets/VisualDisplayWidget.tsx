@@ -7,8 +7,7 @@
  * - Image galleries with file path loading
  */
 
-import React, { useState, useEffect, useRef } from 'react';
-import { useAtomValue } from 'jotai';
+import React, { useState } from 'react';
 import { FullscreenModal } from '../FullscreenModal';
 import {
   BarChart,
@@ -33,45 +32,34 @@ import {
 import type { CustomToolWidgetProps } from './index';
 import type { TranscriptViewMessage } from '../../../../ai/server/transcript/TranscriptProjector';
 type ToolCall = NonNullable<TranscriptViewMessage['toolCall']>;
-import { isDarkThemeAtom } from '../../../../store/atoms/theme';
-import { GifPlayer } from './GifPlayer';
-import { localAssetUrl } from '../../../../utils/localAssetUrl';
+import { AgentStatusPill, AgentToolCard, type AgentStatusTone, type AgentToolStatus } from '../../../AgentElements/AgentElementsPrimitives';
+import { MaterialSymbol } from '../../../icons/MaterialSymbol';
+import { ImageDisplay, type ImageContent, type VisualDisplayReadFile } from './VisualDisplayImageDisplay';
 
-// Theme-aware color palettes
-const LIGHT_COLORS = [
-  '#6366f1', // indigo
-  '#10b981', // emerald
-  '#f59e0b', // amber
-  '#ef4444', // red
-  '#8b5cf6', // violet
-  '#ec4899', // pink
-  '#06b6d4', // cyan
-  '#f97316'  // orange
+const DEFAULT_CHART_COLORS = [
+  'var(--an-primary-color)',
+  'var(--an-success-color)',
+  'var(--an-warning-color)',
+  'var(--an-diff-removed-text)',
+  'var(--an-foreground-muted)',
+  'color-mix(in srgb, var(--an-primary-color) 70%, var(--an-success-color))',
+  'color-mix(in srgb, var(--an-primary-color) 70%, var(--an-warning-color))',
+  'color-mix(in srgb, var(--an-success-color) 70%, var(--an-diff-removed-text))',
 ];
 
-const DARK_COLORS = [
-  '#818cf8', // lighter indigo
-  '#34d399', // lighter emerald
-  '#fbbf24', // lighter amber
-  '#f87171', // lighter red
-  '#a78bfa', // lighter violet
-  '#f472b6', // lighter pink
-  '#22d3ee', // lighter cyan
-  '#fb923c'  // lighter orange
-];
+const CHART_GRID_STROKE = 'var(--an-tool-border-color)';
+const CHART_AXIS_STROKE = 'var(--an-tool-color-muted)';
+const CHART_ERROR_STROKE = 'var(--an-tool-color-muted)';
 
-/**
- * Get the appropriate color palette based on current theme
- */
-function getThemeColors(isDark: boolean): string[] {
-  return isDark ? DARK_COLORS : LIGHT_COLORS;
+function classNames(...values: Array<string | false | null | undefined>): string {
+  return values.filter(Boolean).join(' ');
 }
 
 /**
  * Render error bar component based on configuration
  * Supports both symmetric (errorKey) and asymmetric (errorKeyLower/errorKeyUpper) error bars
  */
-function renderErrorBar(errorBars: ErrorBarConfig | undefined, isDark: boolean) {
+function renderErrorBar(errorBars: ErrorBarConfig | undefined) {
   if (!errorBars) return null;
 
   // Validate that we have either symmetric or asymmetric error data
@@ -84,17 +72,15 @@ function renderErrorBar(errorBars: ErrorBarConfig | undefined, isDark: boolean) 
   }
 
   const strokeWidth = errorBars.strokeWidth ?? 2;
-  const stroke = isDark ? 'var(--nim-text-muted)' : 'var(--nim-text)';
-
   if (hasSymmetric) {
     // Symmetric error bars
-    return <ErrorBar dataKey={errorBars.errorKey!} stroke={stroke} strokeWidth={strokeWidth} />;
+    return <ErrorBar dataKey={errorBars.errorKey!} stroke={CHART_ERROR_STROKE} strokeWidth={strokeWidth} />;
   } else {
     // Asymmetric error bars (lower and upper bounds)
     return (
       <>
-        <ErrorBar dataKey={errorBars.errorKeyLower!} direction="y" stroke={stroke} strokeWidth={strokeWidth} />
-        <ErrorBar dataKey={errorBars.errorKeyUpper!} direction="y" stroke={stroke} strokeWidth={strokeWidth} />
+        <ErrorBar dataKey={errorBars.errorKeyLower!} direction="y" stroke={CHART_ERROR_STROKE} strokeWidth={strokeWidth} />
+        <ErrorBar dataKey={errorBars.errorKeyUpper!} direction="y" stroke={CHART_ERROR_STROKE} strokeWidth={strokeWidth} />
       </>
     );
   }
@@ -117,11 +103,6 @@ interface ChartConfig {
   yAxisKey: string | string[];
   colors?: string[];
   errorBars?: ErrorBarConfig;
-}
-
-// New schema types
-interface ImageContent {
-  path: string;
 }
 
 interface ChartContent {
@@ -338,10 +319,52 @@ class VisualErrorBoundary extends React.Component<
   }
 }
 
+interface ChartTooltipPayload {
+  color?: string;
+  dataKey?: string | number;
+  name?: string | number;
+  value?: unknown;
+}
+
+function ChartTooltipContent({
+  active,
+  payload,
+  label,
+}: {
+  active?: boolean;
+  payload?: ChartTooltipPayload[];
+  label?: string | number;
+}) {
+  if (!active || !payload?.length) return null;
+
+  return (
+    <div className="agent-elements-visual-display-tooltip rounded-[var(--an-radius-sm)] border border-[var(--an-tool-border-color)] bg-[var(--an-tool-background)] px-[var(--an-spacing-sm)] py-[var(--an-spacing-xs)] text-xs leading-[1.35] text-[var(--an-tool-color)]">
+      {label !== undefined ? (
+        <div className="font-medium text-[var(--an-tool-color)]">{label}</div>
+      ) : null}
+      <div className="mt-[var(--an-spacing-xxs)] flex flex-col gap-[var(--an-spacing-xxs)]">
+        {payload.map((entry, index) => (
+          <div
+            className="flex items-center gap-[var(--an-spacing-xs)] text-[var(--an-tool-color-muted)]"
+            key={`${entry.dataKey ?? entry.name ?? index}`}
+          >
+            <span
+              className="agent-elements-visual-display-tooltip-swatch inline-block h-2 w-2 rounded-[var(--an-radius-xs)]"
+              data-color-index={index % DEFAULT_CHART_COLORS.length}
+            />
+            <span>{entry.name ?? entry.dataKey}</span>
+            <span className="font-medium text-[var(--an-tool-color)]">{String(entry.value)}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 /**
  * Render a bar chart
  */
-function renderBarChart(config: ChartConfig, colors: string[], isDark: boolean) {
+function renderBarChart(config: ChartConfig, colors: string[]) {
   const yKeys = Array.isArray(config.yAxisKey) ? config.yAxisKey : [config.yAxisKey];
 
   // Determine which series to attach error bars to
@@ -349,21 +372,14 @@ function renderBarChart(config: ChartConfig, colors: string[], isDark: boolean) 
 
   return (
     <BarChart data={config.data}>
-      <CartesianGrid strokeDasharray="3 3" stroke="var(--nim-border)" />
-      <XAxis dataKey={config.xAxisKey} stroke="var(--nim-text-muted)" tick={{ fontSize: 12 }} />
-      <YAxis stroke="var(--nim-text-muted)" tick={{ fontSize: 12 }} />
-      <Tooltip
-        contentStyle={{
-          background: 'var(--nim-bg-secondary)',
-          border: '1px solid var(--nim-border)',
-          borderRadius: '6px',
-          color: 'var(--nim-text)'
-        }}
-      />
+      <CartesianGrid strokeDasharray="3 3" stroke={CHART_GRID_STROKE} />
+      <XAxis dataKey={config.xAxisKey} stroke={CHART_AXIS_STROKE} tick={{ fontSize: 12 }} />
+      <YAxis stroke={CHART_AXIS_STROKE} tick={{ fontSize: 12 }} />
+      <Tooltip content={<ChartTooltipContent />} />
       {yKeys.length > 1 && <Legend />}
       {yKeys.map((key, index) => (
         <Bar key={key} dataKey={key} fill={colors[index % colors.length]} isAnimationActive={false}>
-          {key === errorBarDataKey && renderErrorBar(config.errorBars, isDark)}
+          {key === errorBarDataKey && renderErrorBar(config.errorBars)}
         </Bar>
       ))}
     </BarChart>
@@ -373,7 +389,7 @@ function renderBarChart(config: ChartConfig, colors: string[], isDark: boolean) 
 /**
  * Render a line chart
  */
-function renderLineChart(config: ChartConfig, colors: string[], isDark: boolean) {
+function renderLineChart(config: ChartConfig, colors: string[]) {
   const yKeys = Array.isArray(config.yAxisKey) ? config.yAxisKey : [config.yAxisKey];
 
   // Determine which series to attach error bars to
@@ -381,17 +397,10 @@ function renderLineChart(config: ChartConfig, colors: string[], isDark: boolean)
 
   return (
     <LineChart data={config.data}>
-      <CartesianGrid strokeDasharray="3 3" stroke="var(--nim-border)" />
-      <XAxis dataKey={config.xAxisKey} stroke="var(--nim-text-muted)" tick={{ fontSize: 12 }} />
-      <YAxis stroke="var(--nim-text-muted)" tick={{ fontSize: 12 }} />
-      <Tooltip
-        contentStyle={{
-          background: 'var(--nim-bg-secondary)',
-          border: '1px solid var(--nim-border)',
-          borderRadius: '6px',
-          color: 'var(--nim-text)'
-        }}
-      />
+      <CartesianGrid strokeDasharray="3 3" stroke={CHART_GRID_STROKE} />
+      <XAxis dataKey={config.xAxisKey} stroke={CHART_AXIS_STROKE} tick={{ fontSize: 12 }} />
+      <YAxis stroke={CHART_AXIS_STROKE} tick={{ fontSize: 12 }} />
+      <Tooltip content={<ChartTooltipContent />} />
       {yKeys.length > 1 && <Legend />}
       {yKeys.map((key, index) => (
         <Line
@@ -403,7 +412,7 @@ function renderLineChart(config: ChartConfig, colors: string[], isDark: boolean)
           dot={{ fill: colors[index % colors.length], strokeWidth: 0, r: 3 }}
           isAnimationActive={false}
         >
-          {key === errorBarDataKey && renderErrorBar(config.errorBars, isDark)}
+          {key === errorBarDataKey && renderErrorBar(config.errorBars)}
         </Line>
       ))}
     </LineChart>
@@ -426,21 +435,14 @@ function renderPieChart(config: ChartConfig, colors: string[]) {
         cy="50%"
         outerRadius="70%"
         label={({ name, percent }) => `${name}: ${((percent ?? 0) * 100).toFixed(0)}%`}
-        labelLine={{ stroke: 'var(--nim-text-muted)' }}
+        labelLine={{ stroke: CHART_AXIS_STROKE }}
         isAnimationActive={false}
       >
         {config.data.map((_, index) => (
           <Cell key={`cell-${index}`} fill={colors[index % colors.length]} />
         ))}
       </Pie>
-      <Tooltip
-        contentStyle={{
-          background: 'var(--nim-bg-secondary)',
-          border: '1px solid var(--nim-border)',
-          borderRadius: '6px',
-          color: 'var(--nim-text)'
-        }}
-      />
+      <Tooltip content={<ChartTooltipContent />} />
     </PieChart>
   );
 }
@@ -448,7 +450,7 @@ function renderPieChart(config: ChartConfig, colors: string[]) {
 /**
  * Render an area chart
  */
-function renderAreaChart(config: ChartConfig, colors: string[], isDark: boolean) {
+function renderAreaChart(config: ChartConfig, colors: string[]) {
   const yKeys = Array.isArray(config.yAxisKey) ? config.yAxisKey : [config.yAxisKey];
 
   // Determine which series to attach error bars to
@@ -456,17 +458,10 @@ function renderAreaChart(config: ChartConfig, colors: string[], isDark: boolean)
 
   return (
     <AreaChart data={config.data}>
-      <CartesianGrid strokeDasharray="3 3" stroke="var(--nim-border)" />
-      <XAxis dataKey={config.xAxisKey} stroke="var(--nim-text-muted)" tick={{ fontSize: 12 }} />
-      <YAxis stroke="var(--nim-text-muted)" tick={{ fontSize: 12 }} />
-      <Tooltip
-        contentStyle={{
-          background: 'var(--nim-bg-secondary)',
-          border: '1px solid var(--nim-border)',
-          borderRadius: '6px',
-          color: 'var(--nim-text)'
-        }}
-      />
+      <CartesianGrid strokeDasharray="3 3" stroke={CHART_GRID_STROKE} />
+      <XAxis dataKey={config.xAxisKey} stroke={CHART_AXIS_STROKE} tick={{ fontSize: 12 }} />
+      <YAxis stroke={CHART_AXIS_STROKE} tick={{ fontSize: 12 }} />
+      <Tooltip content={<ChartTooltipContent />} />
       {yKeys.length > 1 && <Legend />}
       {yKeys.map((key, index) => (
         <Area
@@ -478,7 +473,7 @@ function renderAreaChart(config: ChartConfig, colors: string[], isDark: boolean)
           fillOpacity={0.3}
           isAnimationActive={false}
         >
-          {key === errorBarDataKey && renderErrorBar(config.errorBars, isDark)}
+          {key === errorBarDataKey && renderErrorBar(config.errorBars)}
         </Area>
       ))}
     </AreaChart>
@@ -488,28 +483,20 @@ function renderAreaChart(config: ChartConfig, colors: string[], isDark: boolean)
 /**
  * Render a scatter chart
  */
-function renderScatterChart(config: ChartConfig, colors: string[], isDark: boolean) {
+function renderScatterChart(config: ChartConfig, colors: string[]) {
   const yKey = Array.isArray(config.yAxisKey) ? config.yAxisKey[0] : config.yAxisKey;
 
   return (
     <ScatterChart>
-      <CartesianGrid strokeDasharray="3 3" stroke="var(--nim-border)" />
-      <XAxis dataKey={config.xAxisKey} stroke="var(--nim-text-muted)" tick={{ fontSize: 12 }} name={config.xAxisKey} />
-      <YAxis dataKey={yKey} stroke="var(--nim-text-muted)" tick={{ fontSize: 12 }} name={yKey} />
-      <Tooltip
-        contentStyle={{
-          background: 'var(--nim-bg-secondary)',
-          border: '1px solid var(--nim-border)',
-          borderRadius: '6px',
-          color: 'var(--nim-text)'
-        }}
-        cursor={{ strokeDasharray: '3 3' }}
-      />
+      <CartesianGrid strokeDasharray="3 3" stroke={CHART_GRID_STROKE} />
+      <XAxis dataKey={config.xAxisKey} stroke={CHART_AXIS_STROKE} tick={{ fontSize: 12 }} name={config.xAxisKey} />
+      <YAxis dataKey={yKey} stroke={CHART_AXIS_STROKE} tick={{ fontSize: 12 }} name={yKey} />
+      <Tooltip content={<ChartTooltipContent />} cursor={{ strokeDasharray: '3 3' }} />
       <Scatter data={config.data} fill={colors[0]} isAnimationActive={false}>
         {config.data.map((_, index) => (
           <Cell key={`cell-${index}`} fill={colors[index % colors.length]} />
         ))}
-        {renderErrorBar(config.errorBars, isDark)}
+        {renderErrorBar(config.errorBars)}
       </Scatter>
     </ScatterChart>
   );
@@ -518,127 +505,12 @@ function renderScatterChart(config: ChartConfig, colors: string[], isDark: boole
 /**
  * Component for displaying a single image with loading state
  */
-const ImageDisplay: React.FC<{
-  image: ImageContent;
-  description?: string;
-  readFile?: (path: string) => Promise<{ success: boolean; content?: string; error?: string }>;
-}> = ({ image, description, readFile }) => {
-  const [imageData, setImageData] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    const loadImage = async () => {
-      // Try to load the image via file protocol (for local files)
-      // In Electron, we can use file:// protocol for local images
-      try {
-        // First try using readFile if available (for base64 loading)
-        if (readFile) {
-          const result = await readFile(image.path);
-          if (result.success && result.content) {
-            // Check if content is already base64 or needs conversion
-            if (result.content.startsWith('data:')) {
-              setImageData(result.content);
-            } else {
-              // Determine MIME type from extension
-              const ext = image.path.split('.').pop()?.toLowerCase();
-              const mimeTypes: Record<string, string> = {
-                'png': 'image/png',
-                'jpg': 'image/jpeg',
-                'jpeg': 'image/jpeg',
-                'gif': 'image/gif',
-                'webp': 'image/webp',
-                'svg': 'image/svg+xml',
-                'bmp': 'image/bmp'
-              };
-              const mimeType = mimeTypes[ext || ''] || 'image/png';
-              setImageData(`data:${mimeType};base64,${result.content}`);
-            }
-            setLoading(false);
-            return;
-          } else if (result.error) {
-            console.error('[VisualDisplayWidget] Failed to read image file:', {
-              path: image.path,
-              error: result.error
-            });
-            setError(`Failed to load image: ${result.error}`);
-            setLoading(false);
-            return;
-          }
-        }
-
-        // Fall back to a renderer-loadable URL for local Electron images.
-        // `localAssetUrl` returns `nim-asset://` in Electron (the main window
-        // runs with `webSecurity: true` and cannot load `file://`) and
-        // `file://` for non-Electron consumers.
-        setImageData(localAssetUrl(image.path));
-        setLoading(false);
-      } catch (err) {
-        const errorMessage = err instanceof Error ? err.message : 'Unknown error';
-        console.error('[VisualDisplayWidget] Image load exception:', {
-          path: image.path,
-          error: errorMessage
-        });
-        setError(`Failed to load image: ${errorMessage}`);
-        setLoading(false);
-      }
-    };
-
-    loadImage();
-  }, [image.path, readFile]);
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center p-4 bg-nim-secondary rounded-md border border-nim">
-        <span className="text-nim-muted text-sm">Loading...</span>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="flex flex-col items-center gap-2 p-4 bg-nim-secondary rounded-md border border-nim">
-        <span className="text-nim-error text-sm">{error}</span>
-        <span className="font-mono text-xs text-nim-faint break-all">{image.path}</span>
-      </div>
-    );
-  }
-
-  const isGif = image.path.toLowerCase().endsWith('.gif');
-
-  return (
-    <div className="overflow-hidden rounded-md">
-      {isGif && imageData ? (
-        <GifPlayer
-          src={imageData}
-          alt={description || 'Animated GIF'}
-          className="max-w-full"
-        />
-      ) : (
-        <img
-          src={imageData || ''}
-          alt={description || 'Image'}
-          className="max-w-full h-auto block"
-          onError={(e) => {
-            console.error('[VisualDisplayWidget] Image element failed to load:', {
-              path: image.path,
-              src: imageData?.substring(0, 100) + (imageData && imageData.length > 100 ? '...' : '')
-            });
-            setError(`Failed to render image from: ${image.path}`);
-          }}
-        />
-      )}
-    </div>
-  );
-};
-
 /**
  * Render a chart item
  */
 const ChartItemRenderer: React.FC<{
   item: DisplayItem;
-  isDark: boolean;
-}> = ({ item, isDark }) => {
+}> = ({ item }) => {
   if (!item.chart) return null;
 
   const chartConfig: ChartConfig = {
@@ -650,30 +522,32 @@ const ChartItemRenderer: React.FC<{
     errorBars: item.chart.errorBars
   };
 
-  const colors = chartConfig.colors || getThemeColors(isDark);
-  const height = 300;
+  const colors = chartConfig.colors?.length ? chartConfig.colors : DEFAULT_CHART_COLORS;
 
   const renderChart = () => {
     switch (chartConfig.chartType) {
       case 'bar':
-        return renderBarChart(chartConfig, colors, isDark);
+        return renderBarChart(chartConfig, colors);
       case 'line':
-        return renderLineChart(chartConfig, colors, isDark);
+        return renderLineChart(chartConfig, colors);
       case 'pie':
         return renderPieChart(chartConfig, colors);
       case 'area':
-        return renderAreaChart(chartConfig, colors, isDark);
+        return renderAreaChart(chartConfig, colors);
       case 'scatter':
-        return renderScatterChart(chartConfig, colors, isDark);
+        return renderScatterChart(chartConfig, colors);
       default:
         return null;
     }
   };
 
   const errorFallback = (
-    <div className="p-3 rounded-md border border-nim-error bg-[color-mix(in_srgb,var(--nim-error)_10%,var(--nim-bg))]">
-      <p className="text-nim-muted text-sm mb-2">{item.description}</p>
-      <p className="text-nim-error text-sm">
+    <div
+      className="agent-elements-visual-display-chart-error rounded-[var(--an-spacing-xs)] border border-[color-mix(in_srgb,var(--an-diff-removed-text)_30%,transparent)] bg-[var(--an-diff-removed-bg)] p-[var(--an-spacing-sm)]"
+      data-testid="agent-elements-visual-display-chart-error"
+    >
+      <p className="mb-[var(--an-spacing-xs)] text-sm text-[var(--an-tool-color-muted)]">{item.description}</p>
+      <p className="text-sm text-[var(--an-diff-removed-text)]">
         Failed to render {chartConfig.chartType} chart. Check that data contains valid "{chartConfig.xAxisKey}" and "{Array.isArray(chartConfig.yAxisKey) ? chartConfig.yAxisKey.join(', ') : chartConfig.yAxisKey}" fields.
       </p>
     </div>
@@ -681,9 +555,15 @@ const ChartItemRenderer: React.FC<{
 
   return (
     <VisualErrorBoundary fallback={errorFallback} context={`${chartConfig.chartType} chart`}>
-      <div className="rounded-md overflow-hidden border border-nim bg-nim p-3" role="img" aria-label={`${chartConfig.chartType} chart: ${item.description}`}>
-        <p className="text-nim text-sm font-medium mb-3">{item.description}</p>
-        <div style={{ height }}>
+      <div
+        className="agent-elements-visual-display-chart overflow-hidden rounded-[var(--an-tool-border-radius)] border border-[var(--an-tool-border-color)] bg-[var(--an-background)] p-[var(--an-spacing-sm)]"
+        data-chart-type={chartConfig.chartType}
+        data-testid="agent-elements-visual-display-chart"
+        role="img"
+        aria-label={`${chartConfig.chartType} chart: ${item.description}`}
+      >
+        <p className="mb-[var(--an-spacing-sm)] text-sm font-medium text-[var(--an-tool-color)]">{item.description}</p>
+        <div className="agent-elements-visual-display-chart-frame h-[300px]">
           <ResponsiveContainer width="100%" height="100%">
             {renderChart()}
           </ResponsiveContainer>
@@ -701,56 +581,78 @@ const Lightbox: React.FC<{
   selectedIndex: number;
   onClose: () => void;
   onNavigate: (index: number) => void;
-  readFile?: (path: string) => Promise<{ success: boolean; content?: string; error?: string }>;
+  readFile?: VisualDisplayReadFile;
 }> = ({ images, selectedIndex, onClose, onNavigate, readFile }) => {
   return (
     <FullscreenModal
       isOpen={true}
       onClose={onClose}
       ariaLabel="Image lightbox"
-      contentClassName="max-w-[90vw] max-h-[90vh] flex flex-col items-center"
+      contentClassName="agent-elements-visual-display-lightbox max-w-[90vw] max-h-[90vh] flex flex-col items-center gap-[var(--an-spacing-sm)] rounded-[var(--an-tool-border-radius)] border border-[var(--an-tool-border-color)] bg-[var(--an-tool-background)] p-[var(--an-spacing-md)]"
     >
       <button
-        className="absolute top-2 right-2 w-10 h-10 p-2 bg-nim-secondary border border-nim rounded-full text-nim-muted cursor-pointer transition-all duration-200 flex items-center justify-center z-10 shadow-lg hover:bg-nim-hover hover:text-nim hover:scale-110"
+        className="agent-elements-visual-display-lightbox-close absolute right-[var(--an-spacing-sm)] top-[var(--an-spacing-sm)] z-10 inline-flex h-8 w-8 cursor-pointer items-center justify-center rounded-[var(--an-radius-sm)] border border-[var(--an-tool-border-color)] bg-[var(--an-tool-background)] p-0 text-[var(--an-tool-color-muted)] transition-colors duration-200 hover:bg-[var(--an-background-tertiary)] hover:text-[var(--an-tool-color)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--an-input-focus-outline,var(--an-tool-border-color))]"
+        data-testid="agent-elements-visual-display-lightbox-close"
         onClick={onClose}
-        aria-label="Close"
+        aria-label="Close image lightbox"
+        type="button"
       >
-        <span className="text-2xl leading-none">&times;</span>
+        <span aria-hidden="true">
+          <MaterialSymbol icon="close" size={18} />
+        </span>
       </button>
-      <div className="max-w-full max-h-[calc(90vh-3rem)]">
+      <div
+        className="agent-elements-visual-display-lightbox-image max-h-[calc(90vh-5rem)] max-w-full overflow-hidden rounded-[var(--an-tool-border-radius)]"
+        data-agent-elements-shell="visual-display-lightbox"
+        data-testid="agent-elements-visual-display-lightbox"
+      >
         <ImageDisplay
           image={images[selectedIndex].image!}
           description={images[selectedIndex].description}
           readFile={readFile}
         />
       </div>
-      <div className="mt-3 text-sm text-nim-muted font-mono bg-nim-secondary py-2 px-3 rounded text-center">
+      <div
+        className="agent-elements-visual-display-lightbox-caption max-w-full rounded-[var(--an-spacing-xs)] bg-[var(--an-background-tertiary)] px-[var(--an-spacing-sm)] py-[var(--an-spacing-xs)] text-center font-mono text-sm text-[var(--an-tool-color-muted)]"
+        data-testid="agent-elements-visual-display-lightbox-caption"
+      >
         {images[selectedIndex].description}
       </div>
       {images.length > 1 && (
-        <div className="flex items-center gap-3 mt-3">
+        <div className="agent-elements-visual-display-lightbox-controls flex items-center gap-[var(--an-spacing-sm)]">
           <button
-            className="w-10 h-10 flex items-center justify-center bg-nim-secondary border border-nim rounded-full text-nim-muted cursor-pointer transition-all duration-200 hover:bg-nim-hover hover:text-nim"
+            className="agent-elements-visual-display-lightbox-prev inline-flex h-8 w-8 cursor-pointer items-center justify-center rounded-[var(--an-radius-sm)] border border-[var(--an-tool-border-color)] bg-[var(--an-tool-background)] p-0 text-[var(--an-tool-color-muted)] transition-colors duration-200 hover:bg-[var(--an-background-tertiary)] hover:text-[var(--an-tool-color)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--an-input-focus-outline,var(--an-tool-border-color))]"
+            data-testid="agent-elements-visual-display-lightbox-prev"
             onClick={(e) => {
               e.stopPropagation();
               onNavigate((selectedIndex - 1 + images.length) % images.length);
             }}
-            aria-label="Previous"
+            aria-label="Previous image"
+            type="button"
           >
-            &larr;
+            <span aria-hidden="true">
+              <MaterialSymbol icon="arrow_back" size={18} />
+            </span>
           </button>
-          <span className="text-sm text-nim-muted font-mono">
+          <span
+            className="agent-elements-visual-display-lightbox-count min-w-12 text-center font-mono text-sm text-[var(--an-tool-color-muted)]"
+            data-testid="agent-elements-visual-display-lightbox-count"
+          >
             {selectedIndex + 1} / {images.length}
           </span>
           <button
-            className="w-10 h-10 flex items-center justify-center bg-nim-secondary border border-nim rounded-full text-nim-muted cursor-pointer transition-all duration-200 hover:bg-nim-hover hover:text-nim"
+            className="agent-elements-visual-display-lightbox-next inline-flex h-8 w-8 cursor-pointer items-center justify-center rounded-[var(--an-radius-sm)] border border-[var(--an-tool-border-color)] bg-[var(--an-tool-background)] p-0 text-[var(--an-tool-color-muted)] transition-colors duration-200 hover:bg-[var(--an-background-tertiary)] hover:text-[var(--an-tool-color)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--an-input-focus-outline,var(--an-tool-border-color))]"
+            data-testid="agent-elements-visual-display-lightbox-next"
             onClick={(e) => {
               e.stopPropagation();
               onNavigate((selectedIndex + 1) % images.length);
             }}
-            aria-label="Next"
+            aria-label="Next image"
+            type="button"
           >
-            &rarr;
+            <span aria-hidden="true">
+              <MaterialSymbol icon="arrow_forward" size={18} />
+            </span>
           </button>
         </div>
       )}
@@ -763,17 +665,20 @@ const Lightbox: React.FC<{
  */
 const ImageGallery: React.FC<{
   images: DisplayItem[];
-  readFile?: (path: string) => Promise<{ success: boolean; content?: string; error?: string }>;
+  readFile?: VisualDisplayReadFile;
 }> = ({ images, readFile }) => {
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
 
   const imagePaths = images.map(img => img.image?.path).filter(Boolean);
   const errorFallback = (
-    <div className="p-3 rounded-md border border-nim-error bg-[color-mix(in_srgb,var(--nim-error)_10%,var(--nim-bg))]">
-      <p className="text-nim-error text-sm">
+    <div
+      className="agent-elements-visual-display-gallery-error rounded-[var(--an-spacing-xs)] border border-[color-mix(in_srgb,var(--an-diff-removed-text)_30%,transparent)] bg-[var(--an-diff-removed-bg)] p-[var(--an-spacing-sm)]"
+      data-testid="agent-elements-visual-display-gallery-error"
+    >
+      <p className="text-sm text-[var(--an-diff-removed-text)]">
         Failed to render image gallery ({images.length} image{images.length !== 1 ? 's' : ''}).
         {imagePaths.length > 0 && (
-          <span className="block mt-1 text-nim-faint text-xs">
+          <span className="mt-[var(--an-spacing-xxs)] block text-xs text-[var(--an-tool-color-muted)]">
             Paths: {imagePaths.slice(0, 3).join(', ')}{imagePaths.length > 3 ? `, ...and ${imagePaths.length - 3} more` : ''}
           </span>
         )}
@@ -785,19 +690,28 @@ const ImageGallery: React.FC<{
 
   return (
     <VisualErrorBoundary fallback={errorFallback} context="image gallery">
-      <div className="rounded-md overflow-hidden">
-        <div className={`grid gap-2 ${isSingleImage ? 'grid-cols-1' : 'grid-cols-[repeat(auto-fill,minmax(150px,1fr))]'}`}>
+      <div
+        className="agent-elements-visual-display-gallery overflow-hidden rounded-[var(--an-tool-border-radius)]"
+        data-image-count={images.length}
+        data-testid="agent-elements-visual-display-gallery"
+      >
+        <div className={`grid gap-[var(--an-spacing-sm)] ${isSingleImage ? 'grid-cols-1' : 'grid-cols-[repeat(auto-fill,minmax(150px,1fr))]'}`}>
           {images.map((item, index) => (
-            <div
+            <button
               key={index}
-              className={`group cursor-pointer rounded-md overflow-hidden border border-nim bg-nim-secondary transition-all duration-200 hover:border-nim-primary hover:shadow-md ${isSingleImage ? 'max-w-full' : 'aspect-square'}`}
+              className={classNames(
+                'agent-elements-visual-display-image-card group cursor-pointer overflow-hidden rounded-[var(--an-tool-border-radius)] border border-[var(--an-tool-border-color)] bg-[var(--an-background-secondary)] p-0 text-left transition-colors duration-200 hover:border-[var(--an-primary-color)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--an-input-focus-outline,var(--an-tool-border-color))]',
+                isSingleImage ? 'max-w-full' : 'aspect-square',
+              )}
+              data-testid={`agent-elements-visual-display-image-card-${index}`}
               onClick={() => setSelectedIndex(index)}
+              type="button"
             >
               <div className={`${isSingleImage ? 'max-h-96' : 'w-full h-full'} overflow-hidden`}>
                 <ImageDisplay image={item.image!} description={item.description} readFile={readFile} />
               </div>
-              <div className="p-2 bg-nim-secondary text-xs text-nim-muted truncate">{item.description}</div>
-            </div>
+              <div className="agent-elements-visual-display-image-caption truncate bg-[var(--an-background-secondary)] p-[var(--an-spacing-xs)] text-xs text-[var(--an-tool-color-muted)]">{item.description}</div>
+            </button>
           ))}
         </div>
         {selectedIndex !== null && (
@@ -850,7 +764,6 @@ function groupItemsIntoSegments(items: DisplayItem[]): ItemSegment[] {
 
 export const VisualDisplayWidget: React.FC<CustomToolWidgetProps> = ({ message, readFile }) => {
   const tool = message.toolCall;
-  const isDark = useAtomValue(isDarkThemeAtom);
 
   if (!tool) {
     console.warn('[VisualDisplayWidget] No tool call in message');
@@ -927,17 +840,29 @@ export const VisualDisplayWidget: React.FC<CustomToolWidgetProps> = ({ message, 
     }
 
     return (
-      <div className="visual-display-widget rounded-md border border-nim-error bg-nim-secondary overflow-hidden" role="img" aria-label="Visual content error">
-        <div className="flex items-center gap-2 py-2 px-3 border-b border-nim bg-nim-tertiary">
-          <span className="text-sm font-medium text-nim">Visual</span>
-          <span className="text-xs font-semibold text-nim-error py-0.5 px-2 rounded-full bg-[color-mix(in_srgb,var(--nim-error)_15%,transparent)]">
-            Error
-          </span>
-        </div>
-        <div className="p-3 text-sm text-nim-error whitespace-pre-wrap">
+      <AgentToolCard
+        className="visual-display-widget agent-elements-visual-display-card"
+        data-agent-elements-shell="visual-display-error-card"
+        data-component="RichTranscriptAgentElementsVisualDisplay"
+        data-testid="agent-elements-visual-display-card"
+        icon={<MaterialSymbol icon="insert_chart" size={16} />}
+        status="error"
+        title="Visual Display"
+        trailing={(
+          <AgentStatusPill tone="error">
+            <span data-testid="agent-elements-visual-display-status">Error</span>
+          </AgentStatusPill>
+        )}
+      >
+        <div
+          className="agent-elements-visual-display-error whitespace-pre-wrap rounded-[var(--an-spacing-xs)] border border-[color-mix(in_srgb,var(--an-diff-removed-text)_30%,transparent)] bg-[var(--an-diff-removed-bg)] p-[var(--an-spacing-sm)] text-sm text-[var(--an-diff-removed-text)] select-text"
+          data-testid="agent-elements-visual-display-error"
+          role="img"
+          aria-label="Visual content error"
+        >
           {displayErrorMessage}
         </div>
-      </div>
+      </AgentToolCard>
     );
   }
 
@@ -955,29 +880,57 @@ export const VisualDisplayWidget: React.FC<CustomToolWidgetProps> = ({ message, 
   ].filter(Boolean).join(' and ');
 
   const errorFallback = (
-    <div className="visual-display-widget rounded-md border border-nim-error bg-nim-secondary overflow-hidden" role="img" aria-label="Visual content error">
-      <div className="flex items-center gap-2 py-2 px-3 border-b border-nim bg-nim-tertiary">
-        <span className="text-sm font-medium text-nim">Visual</span>
-        <span className="text-xs font-semibold text-nim-error py-0.5 px-2 rounded-full bg-[color-mix(in_srgb,var(--nim-error)_15%,transparent)]">
-          Error
-        </span>
-      </div>
-      <div className="p-3 text-sm text-nim-error">
+    <AgentToolCard
+      className="visual-display-widget agent-elements-visual-display-card"
+      data-agent-elements-shell="visual-display-error-card"
+      data-component="RichTranscriptAgentElementsVisualDisplay"
+      data-testid="agent-elements-visual-display-card"
+      icon={<MaterialSymbol icon="insert_chart" size={16} />}
+      status="error"
+      title="Visual Display"
+      trailing={(
+        <AgentStatusPill tone="error">
+          <span data-testid="agent-elements-visual-display-status">Error</span>
+        </AgentStatusPill>
+      )}
+    >
+      <div
+        className="agent-elements-visual-display-error rounded-[var(--an-spacing-xs)] border border-[color-mix(in_srgb,var(--an-diff-removed-text)_30%,transparent)] bg-[var(--an-diff-removed-bg)] p-[var(--an-spacing-sm)] text-sm text-[var(--an-diff-removed-text)] select-text"
+        data-testid="agent-elements-visual-display-error"
+      >
         Failed to render visual content ({contentSummary || 'unknown content'}).
       </div>
-    </div>
+    </AgentToolCard>
   );
 
   return (
     <VisualErrorBoundary fallback={errorFallback} context="main widget">
-      <div className="visual-display-widget flex flex-col gap-3" role="img" aria-label={`${items.length} visual item(s)`}>
+      <AgentToolCard
+        className="visual-display-widget agent-elements-visual-display-card"
+        data-agent-elements-shell="visual-display-card"
+        data-component="RichTranscriptAgentElementsVisualDisplay"
+        data-testid="agent-elements-visual-display-card"
+        icon={<MaterialSymbol icon={chartCount > 0 ? 'insert_chart' : 'image'} size={16} />}
+        status={tool.status === 'running' ? 'running' : 'completed'}
+        subtitle={contentSummary || `${items.length} visual item${items.length === 1 ? '' : 's'}`}
+        title="Visual Display"
+        trailing={(
+          <AgentStatusPill tone={tool.status === 'running' ? 'running' : 'success'}>
+            <span data-testid="agent-elements-visual-display-status">
+              {tool.status === 'running' ? 'Rendering' : 'Rendered'}
+            </span>
+          </AgentStatusPill>
+        )}
+        role="img"
+        aria-label={`${items.length} visual item(s)`}
+      >
+      <div className="agent-elements-visual-display-body flex flex-col gap-[var(--an-spacing-sm)]" data-testid="agent-elements-visual-display-body">
         {segments.map((segment, index) => {
           if (segment.type === 'chart') {
             return (
               <ChartItemRenderer
                 key={index}
                 item={segment.item}
-                isDark={isDark}
               />
             );
           } else {
@@ -991,6 +944,7 @@ export const VisualDisplayWidget: React.FC<CustomToolWidgetProps> = ({ message, 
           }
         })}
       </div>
+      </AgentToolCard>
     </VisualErrorBoundary>
   );
 };

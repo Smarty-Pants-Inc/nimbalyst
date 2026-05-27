@@ -4,6 +4,8 @@ import '@testing-library/jest-dom/vitest';
 import React from 'react';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import fs from 'node:fs';
+import path from 'node:path';
 import { ErrorDialog } from '../ErrorDialog';
 
 const copyToClipboardMock = vi.hoisted(() => vi.fn(() => Promise.resolve()));
@@ -43,6 +45,11 @@ const diffErrorDetails = {
   timestamp: '2026-05-24T04:20:00Z',
   filePath: '/workspace/docs/checkout.md',
 };
+
+const errorDialogSourcePath = path.join(
+  process.cwd(),
+  'packages/electron/src/renderer/components/ErrorDialog/ErrorDialog.tsx'
+);
 
 describe('ErrorDialog Agent Elements shell', () => {
   beforeEach(() => {
@@ -132,5 +139,18 @@ describe('ErrorDialog Agent Elements shell', () => {
 
     fireEvent.click(screen.getByTestId('agent-elements-error-dialog-close'));
     expect(onClose).toHaveBeenCalledTimes(1);
+  });
+
+  it('keeps Agent Elements dialog chrome on --an-* aliases instead of direct legacy visual tokens', () => {
+    const source = fs.readFileSync(errorDialogSourcePath, 'utf8');
+
+    expect(source).toContain('--an-code-background');
+    expect(source).toContain('--an-code-color');
+    expect(source).toContain('--an-error-color');
+    expect(source).toContain('--an-info-color');
+    expect(source).toContain('--an-diff-added-bg');
+    expect(source).toContain('--an-diff-removed-bg');
+    expect(source).toContain('--agent-elements-card-inline-padding');
+    expect(source).not.toMatch(/var\(--nim-(?:code|diff|error|info|primary-hover|text)[^)]+\)/);
   });
 });

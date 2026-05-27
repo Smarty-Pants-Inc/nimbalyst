@@ -279,13 +279,13 @@ Best for quick edits and tasks that do not require multi-file operations.`,
 
   return (
     <div
-      className="settings-sidebar agent-elements-settings-sidebar agent-elements-panel-sidebar w-[240px] shrink-0 border-r border-[var(--nim-border)] bg-[var(--nim-bg)] overflow-y-auto"
+      className="settings-sidebar agent-elements-settings-sidebar agent-elements-panel-sidebar w-[240px] shrink-0 overflow-y-auto border-r border-[var(--an-border-color)] bg-[var(--an-background)]"
       data-agent-elements-shell="settings-sidebar"
       data-component="SettingsSidebar"
       data-testid="agent-elements-settings-sidebar"
     >
       <div
-        className="settings-sidebar-content agent-elements-settings-sidebar-content p-3"
+        className="settings-sidebar-content agent-elements-settings-sidebar-content p-[var(--an-spacing-lg)]"
         data-agent-elements-shell="settings-sidebar-content"
         data-testid="agent-elements-settings-sidebar-content"
       >
@@ -294,19 +294,19 @@ Best for quick edits and tasks that do not require multi-file operations.`,
           return (
             <div
               key={group.title}
-              className="settings-sidebar-group agent-elements-settings-group mb-4"
+              className="settings-sidebar-group agent-elements-settings-group mb-[var(--an-spacing-xl)]"
               data-agent-elements-shell="settings-group"
               data-settings-group={group.title}
               data-testid={`agent-elements-settings-group-${groupId}`}
             >
               <div
-                className="settings-sidebar-group-title agent-elements-settings-group-title flex items-center gap-1.5 px-2 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-[var(--nim-text-muted)]"
+                className="settings-sidebar-group-title agent-elements-settings-group-title flex items-center gap-[var(--an-spacing-xs)] px-[var(--an-spacing-sm)] py-[var(--an-spacing-xs)] text-[11px] font-semibold uppercase text-[var(--an-foreground-subtle)]"
                 data-agent-elements-shell="settings-group-title"
               >
                 {group.title}
                 {group.infoTooltip && (
                   <span
-                    className="settings-sidebar-group-info agent-elements-settings-group-info cursor-help text-[var(--nim-text-faint)] hover:text-[var(--nim-text-muted)] transition-colors"
+                    className="settings-sidebar-group-info agent-elements-settings-group-info cursor-help text-[var(--an-foreground-subtle)] transition-[color] duration-150 ease-out hover:text-[var(--an-foreground-muted)]"
                     data-agent-elements-shell="settings-group-info"
                     onMouseEnter={(event) => handleTooltipEnter(event, group.infoTooltip!)}
                     onMouseLeave={handleTooltipLeave}
@@ -320,10 +320,10 @@ Best for quick edits and tasks that do not require multi-file operations.`,
                 .map((item) => (
                   <div
                     key={item.id}
-                    className={`settings-sidebar-item agent-elements-settings-nav-item flex items-center gap-2 px-2 py-1.5 rounded cursor-pointer text-sm transition-colors ${
+                    className={`settings-sidebar-item agent-elements-settings-nav-item flex cursor-pointer items-center gap-[var(--an-spacing-sm)] rounded-[var(--an-radius-sm)] px-[var(--an-spacing-sm)] py-[var(--an-spacing-xs)] text-sm transition-[background-color,color] duration-150 ease-out ${
                       selectedCategory === item.id
-                        ? 'bg-[var(--nim-bg-selected)] text-[var(--nim-text)]'
-                        : 'text-[var(--nim-text-muted)] hover:bg-[var(--nim-bg-hover)] hover:text-[var(--nim-text)]'
+                        ? 'bg-[var(--an-background-tertiary)] text-[var(--an-foreground)]'
+                        : 'text-[var(--an-foreground-muted)] hover:bg-[var(--an-background-secondary)] hover:text-[var(--an-foreground)]'
                     }`}
                     data-agent-elements-shell="settings-nav-item"
                     data-settings-category={item.id}
@@ -332,7 +332,7 @@ Best for quick edits and tasks that do not require multi-file operations.`,
                     onClick={() => onSelectCategory(item.id)}
                   >
                     <span
-                      className="settings-sidebar-item-icon agent-elements-settings-nav-icon flex items-center justify-center w-5 h-5 shrink-0 text-[var(--nim-text-muted)]"
+                      className="settings-sidebar-item-icon agent-elements-settings-nav-icon flex h-5 w-5 shrink-0 items-center justify-center text-[var(--an-foreground-muted)]"
                       data-agent-elements-shell="settings-nav-icon"
                     >
                       {item.icon}
@@ -341,7 +341,7 @@ Best for quick edits and tasks that do not require multi-file operations.`,
                     {item.isAlpha && <AlphaBadge size="xs" tooltip={SETTINGS_ALPHA_TOOLTIP} />}
                     {item.badge && (
                       <span
-                        className="settings-sidebar-item-badge agent-elements-status-pill text-[10px] font-medium px-1.5 py-0.5 rounded bg-[var(--nim-bg-tertiary)] text-[var(--nim-text-muted)]"
+                        className="settings-sidebar-item-badge agent-elements-status-pill rounded-[var(--an-radius-xs)] bg-[var(--an-background-tertiary)] px-[var(--an-spacing-xs)] py-[var(--an-spacing-xxs)] text-[10px] font-medium text-[var(--an-foreground-muted)]"
                         data-agent-elements-shell="settings-nav-badge"
                       >
                         {item.badge}
@@ -349,12 +349,12 @@ Best for quick edits and tasks that do not require multi-file operations.`,
                     )}
                     {item.statusDot && (
                       <span
-                        className={`settings-sidebar-item-status agent-elements-status-dot w-2 h-2 rounded-full shrink-0 ${
+                        className={`settings-sidebar-item-status agent-elements-status-dot h-2 w-2 shrink-0 rounded-full ${
                           item.statusDot === 'success'
-                            ? 'bg-[var(--nim-success)]'
+                            ? 'bg-[var(--an-success-color)]'
                             : item.statusDot === 'error'
-                            ? 'bg-[var(--nim-error)]'
-                            : 'bg-[var(--nim-warning)]'
+                            ? 'bg-[var(--an-error-color)]'
+                            : 'bg-[var(--an-warning-color)]'
                         }`}
                         data-agent-elements-shell="settings-nav-status"
                         data-tone={item.statusDot}
@@ -369,7 +369,7 @@ Best for quick edits and tasks that do not require multi-file operations.`,
       {tooltip &&
         createPortal(
           <div
-            className="settings-sidebar-tooltip agent-elements-settings-tooltip fixed z-[10000] max-w-[280px] px-3 py-2 bg-[var(--nim-bg-tertiary)] border border-[var(--nim-border)] rounded-lg shadow-lg text-sm text-[var(--nim-text)] whitespace-pre-wrap pointer-events-none transform -translate-y-1/2"
+            className="settings-sidebar-tooltip agent-elements-settings-tooltip pointer-events-none fixed z-[10000] max-w-[280px] -translate-y-1/2 whitespace-pre-wrap rounded-[var(--an-tool-border-radius)] border border-[var(--an-border-color)] bg-[var(--an-background-tertiary)] px-[var(--an-spacing-lg)] py-[var(--an-spacing-sm)] text-sm text-[var(--an-foreground)] shadow-[0_12px_30px_color-mix(in_srgb,var(--an-foreground)_12%,transparent)]"
             data-agent-elements-shell="settings-tooltip"
             style={{ top: `${tooltip.top}px`, left: `${tooltip.left}px` }}
           >

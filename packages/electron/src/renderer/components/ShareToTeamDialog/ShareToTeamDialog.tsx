@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useAtomValue } from 'jotai';
 import { MaterialSymbol } from '@nimbalyst/runtime';
 import { sharedDocumentsAtom } from '../../store/atoms/collabDocuments';
@@ -29,6 +29,40 @@ interface FolderNode {
   depth: number;
   children: FolderNode[];
 }
+
+const overlayClass =
+  'share-to-team-overlay agent-elements-share-to-team-backdrop fixed inset-0 z-[10000] flex items-center justify-center bg-[color-mix(in_srgb,var(--an-foreground)_14%,transparent)] p-[var(--an-spacing-xxl)]';
+const dialogClass =
+  'share-to-team-dialog agent-elements-share-to-team-dialog agent-elements-tool-card flex w-[min(92vw,460px)] flex-col overflow-hidden rounded-[var(--an-border-radius)] border border-[var(--an-border-color)] bg-[var(--an-background)] text-[var(--an-foreground)] shadow-[0_20px_60px_color-mix(in_srgb,var(--an-foreground)_10%,transparent)]';
+const headerClass =
+  'agent-elements-share-to-team-header flex items-start gap-[var(--an-spacing-md)] border-b border-[var(--an-border-color)] px-[var(--an-spacing-xxl)] pb-[var(--an-spacing-lg)] pt-[var(--an-spacing-xl)]';
+const bodyClass = 'agent-elements-share-to-team-body px-[var(--an-spacing-xxl)] py-[var(--an-spacing-xl)]';
+const sectionLabelClass = 'm-0 mb-[var(--an-spacing-xs)] text-[11px] font-medium text-[var(--an-foreground-subtle)]';
+const cardClass =
+  'rounded-[var(--an-tool-border-radius)] border border-[var(--an-border-color)] bg-[var(--an-background-secondary)]';
+const inputShellClass =
+  'agent-elements-share-to-team-name-field flex items-center gap-[var(--an-spacing-sm)] rounded-[var(--an-tool-border-radius)] border border-[var(--an-input-border-color)] bg-[var(--an-input-background)] px-[var(--an-spacing-sm)] transition-[border-color,box-shadow] duration-150 ease-out focus-within:border-[var(--an-input-focus-outline)] focus-within:ring-2 focus-within:ring-[var(--an-input-focus-outline)]';
+const inputClass =
+  'agent-elements-share-to-team-name-input min-w-0 flex-1 border-0 bg-transparent py-[var(--an-spacing-sm)] text-[13px] text-[var(--an-input-color)] outline-none placeholder:text-[var(--an-input-placeholder-color)]';
+const inlineInputClass =
+  'agent-elements-share-to-team-new-folder-input min-w-0 flex-1 rounded-[var(--an-input-border-radius)] border border-[var(--an-input-focus-outline)] bg-[var(--an-input-background)] px-[var(--an-spacing-sm)] py-[var(--an-spacing-xs)] text-[13px] text-[var(--an-input-color)] outline-none focus:ring-2 focus:ring-[var(--an-input-focus-outline)]';
+const iconShellClass =
+  'inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-[var(--an-tool-border-radius)] border border-[var(--an-border-color)] bg-[var(--an-background-secondary)] text-[var(--an-primary-color)]';
+const subtleIconClass = 'inline-flex shrink-0 items-center justify-center text-[var(--an-foreground-subtle)]';
+const folderIconClass = 'inline-flex h-5 w-5 shrink-0 items-center justify-center text-[var(--an-foreground-muted)]';
+const selectedFolderIconClass = 'inline-flex h-5 w-5 shrink-0 items-center justify-center text-[var(--an-primary-color)]';
+const folderRowBaseClass =
+  'agent-elements-share-to-team-folder-row group relative flex cursor-pointer items-center gap-[var(--an-spacing-xs)] rounded-[var(--an-tool-border-radius)] border px-[var(--an-spacing-sm)] py-[var(--an-spacing-xs)] text-[13px] transition-[background-color,border-color,color,box-shadow] duration-150 ease-out focus:outline-none focus:ring-2 focus:ring-[var(--an-input-focus-outline)]';
+const folderRowIdleClass =
+  'border-transparent bg-transparent text-[var(--an-foreground)] hover:border-[var(--an-border-color)] hover:bg-[var(--an-background-tertiary)]';
+const folderRowSelectedClass =
+  'border-[color-mix(in_srgb,var(--an-primary-color)_24%,var(--an-border-color))] bg-[color-mix(in_srgb,var(--an-primary-color)_10%,var(--an-background))] text-[var(--an-foreground)] shadow-[inset_0_0_0_1px_color-mix(in_srgb,var(--an-primary-color)_14%,transparent)]';
+const badgeClass =
+  'agent-elements-share-to-team-badge rounded-full border border-[color-mix(in_srgb,var(--an-primary-color)_22%,var(--an-border-color))] bg-[color-mix(in_srgb,var(--an-primary-color)_10%,var(--an-background))] px-2 py-0.5 text-[10px] font-medium leading-none text-[var(--an-primary-color)]';
+const secondaryButtonClass =
+  'inline-flex min-h-8 cursor-pointer items-center justify-center gap-[var(--an-spacing-xs)] rounded-[var(--an-input-border-radius)] border border-[var(--an-border-color)] bg-[var(--an-background)] px-3 py-1.5 text-[13px] font-medium text-[var(--an-foreground-muted)] transition-[background-color,border-color,color] duration-150 ease-out hover:bg-[var(--an-background-tertiary)] hover:text-[var(--an-foreground)] focus:outline-none focus:ring-2 focus:ring-[var(--an-input-focus-outline)]';
+const primaryButtonClass =
+  'inline-flex min-h-8 items-center justify-center gap-[var(--an-spacing-xs)] rounded-[var(--an-input-border-radius)] border border-[var(--an-primary-color)] bg-[var(--an-primary-color)] px-3.5 py-1.5 text-[13px] font-medium text-[var(--an-send-button-color)] transition-[background-color,border-color,color] duration-150 ease-out hover:border-[color-mix(in_srgb,var(--an-primary-color)_82%,var(--an-foreground))] hover:bg-[color-mix(in_srgb,var(--an-primary-color)_88%,var(--an-foreground))] focus:outline-none focus:ring-2 focus:ring-[var(--an-input-focus-outline)] disabled:cursor-not-allowed disabled:opacity-50';
 
 // Build a folder-only tree from existing shared-document titles + custom folders.
 // Document titles look like "Engineering/Design Reviews/foo.md"; we strip the
@@ -93,6 +127,7 @@ export function ShareToTeamDialog({
   const [sharedName, setSharedName] = useState<string>(fileName);
   const [newFolderParent, setNewFolderParent] = useState<string | null>(null);
   const [newFolderName, setNewFolderName] = useState<string>('');
+  const hasSeededSelectionRef = useRef(false);
 
   // Reset transient state every time the dialog opens for a different file.
   useEffect(() => {
@@ -100,6 +135,7 @@ export function ShareToTeamDialog({
     setSharedName(fileName);
     setNewFolderParent(null);
     setNewFolderName('');
+    hasSeededSelectionRef.current = false;
   }, [isOpen, fileName]);
 
   // Load workspace-persisted state: custom folders + last-shared folder.
@@ -161,6 +197,8 @@ export function ShareToTeamDialog({
   // After state loads, seed the selection + expanded state from last-used.
   useEffect(() => {
     if (!isOpen || !hasLoadedState) return;
+    if (hasSeededSelectionRef.current) return;
+    hasSeededSelectionRef.current = true;
     const candidate =
       hasLastSharedFolder && lastSharedFolder === ''
         ? ''
@@ -271,52 +309,46 @@ export function ShareToTeamDialog({
               setSelectedFolder(node.path);
             }
           }}
-          className={`relative flex items-center gap-1 px-2 py-1.5 rounded text-[13px] cursor-pointer select-none ${
-            isSelected
-              ? 'bg-[var(--nim-primary)]/20 text-[var(--nim-text)]'
-              : 'text-[var(--nim-text)] hover:bg-[var(--nim-bg-tertiary)]'
-          }`}
+          className={`${folderRowBaseClass} ${isSelected ? folderRowSelectedClass : folderRowIdleClass}`}
+          data-agent-elements-shell="share-to-team-folder-row"
+          data-folder-path={node.path}
           style={{ paddingLeft: depthPx }}
         >
-          {isSelected && (
-            <span
-              aria-hidden
-              className="absolute left-0 top-1 bottom-1 w-0.5 rounded bg-[var(--nim-primary)]"
-            />
-          )}
           <button
             type="button"
             onClick={(e) => {
               e.stopPropagation();
               if (hasChildren) toggleFolder(node.path);
             }}
-            className={`w-4 h-4 inline-flex items-center justify-center text-[var(--nim-text-faint)] ${
+            className={`inline-flex h-5 w-5 items-center justify-center rounded-[var(--an-radius-xs)] text-[var(--an-foreground-subtle)] transition-[background-color,color] duration-150 ease-out ${
               hasChildren ? 'cursor-pointer' : 'cursor-default invisible'
             }`}
             aria-label={isExpanded ? 'Collapse' : 'Expand'}
           >
-            <MaterialSymbol icon={isExpanded ? 'expand_more' : 'chevron_right'} size={16} />
+            <MaterialSymbol icon={isExpanded ? 'expand_more' : 'chevron_right'} size={16} aria-hidden="true" />
           </button>
           <span
-            className={`inline-flex items-center justify-center ${
-              isSelected ? 'text-[var(--nim-primary)]' : 'text-[var(--nim-text-muted)]'
-            }`}
+            className={isSelected ? selectedFolderIconClass : folderIconClass}
+            aria-hidden="true"
           >
             <MaterialSymbol icon={isExpanded ? 'folder_open' : 'folder'} size={18} />
           </span>
           <span className="flex-1 truncate">{node.name}</span>
           {isLastUsed && (
-            <span className="text-[10px] font-medium uppercase tracking-wide px-1.5 py-0.5 rounded-full bg-[var(--nim-primary)]/15 text-[var(--nim-primary)]">
+            <span className={badgeClass} data-agent-elements-shell="share-to-team-badge">
               last used
             </span>
           )}
         </div>
         {showInlineNewFolder && (
           <div
-            className="flex items-center gap-2 py-1"
+            className="agent-elements-share-to-team-inline-folder flex items-center gap-[var(--an-spacing-sm)] py-[var(--an-spacing-xs)]"
+            data-agent-elements-shell="share-to-team-inline-folder"
             style={{ paddingLeft: depthPx + 18 }}
           >
-            <MaterialSymbol icon="create_new_folder" size={14} className="text-[var(--nim-primary)]" />
+            <span className={subtleIconClass} aria-hidden="true">
+              <MaterialSymbol icon="create_new_folder" size={14} />
+            </span>
             <input
               autoFocus
               type="text"
@@ -333,7 +365,7 @@ export function ShareToTeamDialog({
               }}
               onBlur={commitNewFolder}
               placeholder="Folder name"
-              className="flex-1 bg-[var(--nim-bg)] border border-[var(--nim-primary)] rounded text-[13px] text-[var(--nim-text)] px-2 py-1 outline-none"
+              className={inlineInputClass}
             />
           </div>
         )}
@@ -351,56 +383,77 @@ export function ShareToTeamDialog({
 
   return (
     <div
-      className="share-to-team-overlay fixed inset-0 z-[10000] flex items-center justify-center bg-black/60"
+      className={overlayClass}
+      data-component="ShareToTeamDialogBackdrop"
+      data-testid="agent-elements-share-to-team-backdrop"
+      data-agent-elements-shell="share-to-team-backdrop"
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
       <div
-        className="share-to-team-dialog w-[460px] max-w-[92%] bg-[var(--nim-bg)] border border-[var(--nim-border)] rounded-xl shadow-2xl overflow-hidden"
+        className={dialogClass}
         onClick={(e) => e.stopPropagation()}
         role="dialog"
         aria-label="Share to Team"
+        data-component="ShareToTeamDialog"
+        data-testid="agent-elements-share-to-team-dialog"
+        data-agent-elements-shell="share-to-team-dialog"
       >
-        {/* Header */}
-        <div className="flex items-start gap-3 px-5 pt-4 pb-3 border-b border-[var(--nim-border)]">
-          <div className="w-7 h-7 rounded-md bg-[var(--nim-primary)]/15 text-[var(--nim-primary)] flex items-center justify-center shrink-0 mt-0.5">
+        <div
+          className={headerClass}
+          data-testid="agent-elements-share-to-team-header"
+          data-agent-elements-shell="share-to-team-header"
+        >
+          <div className={iconShellClass} data-agent-elements-shell="share-to-team-icon" aria-hidden="true">
             <MaterialSymbol icon="group" size={18} />
           </div>
-          <div className="flex-1 min-w-0">
-            <h2 className="text-[14px] font-semibold text-[var(--nim-text)] m-0 leading-tight">
+          <div className="min-w-0 flex-1">
+            <h2 className="m-0 text-sm font-medium leading-snug text-[var(--an-foreground)]">
               Share to Team
             </h2>
-            <p className="text-[12px] text-[var(--nim-text-faint)] m-0 mt-0.5 leading-snug">
+            <p className="m-0 mt-1 text-xs leading-relaxed text-[var(--an-foreground-muted)]">
               Pick where this document should live in your team space.
             </p>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="text-[var(--nim-text-faint)] hover:text-[var(--nim-text)] hover:bg-[var(--nim-bg-tertiary)] w-6 h-6 rounded inline-flex items-center justify-center"
+            className="agent-elements-share-to-team-close inline-flex h-8 w-8 cursor-pointer items-center justify-center rounded-[var(--an-input-border-radius)] border border-transparent bg-transparent p-0 text-[var(--an-foreground-muted)] transition-[background-color,border-color,color] duration-150 ease-out hover:border-[var(--an-border-color)] hover:bg-[var(--an-background-tertiary)] hover:text-[var(--an-foreground)] focus:outline-none focus:ring-2 focus:ring-[var(--an-input-focus-outline)]"
             aria-label="Close"
+            data-agent-elements-shell="share-to-team-close"
           >
-            <MaterialSymbol icon="close" size={16} />
+            <MaterialSymbol icon="close" size={16} aria-hidden="true" />
           </button>
         </div>
 
-        {/* Body */}
-        <div className="px-5 pt-3 pb-2">
-          <div className="text-[11px] uppercase tracking-wider font-semibold text-[var(--nim-text-faint)] mb-1.5">
+        <div className={bodyClass} data-agent-elements-shell="share-to-team-body">
+          <div className={sectionLabelClass}>
             Source file
           </div>
-          <div className="flex items-center gap-2.5 px-3 py-2 bg-[var(--nim-bg-secondary)] border border-[var(--nim-border-subtle,var(--nim-border))] rounded-md mb-4">
-            <MaterialSymbol icon="description" size={20} className="text-[var(--nim-primary)] shrink-0" />
-            <div className="min-w-0 flex-1">
-              <div className="text-[13px] font-medium text-[var(--nim-text)] truncate">{fileName}</div>
-              <div className="text-[11px] text-[var(--nim-text-faint)] truncate">{sourceRelPath}</div>
+          <div
+            className={`agent-elements-share-to-team-source mb-[var(--an-spacing-xl)] flex items-center gap-[var(--an-spacing-sm)] px-[var(--an-spacing-lg)] py-[var(--an-spacing-md)] ${cardClass}`}
+            data-testid="agent-elements-share-to-team-source"
+            data-agent-elements-shell="share-to-team-source"
+          >
+            <span className={selectedFolderIconClass} aria-hidden="true">
+              <MaterialSymbol icon="description" size={20} />
+            </span>
+            <div className="min-w-0 flex-1 select-text">
+              <div className="truncate text-[13px] font-medium text-[var(--an-foreground)]">{fileName}</div>
+              <div className="truncate text-[11px] text-[var(--an-foreground-subtle)]">{sourceRelPath}</div>
             </div>
           </div>
 
-          <div className="text-[11px] uppercase tracking-wider font-semibold text-[var(--nim-text-faint)] mb-1.5">
+          <div className={sectionLabelClass}>
             Shared name
           </div>
-          <div className="flex items-center gap-1.5 px-2 bg-[var(--nim-bg-secondary)] border border-[var(--nim-border-subtle,var(--nim-border))] rounded-md mb-4 focus-within:border-[var(--nim-primary)]">
-            <MaterialSymbol icon="edit" size={14} className="text-[var(--nim-text-faint)]" />
+          <div
+            className={`${inputShellClass} mb-[var(--an-spacing-xl)]`}
+            data-testid="agent-elements-share-to-team-name-field"
+            data-agent-elements-shell="share-to-team-name-field"
+          >
+            <span className={subtleIconClass} aria-hidden="true">
+              <MaterialSymbol icon="edit" size={14} />
+            </span>
             <input
               type="text"
               value={sharedName}
@@ -411,26 +464,32 @@ export function ShareToTeamDialog({
                   handleConfirm();
                 }
               }}
-              className="flex-1 bg-transparent border-none text-[var(--nim-text)] text-[13px] py-2 outline-none font-inherit"
+              className={inputClass}
+              data-testid="agent-elements-share-to-team-name-input"
               placeholder="document.md"
             />
           </div>
 
-          <div className="flex items-center justify-between mb-1.5">
-            <div className="text-[11px] uppercase tracking-wider font-semibold text-[var(--nim-text-faint)]">
+          <div className="mb-[var(--an-spacing-xs)] flex items-center justify-between gap-[var(--an-spacing-sm)]">
+            <div className={sectionLabelClass}>
               Destination folder
             </div>
             <button
               type="button"
               onClick={() => beginNewFolder(selectedFolder || null)}
-              className="text-[11px] text-[var(--nim-primary)] hover:underline inline-flex items-center gap-1"
+              className="agent-elements-share-to-team-new-folder inline-flex cursor-pointer items-center gap-[var(--an-spacing-xs)] rounded-[var(--an-input-border-radius)] border border-transparent bg-transparent px-2 py-1 text-[11px] font-medium text-[var(--an-primary-color)] transition-[background-color,border-color,color] duration-150 ease-out hover:border-[var(--an-border-color)] hover:bg-[var(--an-background-tertiary)] focus:outline-none focus:ring-2 focus:ring-[var(--an-input-focus-outline)]"
+              data-agent-elements-shell="share-to-team-new-folder"
             >
-              <MaterialSymbol icon="create_new_folder" size={13} />
+              <MaterialSymbol icon="create_new_folder" size={13} aria-hidden="true" />
               New folder
             </button>
           </div>
-          <div className="share-to-team-tree bg-[var(--nim-bg-secondary)] border border-[var(--nim-border-subtle,var(--nim-border))] rounded-md p-1 mb-3 max-h-[240px] overflow-y-auto">
-            {/* Team root row */}
+          <div
+            className={`share-to-team-tree agent-elements-share-to-team-tree nim-scrollbar mb-[var(--an-spacing-lg)] max-h-[240px] overflow-y-auto p-[var(--an-spacing-xs)] ${cardClass}`}
+            role="tree"
+            data-testid="agent-elements-share-to-team-tree"
+            data-agent-elements-shell="share-to-team-tree"
+          >
             <div
               role="treeitem"
               aria-selected={selectedFolder === ''}
@@ -442,25 +501,20 @@ export function ShareToTeamDialog({
                   setSelectedFolder('');
                 }
               }}
-              className={`relative flex items-center gap-1 px-2 py-1.5 rounded text-[13px] cursor-pointer select-none ${
-                selectedFolder === ''
-                  ? 'bg-[var(--nim-primary)]/20 text-[var(--nim-text)]'
-                  : 'text-[var(--nim-text)] hover:bg-[var(--nim-bg-tertiary)]'
-              }`}
+              className={`${folderRowBaseClass} ${selectedFolder === '' ? folderRowSelectedClass : folderRowIdleClass}`}
+              data-agent-elements-shell="share-to-team-folder-row"
+              data-folder-path=""
               style={{ paddingLeft: 8 }}
             >
-              {selectedFolder === '' && (
-                <span aria-hidden className="absolute left-0 top-1 bottom-1 w-0.5 rounded bg-[var(--nim-primary)]" />
-              )}
-              <span className="w-4 h-4 inline-flex items-center justify-center text-[var(--nim-text-faint)] invisible">
+              <span className="invisible inline-flex h-5 w-5 items-center justify-center text-[var(--an-foreground-subtle)]" aria-hidden="true">
                 <MaterialSymbol icon="chevron_right" size={16} />
               </span>
-              <span className={`inline-flex items-center justify-center ${selectedFolder === '' ? 'text-[var(--nim-primary)]' : 'text-[var(--nim-text-muted)]'}`}>
+              <span className={selectedFolder === '' ? selectedFolderIconClass : folderIconClass} aria-hidden="true">
                 <MaterialSymbol icon="workspaces" size={18} />
               </span>
               <span className="flex-1 truncate">Team root</span>
               {hasLastSharedFolder && lastSharedFolder === '' && (
-                <span className="text-[10px] font-medium uppercase tracking-wide px-1.5 py-0.5 rounded-full bg-[var(--nim-primary)]/15 text-[var(--nim-primary)]">
+                <span className={badgeClass} data-agent-elements-shell="share-to-team-badge">
                   last used
                 </span>
               )}
@@ -470,8 +524,13 @@ export function ShareToTeamDialog({
 
             {/* Inline new-folder input at root level */}
             {isRootCreateOpen && (
-              <div className="flex items-center gap-2 py-1 px-2">
-                <MaterialSymbol icon="create_new_folder" size={14} className="text-[var(--nim-primary)]" />
+              <div
+                className="agent-elements-share-to-team-inline-folder flex items-center gap-[var(--an-spacing-sm)] px-[var(--an-spacing-sm)] py-[var(--an-spacing-xs)]"
+                data-agent-elements-shell="share-to-team-inline-folder"
+              >
+                <span className={subtleIconClass} aria-hidden="true">
+                  <MaterialSymbol icon="create_new_folder" size={14} />
+                </span>
                 <input
                   autoFocus
                   type="text"
@@ -488,30 +547,39 @@ export function ShareToTeamDialog({
                   }}
                   onBlur={commitNewFolder}
                   placeholder="Folder name"
-                  className="flex-1 bg-[var(--nim-bg)] border border-[var(--nim-primary)] rounded text-[13px] text-[var(--nim-text)] px-2 py-1 outline-none"
+                  className={inlineInputClass}
                 />
               </div>
             )}
           </div>
 
-          <div className="flex items-center gap-2 px-3 py-2 bg-[var(--nim-bg-secondary)] border border-[var(--nim-border-subtle,var(--nim-border))] rounded-md mb-3 text-[12px] text-[var(--nim-text-muted)]">
-            <MaterialSymbol icon="place" size={14} className="text-[var(--nim-text-faint)]" />
+          <div
+            className={`agent-elements-share-to-team-summary flex items-center gap-[var(--an-spacing-sm)] px-[var(--an-spacing-lg)] py-[var(--an-spacing-md)] text-[12px] text-[var(--an-foreground-muted)] ${cardClass}`}
+            data-testid="agent-elements-share-to-team-summary"
+            data-agent-elements-shell="share-to-team-summary"
+          >
+            <span className={subtleIconClass} aria-hidden="true">
+              <MaterialSymbol icon="place" size={14} />
+            </span>
             <span>Will be shared as</span>
-            <span className="text-[var(--nim-text)] font-medium truncate" title={destinationFolderLabel}>
+            <span className="truncate font-medium text-[var(--an-foreground)]" title={destinationFolderLabel}>
               {destinationFullPath}
             </span>
-            <span className="text-[var(--nim-primary)] truncate" title={sharedName}>
+            <span className="truncate text-[var(--an-primary-color)]" title={sharedName}>
               {sharedName || fileName}
             </span>
           </div>
         </div>
 
-        {/* Footer */}
-        <div className="flex justify-end gap-2 px-5 py-3 border-t border-[var(--nim-border)]">
+        <div
+          className="agent-elements-share-to-team-actions flex justify-end gap-[var(--an-spacing-sm)] border-t border-[var(--an-border-color)] bg-[var(--an-background-secondary)] px-[var(--an-spacing-xxl)] py-[var(--an-spacing-lg)]"
+          data-testid="agent-elements-share-to-team-actions"
+          data-agent-elements-shell="share-to-team-actions"
+        >
           <button
             type="button"
             onClick={onClose}
-            className="px-3 py-1.5 bg-transparent rounded-md text-[var(--nim-text-muted)] text-[13px] hover:bg-[var(--nim-bg-tertiary)] hover:text-[var(--nim-text)]"
+            className={secondaryButtonClass}
           >
             Cancel
           </button>
@@ -519,13 +587,9 @@ export function ShareToTeamDialog({
             type="button"
             onClick={handleConfirm}
             disabled={!sharedName.trim()}
-            className={`px-3.5 py-1.5 rounded-md text-[13px] font-medium inline-flex items-center gap-1.5 ${
-              sharedName.trim()
-                ? 'bg-[var(--nim-primary)] text-[#0f1115] hover:bg-[var(--nim-primary-hover)] hover:text-white cursor-pointer'
-                : 'bg-[var(--nim-primary)] text-[#0f1115] opacity-50 cursor-not-allowed'
-            }`}
+            className={primaryButtonClass}
           >
-            <MaterialSymbol icon="group_add" size={16} />
+            <MaterialSymbol icon="group_add" size={16} aria-hidden="true" />
             Share to Team
           </button>
         </div>

@@ -22,11 +22,52 @@ interface ProjectPermissionsPanelProps {
   workspaceName: string;
 }
 
+const cardPaddingClass =
+  '[--agent-elements-card-block-padding:var(--an-spacing-lg)] [--agent-elements-card-inline-padding:var(--an-spacing-lg)]';
+const compactCardPaddingClass =
+  '[--agent-elements-card-block-padding:var(--an-spacing-sm)] [--agent-elements-card-inline-padding:var(--an-spacing-md)]';
+const roomyCardPaddingClass =
+  '[--agent-elements-card-block-padding:var(--an-spacing-xl)] [--agent-elements-card-inline-padding:var(--an-spacing-xl)]';
+const panelClassName =
+  'settings-panel-content project-permissions-panel agent-elements-settings-panel flex h-full w-full flex-col gap-[var(--an-spacing-xl)] p-[var(--an-spacing-xxl)] text-[var(--an-foreground)]';
+const panelHeaderClassName =
+  'settings-panel-header agent-elements-settings-panel-header border-b border-[var(--an-border-color)] pb-[var(--an-spacing-xl)]';
+const panelTitleClassName =
+  'm-0 mb-[var(--an-spacing-sm)] text-xl font-semibold leading-tight text-[var(--an-foreground)]';
+const panelDescriptionClassName =
+  'm-0 text-sm leading-relaxed text-[var(--an-foreground-muted)]';
+const inlineCodeClassName =
+  'rounded-[var(--an-radius-xs)] bg-[var(--an-background-tertiary)] px-[var(--an-spacing-xs)] py-[var(--an-spacing-xxs)] text-xs text-[var(--an-code-color)]';
+const emptyStateClassName =
+  `settings-panel-empty agent-elements-empty-state agent-elements-tool-card border-dashed text-center text-sm leading-relaxed text-[var(--an-foreground-muted)] ${roomyCardPaddingClass}`;
+const loadingStateClassName =
+  `settings-panel-loading agent-elements-loading-state agent-elements-tool-card border-dashed text-center text-sm leading-relaxed text-[var(--an-foreground-muted)] ${roomyCardPaddingClass}`;
+const sectionClassName =
+  'permissions-section agent-elements-settings-section flex flex-col gap-[var(--an-spacing-md)] border-b border-[var(--an-border-color)] pb-[var(--an-spacing-xl)] last:border-b-0 last:pb-0';
+const sectionHeaderClassName =
+  'permissions-section-header flex items-center gap-[var(--an-spacing-sm)] text-sm font-medium text-[var(--an-foreground)]';
+const sectionDescriptionClassName =
+  'permissions-section-description m-0 text-xs leading-relaxed text-[var(--an-foreground-muted)]';
+const countPillClassName =
+  'permissions-section-count rounded-[var(--an-radius-xs)] bg-[var(--an-background-tertiary)] px-[var(--an-spacing-xs)] py-[var(--an-spacing-xxs)] text-xs text-[var(--an-foreground-muted)]';
+const secondaryButtonClassName =
+  'btn-secondary inline-flex cursor-pointer items-center justify-center gap-[var(--an-spacing-xs)] rounded-[var(--an-radius-sm)] border border-[var(--an-border-color)] bg-transparent px-[var(--an-spacing-md)] py-[var(--an-spacing-xs)] text-xs font-medium text-[var(--an-foreground-muted)] transition-[background-color,border-color,color,opacity] duration-150 ease-out hover:border-[var(--an-primary-color)] hover:bg-[var(--an-background-tertiary)] hover:text-[var(--an-foreground)] disabled:cursor-not-allowed disabled:opacity-50';
+const primaryButtonClassName =
+  'btn-primary inline-flex cursor-pointer items-center justify-center gap-[var(--an-spacing-xs)] rounded-[var(--an-radius-sm)] border border-[var(--an-primary-color)] bg-[var(--an-primary-color)] px-[var(--an-spacing-md)] py-[var(--an-spacing-xs)] text-xs font-medium text-[var(--an-send-button-color)] transition-[background-color,border-color,opacity] duration-150 ease-out hover:border-[color-mix(in_srgb,var(--an-primary-color)_82%,var(--an-foreground))] hover:bg-[color-mix(in_srgb,var(--an-primary-color)_88%,var(--an-foreground))] disabled:cursor-not-allowed disabled:opacity-50';
+const removeButtonClassName =
+  'flex h-6 w-6 cursor-pointer items-center justify-center rounded-[var(--an-radius-xs)] border-none bg-transparent text-[var(--an-foreground-muted)] transition-[background-color,color] duration-150 ease-out hover:bg-[var(--an-background-tertiary)] hover:text-[var(--an-error-color)]';
+const rowClassName =
+  'agent-elements-permission-row flex items-center justify-between gap-[var(--an-spacing-md)] rounded-[var(--an-tool-border-radius)] border border-[var(--an-border-color)] bg-[var(--an-background-secondary)] px-[var(--agent-elements-card-inline-padding,var(--an-spacing-md))] py-[var(--agent-elements-card-block-padding,var(--an-spacing-sm))] text-left';
+const listEmptyClassName =
+  `permissions-empty-state agent-elements-empty-state rounded-[var(--an-tool-border-radius)] border border-dashed border-[var(--an-border-color)] bg-[var(--an-background-secondary)] text-xs leading-relaxed text-[var(--an-foreground-muted)] ${compactCardPaddingClass}`;
+const inputClassName =
+  'permissions-url-input agent-elements-input rounded-[var(--an-input-border-radius)] border border-[var(--an-input-border-color)] bg-[var(--an-input-background)] px-[var(--an-spacing-md)] py-[var(--an-spacing-sm)] text-sm text-[var(--an-input-color)] outline-none transition-[background-color,border-color,color] duration-150 ease-out placeholder:text-[var(--an-input-placeholder-color)] focus:border-[var(--an-input-focus-border)] focus:ring-2 focus:ring-[var(--an-focus-ring)]';
+
 const getPermissionModeOptionClassName = (isActive: boolean) => (
-  `permissions-mode-option agent-elements-permission-mode-option flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${
+  `permissions-mode-option agent-elements-permission-mode-option agent-elements-tool-card flex-row cursor-pointer items-start ${compactCardPaddingClass} transition-[background-color,border-color,color] duration-150 ease-out ${
     isActive
-      ? 'border-[var(--nim-primary)] bg-[var(--nim-primary)]/5'
-      : 'border-[var(--nim-border)] bg-[var(--nim-bg-secondary)] hover:bg-[var(--nim-bg-hover)]'
+      ? 'border-[var(--an-primary-color)] bg-[color-mix(in_srgb,var(--an-primary-color)_8%,var(--an-background))]'
+      : 'border-[var(--an-border-color)] bg-[var(--an-background-secondary)] hover:bg-[var(--an-background-tertiary)]'
   }`
 );
 
@@ -251,14 +292,14 @@ export const ProjectPermissionsPanel: React.FC<ProjectPermissionsPanelProps> = (
   if (!workspacePath) {
     return (
       <div
-        className="settings-panel-content agent-elements-settings-panel agent-elements-project-permissions-panel flex flex-col p-6"
+        className={panelClassName}
         data-agent-elements-shell="project-permissions-panel"
         data-component="ProjectPermissionsPanel"
         data-testid="agent-elements-project-permissions-panel"
         data-workspace-bound="false"
       >
         <div
-          className="settings-panel-empty agent-elements-empty-state text-center py-12 text-[var(--nim-text-muted)]"
+          className={emptyStateClassName}
           data-agent-elements-shell="project-permissions-empty-state"
         >
           <p>Open a workspace to configure agent permissions.</p>
@@ -270,14 +311,14 @@ export const ProjectPermissionsPanel: React.FC<ProjectPermissionsPanelProps> = (
   if (loading) {
     return (
       <div
-        className="settings-panel-content agent-elements-settings-panel agent-elements-project-permissions-panel flex flex-col p-6"
+        className={panelClassName}
         data-agent-elements-shell="project-permissions-panel"
         data-component="ProjectPermissionsPanel"
         data-testid="agent-elements-project-permissions-panel"
         data-workspace-bound="true"
       >
         <div
-          className="settings-panel-loading agent-elements-loading-state text-center py-12 text-[var(--nim-text-muted)]"
+          className={loadingStateClassName}
           data-agent-elements-shell="project-permissions-loading"
         >
           Loading permissions...
@@ -288,7 +329,7 @@ export const ProjectPermissionsPanel: React.FC<ProjectPermissionsPanelProps> = (
 
   return (
     <div
-      className="settings-panel-content agent-elements-settings-panel agent-elements-project-permissions-panel flex flex-col p-6"
+      className={panelClassName}
       data-agent-elements-shell="project-permissions-panel"
       data-component="ProjectPermissionsPanel"
       data-source="packages/electron/src/renderer/components/Settings/panels/ProjectPermissionsPanel.tsx"
@@ -297,20 +338,20 @@ export const ProjectPermissionsPanel: React.FC<ProjectPermissionsPanelProps> = (
       data-workspace-name={workspaceName}
     >
       <div
-        className="settings-panel-header agent-elements-settings-panel-header mb-6"
+        className={panelHeaderClassName}
         data-agent-elements-shell="project-permissions-header"
         data-testid="agent-elements-project-permissions-header"
       >
-        <h2 className="text-xl font-semibold text-[var(--nim-text)] mb-2">Agent Permissions</h2>
-        <p className="text-sm text-[var(--nim-text-muted)] leading-relaxed">
+        <h2 className={panelTitleClassName}>Agent Permissions</h2>
+        <p className={panelDescriptionClassName}>
           Manage which commands the AI agent can run in this project.
-          Approved patterns are saved to <code className="text-xs bg-[var(--nim-bg-secondary)] px-1 py-0.5 rounded">.claude/settings.local.json</code> and shared with Claude Code CLI.
+          Approved patterns are saved to <code className={inlineCodeClassName}>.claude/settings.local.json</code> and shared with Claude Code CLI.
         </p>
       </div>
 
       {(error || loadError) && (
         <div
-          className="settings-message error agent-elements-status-card flex items-center gap-2 p-3 mb-4 rounded-lg border border-[var(--nim-error)]/30 bg-[var(--nim-error)]/10 text-[var(--nim-error)] text-sm"
+          className={`settings-message error agent-elements-status-card agent-elements-tool-card flex-row items-center border-[color-mix(in_srgb,var(--an-error-color)_34%,var(--an-border-color))] bg-[color-mix(in_srgb,var(--an-error-color)_10%,var(--an-background))] text-sm text-[var(--an-error-color)] ${compactCardPaddingClass}`}
           data-agent-elements-shell="project-permissions-message"
           data-tone="error"
         >
@@ -321,7 +362,7 @@ export const ProjectPermissionsPanel: React.FC<ProjectPermissionsPanelProps> = (
 
       {success && (
         <div
-          className="settings-message success agent-elements-status-card flex items-center gap-2 p-3 mb-4 rounded-lg border border-[var(--nim-success)]/30 bg-[var(--nim-success)]/10 text-[var(--nim-success)] text-sm"
+          className={`settings-message success agent-elements-status-card agent-elements-tool-card flex-row items-center border-[color-mix(in_srgb,var(--an-success-color)_34%,var(--an-border-color))] bg-[color-mix(in_srgb,var(--an-success-color)_10%,var(--an-background))] text-sm text-[var(--an-success-color)] ${compactCardPaddingClass}`}
           data-agent-elements-shell="project-permissions-message"
           data-tone="success"
         >
@@ -332,40 +373,40 @@ export const ProjectPermissionsPanel: React.FC<ProjectPermissionsPanelProps> = (
 
       {/* Workspace Trust Section */}
       <div
-        className="permissions-section agent-elements-settings-section mb-6"
+        className={sectionClassName}
         data-agent-elements-shell="project-permissions-section"
         data-permission-section="trust"
       >
-        <div className="permissions-section-header text-sm font-medium text-[var(--nim-text)] mb-3">
+        <div className={sectionHeaderClassName}>
           <span>Workspace Trust</span>
         </div>
         <div
-          className="permissions-trust-card agent-elements-tool-card flex items-center justify-between p-4 rounded-lg border border-[var(--nim-border)] bg-[var(--nim-bg-secondary)]"
+          className={`permissions-trust-card agent-elements-tool-card flex-row items-center justify-between ${cardPaddingClass}`}
           data-agent-elements-shell="project-permissions-trust-card"
           data-permission-trusted={permissions?.permissionMode !== null ? 'true' : 'false'}
           data-testid="agent-elements-project-permissions-trust-card"
         >
           <div className="permissions-trust-info flex-1">
-            <div className="permissions-trust-status flex items-center gap-2 mb-1">
+            <div className="permissions-trust-status mb-[var(--an-spacing-xs)] flex items-center gap-[var(--an-spacing-sm)]">
               {permissions?.permissionMode !== null ? (
                 <>
-                  <span className="material-symbols-outlined permissions-trust-icon trusted text-[var(--nim-success)]">verified</span>
-                  <span className="permissions-trust-label text-sm font-medium text-[var(--nim-text)]">This workspace is trusted</span>
+                  <span className="material-symbols-outlined permissions-trust-icon trusted text-[var(--an-success-color)]">verified</span>
+                  <span className="permissions-trust-label text-sm font-medium text-[var(--an-foreground)]">This workspace is trusted</span>
                 </>
               ) : (
                 <>
-                  <span className="material-symbols-outlined permissions-trust-icon untrusted text-[var(--nim-warning)]">gpp_maybe</span>
-                  <span className="permissions-trust-label text-sm font-medium text-[var(--nim-text)]">This workspace is not trusted</span>
+                  <span className="material-symbols-outlined permissions-trust-icon untrusted text-[var(--an-warning-color)]">gpp_maybe</span>
+                  <span className="permissions-trust-label text-sm font-medium text-[var(--an-foreground)]">This workspace is not trusted</span>
                 </>
               )}
             </div>
-            <p className="permissions-trust-description text-xs text-[var(--nim-text-muted)]">
+            <p className="permissions-trust-description m-0 text-xs leading-relaxed text-[var(--an-foreground-muted)]">
               {permissions?.permissionMode !== null
                 ? 'The AI agent can run commands in this workspace.'
                 : 'Trust this workspace to allow the AI agent to run commands.'}
             </p>
             {permissions?.trustedAt && (
-              <p className="permissions-trust-date text-xs text-[var(--nim-text-faint)] mt-1">
+              <p className="permissions-trust-date m-0 mt-[var(--an-spacing-xs)] text-xs text-[var(--an-foreground-subtle)]">
                 Trusted on {new Date(permissions.trustedAt).toLocaleDateString()}
               </p>
             )}
@@ -373,14 +414,14 @@ export const ProjectPermissionsPanel: React.FC<ProjectPermissionsPanelProps> = (
           <div className="permissions-trust-action">
             {permissions?.permissionMode !== null ? (
               <button
-                className="btn-secondary px-3 py-1.5 rounded text-xs font-medium border border-[var(--nim-border)] bg-transparent text-[var(--nim-text-muted)] hover:bg-[var(--nim-bg-hover)] cursor-pointer"
+                className={secondaryButtonClassName}
                 onClick={handleRevokeWorkspaceTrust}
               >
                 Revoke Trust
               </button>
             ) : (
               <button
-                className="btn-primary px-3 py-1.5 rounded text-xs font-medium bg-[var(--nim-primary)] text-white hover:bg-[var(--nim-primary-hover)] cursor-pointer"
+                className={primaryButtonClassName}
                 onClick={handleTrustWorkspace}
               >
                 Trust Workspace
@@ -393,15 +434,15 @@ export const ProjectPermissionsPanel: React.FC<ProjectPermissionsPanelProps> = (
       {/* Permission Mode Section - Only show when trusted */}
       {permissions && permissions.permissionMode !== null && (
         <div
-          className="permissions-section agent-elements-settings-section mb-6"
+          className={sectionClassName}
           data-agent-elements-shell="project-permissions-section"
           data-permission-section="mode"
           data-testid="agent-elements-project-permissions-mode-section"
         >
-          <div className="permissions-section-header text-sm font-medium text-[var(--nim-text)] mb-3">
+          <div className={sectionHeaderClassName}>
             <span>Permission Mode</span>
           </div>
-          <div className="permissions-mode-options flex flex-col gap-2">
+          <div className="permissions-mode-options flex flex-col gap-[var(--an-spacing-sm)]">
             <label
               className={getPermissionModeOptionClassName(permissions.permissionMode === 'ask')}
               data-agent-elements-shell="project-permissions-mode-option"
@@ -415,11 +456,11 @@ export const ProjectPermissionsPanel: React.FC<ProjectPermissionsPanelProps> = (
                 onChange={() => handlePermissionModeChange('ask')}
                 className="sr-only"
               />
-              <div className="permissions-mode-option-content flex items-start gap-3">
-                <span className="material-symbols-outlined text-[var(--nim-text-muted)]">verified_user</span>
-                <div className="permissions-mode-option-text flex flex-col gap-0.5">
-                  <span className="permissions-mode-option-title text-sm font-medium text-[var(--nim-text)]">Ask</span>
-                  <span className="permissions-mode-option-description text-xs text-[var(--nim-text-muted)]">
+              <div className="permissions-mode-option-content flex items-start gap-[var(--an-spacing-md)]">
+                <span className="material-symbols-outlined text-[var(--an-foreground-muted)]">verified_user</span>
+                <div className="permissions-mode-option-text flex flex-col gap-[var(--an-spacing-xxs)]">
+                  <span className="permissions-mode-option-title text-sm font-medium text-[var(--an-foreground)]">Ask</span>
+                  <span className="permissions-mode-option-description text-xs leading-relaxed text-[var(--an-foreground-muted)]">
                     Agent asks before running commands. Approvals saved to .claude/settings.local.json.
                   </span>
                 </div>
@@ -438,11 +479,11 @@ export const ProjectPermissionsPanel: React.FC<ProjectPermissionsPanelProps> = (
                 onChange={() => handlePermissionModeChange('allow-all')}
                 className="sr-only"
               />
-              <div className="permissions-mode-option-content flex items-start gap-3">
-                <span className="material-symbols-outlined text-[var(--nim-text-muted)]">check_circle</span>
-                <div className="permissions-mode-option-text flex flex-col gap-0.5">
-                  <span className="permissions-mode-option-title text-sm font-medium text-[var(--nim-text)]">Allow Edits</span>
-                  <span className="permissions-mode-option-description text-xs text-[var(--nim-text-muted)]">
+              <div className="permissions-mode-option-content flex items-start gap-[var(--an-spacing-md)]">
+                <span className="material-symbols-outlined text-[var(--an-foreground-muted)]">check_circle</span>
+                <div className="permissions-mode-option-text flex flex-col gap-[var(--an-spacing-xxs)]">
+                  <span className="permissions-mode-option-title text-sm font-medium text-[var(--an-foreground)]">Allow Edits</span>
+                  <span className="permissions-mode-option-description text-xs leading-relaxed text-[var(--an-foreground-muted)]">
                     File operations auto-approved. Bash and web requests follow Claude Code settings.
                   </span>
                 </div>
@@ -461,11 +502,11 @@ export const ProjectPermissionsPanel: React.FC<ProjectPermissionsPanelProps> = (
                 onChange={() => handlePermissionModeChange('bypass-all')}
                 className="sr-only"
               />
-              <div className="permissions-mode-option-content flex items-start gap-3">
-                <span className="material-symbols-outlined text-[var(--nim-text-muted)]">check_circle</span>
-                <div className="permissions-mode-option-text flex flex-col gap-0.5">
-                  <span className="permissions-mode-option-title text-sm font-medium text-[var(--nim-text)]">Allow All</span>
-                  <span className="permissions-mode-option-description text-xs text-[var(--nim-text-muted)]">
+              <div className="permissions-mode-option-content flex items-start gap-[var(--an-spacing-md)]">
+                <span className="material-symbols-outlined text-[var(--an-foreground-muted)]">check_circle</span>
+                <div className="permissions-mode-option-text flex flex-col gap-[var(--an-spacing-xxs)]">
+                  <span className="permissions-mode-option-title text-sm font-medium text-[var(--an-foreground)]">Allow All</span>
+                  <span className="permissions-mode-option-description text-xs leading-relaxed text-[var(--an-foreground-muted)]">
                     All operations auto-approved without any prompts.
                   </span>
                 </div>
@@ -478,50 +519,48 @@ export const ProjectPermissionsPanel: React.FC<ProjectPermissionsPanelProps> = (
       {/* Additional Directories Section - Only show when trusted */}
       {permissions?.permissionMode !== null && (
         <div
-          className="permissions-section agent-elements-settings-section mb-6"
+          className={sectionClassName}
           data-agent-elements-shell="project-permissions-section"
           data-permission-section="directories"
           data-testid="agent-elements-project-permissions-directories-section"
         >
-          <div className="permissions-section-header flex items-center gap-2 text-sm font-medium text-[var(--nim-text)] mb-2">
+          <div className={sectionHeaderClassName}>
             <span>Additional Directories</span>
-            <span className="permissions-section-count text-xs px-1.5 py-0.5 rounded bg-[var(--nim-bg-tertiary)] text-[var(--nim-text-muted)]">{permissions?.additionalDirectories.length || 0}</span>
+            <span className={countPillClassName}>{permissions?.additionalDirectories.length || 0}</span>
           </div>
-          <p className="permissions-section-description text-xs text-[var(--nim-text-muted)] mb-3">
+          <p className={sectionDescriptionClassName}>
             Allow the agent to access directories outside this project.
           </p>
           {permissions?.additionalDirectories.length === 0 ? (
-            <div className="permissions-empty-state agent-elements-empty-state text-xs text-[var(--nim-text-faint)] py-4 px-3 rounded-lg bg-[var(--nim-bg-secondary)] border border-[var(--nim-border)]">
+            <div className={listEmptyClassName}>
               No additional directories. The agent can only access files within this project.
             </div>
           ) : (
-            <div className="permissions-directory-list flex flex-col gap-2 mb-3">
+            <div className="permissions-directory-list flex flex-col gap-[var(--an-spacing-sm)]">
               {permissions?.additionalDirectories.map((dir) => (
                 <div
                   key={dir.path}
-                  className="permissions-directory-item agent-elements-permission-row flex items-center justify-between p-2 rounded-lg bg-[var(--nim-bg-secondary)] border border-[var(--nim-border)]"
+                  className={`permissions-directory-item ${rowClassName} ${compactCardPaddingClass}`}
                   data-agent-elements-shell="project-permissions-row"
                   data-permission-row="directory"
                 >
-                  <div className="permissions-directory-path flex items-center gap-2 min-w-0 flex-1">
-                    <span className="material-symbols-outlined text-[var(--nim-text-muted)] text-base">folder</span>
-                    <span className="permissions-directory-path-text text-xs text-[var(--nim-text)] truncate" title={dir.path}>{dir.path}</span>
+                  <div className="permissions-directory-path flex min-w-0 flex-1 items-center gap-[var(--an-spacing-sm)]">
+                    <span className="material-symbols-outlined text-base text-[var(--an-foreground-muted)]">folder</span>
+                    <span className="permissions-directory-path-text truncate text-xs text-[var(--an-foreground)]" title={dir.path}>{dir.path}</span>
                   </div>
                   <button
-                    className="permissions-directory-remove w-6 h-6 flex items-center justify-center rounded text-[var(--nim-text-muted)] hover:text-[var(--nim-error)] hover:bg-[var(--nim-bg-hover)] cursor-pointer bg-transparent border-none"
+                    className={`permissions-directory-remove ${removeButtonClassName}`}
                     onClick={() => handleRemoveDirectory(dir.path)}
                     title="Remove directory"
                   >
-                    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" className="w-3.5 h-3.5">
-                      <path d="M2 4h12M6 4V2.5A1.5 1.5 0 017.5 1h1A1.5 1.5 0 0110 2.5V4M5 7v5M8 7v5M11 7v5M3 4v9.5A1.5 1.5 0 004.5 15h7a1.5 1.5 0 001.5-1.5V4"/>
-                    </svg>
+                    <span className="material-symbols-outlined text-base">delete</span>
                   </button>
                 </div>
               ))}
             </div>
           )}
           <button
-            className="btn-secondary permissions-add-directory-btn px-3 py-1.5 rounded text-xs font-medium border border-[var(--nim-border)] bg-transparent text-[var(--nim-text-muted)] hover:bg-[var(--nim-bg-hover)] cursor-pointer flex items-center gap-1 disabled:opacity-50"
+            className={`permissions-add-directory-btn ${secondaryButtonClassName} w-fit`}
             onClick={handleAddDirectory}
             disabled={isAddingDirectory}
           >
@@ -534,37 +573,37 @@ export const ProjectPermissionsPanel: React.FC<ProjectPermissionsPanelProps> = (
       {/* Allowed URL Patterns Section - Only show when trusted */}
       {permissions?.permissionMode !== null && (
         <div
-          className="permissions-section agent-elements-settings-section mb-6"
+          className={sectionClassName}
           data-agent-elements-shell="project-permissions-section"
           data-permission-section="urls"
           data-testid="agent-elements-project-permissions-urls-section"
         >
-          <div className="permissions-section-header flex items-center gap-2 text-sm font-medium text-[var(--nim-text)] mb-2">
+          <div className={sectionHeaderClassName}>
             <span>Allowed URL Patterns</span>
-            <span className="permissions-section-count text-xs px-1.5 py-0.5 rounded bg-[var(--nim-bg-tertiary)] text-[var(--nim-text-muted)]">{permissions?.allowedUrlPatterns?.length || 0}</span>
+            <span className={countPillClassName}>{permissions?.allowedUrlPatterns?.length || 0}</span>
           </div>
-          <p className="permissions-section-description text-xs text-[var(--nim-text-muted)] mb-3">
+          <p className={sectionDescriptionClassName}>
             Allow the agent to fetch or curl specific domains.
-            Use wildcards like <code className="bg-[var(--nim-bg-tertiary)] px-1 py-0.5 rounded">*.github.com</code> to allow all subdomains.
+            Use wildcards like <code className={inlineCodeClassName}>*.github.com</code> to allow all subdomains.
           </p>
 
           {/* All Domains Allowed Card */}
           {isAllDomainsAllowed ? (
             <div
-              className="permissions-all-domains-card agent-elements-tool-card flex items-center justify-between p-3 rounded-lg border border-[var(--nim-primary)]/30 bg-[var(--nim-primary)]/5"
+              className={`permissions-all-domains-card agent-elements-tool-card flex-row items-center justify-between border-[color-mix(in_srgb,var(--an-primary-color)_34%,var(--an-border-color))] bg-[color-mix(in_srgb,var(--an-primary-color)_8%,var(--an-background))] ${compactCardPaddingClass}`}
               data-agent-elements-shell="project-permissions-all-domains-card"
             >
-              <div className="permissions-all-domains-info flex items-center gap-3">
-                <span className="material-symbols-outlined permissions-all-domains-icon text-[var(--nim-primary)]">public</span>
+              <div className="permissions-all-domains-info flex items-center gap-[var(--an-spacing-md)]">
+                <span className="material-symbols-outlined permissions-all-domains-icon text-[var(--an-primary-color)]">public</span>
                 <div className="permissions-all-domains-text flex flex-col">
-                  <span className="permissions-all-domains-title text-sm font-medium text-[var(--nim-text)]">All domains allowed</span>
-                  <span className="permissions-all-domains-description text-xs text-[var(--nim-text-muted)]">
+                  <span className="permissions-all-domains-title text-sm font-medium text-[var(--an-foreground)]">All domains allowed</span>
+                  <span className="permissions-all-domains-description text-xs leading-relaxed text-[var(--an-foreground-muted)]">
                     The agent can fetch from any URL without asking.
                   </span>
                 </div>
               </div>
               <button
-                className="btn-secondary px-3 py-1.5 rounded text-xs font-medium border border-[var(--nim-border)] bg-transparent text-[var(--nim-text-muted)] hover:bg-[var(--nim-bg-hover)] cursor-pointer"
+                className={secondaryButtonClassName}
                 onClick={handleRevokeAllDomains}
               >
                 Revoke
@@ -573,32 +612,30 @@ export const ProjectPermissionsPanel: React.FC<ProjectPermissionsPanelProps> = (
           ) : (
             <>
               {(permissions?.allowedUrlPatterns?.length || 0) === 0 && !isAddingUrl ? (
-                <div className="permissions-empty-state agent-elements-empty-state text-xs text-[var(--nim-text-faint)] py-4 px-3 rounded-lg bg-[var(--nim-bg-secondary)] border border-[var(--nim-border)] mb-3">
+                <div className={listEmptyClassName}>
                   No URL patterns allowed yet. The agent will ask before making web requests.
                 </div>
               ) : (
-                <div className="permissions-url-list flex flex-col gap-2 mb-3">
+                <div className="permissions-url-list flex flex-col gap-[var(--an-spacing-sm)]">
                   {permissions?.allowedUrlPatterns?.map((urlPattern) => (
                     <div
                       key={urlPattern.pattern}
-                      className="permissions-url-item agent-elements-permission-row flex items-center justify-between p-2 rounded-lg bg-[var(--nim-bg-secondary)] border border-[var(--nim-border)]"
+                      className={`permissions-url-item ${rowClassName} ${compactCardPaddingClass}`}
                       data-agent-elements-shell="project-permissions-row"
                       data-permission-row="url-pattern"
                     >
-                      <div className="permissions-url-info flex flex-col min-w-0 flex-1">
-                        <span className="permissions-url-pattern text-xs font-medium text-[var(--nim-text)] font-mono">{urlPattern.pattern}</span>
+                      <div className="permissions-url-info flex min-w-0 flex-1 flex-col">
+                        <span className="permissions-url-pattern font-mono text-xs font-medium text-[var(--an-foreground)]">{urlPattern.pattern}</span>
                         {urlPattern.description && (
-                          <span className="permissions-url-description text-xs text-[var(--nim-text-muted)]">{urlPattern.description}</span>
+                          <span className="permissions-url-description text-xs text-[var(--an-foreground-muted)]">{urlPattern.description}</span>
                         )}
                       </div>
                       <button
-                        className="permissions-url-remove w-6 h-6 flex items-center justify-center rounded text-[var(--nim-text-muted)] hover:text-[var(--nim-error)] hover:bg-[var(--nim-bg-hover)] cursor-pointer bg-transparent border-none"
+                        className={`permissions-url-remove ${removeButtonClassName}`}
                         onClick={() => handleRemoveUrlPattern(urlPattern.pattern)}
                         title="Remove URL pattern"
                       >
-                        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" className="w-3.5 h-3.5">
-                          <path d="M2 4h12M6 4V2.5A1.5 1.5 0 017.5 1h1A1.5 1.5 0 0110 2.5V4M5 7v5M8 7v5M11 7v5M3 4v9.5A1.5 1.5 0 004.5 15h7a1.5 1.5 0 001.5-1.5V4"/>
-                        </svg>
+                        <span className="material-symbols-outlined text-base">delete</span>
                       </button>
                     </div>
                   ))}
@@ -606,13 +643,13 @@ export const ProjectPermissionsPanel: React.FC<ProjectPermissionsPanelProps> = (
               )}
               {isAddingUrl ? (
                 <div
-                  className="permissions-add-url-form agent-elements-tool-card flex flex-col gap-2 p-3 rounded-lg bg-[var(--nim-bg-secondary)] border border-[var(--nim-border)]"
+                  className={`permissions-add-url-form agent-elements-tool-card ${compactCardPaddingClass}`}
                   data-agent-elements-shell="project-permissions-url-form"
                   data-testid="agent-elements-project-permissions-url-form"
                 >
                   <input
                     type="text"
-                    className="permissions-url-input agent-elements-input px-3 py-1.5 rounded-md border border-[var(--nim-border)] bg-[var(--nim-bg)] text-[var(--nim-text)] text-sm placeholder:text-[var(--nim-text-faint)]"
+                    className={inputClassName}
                     placeholder="URL pattern (e.g., *.github.com)"
                     value={newUrlPattern}
                     onChange={(e) => setNewUrlPattern(e.target.value)}
@@ -620,14 +657,14 @@ export const ProjectPermissionsPanel: React.FC<ProjectPermissionsPanelProps> = (
                   />
                   <input
                     type="text"
-                    className="permissions-url-input agent-elements-input px-3 py-1.5 rounded-md border border-[var(--nim-border)] bg-[var(--nim-bg)] text-[var(--nim-text)] text-sm placeholder:text-[var(--nim-text-faint)]"
+                    className={inputClassName}
                     placeholder="Description (optional)"
                     value={newUrlDescription}
                     onChange={(e) => setNewUrlDescription(e.target.value)}
                   />
-                  <div className="permissions-add-url-actions flex items-center gap-2 justify-end mt-1">
+                  <div className="permissions-add-url-actions mt-[var(--an-spacing-xs)] flex items-center justify-end gap-[var(--an-spacing-sm)]">
                     <button
-                      className="btn-secondary px-3 py-1.5 rounded text-xs font-medium border border-[var(--nim-border)] bg-transparent text-[var(--nim-text-muted)] hover:bg-[var(--nim-bg-hover)] cursor-pointer"
+                      className={secondaryButtonClassName}
                       onClick={() => {
                         setIsAddingUrl(false);
                         setNewUrlPattern('');
@@ -637,7 +674,7 @@ export const ProjectPermissionsPanel: React.FC<ProjectPermissionsPanelProps> = (
                       Cancel
                     </button>
                     <button
-                      className="btn-primary px-3 py-1.5 rounded text-xs font-medium bg-[var(--nim-primary)] text-white hover:bg-[var(--nim-primary-hover)] cursor-pointer disabled:opacity-50"
+                      className={primaryButtonClassName}
                       onClick={handleAddUrlPattern}
                       disabled={!newUrlPattern.trim()}
                     >
@@ -646,16 +683,16 @@ export const ProjectPermissionsPanel: React.FC<ProjectPermissionsPanelProps> = (
                   </div>
                 </div>
               ) : (
-                <div className="permissions-url-actions flex items-center gap-2">
+                <div className="permissions-url-actions flex items-center gap-[var(--an-spacing-sm)]">
                   <button
-                    className="btn-secondary permissions-add-url-btn px-3 py-1.5 rounded text-xs font-medium border border-[var(--nim-border)] bg-transparent text-[var(--nim-text-muted)] hover:bg-[var(--nim-bg-hover)] cursor-pointer flex items-center gap-1"
+                    className={`permissions-add-url-btn ${secondaryButtonClassName}`}
                     onClick={() => setIsAddingUrl(true)}
                   >
                     <span className="material-symbols-outlined text-base">add</span>
                     Add URL Pattern
                   </button>
                   <button
-                    className="btn-secondary permissions-allow-all-btn px-3 py-1.5 rounded text-xs font-medium border border-[var(--nim-border)] bg-transparent text-[var(--nim-text-muted)] hover:bg-[var(--nim-bg-hover)] cursor-pointer flex items-center gap-1"
+                    className={`permissions-allow-all-btn ${secondaryButtonClassName}`}
                     onClick={handleAllowAllDomains}
                   >
                     <span className="material-symbols-outlined text-base">public</span>
@@ -671,37 +708,35 @@ export const ProjectPermissionsPanel: React.FC<ProjectPermissionsPanelProps> = (
       {/* Allowed Patterns Section - Only show when trusted */}
       {permissions?.permissionMode !== null && (
         <div
-          className="permissions-section agent-elements-settings-section mb-6"
+          className={sectionClassName}
           data-agent-elements-shell="project-permissions-section"
           data-permission-section="patterns"
           data-testid="agent-elements-project-permissions-patterns-section"
         >
-          <div className="permissions-section-header flex items-center gap-2 text-sm font-medium text-[var(--nim-text)] mb-2">
+          <div className={sectionHeaderClassName}>
             <span>Allowed Patterns</span>
-            <span className="permissions-section-count text-xs px-1.5 py-0.5 rounded bg-[var(--nim-bg-tertiary)] text-[var(--nim-text-muted)]">{permissions?.allowedPatterns.length || 0}</span>
+            <span className={countPillClassName}>{permissions?.allowedPatterns.length || 0}</span>
           </div>
           {permissions?.allowedPatterns.length === 0 ? (
-            <div className="permissions-empty-state agent-elements-empty-state text-xs text-[var(--nim-text-faint)] py-4 px-3 rounded-lg bg-[var(--nim-bg-secondary)] border border-[var(--nim-border)]">
+            <div className={listEmptyClassName}>
               No patterns allowed yet. When you approve a command, its pattern will appear here.
             </div>
           ) : (
-            <div className="permissions-pattern-list flex flex-col gap-2">
+            <div className="permissions-pattern-list flex flex-col gap-[var(--an-spacing-sm)]">
               {permissions?.allowedPatterns.map((rule) => (
                 <div
                   key={rule.pattern}
-                  className="permissions-pattern-item agent-elements-permission-row flex items-center justify-between p-2 rounded-lg bg-[var(--nim-bg-secondary)] border border-[var(--nim-border)]"
+                  className={`permissions-pattern-item ${rowClassName} ${compactCardPaddingClass}`}
                   data-agent-elements-shell="project-permissions-row"
                   data-permission-row="allowed-pattern"
                 >
-                  <span className="permissions-pattern-name text-xs font-medium text-[var(--nim-text)] font-mono">{rule.displayName}</span>
+                  <span className="permissions-pattern-name font-mono text-xs font-medium text-[var(--an-foreground)]">{rule.displayName}</span>
                   <button
-                    className="permissions-pattern-remove w-6 h-6 flex items-center justify-center rounded text-[var(--nim-text-muted)] hover:text-[var(--nim-error)] hover:bg-[var(--nim-bg-hover)] cursor-pointer bg-transparent border-none"
+                    className={`permissions-pattern-remove ${removeButtonClassName}`}
                     onClick={() => handleRemovePattern(rule.pattern, 'allowed')}
                     title="Remove pattern"
                   >
-                    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" className="w-3.5 h-3.5">
-                      <path d="M2 4h12M6 4V2.5A1.5 1.5 0 017.5 1h1A1.5 1.5 0 0110 2.5V4M5 7v5M8 7v5M11 7v5M3 4v9.5A1.5 1.5 0 004.5 15h7a1.5 1.5 0 001.5-1.5V4"/>
-                    </svg>
+                    <span className="material-symbols-outlined text-base">delete</span>
                   </button>
                 </div>
               ))}
@@ -718,12 +753,12 @@ export const ProjectPermissionsPanel: React.FC<ProjectPermissionsPanelProps> = (
         permissions?.additionalDirectories?.length
       ) ? (
         <div
-          className="permissions-footer agent-elements-settings-footer pt-4 border-t border-[var(--nim-border)]"
+          className="permissions-footer agent-elements-settings-footer border-t border-[var(--an-border-color)] pt-[var(--an-spacing-lg)]"
           data-agent-elements-shell="project-permissions-footer"
           data-testid="agent-elements-project-permissions-footer"
         >
           <button
-            className="btn-secondary px-3 py-1.5 rounded text-xs font-medium border border-[var(--nim-border)] bg-transparent text-[var(--nim-text-muted)] hover:bg-[var(--nim-bg-hover)] cursor-pointer"
+            className={secondaryButtonClassName}
             onClick={handleResetToDefaults}
           >
             Reset to Defaults

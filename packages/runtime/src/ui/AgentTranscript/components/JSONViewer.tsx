@@ -1,99 +1,92 @@
-import React, { useEffect } from 'react';
-
-// Inject JSON viewer styles once (for theme-specific syntax highlighting)
-const injectJSONViewerStyles = () => {
-  const styleId = 'json-viewer-styles';
-  if (document.getElementById(styleId)) return;
-
-  const style = document.createElement('style');
-  style.id = styleId;
-  style.textContent = `
-    /* Light theme (default) */
-    .json-key { color: #0451A5; font-weight: 500; }
-    .json-string { color: #A31515; }
-    .json-number { color: #098658; }
-    .json-boolean { color: #0000FF; font-weight: 600; }
-    .json-null { color: #0000FF; font-weight: 600; font-style: italic; }
-
-    /* Dark and Crystal Dark themes */
-    .dark-theme .json-key,
-    .crystal-dark-theme .json-key { color: #9CDCFE; }
-    .dark-theme .json-string,
-    .crystal-dark-theme .json-string { color: #CE9178; }
-    .dark-theme .json-number,
-    .crystal-dark-theme .json-number { color: #B5CEA8; }
-    .dark-theme .json-boolean,
-    .crystal-dark-theme .json-boolean { color: #569CD6; }
-    .dark-theme .json-null,
-    .crystal-dark-theme .json-null { color: #569CD6; }
-  `;
-  document.head.appendChild(style);
-};
+import React from 'react';
+import '../../AgentElements/AgentElementsPrimitives.css';
 
 interface JSONViewerProps {
-  data: any;
+  data: unknown;
   maxHeight?: string;
 }
 
-export const JSONViewer: React.FC<JSONViewerProps> = ({ data, maxHeight = '16rem' }) => {
-  // Inject styles on mount
-  useEffect(() => {
-    injectJSONViewerStyles();
-  }, []);
+function classNames(...values: Array<string | false | null | undefined>): string {
+  return values.filter(Boolean).join(' ');
+}
 
-  const formatJSON = (obj: any): JSX.Element => {
+function maxHeightClass(maxHeight: string): string {
+  switch (maxHeight) {
+    case '12rem':
+      return 'agent-elements-json-viewer--max-12rem';
+    case '20rem':
+      return 'agent-elements-json-viewer--max-20rem';
+    case '24rem':
+      return 'agent-elements-json-viewer--max-24rem';
+    case '16rem':
+    default:
+      return 'agent-elements-json-viewer--max-16rem';
+  }
+}
+
+function quoted(value: string): string {
+  return JSON.stringify(value);
+}
+
+export const JSONViewer: React.FC<JSONViewerProps> = ({ data, maxHeight = '16rem' }) => {
+  const formatJSON = (obj: unknown): JSX.Element => {
     let keyCounter = 0;
     const getUniqueKey = (prefix: string) => `${prefix}-${keyCounter++}`;
 
-    const renderValue = (value: any, indent: number = 0): JSX.Element[] => {
+    const renderValue = (value: unknown, indent = 0): JSX.Element[] => {
       const indentStr = '  '.repeat(indent);
       const elements: JSX.Element[] = [];
 
       if (value === null) {
         elements.push(<span key={getUniqueKey('null')} className="json-null">null</span>);
       } else if (typeof value === 'boolean') {
-        elements.push(<span key={getUniqueKey('bool')} className="json-boolean font-semibold">{String(value)}</span>);
+        elements.push(<span key={getUniqueKey('bool')} className="json-boolean">{String(value)}</span>);
       } else if (typeof value === 'number') {
         elements.push(<span key={getUniqueKey('num')} className="json-number">{value}</span>);
       } else if (typeof value === 'string') {
-        elements.push(<span key={getUniqueKey('str')} className="json-string">"{value}"</span>);
+        elements.push(<span key={getUniqueKey('str')} className="json-string">{quoted(value)}</span>);
       } else if (Array.isArray(value)) {
         if (value.length === 0) {
           elements.push(<span key={getUniqueKey('arr')}>[]</span>);
         } else {
-          elements.push(<span key={getUniqueKey('arr-open')} className="json-bracket text-[var(--nim-text-muted)] font-semibold">[</span>);
+          elements.push(<span key={getUniqueKey('arr-open')} className="json-bracket">[</span>);
           elements.push(<br key={getUniqueKey('br')} />);
           value.forEach((item, idx) => {
             elements.push(<span key={getUniqueKey('indent')}>{indentStr}  </span>);
             elements.push(...renderValue(item, indent + 1));
             if (idx < value.length - 1) {
-              elements.push(<span key={getUniqueKey('comma')} className="json-punctuation text-[var(--nim-text-faint)]">,</span>);
+              elements.push(<span key={getUniqueKey('comma')} className="json-punctuation">,</span>);
             }
             elements.push(<br key={getUniqueKey('br')} />);
           });
           elements.push(<span key={getUniqueKey('indent')}>{indentStr}</span>);
-          elements.push(<span key={getUniqueKey('arr-close')} className="json-bracket text-[var(--nim-text-muted)] font-semibold">]</span>);
+          elements.push(<span key={getUniqueKey('arr-close')} className="json-bracket">]</span>);
         }
       } else if (typeof value === 'object') {
-        const keys = Object.keys(value);
+        const record = value as Record<string, unknown>;
+        const keys = Object.keys(record);
         if (keys.length === 0) {
           elements.push(<span key={getUniqueKey('obj')}>{'{}'}</span>);
         } else {
-          elements.push(<span key={getUniqueKey('obj-open')} className="json-bracket text-[var(--nim-text-muted)] font-semibold">{'{'}</span>);
+          elements.push(<span key={getUniqueKey('obj-open')} className="json-bracket">{'{'}</span>);
           elements.push(<br key={getUniqueKey('br')} />);
           keys.forEach((key, idx) => {
             elements.push(<span key={getUniqueKey('indent')}>{indentStr}  </span>);
-            elements.push(<span key={getUniqueKey('key')} className="json-key">"{key}"</span>);
-            elements.push(<span key={getUniqueKey('colon')} className="json-punctuation text-[var(--nim-text-faint)]">: </span>);
-            elements.push(...renderValue(value[key], indent + 1));
+            elements.push(<span key={getUniqueKey('key')} className="json-key">{quoted(key)}</span>);
+            elements.push(<span key={getUniqueKey('colon')} className="json-punctuation">: </span>);
+            elements.push(...renderValue(record[key], indent + 1));
             if (idx < keys.length - 1) {
-              elements.push(<span key={getUniqueKey('comma')} className="json-punctuation text-[var(--nim-text-faint)]">,</span>);
+              elements.push(<span key={getUniqueKey('comma')} className="json-punctuation">,</span>);
             }
             elements.push(<br key={getUniqueKey('br')} />);
           });
           elements.push(<span key={getUniqueKey('indent')}>{indentStr}</span>);
-          elements.push(<span key={getUniqueKey('obj-close')} className="json-bracket text-[var(--nim-text-muted)] font-semibold">{'}'}</span>);
+          elements.push(<span key={getUniqueKey('obj-close')} className="json-bracket">{'}'}</span>);
         }
+      } else if (typeof value === 'undefined') {
+        elements.push(<span key={getUniqueKey('undefined')} className="json-null">undefined</span>);
+      } else {
+        elements.push(<span key={getUniqueKey('fallback')} className="json-string">{String(value)}</span>);
       }
 
       return elements;
@@ -104,8 +97,14 @@ export const JSONViewer: React.FC<JSONViewerProps> = ({ data, maxHeight = '16rem
 
   return (
     <pre
-      className="json-viewer font-mono text-xs leading-normal text-[var(--nim-text)] bg-[var(--nim-bg-secondary)] p-3 rounded-md overflow-x-auto m-0 whitespace-pre"
-      style={{ maxHeight, overflowY: 'auto' }}
+      className={classNames(
+        'json-viewer agent-elements-json-viewer agent-elements-debug-payload',
+        maxHeightClass(maxHeight),
+      )}
+      data-agent-elements-shell="json-viewer"
+      data-component="JSONViewer"
+      data-debug-only="true"
+      data-testid="agent-elements-json-viewer"
     >
       {formatJSON(data)}
     </pre>

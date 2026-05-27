@@ -36,16 +36,21 @@ export function PendingReviewBanner({ workspacePath, sessionId }: PendingReviewB
   }
 
   return (
-    <div className="pending-review-banner flex items-center justify-between px-3 py-2 bg-amber-400/10 border-b border-amber-400/30">
+    <div
+      className="pending-review-banner agent-elements-pending-review-banner agent-elements-status-banner flex items-center justify-between px-3 py-2 border-b border-[color-mix(in_srgb,var(--an-warning-color)_26%,var(--an-border-color))] bg-[color-mix(in_srgb,var(--an-warning-color)_8%,var(--an-background))] text-[var(--an-warning-color)] transition-[background-color,border-color,color] duration-150 ease-out"
+      data-testid="agent-elements-pending-review-banner"
+      data-agent-elements-shell="pending-review-banner"
+      data-pending-count={pendingCount}
+    >
       <div className="pending-review-banner__info flex items-center gap-2">
-        <MaterialSymbol icon="rate_review" size={16} className="pending-review-banner__icon text-nim-warning" />
-        <span className="pending-review-banner__text text-xs text-nim-warning font-medium">
+        <MaterialSymbol icon="rate_review" size={16} className="pending-review-banner__icon agent-elements-status-banner-icon shrink-0" />
+        <span className="pending-review-banner__text agent-elements-status-banner-text text-xs font-medium">
           <span className="pending-review-banner__count font-semibold">{pendingCount}</span>
           {' '}file{pendingCount !== 1 ? 's' : ''} pending review
         </span>
       </div>
       <button
-        className="pending-review-banner__clear-btn flex items-center gap-1 px-2.5 py-1 bg-transparent border border-nim-warning rounded text-nim-warning text-[11px] font-medium cursor-pointer transition-all duration-200 font-inherit hover:enabled:bg-amber-400/15 disabled:opacity-50 disabled:cursor-not-allowed"
+        className="pending-review-banner__clear-btn agent-elements-status-banner-action flex items-center gap-1 px-2.5 py-1 bg-transparent border border-current rounded-[var(--an-radius-sm)] text-[11px] font-medium cursor-pointer transition-[background-color,border-color,color] duration-150 ease-out font-inherit hover:enabled:bg-[color-mix(in_srgb,currentColor_12%,transparent)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--an-input-focus-outline)] disabled:opacity-50 disabled:cursor-not-allowed"
         onClick={handleClearAll}
         disabled={isClearing}
         title="Accept all pending AI changes"

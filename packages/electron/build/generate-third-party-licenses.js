@@ -457,7 +457,7 @@ function renderNotices(records, summary) {
     }
   }
 
-  return `${sections.join('\n').replace(/\n{3,}/g, '\n\n')}\n`;
+  return `${sections.join('\n').replace(/\n{3,}/g, '\n\n')}\n`.replace(/[ \t]+$/gm, '');
 }
 
 function renderAudit(records, summary) {

@@ -20,13 +20,13 @@ export function ApiKeyDialog({ isOpen, onClose, onOpenPreferences }: ApiKeyDialo
 
   return (
     <div
-      className="api-key-dialog-overlay nim-overlay agent-elements-api-key-dialog-backdrop bg-[color-mix(in_srgb,var(--nim-text)_36%,transparent)]"
+      className="api-key-dialog-overlay nim-overlay agent-elements-api-key-dialog-backdrop bg-[color-mix(in_srgb,var(--an-foreground)_36%,transparent)]"
       data-testid="agent-elements-api-key-dialog-backdrop"
       data-agent-elements-shell="api-key-dialog-backdrop"
       onClick={onClose}
     >
       <div
-        className="api-key-dialog nim-modal agent-elements-api-key-dialog agent-elements-tool-card w-[90vw] max-w-[520px] !gap-0 !p-0 overflow-hidden rounded-[var(--an-border-radius)] border border-[var(--an-border-color)] bg-[var(--an-background)] text-[var(--an-foreground)] shadow-[0_20px_60px_color-mix(in_srgb,var(--nim-text)_18%,transparent)]"
+        className="api-key-dialog nim-modal agent-elements-api-key-dialog agent-elements-tool-card w-[90vw] max-w-[520px] !gap-0 !p-0 overflow-hidden rounded-[var(--an-border-radius)] border border-[var(--an-border-color)] bg-[var(--an-background)] text-[var(--an-foreground)] shadow-[0_20px_60px_color-mix(in_srgb,var(--an-foreground)_18%,transparent)]"
         data-testid="agent-elements-api-key-dialog"
         data-component="ApiKeyDialog"
         data-agent-elements-shell="api-key-dialog"
@@ -153,7 +153,7 @@ export function ApiKeyDialog({ isOpen, onClose, onOpenPreferences }: ApiKeyDialo
           </button>
           <button
             type="button"
-            className={`${buttonBase} nim-btn-primary !border-[var(--an-primary-color)] !bg-[var(--an-primary-color)] !text-[var(--an-background)] hover:!border-[var(--nim-primary-hover)] hover:!bg-[var(--nim-primary-hover)]`}
+            className={`${buttonBase} nim-btn-primary !border-[var(--an-primary-color)] !bg-[var(--an-primary-color)] !text-[var(--an-button-primary-text)] hover:!border-[color-mix(in_srgb,var(--an-primary-color)_82%,var(--an-foreground))] hover:!bg-[color-mix(in_srgb,var(--an-primary-color)_88%,var(--an-foreground))]`}
             onClick={handleOpenPreferences}
           >
             <span aria-hidden="true">

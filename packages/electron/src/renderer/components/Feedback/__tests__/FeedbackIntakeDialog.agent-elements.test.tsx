@@ -4,6 +4,8 @@ import '@testing-library/jest-dom/vitest';
 import React from 'react';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import fs from 'node:fs';
+import path from 'node:path';
 import { FeedbackIntakeDialog } from '../FeedbackIntakeDialog';
 
 const posthogCaptureMock = vi.hoisted(() => vi.fn());
@@ -71,6 +73,10 @@ describe('FeedbackIntakeDialog Agent Elements shell', () => {
     expect(dialog).toHaveClass('feedback-intake-dialog', 'agent-elements-feedback-intake-dialog', 'agent-elements-tool-card');
     expect(dialog).toHaveAttribute('data-component', 'FeedbackIntakeDialog');
     expect(dialog).toHaveAttribute('data-agent-elements-shell', 'feedback-intake-dialog');
+    expect(dialog.className).toContain('!p-0');
+    expect(dialog.className).toContain('!gap-0');
+    expect(dialog.className).toContain('--agent-elements-card-inline-padding');
+    expect(dialog.className).toContain('--agent-elements-card-block-padding');
 
     expect(screen.getByTestId('agent-elements-feedback-intake-header')).toHaveTextContent(
       'Send better feedback with your Agent'
@@ -169,5 +175,28 @@ describe('FeedbackIntakeDialog Agent Elements shell', () => {
     expect(invoke).toHaveBeenCalledWith('open-external', 'mailto:support@nimbalyst.com');
     expect(posthogCaptureMock).toHaveBeenCalledWith('feedback_external_link_clicked', { target: 'email' });
     expect(onClose).toHaveBeenCalledTimes(3);
+  });
+
+  it('keeps the Agent Elements feedback shell on alias tokens instead of direct legacy visual tokens', () => {
+    const source = fs.readFileSync(
+      path.join(
+        process.cwd(),
+        'packages/electron/src/renderer/components/Feedback/FeedbackIntakeDialog.tsx',
+      ),
+      'utf8',
+    );
+
+    expect(source).toContain('--an-primary-color');
+    expect(source).toContain('--an-foreground');
+    expect(source).toContain('--an-error-color');
+    expect(source).toContain('--an-warning-color');
+    expect(source).toContain('!p-0');
+    expect(source).toContain('!gap-0');
+    expect(source).toContain('--agent-elements-card-inline-padding');
+    expect(source).toContain('--agent-elements-card-block-padding');
+    expect(source).toContain('px-[var(--agent-elements-card-inline-padding)]');
+    expect(source).toContain('py-[var(--agent-elements-card-block-padding)]');
+    expect(source).not.toMatch(/var\(--nim-(text|primary-hover|error|warning)\)/);
+    expect(source).not.toMatch(/agent-elements-feedback-intake-(?:header|body)[^`'"]*\bp-\[var\(--an-spacing/);
   });
 });

@@ -2,6 +2,8 @@
 
 import '@testing-library/jest-dom/vitest';
 import React from 'react';
+import fs from 'node:fs';
+import path from 'node:path';
 import { fireEvent, render, screen, within } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { GutterContextMenu } from '../GutterContextMenu';
@@ -16,6 +18,11 @@ const mockState = vi.hoisted(() => ({
   toggleHidden: vi.fn(),
   showAll: vi.fn(),
 }));
+
+const sourcePath = path.join(
+  process.cwd(),
+  'packages/electron/src/renderer/components/NavigationGutter/GutterContextMenu.tsx',
+);
 
 vi.mock('jotai', () => ({
   useAtomValue: vi.fn((atom: string) => {
@@ -79,7 +86,15 @@ describe('GutterContextMenu Agent Elements shell', () => {
     expect(menu).toHaveClass('gutter-context-menu', 'agent-elements-gutter-context-menu', 'agent-elements-tool-card');
     expect(menu).toHaveAttribute('data-component', 'GutterContextMenu');
     expect(menu).toHaveAttribute('data-agent-elements-shell', 'gutter-context-menu');
+    expect(menu).toHaveAttribute('data-agent-elements-card-padding', 'symmetric-inline');
+    expect(menu).toHaveAttribute('data-agent-elements-card-width', 'floating-menu');
     expect(menu.className).not.toMatch(/backdrop.*blur|rounded-md|rgba\(/);
+
+    const source = fs.readFileSync(sourcePath, 'utf8');
+    expect(source).toContain('data-agent-elements-card-padding="symmetric-inline"');
+    expect(source).toContain('data-agent-elements-card-width="floating-menu"');
+    expect(source).toContain('--agent-elements-card-inline-padding');
+    expect(source).not.toMatch(/\b(?:bg|text|border|hover:bg|hover:text|hover:border)-nim(?:-[\w-]+)?\b|var\(--nim-/);
 
     const hideItem = screen.getByTestId('agent-elements-gutter-context-menu-hide-voice-mode');
     expect(hideItem).toHaveClass('agent-elements-gutter-context-menu-item');

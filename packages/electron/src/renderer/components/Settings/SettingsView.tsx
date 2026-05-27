@@ -137,7 +137,7 @@ export function SettingsView({
   // Ref to track if we need to save (for debounce)
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const pendingSaveRef = useRef(false);
-  const performSaveRef = useRef<() => Promise<void>>();
+  const performSaveRef = useRef<(() => Promise<void>) | null>(null);
   // NOTE: Notification settings (Phase 2), Advanced settings (Phase 3), Sync settings (Phase 4),
   // AI debug settings (Phase 5), AI provider settings (Phase 5b), and Voice mode settings (Phase 7)
   // have been moved to Jotai atoms in appSettings.ts
@@ -594,13 +594,19 @@ export function SettingsView({
         return (
           <>
             {hasWorkspaceMcpServers && scope === 'user' && (
-              <div className="settings-project-indicator flex items-start gap-3 py-3 px-4 mb-6 bg-[rgba(59,130,246,0.1)] border border-[rgba(59,130,246,0.3)] rounded-lg text-[var(--nim-text)] [&_.material-symbols-outlined]:text-[var(--nim-info)] [&_.material-symbols-outlined]:shrink-0 [&_.material-symbols-outlined]:mt-0.5">
-                <MaterialSymbol icon="info" size={20} />
+              <div
+                className="settings-project-indicator agent-elements-settings-project-indicator agent-elements-status-pill mb-6 flex items-start gap-[var(--an-spacing-md)] rounded-[var(--an-tool-border-radius)] border border-[color-mix(in_srgb,var(--an-primary-color)_30%,var(--an-border-color))] bg-[color-mix(in_srgb,var(--an-primary-color)_10%,var(--an-background))] px-[var(--an-spacing-xl)] py-[var(--an-spacing-lg)] text-[var(--an-foreground)] [&_.material-symbols-outlined]:mt-0.5 [&_.material-symbols-outlined]:shrink-0 [&_.material-symbols-outlined]:text-[var(--an-primary-color)]"
+                data-agent-elements-shell="settings-project-indicator"
+                data-testid="agent-elements-settings-project-indicator"
+              >
+                <span aria-hidden="true" className="settings-project-indicator-icon agent-elements-settings-project-indicator-icon">
+                  <MaterialSymbol icon="info" size={20} />
+                </span>
                 <div className="settings-project-indicator-text flex flex-col gap-1">
-                  <strong className="text-sm font-semibold text-[var(--nim-text)]">
+                  <strong className="text-sm font-semibold text-[var(--an-foreground)]">
                     There {workspaceMcpServerCount === 1 ? 'is' : 'are'} {workspaceMcpServerCount} additional MCP {workspaceMcpServerCount === 1 ? 'server' : 'servers'} configured just for this project.
                   </strong>
-                  <span className="text-[13px] text-[var(--nim-text-muted)] leading-[1.4]">Switch to the Project tab above to view or edit project-specific MCP servers.</span>
+                  <span className="text-[13px] leading-[1.4] text-[var(--an-foreground-muted)]">Switch to the Project tab above to view or edit project-specific MCP servers.</span>
                 </div>
               </div>
             )}
@@ -661,33 +667,33 @@ export function SettingsView({
 
   return (
     <div
-      className="settings-view agent-elements-settings-view agent-elements-panel-shell flex flex-col h-full bg-[var(--nim-bg)] text-[var(--nim-text)]"
+      className="settings-view agent-elements-settings-view agent-elements-panel-shell flex h-full flex-col bg-[var(--an-background)] text-[var(--an-foreground)]"
       data-agent-elements-shell="settings-view"
       data-component="SettingsView"
       data-testid="agent-elements-settings-view"
     >
       {/* Settings Header */}
       <header
-        className="settings-view-header agent-elements-settings-header h-[52px] bg-[var(--nim-bg-secondary)] border-b border-[var(--nim-border)] flex items-center px-5 gap-4 shrink-0"
+        className="settings-view-header agent-elements-settings-header flex h-[52px] shrink-0 items-center gap-4 border-b border-[var(--an-border-color)] bg-[var(--an-background-secondary)] px-5"
         data-agent-elements-shell="settings-header"
         data-testid="agent-elements-settings-header"
       >
-        <h1 className="settings-view-title text-base font-semibold text-[var(--nim-text)] m-0">Settings</h1>
+        <h1 className="settings-view-title m-0 text-base font-semibold text-[var(--an-foreground)]">Settings</h1>
 
         <div
           className="settings-scope-container agent-elements-settings-scope-container flex items-center gap-3"
           data-agent-elements-shell="settings-scope-container"
         >
           <div
-            className="settings-scope-tabs agent-elements-settings-scope-tabs flex bg-[var(--nim-bg-tertiary)] p-1 rounded-lg"
+            className="settings-scope-tabs agent-elements-settings-scope-tabs flex rounded-[var(--an-tool-border-radius)] bg-[var(--an-background-tertiary)] p-1"
             data-agent-elements-shell="settings-scope-tabs"
             data-testid="agent-elements-settings-scope-tabs"
           >
             <button
-              className={`settings-scope-tab agent-elements-settings-scope-tab py-1.5 px-4 rounded-md text-xs font-medium cursor-pointer transition-all duration-150 border-none ${
+              className={`settings-scope-tab agent-elements-settings-scope-tab cursor-pointer rounded-[var(--an-small-border-radius)] border border-transparent px-4 py-1.5 text-xs font-medium transition-[background-color,border-color,color] duration-150 focus:outline-none focus:ring-2 focus:ring-[var(--an-focus-ring)] ${
                 scope === 'user'
-                  ? 'bg-[var(--nim-primary)] text-white shadow-sm'
-                  : 'bg-transparent text-[var(--nim-text-muted)] hover:text-[var(--nim-text)] hover:bg-[var(--nim-bg-hover)]'
+                  ? 'border-[var(--an-primary-color)] bg-[var(--an-primary-color)] text-[var(--an-background)]'
+                  : 'bg-transparent text-[var(--an-foreground-muted)] hover:bg-[var(--an-background)] hover:text-[var(--an-foreground)]'
               }`}
               data-agent-elements-shell="settings-scope-tab"
               data-selected={scope === 'user' ? 'true' : 'false'}
@@ -697,10 +703,10 @@ export function SettingsView({
               User
             </button>
             <button
-              className={`settings-scope-tab agent-elements-settings-scope-tab py-1.5 px-4 rounded-md text-xs font-medium cursor-pointer transition-all duration-150 border-none disabled:opacity-50 disabled:cursor-not-allowed ${
+              className={`settings-scope-tab agent-elements-settings-scope-tab cursor-pointer rounded-[var(--an-small-border-radius)] border border-transparent px-4 py-1.5 text-xs font-medium transition-[background-color,border-color,color] duration-150 focus:outline-none focus:ring-2 focus:ring-[var(--an-focus-ring)] disabled:cursor-not-allowed disabled:opacity-50 ${
                 scope === 'project'
-                  ? 'bg-[var(--nim-primary)] text-white shadow-sm'
-                  : 'bg-transparent text-[var(--nim-text-muted)] hover:text-[var(--nim-text)] hover:bg-[var(--nim-bg-hover)]'
+                  ? 'border-[var(--an-primary-color)] bg-[var(--an-primary-color)] text-[var(--an-background)]'
+                  : 'bg-transparent text-[var(--an-foreground-muted)] hover:bg-[var(--an-background)] hover:text-[var(--an-foreground)]'
               }`}
               data-agent-elements-shell="settings-scope-tab"
               data-selected={scope === 'project' ? 'true' : 'false'}
@@ -712,7 +718,7 @@ export function SettingsView({
               Project
             </button>
           </div>
-          <span className="settings-scope-hint text-[13px] text-[var(--nim-text-muted)]">
+          <span className="settings-scope-hint text-[13px] text-[var(--an-foreground-muted)]">
             {scope === 'user'
               ? 'These settings apply to all projects'
               : `Settings for ${workspaceName || 'this project'}`}
@@ -722,10 +728,10 @@ export function SettingsView({
         <span className="flex-1" />
         <span
           className={`settings-save-status agent-elements-settings-save-status text-xs min-w-[60px] ${
-          saveStatus === 'saving' ? 'text-[var(--nim-text-muted)]' :
-          saveStatus === 'saved' ? 'text-[var(--nim-success)]' :
-          saveStatus === 'error' ? 'text-[var(--nim-error)]' :
-          'text-[var(--nim-text-faint)]'
+          saveStatus === 'saving' ? 'text-[var(--an-foreground-muted)]' :
+          saveStatus === 'saved' ? 'text-[var(--an-success-color)]' :
+          saveStatus === 'error' ? 'text-[var(--an-diff-removed-text)]' :
+          'text-[var(--an-foreground-subtle)]'
         }`}
           data-agent-elements-shell="settings-save-status"
         >
@@ -749,7 +755,7 @@ export function SettingsView({
         />
 
         <main
-          className="settings-view-main agent-elements-settings-main flex-1 overflow-y-auto p-6 bg-[var(--nim-bg)] relative z-0"
+          className="settings-view-main agent-elements-settings-main relative z-0 flex-1 overflow-y-auto bg-[var(--an-background)] p-6"
           data-agent-elements-shell="settings-main"
           data-testid="agent-elements-settings-main"
         >

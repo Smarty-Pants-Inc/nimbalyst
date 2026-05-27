@@ -82,6 +82,10 @@ describe('ExtensionProjectIntroModal Agent Elements shell', () => {
     const source = readFileSync(sourcePath, 'utf8');
 
     expect(source).toContain('agent-elements-extension-project-intro');
+    expect(source).toContain('--an-foreground');
+    expect(source).toContain('--an-primary-color');
+    expect(source).toContain('--agent-elements-card-inline-padding');
+    expect(source).not.toMatch(/var\(--nim-(?:text|primary-hover)[^)]+\)/);
     expect(source).not.toMatch(/bg-black|backdrop-blur|rgba\(|nim-modal|nim-btn-primary|nim-btn-secondary/);
     expect(source).not.toMatch(/rounded-lg|rounded-xl|tracking-\[|text-white|text-black/);
   });

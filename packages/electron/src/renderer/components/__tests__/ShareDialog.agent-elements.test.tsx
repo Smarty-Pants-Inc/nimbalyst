@@ -3,6 +3,8 @@
 import '@testing-library/jest-dom/vitest';
 import React from 'react';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import fs from 'node:fs';
+import path from 'node:path';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ShareDialog } from '../ShareDialog/ShareDialog';
 
@@ -103,6 +105,10 @@ describe('ShareDialog Agent Elements shell', () => {
     expect(dialog).toHaveClass('share-dialog', 'agent-elements-share-dialog', 'agent-elements-tool-card');
     expect(dialog).toHaveAttribute('data-component', 'ShareDialog');
     expect(dialog).toHaveAttribute('data-agent-elements-shell', 'share-dialog');
+    expect(dialog.className).toContain('!p-0');
+    expect(dialog.className).toContain('!gap-0');
+    expect(dialog.className).toContain('--agent-elements-card-inline-padding');
+    expect(dialog.className).toContain('--agent-elements-card-block-padding');
 
     expect(screen.getByTestId('agent-elements-share-dialog-header')).toHaveTextContent('Share session');
     expect(screen.getByTestId('agent-elements-share-dialog-privacy')).toHaveAttribute(
@@ -205,5 +211,24 @@ describe('ShareDialog Agent Elements shell', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
     expect(onClose).toHaveBeenCalledTimes(1);
+  });
+
+  it('keeps ShareDialog chrome on shared Agent Elements gutters and alias tokens', () => {
+    const source = fs.readFileSync(
+      path.join(process.cwd(), 'packages/electron/src/renderer/components/ShareDialog/ShareDialog.tsx'),
+      'utf8',
+    );
+
+    expect(source).toContain('--an-foreground');
+    expect(source).toContain('--an-primary-color');
+    expect(source).toContain('--an-error-color');
+    expect(source).toContain('!p-0');
+    expect(source).toContain('!gap-0');
+    expect(source).toContain('--agent-elements-card-inline-padding');
+    expect(source).toContain('--agent-elements-card-block-padding');
+    expect(source).toContain('px-[var(--agent-elements-card-inline-padding)]');
+    expect(source).toContain('py-[var(--agent-elements-card-block-padding)]');
+    expect(source).not.toMatch(/var\(--nim-(?:text|primary-hover|bg|error)[^)]+\)/);
+    expect(source).not.toMatch(/agent-elements-share-dialog-(?:header|body)[^`'"]*\bp-\[var\(--an-spacing/);
   });
 });

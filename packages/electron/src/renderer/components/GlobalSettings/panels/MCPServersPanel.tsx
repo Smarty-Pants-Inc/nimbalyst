@@ -2352,7 +2352,7 @@ function MCPServersPanelInner({ scope = 'user', workspacePath }: MCPServersPanel
       <div className="mcp-servers-container [container-type:inline-size] [container-name:mcp-servers] flex gap-6 flex-1 min-h-[400px] max-h-[calc(100vh-250px)] mt-4">
         {/* Sidebar - always visible in list view */}
         {viewState === 'list' && (
-          <aside className="mcp-servers-sidebar flex-[0_0_280px] min-w-[220px] max-w-[350px] flex flex-col border border-[var(--nim-border)] rounded-md overflow-hidden @[max-width:600px]:flex-[0_0_100%] @[max-width:600px]:max-w-full" aria-label="MCP servers list">
+          <aside className="mcp-servers-sidebar flex-[0_0_280px] min-w-[220px] max-w-[350px] flex flex-col border border-[var(--nim-border)] rounded-md overflow-hidden @max-[600px]/mcp-servers:flex-[0_0_100%] @max-[600px]/mcp-servers:max-w-full" aria-label="MCP servers list">
             <div className="mcp-servers-header flex justify-between items-center px-4 py-3 border-b border-[var(--nim-border)] bg-[var(--nim-bg-secondary)]">
               <h4 className="m-0 text-sm font-semibold text-[var(--nim-text)]">Servers</h4>
               <button

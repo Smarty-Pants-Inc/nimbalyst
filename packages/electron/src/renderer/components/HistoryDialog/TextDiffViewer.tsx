@@ -31,6 +31,41 @@ interface ChangeGroup {
   type: 'addition' | 'deletion' | 'modification';
 }
 
+const rootClass =
+  'text-diff-viewer agent-elements-text-diff-viewer flex h-full w-full flex-col overflow-hidden bg-[var(--an-background)] p-[var(--an-spacing-md)] text-[var(--an-foreground)] @container/text-diff-viewer';
+const panelsClass =
+  'text-diff-panels agent-elements-text-diff-panels flex min-h-0 flex-1 gap-[var(--an-spacing-md)] overflow-hidden @max-[760px]/text-diff-viewer:flex-col';
+const panelBaseClass =
+  'text-diff-panel agent-elements-text-diff-panel flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden rounded-[var(--an-tool-border-radius)] border border-[var(--an-border-color)] bg-[var(--an-background)]';
+const headerBaseClass =
+  'text-diff-header agent-elements-text-diff-header flex min-h-9 items-center border-b border-[var(--an-border-color)] bg-[var(--an-background-secondary)] px-[var(--an-spacing-lg)] py-[var(--an-spacing-sm)] text-[13px] font-medium leading-5';
+const contentClass =
+  'text-diff-content agent-elements-text-diff-content nim-scrollbar min-h-0 flex-1 overflow-auto bg-[var(--an-background)]';
+const linesClass =
+  'text-diff-lines agent-elements-text-diff-lines font-mono text-xs leading-4 text-[var(--an-foreground)]';
+const lineBaseClass =
+  'text-diff-line agent-elements-text-diff-line flex min-h-5 min-w-0 transition-[background-color,color] duration-150 ease-out';
+const lineNumberBaseClass =
+  'text-diff-line-number agent-elements-text-diff-line-number w-12 shrink-0 border-r border-[var(--an-border-color)] px-[var(--an-spacing-sm)] py-[var(--an-spacing-xxs)] text-right text-[11px] leading-4 select-none';
+const lineContentBaseClass =
+  'text-diff-line-content agent-elements-text-diff-line-content min-w-0 flex-1 whitespace-pre-wrap break-words px-[var(--an-spacing-sm)] py-[var(--an-spacing-xxs)] leading-4 select-text';
+
+function getDiffLineClass(type: DiffLine['type']): string {
+  if (type === 'added') return `${lineBaseClass} cursor-pointer bg-[var(--an-diff-added-bg)] text-[var(--an-diff-added-text)]`;
+  if (type === 'removed') return `${lineBaseClass} cursor-pointer bg-[var(--an-diff-removed-bg)] text-[var(--an-diff-removed-text)]`;
+  return `${lineBaseClass} cursor-default text-[var(--an-foreground)]`;
+}
+
+function getLineNumberClass(type: DiffLine['type']): string {
+  if (type === 'added') {
+    return `${lineNumberBaseClass} bg-[color-mix(in_srgb,var(--an-diff-added-text)_10%,var(--an-background))] text-[var(--an-diff-added-text)]`;
+  }
+  if (type === 'removed') {
+    return `${lineNumberBaseClass} bg-[color-mix(in_srgb,var(--an-diff-removed-text)_10%,var(--an-background))] text-[var(--an-diff-removed-text)]`;
+  }
+  return `${lineNumberBaseClass} bg-[var(--an-background-secondary)] text-[var(--an-foreground-subtle)]`;
+}
+
 export function TextDiffViewer({
   oldText,
   newText,
@@ -253,48 +288,54 @@ export function TextDiffViewer({
   }, [currentChangeIndex, changeGroups.length, scrollToChange]);
 
   return (
-    <div className="text-diff-viewer flex flex-col h-full overflow-hidden">
-      <div className="text-diff-panels flex flex-1 overflow-hidden">
-        <div className="text-diff-panel text-diff-old flex-1 flex flex-col overflow-hidden">
-          <div className="text-diff-header px-3 py-2 text-[11px] font-semibold uppercase tracking-[0.5px] border-b border-[var(--nim-border)] bg-[var(--nim-bg-secondary)] text-red-600">
+    <div
+      className={rootClass}
+      data-testid="agent-elements-text-diff-viewer"
+      data-agent-elements-shell="text-diff-viewer"
+      data-component="TextDiffViewer"
+      data-change-groups={changeGroups.length}
+    >
+      <div
+        className={panelsClass}
+        data-testid="agent-elements-text-diff-panels"
+        data-agent-elements-shell="text-diff-panels"
+      >
+        <div
+          className={`${panelBaseClass} text-diff-old agent-elements-text-diff-panel-old`}
+          data-testid="agent-elements-text-diff-panel-old"
+          data-agent-elements-shell="text-diff-panel-old"
+          role="region"
+          aria-label="Old version text diff"
+        >
+          <div className={`${headerBaseClass} text-[var(--an-diff-removed-text)]`}>
             Old Version
           </div>
           <div
-            className="text-diff-content flex-1 overflow-auto nim-scrollbar"
+            className={contentClass}
             ref={oldContentRef}
             onScroll={() => handleScroll('old')}
           >
-            <div className="text-diff-lines font-mono text-[13px] leading-[1.6]">
+            <div className={linesClass}>
               {oldLines.map((line, index) => (
                 <div
                   key={index}
-                  className={`text-diff-line flex min-h-[1.6em] ${
-                    line.type === 'removed'
-                      ? 'bg-red-100 dark:bg-red-600/15'
-                      : ''
-                  }`}
+                  className={getDiffLineClass(line.type)}
+                  data-diff-line={line.type}
                   onClick={() => {
                     if (line.type !== 'unchanged') {
                       handleLineClick(index, false);
                     }
                   }}
-                  style={{ cursor: line.type !== 'unchanged' ? 'pointer' : 'default' }}
                 >
                   <span
-                    className={`text-diff-line-number shrink-0 w-[50px] px-2 text-right select-none border-r border-[var(--nim-border)] ${
-                      line.type === 'removed'
-                        ? 'bg-red-200 text-red-800 dark:bg-red-600/25 dark:text-red-300'
-                        : 'bg-[var(--nim-bg-secondary)] text-[var(--nim-text-faint)]'
-                    }`}
+                    className={getLineNumberClass(line.type)}
+                    data-agent-elements-shell="text-diff-line-number"
                   >
                     {line.lineNumber}
                   </span>
                   <span
-                    className={`text-diff-line-content flex-1 px-3 whitespace-pre-wrap break-words ${
-                      line.type === 'removed'
-                        ? 'text-red-800 dark:text-red-300'
-                        : 'text-[var(--nim-text)]'
-                    }`}
+                    className={lineContentBaseClass}
+                    data-agent-elements-shell="text-diff-line-content"
                   >
                     {line.content || ' '}
                   </span>
@@ -303,46 +344,42 @@ export function TextDiffViewer({
             </div>
           </div>
         </div>
-        <div className="text-diff-panel text-diff-new flex-1 flex flex-col overflow-hidden border-l border-[var(--nim-border)]">
-          <div className="text-diff-header px-3 py-2 text-[11px] font-semibold uppercase tracking-[0.5px] border-b border-[var(--nim-border)] bg-[var(--nim-bg-secondary)] text-green-600">
+        <div
+          className={`${panelBaseClass} text-diff-new agent-elements-text-diff-panel-new`}
+          data-testid="agent-elements-text-diff-panel-new"
+          data-agent-elements-shell="text-diff-panel-new"
+          role="region"
+          aria-label="New version text diff"
+        >
+          <div className={`${headerBaseClass} text-[var(--an-diff-added-text)]`}>
             New Version
           </div>
           <div
-            className="text-diff-content flex-1 overflow-auto nim-scrollbar"
+            className={contentClass}
             ref={newContentRef}
             onScroll={() => handleScroll('new')}
           >
-            <div className="text-diff-lines font-mono text-[13px] leading-[1.6]">
+            <div className={linesClass}>
               {newLines.map((line, index) => (
                 <div
                   key={index}
-                  className={`text-diff-line flex min-h-[1.6em] ${
-                    line.type === 'added'
-                      ? 'bg-green-100 dark:bg-green-600/15'
-                      : ''
-                  }`}
+                  className={getDiffLineClass(line.type)}
+                  data-diff-line={line.type}
                   onClick={() => {
                     if (line.type !== 'unchanged') {
                       handleLineClick(index, true);
                     }
                   }}
-                  style={{ cursor: line.type !== 'unchanged' ? 'pointer' : 'default' }}
                 >
                   <span
-                    className={`text-diff-line-number shrink-0 w-[50px] px-2 text-right select-none border-r border-[var(--nim-border)] ${
-                      line.type === 'added'
-                        ? 'bg-green-200 text-green-900 dark:bg-green-600/25 dark:text-green-300'
-                        : 'bg-[var(--nim-bg-secondary)] text-[var(--nim-text-faint)]'
-                    }`}
+                    className={getLineNumberClass(line.type)}
+                    data-agent-elements-shell="text-diff-line-number"
                   >
                     {line.lineNumber}
                   </span>
                   <span
-                    className={`text-diff-line-content flex-1 px-3 whitespace-pre-wrap break-words ${
-                      line.type === 'added'
-                        ? 'text-green-900 dark:text-green-300'
-                        : 'text-[var(--nim-text)]'
-                    }`}
+                    className={lineContentBaseClass}
+                    data-agent-elements-shell="text-diff-line-content"
                   >
                     {line.content || ' '}
                   </span>

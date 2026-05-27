@@ -22,6 +22,76 @@ interface WorkspaceHistoryDialogProps {
   theme?: string;
 }
 
+const backdropClass =
+  'workspace-history-dialog-overlay agent-elements-workspace-history-backdrop fixed inset-0 z-[10000] flex items-center justify-center bg-[color-mix(in_srgb,var(--an-foreground)_14%,transparent)] p-[var(--an-spacing-xxl)]';
+const dialogClass =
+  'workspace-history-dialog agent-elements-workspace-history-dialog agent-elements-tool-card flex h-[min(80vh,800px)] w-[min(90vw,1200px)] flex-col overflow-hidden rounded-[var(--an-border-radius)] border border-[var(--an-border-color)] bg-[var(--an-background)] text-[var(--an-foreground)] shadow-[0_20px_60px_color-mix(in_srgb,var(--an-foreground)_10%,transparent)] @container/workspace-history';
+const headerClass =
+  'workspace-history-dialog-header agent-elements-workspace-history-header flex items-center justify-between gap-[var(--an-spacing-lg)] border-b border-[var(--an-border-color)] px-[var(--an-spacing-xxl)] py-[var(--an-spacing-lg)]';
+const titleClass = 'workspace-history-dialog-title flex min-w-0 items-center gap-[var(--an-spacing-md)]';
+const titleIconClass =
+  'agent-elements-workspace-history-header-icon inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-[var(--an-tool-border-radius)] border border-[var(--an-border-color)] bg-[var(--an-background-secondary)] text-[var(--an-primary-color)]';
+const closeButtonClass =
+  'workspace-history-dialog-close agent-elements-workspace-history-close inline-flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-[var(--an-input-border-radius)] border border-transparent bg-transparent text-[var(--an-foreground-muted)] transition-[background-color,border-color,color] duration-150 ease-out hover:border-[var(--an-border-color)] hover:bg-[var(--an-background-tertiary)] hover:text-[var(--an-foreground)] focus-visible:outline-2 focus-visible:outline-[var(--an-focus-ring)] focus-visible:outline-offset-2';
+const contentClass = 'workspace-history-dialog-content flex min-h-0 flex-1 overflow-hidden';
+const filePanelClass =
+  'workspace-history-file-panel agent-elements-workspace-history-file-panel flex w-[min(36vw,350px)] min-w-[260px] flex-col border-r border-[var(--an-border-color)] bg-[var(--an-background-secondary)] @max-[760px]/workspace-history:w-[300px]';
+const panelHeaderClass =
+  'workspace-history-file-panel-header agent-elements-workspace-history-file-panel-header flex min-h-11 items-center justify-between gap-[var(--an-spacing-sm)] border-b border-[var(--an-border-color)] px-[var(--an-spacing-lg)] py-[var(--an-spacing-sm)] text-xs font-medium text-[var(--an-foreground-muted)]';
+const previewPanelClass =
+  'workspace-history-preview-panel agent-elements-workspace-history-preview-panel flex min-w-0 flex-1 flex-col overflow-hidden bg-[var(--an-background)]';
+const previewHeaderClass =
+  'workspace-history-preview-header agent-elements-workspace-history-preview-header flex min-h-[48px] items-center justify-between gap-[var(--an-spacing-lg)] border-b border-[var(--an-border-color)] bg-[var(--an-background-secondary)] px-[var(--an-spacing-xxl)] py-[var(--an-spacing-sm)]';
+const previewHeaderLeftClass =
+  'workspace-history-preview-header-left flex min-w-0 flex-1 items-center gap-[var(--an-spacing-sm)]';
+const actionsClass = 'workspace-history-header-buttons flex shrink-0 items-center gap-[var(--an-spacing-sm)]';
+const buttonBaseClass =
+  'agent-elements-workspace-history-button inline-flex min-h-8 cursor-pointer items-center justify-center gap-[var(--an-spacing-xs)] whitespace-nowrap rounded-[var(--an-input-border-radius)] border px-3.5 py-1.5 text-xs font-medium transition-[background-color,border-color,color,opacity] duration-150 ease-out disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-[var(--an-focus-ring)] focus-visible:outline-offset-2';
+const primaryButtonClass =
+  `${buttonBaseClass} border-[var(--an-primary-color)] bg-[var(--an-primary-color)] text-[var(--an-send-button-color)] hover:border-[color-mix(in_srgb,var(--an-primary-color)_82%,var(--an-foreground))] hover:bg-[color-mix(in_srgb,var(--an-primary-color)_88%,var(--an-foreground))]`;
+const snapshotListClass =
+  'workspace-history-snapshot-list nim-scrollbar max-h-[200px] overflow-y-auto border-b border-[var(--an-border-color)] bg-[var(--an-background)]';
+const snapshotItemBaseClass =
+  'workspace-history-snapshot-item agent-elements-workspace-history-snapshot-item flex cursor-pointer items-center gap-[var(--an-spacing-md)] border-b border-[var(--an-border-color)] px-[var(--an-spacing-xxl)] py-[var(--an-spacing-sm)] last:border-b-0 transition-[background-color,border-color,box-shadow] duration-150 ease-out hover:bg-[var(--an-background-tertiary)] focus-visible:outline-2 focus-visible:outline-[var(--an-focus-ring)] focus-visible:outline-offset-[-2px]';
+const snapshotItemSelectedClass =
+  'selected border-[color-mix(in_srgb,var(--an-primary-color)_22%,var(--an-border-color))] bg-[color-mix(in_srgb,var(--an-primary-color)_8%,var(--an-background))] shadow-[inset_0_0_0_1px_color-mix(in_srgb,var(--an-primary-color)_12%,transparent)]';
+const snapshotIconBaseClass =
+  'workspace-history-snapshot-icon flex h-7 w-7 shrink-0 items-center justify-center rounded-[var(--an-small-border-radius)] border';
+const previewAreaClass =
+  'workspace-history-preview-area nim-scrollbar flex flex-1 flex-col overflow-auto bg-[var(--an-background)]';
+const diffHeaderClass =
+  'workspace-history-diff-header agent-elements-workspace-history-diff-header flex flex-wrap items-center gap-[var(--an-spacing-sm)] border-b border-[var(--an-border-color)] bg-[var(--an-background-secondary)] px-[var(--an-spacing-xxl)] py-[var(--an-spacing-sm)]';
+const diffLabelClass =
+  'workspace-history-diff-label rounded-[var(--an-small-border-radius)] border border-[var(--an-border-color)] bg-[var(--an-background)] px-2 py-0.5 text-[11px] font-medium';
+const diffModeToggleClass =
+  'workspace-history-diff-mode-toggle agent-elements-workspace-history-diff-mode-toggle ml-auto flex gap-[var(--an-spacing-xxs)] rounded-[var(--an-input-border-radius)] border border-[var(--an-border-color)] bg-[var(--an-background)] p-[var(--an-spacing-xxs)]';
+const diffModeButtonBaseClass =
+  'workspace-history-diff-mode-button cursor-pointer rounded-[calc(var(--an-input-border-radius)_-_4px)] border border-transparent px-3 py-1 text-[11px] font-medium transition-[background-color,border-color,color] duration-150 ease-out focus-visible:outline-2 focus-visible:outline-[var(--an-focus-ring)] focus-visible:outline-offset-1';
+const diffModeButtonActiveClass =
+  'active border-[var(--an-primary-color)] bg-[var(--an-primary-color)] text-[var(--an-send-button-color)]';
+const diffModeButtonIdleClass =
+  'text-[var(--an-foreground-muted)] hover:bg-[var(--an-background-tertiary)] hover:text-[var(--an-foreground)]';
+const loadingClass =
+  'workspace-history-preview-loading flex flex-1 flex-col items-center justify-center gap-[var(--an-spacing-lg)] p-10 text-[13px] text-[var(--an-foreground-muted)]';
+const loadingSpinnerClass =
+  'workspace-history-preview-loading-spinner h-6 w-6 rounded-full border-2 border-[var(--an-border-color)] border-t-[var(--an-primary-color)] motion-safe:animate-spin';
+const emptyStateClass =
+  'workspace-history-no-file-selected agent-elements-workspace-history-empty-preview flex flex-1 flex-col items-center justify-center gap-[var(--an-spacing-md)] px-[var(--an-spacing-xxl)] text-center text-[var(--an-foreground-subtle)]';
+
+function DecorativeMaterialSymbol({
+  icon,
+  className,
+}: {
+  icon: string;
+  className?: string;
+}) {
+  return (
+    <span aria-hidden="true" className={`material-symbols-outlined ${className ?? ''}`}>
+      {icon}
+    </span>
+  );
+}
+
 export function WorkspaceHistoryDialog({
   isOpen,
   onClose,
@@ -354,44 +424,59 @@ export function WorkspaceHistoryDialog({
     switch (type) {
       case 'auto-save':
       case 'auto':
-        return 'bg-blue-500/10 text-blue-500';
+        return 'border-[color-mix(in_srgb,var(--an-primary-color)_18%,var(--an-border-color))] bg-[color-mix(in_srgb,var(--an-primary-color)_9%,var(--an-background))] text-[var(--an-primary-color)]';
       case 'manual':
-        return 'bg-emerald-500/10 text-emerald-500';
+        return 'border-[color-mix(in_srgb,var(--an-success-color)_18%,var(--an-border-color))] bg-[color-mix(in_srgb,var(--an-success-color)_9%,var(--an-background))] text-[var(--an-success-color)]';
       case 'ai-diff':
       case 'pre-apply':
       case 'pre-edit':
-        return 'bg-purple-500/10 text-purple-500';
+        return 'border-[color-mix(in_srgb,var(--an-primary-color)_18%,var(--an-border-color))] bg-[color-mix(in_srgb,var(--an-primary-color)_9%,var(--an-background))] text-[var(--an-primary-color)]';
       case 'external-change':
-        return 'bg-orange-500/10 text-orange-500';
+        return 'border-[color-mix(in_srgb,var(--an-warning-color)_18%,var(--an-border-color))] bg-[color-mix(in_srgb,var(--an-warning-color)_9%,var(--an-background))] text-[var(--an-warning-color)]';
       case 'incremental-approval':
-        return 'bg-teal-500/10 text-teal-500';
+        return 'border-[color-mix(in_srgb,var(--an-success-color)_18%,var(--an-border-color))] bg-[color-mix(in_srgb,var(--an-success-color)_9%,var(--an-background))] text-[var(--an-success-color)]';
       default:
-        return 'bg-[var(--nim-bg-tertiary)] text-[var(--nim-text-muted)]';
+        return 'border-[var(--an-border-color)] bg-[var(--an-background-tertiary)] text-[var(--an-foreground-muted)]';
     }
   };
 
   return (
-    <div className="workspace-history-dialog-overlay nim-overlay" onClick={onClose}>
+    <div
+      className={backdropClass}
+      onClick={onClose}
+      data-testid="agent-elements-workspace-history-backdrop"
+      data-agent-elements-shell="workspace-history-backdrop"
+    >
       <div
-        className="workspace-history-dialog nim-modal w-[90%] max-w-[1200px] h-[80%] max-h-[800px]"
+        className={dialogClass}
         onClick={(e) => e.stopPropagation()}
+        data-testid="agent-elements-workspace-history-dialog"
+        data-component="WorkspaceHistoryDialog"
+        data-agent-elements-shell="workspace-history-dialog"
       >
-        <div className="workspace-history-dialog-header flex items-center justify-between px-4 py-3 border-b border-[var(--nim-border)]">
-          <div className="workspace-history-dialog-title flex items-center gap-2">
-            <span className="material-symbols-outlined text-xl text-[var(--nim-text-muted)]">history</span>
-            <h2 className="m-0 text-base font-semibold text-[var(--nim-text)]">Folder History</h2>
+        <div
+          className={headerClass}
+          data-testid="agent-elements-workspace-history-header"
+          data-agent-elements-shell="workspace-history-header"
+        >
+          <div className={titleClass}>
+            <DecorativeMaterialSymbol icon="history" className={`${titleIconClass} text-lg`} />
+            <h2 className="m-0 truncate text-base font-semibold text-[var(--an-foreground)]">Folder History</h2>
           </div>
-          <button className="workspace-history-dialog-close nim-btn-icon" onClick={onClose}>
-            <span className="material-symbols-outlined text-xl">close</span>
+          <button className={closeButtonClass} onClick={onClose} type="button" aria-label="Close folder history">
+            <DecorativeMaterialSymbol icon="close" className="text-xl" />
           </button>
         </div>
 
-        <div className="workspace-history-dialog-content flex-1 flex overflow-hidden">
-          {/* Left Panel - File Tree */}
-          <div className="workspace-history-file-panel w-[350px] border-r border-[var(--nim-border)] flex flex-col bg-[var(--nim-bg-secondary)]">
-            <div className="workspace-history-file-panel-header px-3 py-2 border-b border-[var(--nim-border)] text-xs font-semibold text-[var(--nim-text-muted)] uppercase tracking-wide flex items-center justify-between">
+        <div className={contentClass}>
+          <div
+            className={filePanelClass}
+            data-testid="agent-elements-workspace-history-file-panel"
+            data-agent-elements-shell="workspace-history-file-panel"
+          >
+            <div className={panelHeaderClass}>
               <span>Files with History ({files.length} files{deletedFilesCount > 0 ? `, ${deletedFilesCount} deleted` : ''})</span>
-              {loading && <span className="workspace-history-loading text-[11px] font-normal text-[var(--nim-text-faint)]">Loading...</span>}
+              {loading && <span className="workspace-history-loading text-[11px] font-normal text-[var(--an-foreground-subtle)]">Loading...</span>}
             </div>
             <WorkspaceHistoryFileTree
               files={files}
@@ -403,42 +488,47 @@ export function WorkspaceHistoryDialog({
             />
           </div>
 
-          {/* Right Panel - History View */}
-          <div className="workspace-history-preview-panel flex-1 flex flex-col min-w-0 overflow-hidden">
-            <div className="workspace-history-preview-header px-4 py-2 border-b border-[var(--nim-border)] flex items-center justify-between bg-[var(--nim-bg-secondary)] gap-3 min-h-[44px]">
-              <div className="workspace-history-preview-header-left flex items-center gap-2 min-w-0 flex-1">
+          <div
+            className={previewPanelClass}
+            data-testid="agent-elements-workspace-history-preview-panel"
+            data-agent-elements-shell="workspace-history-preview-panel"
+          >
+            <div className={previewHeaderClass}>
+              <div className={previewHeaderLeftClass}>
                 {selectedFilePath ? (
                   <>
-                    <span className="material-symbols-outlined text-lg text-[var(--nim-text-muted)] shrink-0">description</span>
-                    <span className="workspace-history-selected-file text-[13px] font-medium text-[var(--nim-text)] whitespace-nowrap overflow-hidden text-ellipsis">
+                    <DecorativeMaterialSymbol icon="description" className="shrink-0 text-lg text-[var(--an-foreground-muted)]" />
+                    <span className="workspace-history-selected-file overflow-hidden text-ellipsis whitespace-nowrap text-[13px] font-medium text-[var(--an-foreground)]">
                       {selectedFilePath.replace(workspacePath + '/', '')}
                     </span>
-                    <span className="workspace-history-snapshot-count text-xs text-[var(--nim-text-faint)] shrink-0">
+                    <span className="workspace-history-snapshot-count shrink-0 text-xs text-[var(--an-foreground-subtle)]">
                       ({snapshots.length} snapshot{snapshots.length !== 1 ? 's' : ''})
                     </span>
                   </>
                 ) : (
-                  <span className="workspace-history-no-selection text-[13px] text-[var(--nim-text-muted)]">Select a file to view history</span>
+                  <span className="workspace-history-no-selection text-[13px] text-[var(--an-foreground-muted)]">Select a file to view history</span>
                 )}
               </div>
-              <div className="workspace-history-header-buttons flex items-center gap-2 shrink-0">
+              <div className={actionsClass}>
                 {selectedDeletedFiles.size > 0 && (
                   <button
-                    className="workspace-history-restore-selected-button px-3.5 py-1.5 bg-emerald-500 text-white border-none rounded-md text-xs font-medium cursor-pointer transition-all duration-200 flex items-center gap-1 whitespace-nowrap hover:bg-emerald-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className={`workspace-history-restore-selected-button ${primaryButtonClass}`}
                     onClick={handleBatchRestore}
                     disabled={isRestoring}
+                    type="button"
                   >
-                    <span className="material-symbols-outlined text-base">restore</span>
+                    <DecorativeMaterialSymbol icon="restore" className="text-base" />
                     Restore Selected ({selectedDeletedFiles.size})
                   </button>
                 )}
                 {selectedFilePath && selectedSnapshotTimestamp && (
                   <button
-                    className="workspace-history-restore-button nim-btn-primary px-3.5 py-1.5 text-xs font-medium rounded-md flex items-center gap-1 whitespace-nowrap"
+                    className={`workspace-history-restore-button ${primaryButtonClass}`}
                     onClick={handleRestoreVersion}
                     disabled={isRestoring || !previewContent}
+                    type="button"
                   >
-                    <span className="material-symbols-outlined text-base">restore</span>
+                    <DecorativeMaterialSymbol icon="restore" className="text-base" />
                     {isSelectedFileDeleted ? 'Restore File' : 'Restore This Version'}
                   </button>
                 )}
@@ -447,53 +537,71 @@ export function WorkspaceHistoryDialog({
 
             {selectedFilePath ? (
               <div className="workspace-history-preview-content-wrapper flex-1 flex flex-col overflow-hidden">
-                {/* Snapshot List */}
-                <div className="workspace-history-snapshot-list border-b border-[var(--nim-border)] max-h-[200px] overflow-y-auto nim-scrollbar">
+                <div className={snapshotListClass}>
                   {snapshotsLoading ? (
-                    <div className="workspace-history-snapshots-loading p-5 text-center text-[var(--nim-text-muted)] text-[13px]">Loading snapshots...</div>
+                    <div className="workspace-history-snapshots-loading p-5 text-center text-[13px] text-[var(--an-foreground-muted)]">Loading snapshots...</div>
                   ) : snapshots.length === 0 ? (
-                    <div className="workspace-history-no-snapshots p-5 text-center text-[var(--nim-text-muted)] text-[13px]">No snapshots available</div>
+                    <div className="workspace-history-no-snapshots p-5 text-center text-[13px] text-[var(--an-foreground-muted)]">No snapshots available</div>
                   ) : (
                     snapshots.map((snapshot, index) => (
                       <div
                         key={`${snapshot.timestamp}-${index}`}
-                        className={`workspace-history-snapshot-item flex items-center gap-2.5 px-4 py-2 cursor-pointer border-b border-[var(--nim-border)] last:border-b-0 transition-colors duration-150 hover:bg-[var(--nim-bg-hover)] ${selectedSnapshotTimestamp === snapshot.timestamp ? 'selected bg-[var(--nim-bg-tertiary)] border-l-[3px] border-l-[var(--nim-primary)] pl-[13px]' : ''}`}
+                        className={`${snapshotItemBaseClass} ${selectedSnapshotTimestamp === snapshot.timestamp ? snapshotItemSelectedClass : ''}`}
                         onClick={() => handleSnapshotSelect(snapshot.timestamp, index)}
+                        role="button"
+                        tabIndex={0}
+                        onKeyDown={(event) => {
+                          if (event.key === 'Enter' || event.key === ' ') {
+                            event.preventDefault();
+                            void handleSnapshotSelect(snapshot.timestamp, index);
+                          }
+                        }}
+                        data-agent-elements-shell="workspace-history-snapshot-item"
+                        data-selected={selectedSnapshotTimestamp === snapshot.timestamp ? 'true' : 'false'}
                       >
-                        <div className={`workspace-history-snapshot-icon w-7 h-7 rounded-md flex items-center justify-center shrink-0 ${getSnapshotIconBgClass(snapshot.type)}`}>
-                          <span className="material-symbols-outlined text-base">{getSnapshotIcon(snapshot.type)}</span>
+                        <div className={`${snapshotIconBaseClass} ${getSnapshotIconBgClass(snapshot.type)}`}>
+                          <DecorativeMaterialSymbol icon={getSnapshotIcon(snapshot.type)} className="text-base" />
                         </div>
                         <div className="workspace-history-snapshot-info flex-1 min-w-0">
-                          <span className="workspace-history-snapshot-type block text-xs font-medium text-[var(--nim-text)] capitalize">{snapshot.type.replace('-', ' ')}</span>
-                          <span className="workspace-history-snapshot-time block text-[11px] text-[var(--nim-text-faint)]">{formatTimestamp(snapshot.timestamp)}</span>
+                          <span className="workspace-history-snapshot-type block text-xs font-medium capitalize text-[var(--an-foreground)]">{snapshot.type.replace('-', ' ')}</span>
+                          <span className="workspace-history-snapshot-time block text-[11px] text-[var(--an-foreground-subtle)]">{formatTimestamp(snapshot.timestamp)}</span>
                         </div>
                       </div>
                     ))
                   )}
                 </div>
 
-                {/* Preview Area */}
-                <div className="workspace-history-preview-area flex-1 overflow-auto bg-[var(--nim-bg)] flex flex-col nim-scrollbar">
+                <div className={previewAreaClass}>
                   {diffMode && versionAMeta && versionBMeta && (
-                    <div className="workspace-history-diff-header px-4 py-2 flex items-center gap-2 border-b border-[var(--nim-border)] bg-[var(--nim-bg-secondary)] flex-wrap">
-                      <span className="workspace-history-diff-label old px-2 py-0.5 rounded bg-[var(--nim-bg-tertiary)] text-[11px] font-medium text-[var(--nim-error)]">
+                    <div
+                      className={diffHeaderClass}
+                      data-testid="agent-elements-workspace-history-diff-header"
+                      data-agent-elements-shell="workspace-history-diff-header"
+                    >
+                      <span className={`${diffLabelClass} old text-[var(--an-diff-removed-text)]`}>
                         {formatVersionLabel(versionAMeta.type, versionAMeta.timestamp)}
                       </span>
-                      <span className="workspace-history-diff-separator text-[11px] font-semibold text-[var(--nim-text-faint)]">vs</span>
-                      <span className="workspace-history-diff-label new px-2 py-0.5 rounded bg-[var(--nim-bg-tertiary)] text-[11px] font-medium text-[var(--nim-success)]">
+                      <span className="workspace-history-diff-separator text-[11px] font-semibold text-[var(--an-foreground-subtle)]">vs</span>
+                      <span className={`${diffLabelClass} new text-[var(--an-success-color)]`}>
                         {formatVersionLabel(versionBMeta.type, versionBMeta.timestamp)}
                       </span>
                       {fileType === 'markdown' && (
-                        <div className="workspace-history-diff-mode-toggle flex bg-[var(--nim-bg)] border border-[var(--nim-border)] rounded-md p-0.5 gap-0.5 ml-auto">
+                        <div
+                          className={diffModeToggleClass}
+                          data-testid="agent-elements-workspace-history-diff-mode-toggle"
+                          data-agent-elements-shell="workspace-history-diff-mode-toggle"
+                        >
                           <button
-                            className={`workspace-history-diff-mode-button px-3 py-1 text-[11px] font-medium border-none rounded cursor-pointer transition-all duration-200 ${diffViewMode === 'rich' ? 'active text-white bg-[var(--nim-primary)]' : 'text-[var(--nim-text-muted)] hover:text-[var(--nim-text)] hover:bg-[var(--nim-bg-hover)]'}`}
+                            className={`${diffModeButtonBaseClass} ${diffViewMode === 'rich' ? diffModeButtonActiveClass : diffModeButtonIdleClass}`}
                             onClick={() => setDiffViewMode('rich')}
+                            type="button"
                           >
                             Rich
                           </button>
                           <button
-                            className={`workspace-history-diff-mode-button px-3 py-1 text-[11px] font-medium border-none rounded cursor-pointer transition-all duration-200 ${diffViewMode === 'text' ? 'active text-white bg-[var(--nim-primary)]' : 'text-[var(--nim-text-muted)] hover:text-[var(--nim-text)] hover:bg-[var(--nim-bg-hover)]'}`}
+                            className={`${diffModeButtonBaseClass} ${diffViewMode === 'text' ? diffModeButtonActiveClass : diffModeButtonIdleClass}`}
                             onClick={() => setDiffViewMode('text')}
+                            type="button"
                           >
                             Text
                           </button>
@@ -503,8 +611,8 @@ export function WorkspaceHistoryDialog({
                   )}
 
                   {loadingPreview ? (
-                    <div className="workspace-history-preview-loading flex flex-col items-center justify-center p-10 gap-3 text-[var(--nim-text-muted)] text-[13px]">
-                      <div className="workspace-history-preview-loading-spinner w-6 h-6 border-2 border-[var(--nim-border)] border-t-[var(--nim-primary)] rounded-full animate-spin" />
+                    <div className={loadingClass}>
+                      <div className={loadingSpinnerClass} />
                       Loading preview...
                     </div>
                   ) : diffMode ? (
@@ -541,17 +649,21 @@ export function WorkspaceHistoryDialog({
                       )}
                     </div>
                   ) : selectedSnapshotTimestamp ? (
-                    <pre className="workspace-history-preview-text m-0 p-4 font-mono text-[13px] leading-relaxed text-[var(--nim-text)] whitespace-pre-wrap break-words">{previewContent}</pre>
+                    <pre className="workspace-history-preview-text m-0 whitespace-pre-wrap break-words p-[var(--an-spacing-xxl)] font-mono text-[13px] leading-relaxed text-[var(--an-foreground)]">{previewContent}</pre>
                   ) : (
-                    <div className="workspace-history-preview-empty flex items-center justify-center flex-1 text-[var(--nim-text-muted)] text-[13px]">
+                    <div className="workspace-history-preview-empty flex flex-1 items-center justify-center text-[13px] text-[var(--an-foreground-muted)]">
                       Select a snapshot to preview
                     </div>
                   )}
                 </div>
               </div>
             ) : (
-              <div className="workspace-history-no-file-selected flex flex-col items-center justify-center flex-1 gap-3 text-[var(--nim-text-faint)]">
-                <span className="material-symbols-outlined text-5xl opacity-30">folder_open</span>
+              <div
+                className={emptyStateClass}
+                data-testid="agent-elements-workspace-history-empty-preview"
+                data-agent-elements-shell="workspace-history-empty-preview"
+              >
+                <DecorativeMaterialSymbol icon="folder_open" className="text-5xl opacity-40" />
                 <p className="m-0 text-sm">Select a file from the tree to view its history</p>
               </div>
             )}

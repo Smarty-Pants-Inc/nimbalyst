@@ -1,6 +1,10 @@
 import { TranscriptProjector } from '../../ai/server/transcript/TranscriptProjector';
 import type { TranscriptViewMessage } from '../../ai/server/transcript/TranscriptProjector';
 import type { InteractivePromptPayload, ToolProgressPayload, TranscriptEvent } from '../../ai/server/transcript/types';
+import {
+  frameworkStreamEventFromToolArguments,
+  projectFrameworkStreamEventsToAgentElementsModels,
+} from './AgentElementsFrameworkStreamProjection';
 import type { AgentElementsRendererModel } from './AgentElementsRendererRegistry';
 import type { AgentDiffLine, AgentSearchResult } from './AgentElementsToolRenderers';
 import type { AgentPlanStep, AgentTodoItem } from './AgentElementsTodoPlan';
@@ -8,15 +12,35 @@ import type { AgentMcpArgument, AgentQuestionAnswer, AgentQuestionOption, AgentS
 
 type TranscriptToolCall = NonNullable<TranscriptViewMessage['toolCall']>;
 
-export interface FrameworkStreamEvent {
-  method?: string;
-  namespace?: string | string[];
-  data?: unknown;
-  event?: string;
-  name?: string;
-  source?: string;
-  runId?: string;
-  threadId?: string;
+export type { FrameworkStreamEvent } from './AgentElementsFrameworkStreamProjection';
+export { projectFrameworkStreamEventsToAgentElementsModels } from './AgentElementsFrameworkStreamProjection';
+
+const NORMAL_TRANSCRIPT_RENDERER_KINDS = new Set([
+  'userMessage',
+  'assistantMessage',
+  'thinking',
+  'systemStatus',
+  'bash',
+  'fileEdit',
+  'search',
+  'mcp',
+  'genericTool',
+  'humanInput',
+  'plan',
+  'todo',
+  'subagent',
+]);
+
+export function isAgentElementsModelVisibleInNormalTranscript(
+  model: AgentElementsRendererModel,
+): boolean {
+  return NORMAL_TRANSCRIPT_RENDERER_KINDS.has(model.kind);
+}
+
+export function filterAgentElementsModelsForNormalTranscript(
+  models: readonly AgentElementsRendererModel[],
+): AgentElementsRendererModel[] {
+  return models.filter(isAgentElementsModelVisibleInNormalTranscript);
 }
 
 const EDIT_TOOL_NAMES = new Set([
@@ -100,88 +124,6 @@ function formatScalar(value: unknown): string {
   return 'structured value';
 }
 
-function namespaceLabel(namespace: FrameworkStreamEvent['namespace']): string | undefined {
-  if (Array.isArray(namespace)) {
-    return namespace.filter(Boolean).join(' > ') || undefined;
-  }
-  return namespace;
-}
-
-function objectEntries(value: unknown): Array<[string, unknown]> {
-  if (!value || typeof value !== 'object' || Array.isArray(value)) return [];
-  return Object.entries(value as Record<string, unknown>);
-}
-
-function stateChangedKeys(data: unknown) {
-  const entries = objectEntries(data);
-  if (entries.length === 0) {
-    return [{ key: 'value', after: formatScalar(data), summary: formatScalar(data) }];
-  }
-
-  return entries.map(([key, value]) => ({
-    key,
-    after: formatScalar(value),
-    summary: formatScalar(value),
-  }));
-}
-
-function frameworkLifecycleStatus(value: unknown): NonNullable<AgentElementsRendererModel['lifecycleStatus']> {
-  const status = typeof value === 'string' ? value.toLowerCase() : '';
-  if (status === 'queued' || status === 'running' || status === 'completed' || status === 'failed' || status === 'cancelled' || status === 'interrupted') {
-    return status;
-  }
-  if (status === 'error' || status === 'failure') return 'failed';
-  if (status === 'pending' || status === 'started' || status === 'starting') return 'running';
-  if (status === 'done' || status === 'success' || status === 'finished') return 'completed';
-  return 'running';
-}
-
-function frameworkRecord(data: unknown): Record<string, unknown> {
-  return data && typeof data === 'object' && !Array.isArray(data) ? data as Record<string, unknown> : {};
-}
-
-function frameworkEventName(event: FrameworkStreamEvent, fallback: string): string {
-  return firstString(frameworkRecord(event.data), ['eventName', 'event', 'name', 'type']) ?? event.event ?? event.name ?? event.method ?? fallback;
-}
-
-function frameworkArray(value: unknown): unknown[] {
-  return Array.isArray(value) ? value : [];
-}
-
-function frameworkSubagentItems(record: Record<string, unknown>): AgentSubagentItem[] {
-  const messageItems = frameworkArray(record.messages).map((message, index): AgentSubagentItem => {
-    const messageRecord = frameworkRecord(message);
-    return {
-      id: firstString(messageRecord, ['id']) ?? `message-${index}`,
-      title: firstString(messageRecord, ['role', 'type']) ?? 'Message',
-      detail: firstString(messageRecord, ['text', 'content', 'message']),
-      kind: 'message',
-      status: 'completed',
-    };
-  });
-
-  const toolItems = frameworkArray(record.toolCalls ?? record.tool_calls).map((tool, index): AgentSubagentItem => {
-    const toolRecord = frameworkRecord(tool);
-    return {
-      id: firstString(toolRecord, ['id']) ?? `tool-${index}`,
-      title: firstString(toolRecord, ['name', 'toolName', 'tool_name']) ?? `Tool ${index + 1}`,
-      detail: firstString(toolRecord, ['summary', 'message', 'detail']),
-      kind: 'tool',
-      status: frameworkLifecycleStatus(firstString(toolRecord, ['status', 'state'])) === 'failed' ? 'error' : frameworkLifecycleStatus(firstString(toolRecord, ['status', 'state'])) === 'completed' ? 'completed' : 'running',
-    };
-  });
-
-  const valueItems = objectEntries(record.values).map(([key, value]): AgentSubagentItem => ({
-    id: `value-${key}`,
-    title: key,
-    detail: formatScalar(value),
-    kind: 'value',
-    status: 'completed',
-  }));
-
-  return [...messageItems, ...toolItems, ...valueItems];
-}
-
 function safeParseObject(value: unknown): Record<string, unknown> | null {
   if (!value || typeof value !== 'string') return null;
   const trimmed = value.trim();
@@ -189,6 +131,22 @@ function safeParseObject(value: unknown): Record<string, unknown> | null {
   try {
     const parsed = JSON.parse(trimmed);
     return parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? parsed as Record<string, unknown> : null;
+  } catch {
+    return null;
+  }
+}
+
+function safeParseJson(value: unknown): unknown {
+  if (!value || typeof value !== 'string') return null;
+  const trimmed = value.trim();
+  if (
+    !((trimmed.startsWith('{') && trimmed.endsWith('}')) ||
+      (trimmed.startsWith('[') && trimmed.endsWith(']')))
+  ) {
+    return null;
+  }
+  try {
+    return JSON.parse(trimmed);
   } catch {
     return null;
   }
@@ -279,8 +237,224 @@ function primaryResultText(tool: TranscriptToolCall): string | undefined {
   return isSerializedJsonResult(result) ? undefined : result;
 }
 
+function firstNumber(record: Record<string, unknown>, keys: string[]): number | undefined {
+  for (const key of keys) {
+    const value = record[key];
+    if (typeof value === 'number' && Number.isFinite(value)) return value;
+    if (typeof value === 'string' && /^\d+$/.test(value.trim())) return Number(value.trim());
+  }
+  return undefined;
+}
+
+function firstStructuredPath(record: Record<string, unknown>): string | undefined {
+  return firstString(record, [
+    'path',
+    'filePath',
+    'file_path',
+    'filepath',
+    'filename',
+    'file',
+    'uri',
+    'url',
+  ]);
+}
+
+function firstReadableText(record: Record<string, unknown>): string | undefined {
+  return firstString(record, [
+    'excerpt',
+    'snippet',
+    'preview',
+    'text',
+    'line',
+    'content',
+    'body',
+    'summary',
+    'message',
+    'title',
+  ]);
+}
+
+function firstContentLine(value: string | undefined): string | undefined {
+  if (!value) return undefined;
+  return value
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .find(Boolean);
+}
+
+function truncateSearchExcerpt(value: string | undefined): string | undefined {
+  const firstLine = firstContentLine(value);
+  if (!firstLine) return undefined;
+  return firstLine.length > 220 ? `${firstLine.slice(0, 219)}…` : firstLine;
+}
+
+function metadataForSearchRecord(record: Record<string, unknown>): string | undefined {
+  const kind = firstString(record, ['kind', 'type', 'status']);
+  const score = record.score;
+  if (kind && (typeof score === 'number' || typeof score === 'string')) return `${kind} · score ${score}`;
+  if (kind) return kind;
+  if (typeof score === 'number' || typeof score === 'string') return `score ${score}`;
+  return undefined;
+}
+
+function structuredSearchResultFromRecord(record: Record<string, unknown>, index: number): AgentSearchResult {
+  const path = firstStructuredPath(record);
+  const title = firstString(record, ['title', 'name', 'label']) ?? (path ? basename(path) : `Result ${index + 1}`);
+  return {
+    title,
+    path,
+    line: firstNumber(record, ['line', 'lineNumber', 'line_number', 'startLine', 'start_line']),
+    excerpt: truncateSearchExcerpt(firstReadableText(record)),
+    metadata: metadataForSearchRecord(record),
+  };
+}
+
+function structuredSearchRows(parsed: unknown): Record<string, unknown>[] {
+  if (Array.isArray(parsed)) {
+    return parsed
+      .filter((item): item is Record<string, unknown> => !!item && typeof item === 'object' && !Array.isArray(item));
+  }
+
+  if (!parsed || typeof parsed !== 'object') return [];
+  const record = parsed as Record<string, unknown>;
+  for (const key of ['matches', 'results', 'files', 'items', 'rows', 'entries', 'documents', 'data']) {
+    const value = record[key];
+    if (Array.isArray(value)) {
+      return value
+        .filter((item): item is Record<string, unknown> => !!item && typeof item === 'object' && !Array.isArray(item));
+    }
+  }
+
+  if (firstStructuredPath(record) || firstReadableText(record)) {
+    return [record];
+  }
+
+  return [];
+}
+
+function truncateStructuredSummary(value: string | undefined): string | undefined {
+  const firstLine = firstContentLine(value);
+  if (!firstLine) return undefined;
+  return firstLine.length > 90 ? `${firstLine.slice(0, 89)}…` : firstLine;
+}
+
+function structuredResultRows(parsed: unknown): Record<string, unknown>[] {
+  if (Array.isArray(parsed)) {
+    return parsed
+      .filter((item): item is Record<string, unknown> => !!item && typeof item === 'object' && !Array.isArray(item));
+  }
+
+  if (!parsed || typeof parsed !== 'object') return [];
+  const record = parsed as Record<string, unknown>;
+  for (const key of [
+    'rows',
+    'items',
+    'results',
+    'entries',
+    'documents',
+    'data',
+    'matches',
+    'issues',
+    'pullRequests',
+    'pull_requests',
+    'files',
+  ]) {
+    const value = record[key];
+    if (Array.isArray(value)) {
+      return value
+        .filter((item): item is Record<string, unknown> => !!item && typeof item === 'object' && !Array.isArray(item));
+    }
+  }
+
+  return [];
+}
+
+function structuredResultRowLabel(record: Record<string, unknown>, index: number): string {
+  return truncateStructuredSummary(firstString(record, [
+    'title',
+    'name',
+    'label',
+    'path',
+    'filePath',
+    'file_path',
+    'url',
+    'summary',
+    'message',
+    'content',
+    'text',
+    'id',
+  ])) ?? `Result ${index + 1}`;
+}
+
+function structuredResultRowDetail(record: Record<string, unknown>): string | undefined {
+  return truncateStructuredSummary(firstString(record, [
+    'status',
+    'state',
+    'type',
+    'kind',
+    'path',
+    'filePath',
+    'file_path',
+    'summary',
+    'message',
+  ]));
+}
+
+function structuredScalarSummary(record: Record<string, unknown>): string | undefined {
+  const entries = Object.entries(record)
+    .filter(([, value]) => (
+      typeof value === 'string' ||
+      typeof value === 'number' ||
+      typeof value === 'boolean'
+    ))
+    .slice(0, 4)
+    .map(([key, value]) => `${key} ${truncateStructuredSummary(formatScalar(value))}`)
+    .filter((entry) => !entry.endsWith(' '));
+
+  return entries.length > 0 ? entries.join('; ') : undefined;
+}
+
+function structuredResultSummary(value: string | undefined): string | undefined {
+  const parsed = safeParseJson(value);
+  if (!parsed) return undefined;
+
+  const rows = structuredResultRows(parsed);
+  if (rows.length > 0) {
+    const rowSummaries = rows.slice(0, 4).map((row, index) => {
+      const label = structuredResultRowLabel(row, index);
+      const detail = structuredResultRowDetail(row);
+      return detail && detail !== label ? `${label} (${detail})` : label;
+    });
+    const suffix = rows.length > rowSummaries.length ? `; +${rows.length - rowSummaries.length} more` : '';
+    return `${rows.length} result${rows.length === 1 ? '' : 's'}: ${rowSummaries.join('; ')}${suffix}`;
+  }
+
+  if (Array.isArray(parsed)) {
+    const scalarItems = parsed
+      .map((item) => truncateStructuredSummary(formatScalar(item)))
+      .filter((item): item is string => Boolean(item))
+      .slice(0, 4);
+    return scalarItems.length > 0 ? `${parsed.length} item${parsed.length === 1 ? '' : 's'}: ${scalarItems.join('; ')}` : undefined;
+  }
+
+  if (parsed && typeof parsed === 'object') {
+    return structuredScalarSummary(parsed as Record<string, unknown>);
+  }
+
+  return undefined;
+}
+
 function parseSearchResults(value: string | undefined): AgentSearchResult[] | undefined {
   if (!value) return undefined;
+  const parsed = safeParseJson(value);
+  const structuredRows = structuredSearchRows(parsed);
+  if (structuredRows.length > 0) {
+    return structuredRows
+      .slice(0, 12)
+      .map((row, index) => structuredSearchResultFromRecord(row, index));
+  }
+  if (parsed !== null) return [];
+
   const rows = value
     .split(/\r?\n/)
     .map((line) => line.trim())
@@ -498,14 +672,18 @@ function mapToolCall(message: TranscriptViewMessage, tool: TranscriptToolCall): 
 
   if (SEARCH_TOOL_NAMES.has(normalized) || normalized.endsWith('__search') || normalized.endsWith(':search')) {
     const query = firstString(tool.arguments, ['query', 'pattern', 'path', 'file_path', 'filePath']) ?? tool.description ?? tool.toolDisplayName;
+    const isError = tool.status === 'error' || tool.isError === true;
+    const structuredResult = structuredResultSummary(resultText(tool));
     return {
       kind: 'search',
       title: tool.toolDisplayName,
-      status: tool.status,
+      status: isError ? 'error' : tool.status,
       query,
       searchSource: normalized === 'web_search' ? 'web' : 'code',
-      searchResults: parseSearchResults(resultText(tool)),
-      body: tool.description,
+      searchResults: isError ? [] : parseSearchResults(resultText(tool)),
+      body: isError
+        ? primaryResultText(tool) ?? structuredResult ?? tool.description ?? 'Tool failed.'
+        : tool.description,
       progressUpdates: progressUpdates(tool),
       rawPayload,
     };
@@ -513,6 +691,7 @@ function mapToolCall(message: TranscriptViewMessage, tool: TranscriptToolCall): 
 
   if (tool.mcpServer || tool.mcpTool || tool.toolName.startsWith('mcp__')) {
     const identity = parseMcpIdentity(tool);
+    const structuredResult = structuredResultSummary(resultText(tool));
     return {
       kind: 'mcp',
       title: tool.toolDisplayName,
@@ -521,18 +700,20 @@ function mapToolCall(message: TranscriptViewMessage, tool: TranscriptToolCall): 
       toolName: identity.toolName,
       displayName: tool.toolDisplayName,
       args: mcpArgs(tool.arguments),
-      result: primaryResultText(tool) ?? (resultText(tool) ? 'Structured result available in debug details.' : undefined),
-      error: tool.isError ? primaryResultText(tool) ?? 'Structured error available in debug details.' : undefined,
+      result: primaryResultText(tool) ?? structuredResult ?? (resultText(tool) ? 'Structured result available in debug details.' : undefined),
+      error: tool.isError ? primaryResultText(tool) ?? structuredResult ?? 'Structured error available in debug details.' : undefined,
+      progressUpdates: progressUpdates(tool),
       rawPayload,
     };
   }
 
+  const structuredResult = structuredResultSummary(resultText(tool));
   return {
     kind: 'genericTool',
     title: tool.toolDisplayName || tool.toolName || 'Tool call',
     status: tool.status,
     summary: tool.description,
-    result: primaryResultText(tool) ?? (
+    result: primaryResultText(tool) ?? structuredResult ?? (
       resultText(tool)
         ? 'Structured result available in debug details.'
         : tool.status === 'running' ? 'Tool is running.' : 'No result content.'
@@ -541,6 +722,7 @@ function mapToolCall(message: TranscriptViewMessage, tool: TranscriptToolCall): 
       { label: 'tool', value: tool.toolName },
       ...(targetPath(tool) ? [{ label: 'path', value: targetPath(tool) }] : []),
     ],
+    progressUpdates: progressUpdates(tool),
     rawPayload,
   };
 }
@@ -762,7 +944,14 @@ export function projectTranscriptViewMessageToAgentElementsModels(
     case 'system_message':
       return [mapSystemStatus(message)];
     case 'tool_call':
-      return message.toolCall ? [mapToolCall(message, message.toolCall)] : [];
+      if (!message.toolCall) return [];
+      {
+        const frameworkEvent = frameworkStreamEventFromToolArguments(message.toolCall.arguments);
+        if (frameworkEvent) {
+          return projectFrameworkStreamEventsToAgentElementsModels([frameworkEvent]);
+        }
+      }
+      return [mapToolCall(message, message.toolCall)];
     case 'interactive_prompt':
       return message.interactivePrompt ? [mapInteractivePrompt(message, message.interactivePrompt)] : [];
     case 'subagent':
@@ -808,156 +997,4 @@ export function projectTranscriptEventsToAgentElementsModels(
   return rows
     .sort((a, b) => a.sequence - b.sequence || a.id - b.id)
     .flatMap((row) => row.models);
-}
-
-export function projectFrameworkStreamEventsToAgentElementsModels(
-  events: readonly FrameworkStreamEvent[],
-): AgentElementsRendererModel[] {
-  return events.flatMap((event): AgentElementsRendererModel[] => {
-    const method = (event.method ?? event.event ?? '').trim();
-    const namespace = namespaceLabel(event.namespace);
-    const record = frameworkRecord(event.data);
-    const rawPayload = { frameworkStreamEvent: event };
-
-    if (method === 'updates' || method === 'values' || method === 'output') {
-      return [{
-        kind: 'stateUpdate',
-        title: method === 'output' ? 'Final output' : method === 'values' ? 'State values' : 'Graph update',
-        namespace,
-        status: method === 'output' ? 'completed' : 'running',
-        summary: method === 'output' ? 'Final agent output' : method === 'values' ? 'State snapshot' : 'Changed state keys',
-        changedKeys: stateChangedKeys(event.data),
-        rawPayload,
-      }];
-    }
-
-    if (method === 'messages' || method === 'message') {
-      const role = firstString(record, ['role', 'type']) === 'user' ? 'user' : 'assistant';
-      const body = firstString(record, ['text', 'content', 'message']);
-      const reasoning = firstString(record, ['reasoning', 'thinking']);
-      const model = firstString(record, ['model', 'modelName', 'model_name']) ?? namespace;
-      const models: AgentElementsRendererModel[] = [];
-
-      if (reasoning) {
-        models.push({
-          kind: 'thinking',
-          body: reasoning,
-          detail: model,
-          status: body ? 'completed' : 'running',
-          rawPayload,
-        });
-      }
-
-      models.push({
-        kind: role === 'user' ? 'userMessage' : 'assistantMessage',
-        body,
-        actor: {
-          role,
-          name: role === 'user' ? 'User' : 'Smarty Code',
-          metadata: model,
-        },
-        isStreaming: !body,
-        rawPayload,
-      });
-
-      return models;
-    }
-
-    if (method === 'subagents' || method === 'subgraphs') {
-      const name = firstString(record, ['name', 'graphName', 'graph_name', 'agentName', 'agent_name']) ?? namespace ?? 'Subagent';
-      const status = frameworkLifecycleStatus(firstString(record, ['status', 'state']));
-      return [{
-        kind: 'subagent',
-        title: name,
-        body: name,
-        status: status === 'failed' ? 'error' : status === 'completed' ? 'completed' : 'running',
-        summary: firstString(record, ['taskInput', 'task_input', 'summary', 'output', 'message']),
-        subagentItems: frameworkSubagentItems(record),
-        rawPayload,
-      }];
-    }
-
-    if (method === 'tools' || method === 'toolCalls' || method === 'tool_calls') {
-      const toolName = firstString(record, ['name', 'toolName', 'tool_name']) ?? event.name ?? event.event ?? 'Tool call';
-      return [{
-        kind: 'toolLifecycle',
-        title: toolName,
-        status: firstString(record, ['status', 'state']) ?? 'running',
-        detail: namespace ?? firstString(record, ['detail', 'message']),
-        body: event.event ?? firstString(record, ['summary', 'message']) ?? 'Tool lifecycle event',
-        rawPayload,
-      }];
-    }
-
-    if (method === 'lifecycle') {
-      return [{
-        kind: 'checkpointTaskDebug',
-        lifecycleKind: 'run',
-        lifecycleStatus: frameworkLifecycleStatus(firstString(record, ['status', 'state']) ?? event.event),
-        title: firstString(record, ['name', 'title']) ?? event.event ?? 'Run lifecycle',
-        detail: firstString(record, ['detail', 'message', 'summary']),
-        rawPayload,
-      }];
-    }
-
-    if (method === 'checkpoints') {
-      const checkpoint = frameworkRecord(record.checkpoint);
-      const taskEvents = Array.isArray(record.tasks)
-        ? record.tasks.map((task, index) => {
-          const taskRecord = frameworkRecord(task);
-          return {
-            id: firstString(taskRecord, ['id']) ?? `task-${index}`,
-            label: firstString(taskRecord, ['name', 'title']) ?? `Task ${index + 1}`,
-            detail: firstString(taskRecord, ['detail', 'message', 'summary']),
-            status: frameworkLifecycleStatus(firstString(taskRecord, ['status', 'state'])),
-          };
-        })
-        : undefined;
-
-      return [{
-        kind: 'checkpointTaskDebug',
-        lifecycleKind: 'checkpoint',
-        lifecycleStatus: 'completed',
-        title: firstString(record, ['name', 'title']) ?? 'Checkpoint',
-        resumeId: firstString(checkpoint, ['id', 'checkpointId', 'checkpoint_id']),
-        lifecycleEvents: taskEvents,
-        rawPayload,
-      }];
-    }
-
-    if (method === 'tasks') {
-      return [{
-        kind: 'checkpointTaskDebug',
-        lifecycleKind: 'task',
-        lifecycleStatus: frameworkLifecycleStatus(firstString(record, ['status', 'state'])),
-        title: firstString(record, ['name', 'title']) ?? event.event ?? 'Task lifecycle',
-        detail: firstString(record, ['detail', 'message', 'summary']),
-        rawPayload,
-      }];
-    }
-
-    if (method === 'debug') {
-      return [{
-        kind: 'checkpointTaskDebug',
-        lifecycleKind: 'custom',
-        title: event.event ?? firstString(record, ['name', 'title', 'node']) ?? 'Debug event',
-        status: firstString(record, ['status', 'state']) ?? 'running',
-        detail: firstString(record, ['detail', 'message', 'summary']),
-        rawPayload,
-      }];
-    }
-
-    if (method === 'custom' || method.startsWith('custom:') || method === 'extensions' || method === 'extension') {
-      return [{
-        kind: 'extensionEvent',
-        eventName: frameworkEventName(event, method === 'custom' ? 'custom.event' : method),
-        source: event.source ?? namespace ?? firstString(record, ['source']) ?? 'framework',
-        status: firstString(record, ['status', 'state']) ?? 'running',
-        summary: firstString(record, ['summary', 'message', 'detail']),
-        rawPayload,
-      }];
-    }
-
-    return [];
-  });
 }

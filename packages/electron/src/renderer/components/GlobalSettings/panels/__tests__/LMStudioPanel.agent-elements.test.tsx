@@ -2,9 +2,22 @@
 
 import '@testing-library/jest-dom/vitest';
 import React from 'react';
+import { readFileSync } from 'node:fs';
+import path from 'node:path';
 import { fireEvent, render, screen, within } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { LMStudioPanel } from '../LMStudioPanel';
+
+const sourcePath = path.join(
+  process.cwd(),
+  'packages/electron/src/renderer/components/GlobalSettings/panels/LMStudioPanel.tsx',
+);
+const chromeSourcePath = path.join(
+  process.cwd(),
+  'packages/electron/src/renderer/components/GlobalSettings/panels/providerPanelChrome.ts',
+);
+const legacyVisualChromePattern =
+  /bg-nim|text-nim|border-nim|bg-\[var\(--nim|text-\[var\(--nim|border-\[var\(--nim|--nim-|rgba\(|#[0-9a-fA-F]{3,8}\b|rounded-lg|transition-all/;
 
 const baseProps = () => ({
   config: {
@@ -100,5 +113,21 @@ describe('LMStudioPanel Agent Elements shell', () => {
     expect(screen.getByTestId('agent-elements-lmstudio-models-empty')).toHaveTextContent(
       'No models found. Make sure LM Studio is running with a loaded model.',
     );
+  });
+
+  it('keeps provider chrome on Agent Elements aliases instead of legacy visual tokens', () => {
+    const panelSource = readFileSync(sourcePath, 'utf8');
+    const chromeSource = readFileSync(chromeSourcePath, 'utf8');
+    const source = `${panelSource}\n${chromeSource}`;
+
+    expect(panelSource).toContain('createProviderPanelChrome');
+    expect(source).toContain('--an-border-color');
+    expect(source).toContain('--an-foreground');
+    expect(source).toContain('--an-input-background');
+    expect(source).toContain('--an-primary-color');
+    expect(source).toContain('--an-success-color');
+    expect(source).toContain('--an-error-color');
+    expect(source).toContain('--agent-elements-card-inline-padding');
+    expect(source).not.toMatch(legacyVisualChromePattern);
   });
 });

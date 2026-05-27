@@ -4,6 +4,8 @@ import '@testing-library/jest-dom/vitest';
 import React from 'react';
 import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import fs from 'node:fs';
+import path from 'node:path';
 import { PromptQuickOpen } from '../PromptQuickOpen';
 
 vi.mock('@nimbalyst/runtime', async () => {
@@ -40,6 +42,11 @@ const prompts = [
     provider: 'claude',
   },
 ];
+
+const promptQuickOpenSourcePath = path.join(
+  process.cwd(),
+  'packages/electron/src/renderer/components/PromptQuickOpen.tsx',
+);
 
 describe('PromptQuickOpen Agent Elements shell', () => {
   beforeEach(() => {
@@ -149,5 +156,14 @@ describe('PromptQuickOpen Agent Elements shell', () => {
       expect(navigator.clipboard.writeText).toHaveBeenCalledWith('Fix auth bug');
     });
     expect(screen.getByTestId('agent-elements-prompt-quick-open-copied-toast')).toHaveTextContent('Copied to clipboard');
+  });
+
+  it('keeps the prompt quick-open shell on Agent Elements visual aliases', () => {
+    const source = fs.readFileSync(promptQuickOpenSourcePath, 'utf8');
+
+    expect(source).toContain('agent-elements-prompt-quick-open-backdrop');
+    expect(source).toContain('agent-elements-prompt-quick-open');
+    expect(source).toContain('var(--an-foreground)');
+    expect(source).not.toMatch(/var\(--nim-[^)]+\)/);
   });
 });

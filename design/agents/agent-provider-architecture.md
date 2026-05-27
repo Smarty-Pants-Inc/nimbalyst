@@ -257,7 +257,7 @@ For a new agent provider this means:
 - Make sure tool-call IDs are stable across `tool_call_started` and `tool_call_completed` (`providerToolCallId`). This is what lets the matcher pair the start with the result.
 - When your agent invokes shell commands that touch files (Bash-style), the matcher already has heuristics — but emitting an explicit canonical `tool_progress` event with elapsed seconds keeps the UI honest.
 
-The user-facing diff review (`DiffPreview`, `TextDiffViewer`, `MonacoDiffViewer`) and the FilesEditedSidebar are downstream of these signals; if they look empty after a turn, a tool-name allowlist miss is the most common cause.
+The user-facing diff review (`DiffPreviewEditor`, `TextDiffViewer`, `MonacoDiffViewer`, `ImageDiffViewer`) and the FilesEditedSidebar are downstream of these signals; if they look empty after a turn, a tool-name allowlist miss is the most common cause.
 
 ## 9. IPC surface
 

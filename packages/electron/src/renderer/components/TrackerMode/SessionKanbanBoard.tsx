@@ -78,16 +78,52 @@ const ALL_COLUMN_KEYS: SessionPhaseKey[] = [
   ...SESSION_PHASE_COLUMNS.map(c => c.value),
 ];
 
+const kanbanColumnBaseClass =
+  'session-kanban-column agent-elements-session-kanban-column flex flex-col min-w-[240px] max-w-[300px] flex-1 overflow-hidden rounded-[var(--an-tool-border-radius)] border border-[var(--an-border-color)] bg-[var(--an-background-secondary)] text-[var(--an-foreground)]';
+const kanbanCollapsedColumnClass =
+  'session-kanban-column agent-elements-session-kanban-column flex w-10 shrink-0 cursor-pointer flex-col overflow-hidden rounded-[var(--an-tool-border-radius)] border border-[var(--an-border-color)] bg-[var(--an-background-secondary)] text-[var(--an-foreground)] transition-[background-color,border-color] duration-150 ease-out';
+const kanbanDragOverClass =
+  'bg-[color-mix(in_srgb,var(--an-primary-color)_8%,var(--an-background))] outline outline-2 outline-dashed outline-[color-mix(in_srgb,var(--an-primary-color)_34%,transparent)] -outline-offset-2';
+const kanbanColumnHeaderClass =
+  'agent-elements-session-kanban-column-header flex cursor-pointer items-center gap-[var(--an-spacing-sm)] border-b border-[var(--an-border-color)] px-[var(--an-spacing-lg)] py-[var(--an-spacing-sm)] transition-[background-color,color] duration-150 ease-out hover:bg-[var(--an-background-tertiary)]';
+const kanbanColumnBodyClass =
+  'agent-elements-session-kanban-column-body flex-1 space-y-[var(--an-spacing-sm)] overflow-y-auto p-[var(--an-spacing-sm)] transition-[background-color] duration-150 ease-out';
+const kanbanSubtleTextClass = 'text-[var(--an-foreground-subtle)]';
+const kanbanMutedTextClass = 'text-[var(--an-foreground-muted)]';
+const kanbanInteractiveIconClass =
+  'flex h-4 w-4 items-center justify-center rounded-[var(--an-radius-xs)] text-[var(--an-foreground-subtle)] transition-colors duration-150 ease-out hover:text-[var(--an-foreground-muted)]';
+const kanbanToolbarClass =
+  'agent-elements-session-kanban-toolbar flex shrink-0 items-center gap-[var(--an-spacing-sm)] border-b border-[var(--an-border-color)] bg-[var(--an-background)] px-[var(--an-spacing-lg)] py-[var(--an-spacing-sm)] text-[var(--an-foreground)]';
+const kanbanSearchInputClass =
+  'w-full rounded-[var(--an-input-border-radius)] border border-[var(--an-input-border-color)] bg-[var(--an-input-background)] py-1 pl-7 pr-2 text-[11px] text-[var(--an-input-color)] outline-none transition-[border-color,box-shadow] duration-150 ease-out placeholder:text-[var(--an-input-placeholder-color)] focus:border-[var(--an-input-focus-outline)] focus:ring-2 focus:ring-[var(--an-input-focus-outline)]';
+const kanbanPillClass =
+  'flex shrink-0 cursor-pointer items-center gap-1 rounded-[var(--an-small-border-radius)] border px-2 py-0.5 text-[11px] transition-[background-color,border-color,color] duration-150 ease-out';
+const kanbanActivePillClass =
+  'border-[color-mix(in_srgb,var(--an-primary-color)_36%,var(--an-border-color))] bg-[color-mix(in_srgb,var(--an-primary-color)_8%,var(--an-background))] text-[var(--an-primary-color)]';
+const kanbanInactivePillClass =
+  'border-[var(--an-border-color)] text-[var(--an-foreground-subtle)] hover:text-[var(--an-foreground)]';
+const kanbanMenuClass =
+  'agent-elements-session-kanban-menu agent-elements-tool-card z-[1000] min-w-[180px] rounded-[var(--an-tool-border-radius)] border border-[var(--an-border-color)] bg-[var(--an-background)] p-1 text-[var(--an-foreground)] shadow-[0_12px_32px_color-mix(in_srgb,var(--an-foreground)_12%,transparent)]';
+const kanbanMenuItemClass =
+  'flex w-full cursor-pointer items-center gap-[var(--an-spacing-sm)] rounded-[var(--an-radius-sm)] border-none bg-transparent px-[var(--an-spacing-md)] py-[var(--an-spacing-sm)] text-left text-[0.8125rem] text-[var(--an-foreground)] transition-[background-color,color] duration-150 ease-out hover:bg-[var(--an-background-tertiary)] [&_svg]:shrink-0';
+const kanbanDividerClass = 'my-1 h-px bg-[var(--an-border-color)]';
+const kanbanCardClass =
+  'agent-elements-session-kanban-card agent-elements-tool-card w-full min-w-0 cursor-default text-left [--agent-elements-card-block-padding:var(--an-spacing-md)] [--agent-elements-card-inline-padding:var(--an-spacing-md)] transition-[background-color,border-color,box-shadow] duration-150 ease-out';
+const kanbanCardTitleRowClass =
+  'mb-1.5 flex min-w-0 items-start gap-[var(--an-spacing-xs)]';
+const kanbanCardFooterClass =
+  'flex min-w-0 items-center justify-between gap-[var(--an-spacing-sm)]';
+
 // ============================================================
 // ChildRunStateBar
 // ============================================================
 
 const RUN_STATE_SEGMENTS = [
-  { key: 'running' as const, label: 'running', color: '#60a5fa' },
-  { key: 'waiting' as const, label: 'waiting', color: '#f97316' },
-  { key: 'review' as const, label: 'review', color: '#a78bfa' },
-  { key: 'idle' as const, label: 'idle', color: '#666666' },
-  { key: 'done' as const, label: 'done', color: '#4ade80' },
+  { key: 'running' as const, label: 'running', color: 'var(--an-primary-color)' },
+  { key: 'waiting' as const, label: 'waiting', color: 'var(--an-warning-color)' },
+  { key: 'review' as const, label: 'review', color: 'var(--an-info-color)' },
+  { key: 'idle' as const, label: 'idle', color: 'var(--an-foreground-subtle)' },
+  { key: 'done' as const, label: 'done', color: 'var(--an-success-color)' },
 ];
 
 function ChildRunStateBar({ sessionId }: { sessionId: string }) {
@@ -122,29 +158,17 @@ function ChildRunStateBar({ sessionId }: { sessionId: string }) {
 function CardTypeIcon({ type, provider }: { type: KanbanCardType; provider?: string }) {
   if (type === 'worktree') {
     return (
-      <svg width="14" height="14" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" className="shrink-0 mt-px text-[#a78bfa]">
-        <rect x="3" y="2" width="3" height="3" rx="0.5" stroke="currentColor" strokeWidth="1.5" fill="none"/>
-        <rect x="10" y="2" width="3" height="3" rx="0.5" stroke="currentColor" strokeWidth="1.5" fill="none"/>
-        <rect x="3" y="11" width="3" height="3" rx="0.5" stroke="currentColor" strokeWidth="1.5" fill="none"/>
-        <path d="M4.5 5v3.5a1.5 1.5 0 0 0 1.5 1.5h4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-        <path d="M11.5 5v5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-      </svg>
+      <MaterialSymbol icon="account_tree" size={14} className="mt-px shrink-0 text-[var(--an-info-color)]" />
     );
   }
   if (type === 'workstream') {
     return (
-      <svg width="14" height="14" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" className="shrink-0 mt-px text-[#60a5fa]">
-        <circle cx="8" cy="4" r="1.5" fill="currentColor"/>
-        <circle cx="4" cy="12" r="1.5" fill="currentColor"/>
-        <circle cx="12" cy="12" r="1.5" fill="currentColor"/>
-        <line x1="7.5" y1="5.2" x2="4.5" y2="10.8" stroke="currentColor" strokeWidth="1" strokeLinecap="round"/>
-        <line x1="8.5" y1="5.2" x2="11.5" y2="10.8" stroke="currentColor" strokeWidth="1" strokeLinecap="round"/>
-      </svg>
+      <MaterialSymbol icon="hub" size={14} className="mt-px shrink-0 text-[var(--an-primary-color)]" />
     );
   }
   // Regular session: show provider icon
   return (
-    <span className="shrink-0 mt-px flex items-center text-nim-muted">
+    <span className="mt-px flex shrink-0 items-center text-[var(--an-foreground-muted)]">
       <ProviderIcon provider={provider || 'claude'} size={14} />
     </span>
   );
@@ -159,9 +183,9 @@ type CardVisualState = 'running' | 'waiting' | 'unread' | 'idle';
 
 /** Background + border tints for each visual state */
 const CARD_STATE_STYLES: Record<CardVisualState, { bg: string; border: string }> = {
-  running:  { bg: 'rgba(96, 165, 250, 0.06)',  border: 'rgba(96, 165, 250, 0.25)' },
-  waiting:  { bg: 'rgba(249, 115, 22, 0.06)',  border: 'rgba(249, 115, 22, 0.25)' },
-  unread:   { bg: 'rgba(96, 165, 250, 0.04)',  border: 'rgba(96, 165, 250, 0.18)' },
+  running:  { bg: 'color-mix(in_srgb,var(--an-primary-color)_6%,var(--an-background))', border: 'color-mix(in_srgb,var(--an-primary-color)_26%,var(--an-border-color))' },
+  waiting:  { bg: 'color-mix(in_srgb,var(--an-warning-color)_7%,var(--an-background))', border: 'color-mix(in_srgb,var(--an-warning-color)_30%,var(--an-border-color))' },
+  unread:   { bg: 'color-mix(in_srgb,var(--an-primary-color)_4%,var(--an-background))', border: 'color-mix(in_srgb,var(--an-primary-color)_20%,var(--an-border-color))' },
   idle:     { bg: 'transparent',                border: '' },
 };
 
@@ -189,7 +213,7 @@ function useCardState(sessionId: string, cardType: KanbanCardType): CardStateInf
       state: 'running',
       badgeLabel: hasChildRunning ? `${childStates.running} running` : 'running',
       badgeIcon: 'progress_activity',
-      badgeColor: '#60a5fa',
+      badgeColor: 'var(--an-primary-color)',
       spinIcon: true,
     };
   }
@@ -198,7 +222,7 @@ function useCardState(sessionId: string, cardType: KanbanCardType): CardStateInf
       state: 'waiting',
       badgeLabel: hasChildWaiting ? `${childStates.waiting} waiting` : 'needs input',
       badgeIcon: 'help_outline',
-      badgeColor: '#f97316',
+      badgeColor: 'var(--an-warning-color)',
       spinIcon: false,
     };
   }
@@ -207,7 +231,7 @@ function useCardState(sessionId: string, cardType: KanbanCardType): CardStateInf
       state: 'unread',
       badgeLabel: null,
       badgeIcon: null,
-      badgeColor: 'var(--nim-primary)',
+      badgeColor: 'var(--an-primary-color)',
       spinIcon: false,
     };
   }
@@ -227,7 +251,7 @@ function useCardState(sessionId: string, cardType: KanbanCardType): CardStateInf
 function CardStatusBadge({ info }: { info: CardStateInfo }) {
   if (info.state === 'running') {
     return (
-      <span className="flex items-center gap-0.5 text-[10px] px-1 py-px rounded bg-blue-400/10" style={{ color: info.badgeColor }}>
+      <span className="flex items-center gap-0.5 rounded-[var(--an-radius-xs)] bg-[color-mix(in_srgb,var(--an-primary-color)_10%,transparent)] px-1 py-px text-[10px]" style={{ color: info.badgeColor }}>
         <span className={`material-symbols-outlined text-[12px] ${info.spinIcon ? 'animate-spin' : ''}`}>{info.badgeIcon}</span>
         {info.badgeLabel}
       </span>
@@ -235,7 +259,7 @@ function CardStatusBadge({ info }: { info: CardStateInfo }) {
   }
   if (info.state === 'waiting') {
     return (
-      <span className="flex items-center gap-0.5 text-[10px] px-1 py-px rounded bg-orange-500/10" style={{ color: info.badgeColor }}>
+      <span className="flex items-center gap-0.5 rounded-[var(--an-radius-xs)] bg-[color-mix(in_srgb,var(--an-warning-color)_10%,transparent)] px-1 py-px text-[10px]" style={{ color: info.badgeColor }}>
         <MaterialSymbol icon="help_outline" size={12} />
         {info.badgeLabel}
       </span>
@@ -243,7 +267,7 @@ function CardStatusBadge({ info }: { info: CardStateInfo }) {
   }
   if (info.state === 'unread') {
     return (
-      <span className="flex items-center justify-center w-[8px] h-[8px] text-[var(--nim-primary)]" title="Unread response">
+      <span className="flex h-[8px] w-[8px] items-center justify-center text-[var(--an-primary-color)]" title="Unread response">
         <MaterialSymbol icon="circle" size={8} fill />
       </span>
     );
@@ -389,12 +413,12 @@ function TranscriptPeek({ sessionId, anchorRef, onClose }: TranscriptPeekProps) 
   return createPortal(
     <div
       ref={peekRef}
-      className="fixed z-[100] w-[600px] h-[350px] bg-nim-secondary border border-nim rounded-lg shadow-2xl overflow-hidden flex flex-col"
+      className="agent-elements-session-kanban-peek fixed z-[100] flex h-[350px] w-[600px] flex-col overflow-hidden rounded-[var(--an-tool-border-radius)] border border-[var(--an-border-color)] bg-[var(--an-background-secondary)] text-[var(--an-foreground)] shadow-[0_16px_48px_color-mix(in_srgb,var(--an-foreground)_14%,transparent)]"
       style={{ top: position?.top ?? 0, left: position?.left ?? 0, visibility: position ? 'visible' : 'hidden' }}
       onMouseLeave={onClose}
     >
       {loading ? (
-        <div className="flex-1 flex items-center justify-center text-nim-faint">
+        <div className="flex flex-1 items-center justify-center text-[var(--an-foreground-subtle)]">
           <span className="material-symbols-outlined text-sm animate-spin" style={{ fontSize: '16px' }}>progress_activity</span>
         </div>
       ) : messages && messages.length > 0 ? (
@@ -407,7 +431,7 @@ function TranscriptPeek({ sessionId, anchorRef, onClose }: TranscriptPeekProps) 
           />
         </div>
       ) : (
-        <div className="flex-1 flex items-center justify-center text-[11px] text-nim-disabled italic">
+        <div className="flex flex-1 items-center justify-center text-[11px] italic text-[var(--an-foreground-subtle)]">
           No messages yet
         </div>
       )}
@@ -535,18 +559,16 @@ function SessionKanbanCard({ session, onSelect, onArchive, onRename, phaseColor,
     <>
       <div
         ref={cardRef}
-        className={`w-full text-left p-2.5 rounded-md border transition-colors cursor-default ${
+        className={`${kanbanCardClass} ${
           isFocused
-            ? 'border-[var(--nim-primary)] ring-1 ring-[var(--nim-primary)]'
+            ? 'border-[var(--an-primary-color)] ring-1 ring-[var(--an-primary-color)]'
             : isSelected
-              ? 'border-[rgba(96,165,250,0.5)] bg-[rgba(96,165,250,0.06)]'
+              ? 'border-[color-mix(in_srgb,var(--an-primary-color)_48%,var(--an-border-color))] bg-[color-mix(in_srgb,var(--an-primary-color)_6%,var(--an-background))]'
               : stateStyle.border
                 ? ''
-                : 'border-nim'
+                : 'border-[var(--an-border-color)]'
         }`}
         style={{
-          borderLeftWidth: '3px',
-          borderLeftColor: phaseColor,
           backgroundColor: isFocused ? stateStyle.bg || undefined : isSelected ? undefined : stateStyle.bg || undefined,
           borderColor: isFocused ? undefined : isSelected ? undefined : stateStyle.border || undefined,
         }}
@@ -554,16 +576,24 @@ function SessionKanbanCard({ session, onSelect, onArchive, onRename, phaseColor,
         onContextMenu={handleContextMenu}
         data-testid="session-kanban-card"
         data-session-id={session.id}
+        data-agent-elements-shell="session-kanban-card"
+        data-agent-elements-card-width="column-fill"
+        data-agent-elements-card-padding="symmetric-inline"
       >
         {/* Title row: type/provider icon + title + unread dot */}
-        <div className="flex items-start gap-1.5 mb-1.5">
+        <div className={kanbanCardTitleRowClass}>
+          <span
+            className="mt-[5px] h-2 w-2 shrink-0 rounded-full"
+            style={{ backgroundColor: phaseColor }}
+            data-agent-elements-shell="session-kanban-phase-dot"
+          />
           <CardTypeIcon type={cardType} provider={session.provider} />
-          <div className="flex-1 min-w-0">
+          <div className="min-w-0 flex-1">
             {isRenaming ? (
               <input
                 ref={renameInputRef}
                 type="text"
-                className="w-full px-1 py-0.5 text-xs font-medium border border-[var(--nim-primary)] rounded bg-[var(--nim-bg)] text-[var(--nim-text)] outline-none"
+                className="w-full rounded-[var(--an-input-border-radius)] border border-[var(--an-primary-color)] bg-[var(--an-input-background)] px-1 py-0.5 text-xs font-medium text-[var(--an-input-color)] outline-none"
                 value={renameValue}
                 onChange={(e) => setRenameValue(e.target.value)}
                 onKeyDown={handleRenameKeyDown}
@@ -571,7 +601,7 @@ function SessionKanbanCard({ session, onSelect, onArchive, onRename, phaseColor,
                 onClick={(e) => e.stopPropagation()}
               />
             ) : (
-              <div className="text-xs font-medium text-nim leading-snug line-clamp-2">
+              <div className="line-clamp-2 text-xs font-medium leading-snug text-[var(--an-foreground)]">
                 {session.title}
               </div>
             )}
@@ -581,7 +611,7 @@ function SessionKanbanCard({ session, onSelect, onArchive, onRename, phaseColor,
 
         {/* Child session count (workstream/worktree only) */}
         {cardType !== 'session' && session.childCount > 0 && (
-          <div className="flex items-center gap-1 text-[10px] text-nim-faint mb-1">
+          <div className={`mb-1 flex items-center gap-1 text-[10px] ${kanbanSubtleTextClass}`}>
             <MaterialSymbol icon="chat_bubble_outline" size={12} />
             {session.childCount} session{session.childCount !== 1 ? 's' : ''}
           </div>
@@ -596,35 +626,35 @@ function SessionKanbanCard({ session, onSelect, onArchive, onRename, phaseColor,
 
         {/* Tags */}
         {tags.length > 0 && (
-          <div className="flex gap-1 flex-wrap mb-1.5">
+          <div className="mb-1.5 flex flex-wrap gap-1">
             {tags.slice(0, 4).map(tag => (
               <span
                 key={tag}
-                className="text-[10px] font-medium px-1.5 py-px rounded bg-white/[0.06] text-nim-muted"
+                className="rounded-[var(--an-radius-xs)] bg-[var(--an-background-tertiary)] px-1.5 py-px text-[10px] font-medium text-[var(--an-foreground-muted)]"
               >
                 {tag}
               </span>
             ))}
             {tags.length > 4 && (
-              <span className="text-[10px] text-nim-faint">+{tags.length - 4}</span>
+              <span className={`text-[10px] ${kanbanSubtleTextClass}`}>+{tags.length - 4}</span>
             )}
           </div>
         )}
 
         {/* Footer: uncommitted + peek + time */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-1.5">
+        <div className={kanbanCardFooterClass}>
+          <div className="flex min-w-0 items-center gap-1.5">
             {session.uncommittedCount > 0 && (
-              <span className="flex items-center gap-0.5 text-[10px] text-nim-faint" title={`${session.uncommittedCount} uncommitted file${session.uncommittedCount !== 1 ? 's' : ''}`}>
+              <span className={`flex items-center gap-0.5 text-[10px] ${kanbanSubtleTextClass}`} title={`${session.uncommittedCount} uncommitted file${session.uncommittedCount !== 1 ? 's' : ''}`}>
                 <MaterialSymbol icon="edit_note" size={12} />
                 {session.uncommittedCount}
               </span>
             )}
           </div>
-          <div className="flex items-center gap-1.5">
+          <div className="flex shrink-0 items-center gap-1.5">
             <span
               ref={peekIconRef}
-              className="w-4 h-4 rounded flex items-center justify-center text-nim-disabled hover:text-nim-muted transition-colors"
+              className={kanbanInteractiveIconClass}
               title="Preview transcript"
               data-testid="session-kanban-peek"
               onMouseEnter={handlePeekEnter}
@@ -640,7 +670,7 @@ function SessionKanbanCard({ session, onSelect, onArchive, onRename, phaseColor,
             >
               <MaterialSymbol icon="chat_bubble_outline" size={12} />
             </span>
-            <span className="text-[10px] text-nim-disabled">{timeAgo}</span>
+            <span className={`text-[10px] ${kanbanSubtleTextClass}`}>{timeAgo}</span>
           </div>
         </div>
       </div>
@@ -739,7 +769,7 @@ function SessionKanbanColumn({ phase, label, color, sessions, onSelect, onArchiv
     if (ids.length > 1) {
       const badge = document.createElement('div');
       badge.textContent = `${ids.length} sessions`;
-      badge.style.cssText = 'position:fixed;left:-1000px;top:-1000px;padding:4px 10px;border-radius:6px;background:#60a5fa;color:#fff;font-size:12px;font-weight:600;white-space:nowrap;';
+      badge.style.cssText = 'position:fixed;left:-1000px;top:-1000px;padding:4px 10px;border-radius:var(--an-radius-sm);background:var(--an-primary-color);color:var(--an-button-primary-text);font-size:12px;font-weight:600;white-space:nowrap;';
       document.body.appendChild(badge);
       e.dataTransfer.setDragImage(badge, badge.offsetWidth / 2, badge.offsetHeight / 2);
       requestAnimationFrame(() => document.body.removeChild(badge));
@@ -752,11 +782,12 @@ function SessionKanbanColumn({ phase, label, color, sessions, onSelect, onArchiv
   if (isCollapsed) {
     return (
       <div
-        className={`session-kanban-column flex flex-col w-10 shrink-0 rounded-lg bg-nim-secondary cursor-pointer transition-colors ${
-          isDragOver ? 'bg-[rgba(96,165,250,0.08)] outline outline-2 outline-dashed outline-[rgba(96,165,250,0.3)] -outline-offset-2' : ''
+        className={`${kanbanCollapsedColumnClass} ${
+          isDragOver ? kanbanDragOverClass : ''
         }`}
         data-testid="session-kanban-column"
         data-phase={phase}
+        data-agent-elements-shell="session-kanban-column"
         onClick={onToggleCollapse}
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
@@ -767,11 +798,11 @@ function SessionKanbanColumn({ phase, label, color, sessions, onSelect, onArchiv
             className="w-2 h-2 rounded-full shrink-0"
             style={{ backgroundColor: color }}
           />
-          <span className="text-[10px] font-semibold text-nim-faint">
+          <span className={`text-[10px] font-semibold ${kanbanSubtleTextClass}`}>
             {sessions.length}
           </span>
           <span
-            className="text-[10px] font-semibold text-nim-faint uppercase tracking-wide"
+            className={`text-[10px] font-semibold uppercase tracking-normal ${kanbanSubtleTextClass}`}
             style={{ writingMode: 'vertical-lr', textOrientation: 'mixed' }}
           >
             {label}
@@ -782,10 +813,10 @@ function SessionKanbanColumn({ phase, label, color, sessions, onSelect, onArchiv
   }
 
   return (
-    <div className="session-kanban-column flex flex-col min-w-[240px] max-w-[300px] flex-1 rounded-lg bg-nim-secondary" data-testid="session-kanban-column" data-phase={phase}>
+    <div className={kanbanColumnBaseClass} data-testid="session-kanban-column" data-phase={phase} data-agent-elements-shell="session-kanban-column">
       {/* Column header */}
       <div
-        className="flex items-center gap-2 px-3 py-2 border-b border-nim cursor-pointer hover:bg-[var(--nim-bg-hover)] transition-colors"
+        className={kanbanColumnHeaderClass}
         onClick={(e) => {
           if (sessions.length > 0) {
             onSelectAll(sessions.map(s => s.id));
@@ -800,14 +831,14 @@ function SessionKanbanColumn({ phase, label, color, sessions, onSelect, onArchiv
           className="w-2 h-2 rounded-full shrink-0"
           style={{ backgroundColor: color }}
         />
-        <span className="text-[11px] font-semibold text-nim uppercase tracking-wide truncate">
+        <span className="truncate text-[11px] font-semibold uppercase tracking-normal text-[var(--an-foreground)]">
           {label}
         </span>
-        <span className="text-[10px] font-semibold text-nim-faint ml-auto">
+        <span className={`ml-auto text-[10px] font-semibold ${kanbanSubtleTextClass}`}>
           {sessions.length}
         </span>
         <button
-          className="text-nim-disabled hover:text-nim-muted transition-colors"
+          className={kanbanInteractiveIconClass}
           onClick={(e) => { e.stopPropagation(); onToggleCollapse(); }}
           title="Collapse column"
         >
@@ -817,15 +848,15 @@ function SessionKanbanColumn({ phase, label, color, sessions, onSelect, onArchiv
 
       {/* Column cards */}
       <div
-        className={`flex-1 overflow-y-auto p-1.5 space-y-1.5 transition-colors ${
-          isDragOver ? 'bg-[rgba(96,165,250,0.05)] outline outline-2 outline-dashed outline-[rgba(96,165,250,0.3)] -outline-offset-2 rounded' : ''
+        className={`${kanbanColumnBodyClass} ${
+          isDragOver ? kanbanDragOverClass : ''
         }`}
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
       >
         {sessions.length === 0 ? (
-          <div className="flex items-center justify-center py-6 text-nim-disabled text-[11px] italic">
+          <div className={`flex items-center justify-center py-6 text-[11px] italic ${kanbanSubtleTextClass}`}>
             No sessions
           </div>
         ) : (
@@ -911,7 +942,7 @@ function UnphasedColumn({ sessions, onSelect, onArchive, onRename, onDropToPhase
     if (ids.length > 1) {
       const badge = document.createElement('div');
       badge.textContent = `${ids.length} sessions`;
-      badge.style.cssText = 'position:fixed;left:-1000px;top:-1000px;padding:4px 10px;border-radius:6px;background:#60a5fa;color:#fff;font-size:12px;font-weight:600;white-space:nowrap;';
+      badge.style.cssText = 'position:fixed;left:-1000px;top:-1000px;padding:4px 10px;border-radius:var(--an-radius-sm);background:var(--an-primary-color);color:var(--an-button-primary-text);font-size:12px;font-weight:600;white-space:nowrap;';
       document.body.appendChild(badge);
       e.dataTransfer.setDragImage(badge, badge.offsetWidth / 2, badge.offsetHeight / 2);
       requestAnimationFrame(() => document.body.removeChild(badge));
@@ -924,11 +955,12 @@ function UnphasedColumn({ sessions, onSelect, onArchive, onRename, onDropToPhase
   if (!isExpanded) {
     return (
       <div
-        className={`session-kanban-column flex flex-col w-10 shrink-0 rounded-lg bg-nim-secondary cursor-pointer transition-colors ${
-          isDragOver ? 'bg-[rgba(96,165,250,0.08)] outline outline-2 outline-dashed outline-[rgba(96,165,250,0.3)] -outline-offset-2' : ''
+        className={`${kanbanCollapsedColumnClass} ${
+          isDragOver ? kanbanDragOverClass : ''
         }`}
         data-testid="session-kanban-column"
         data-phase="unphased"
+        data-agent-elements-shell="session-kanban-column"
         onClick={() => setIsExpanded(true)}
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
@@ -936,13 +968,13 @@ function UnphasedColumn({ sessions, onSelect, onArchive, onRename, onDropToPhase
       >
         <div className="flex flex-col items-center gap-1 py-3">
           <span
-            className="w-2 h-2 rounded-full shrink-0 bg-neutral-600"
+            className="h-2 w-2 shrink-0 rounded-full bg-[var(--an-foreground-subtle)]"
           />
-          <span className="text-[10px] font-semibold text-nim-faint">
+          <span className={`text-[10px] font-semibold ${kanbanSubtleTextClass}`}>
             {sessions.length}
           </span>
           <span
-            className="text-[10px] font-semibold text-nim-faint uppercase tracking-wide"
+            className={`text-[10px] font-semibold uppercase tracking-normal ${kanbanSubtleTextClass}`}
             style={{ writingMode: 'vertical-lr', textOrientation: 'mixed' }}
           >
             Inbox
@@ -955,13 +987,14 @@ function UnphasedColumn({ sessions, onSelect, onArchive, onRename, onDropToPhase
   // Expanded: full column
   return (
     <div
-      className="session-kanban-column flex flex-col min-w-[240px] max-w-[300px] flex-1 rounded-lg bg-nim-secondary"
+      className={kanbanColumnBaseClass}
       data-testid="session-kanban-column"
       data-phase="unphased"
+      data-agent-elements-shell="session-kanban-column"
     >
       {/* Column header */}
       <div
-        className="flex items-center gap-2 px-3 py-2 border-b border-nim cursor-pointer hover:bg-[var(--nim-bg-hover)] transition-colors"
+        className={kanbanColumnHeaderClass}
         onClick={(e) => {
           if (sessions.length > 0) {
             onSelectAll(sessions.map(s => s.id));
@@ -972,15 +1005,15 @@ function UnphasedColumn({ sessions, onSelect, onArchive, onRename, onDropToPhase
           onHeaderContextMenu(e, 'unphased', sessions.map(s => s.id));
         }}
       >
-        <span className="w-2 h-2 rounded-full shrink-0 bg-neutral-600" />
-        <span className="text-[11px] font-semibold text-nim uppercase tracking-wide truncate">
+        <span className="h-2 w-2 shrink-0 rounded-full bg-[var(--an-foreground-subtle)]" />
+        <span className="truncate text-[11px] font-semibold uppercase tracking-normal text-[var(--an-foreground)]">
           Inbox
         </span>
-        <span className="text-[10px] font-semibold text-nim-faint ml-auto">
+        <span className={`ml-auto text-[10px] font-semibold ${kanbanSubtleTextClass}`}>
           {sessions.length}
         </span>
         <button
-          className="text-nim-faint hover:text-nim transition-colors"
+          className={kanbanInteractiveIconClass}
           onClick={(e) => { e.stopPropagation(); setIsExpanded(false); }}
           title="Collapse"
         >
@@ -990,8 +1023,8 @@ function UnphasedColumn({ sessions, onSelect, onArchive, onRename, onDropToPhase
 
       {/* Column cards */}
       <div
-        className={`flex-1 overflow-y-auto p-1.5 space-y-1.5 transition-colors ${
-          isDragOver ? 'bg-[rgba(96,165,250,0.05)] outline outline-2 outline-dashed outline-[rgba(96,165,250,0.3)] -outline-offset-2 rounded' : ''
+        className={`${kanbanColumnBodyClass} ${
+          isDragOver ? kanbanDragOverClass : ''
         }`}
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
@@ -1009,7 +1042,7 @@ function UnphasedColumn({ sessions, onSelect, onArchive, onRename, onDropToPhase
               onSelect={onSelect}
               onArchive={onArchive}
               onRename={onRename}
-              phaseColor="#525252"
+              phaseColor="var(--an-foreground-subtle)"
               isFocused={focusedCardId === session.id}
               isSelected={selectedIds.has(session.id)}
               selectedCount={selectedIds.size}
@@ -1138,13 +1171,13 @@ function SessionKanbanToolbar({ selectedCount, onClearSelection }: { selectedCou
     : filter.search;
 
   return (
-    <div className="flex items-center gap-2 px-3 py-1.5 border-b border-nim bg-nim shrink-0" data-testid="kanban-toolbar">
+    <div className={kanbanToolbarClass} data-testid="kanban-toolbar" data-agent-elements-shell="session-kanban-toolbar">
       {/* Search with tag typeahead */}
       <div className="relative flex-1 max-w-[280px]">
         <MaterialSymbol
           icon="search"
           size={14}
-          className="absolute left-2 top-1/2 -translate-y-1/2 text-nim-faint pointer-events-none"
+          className="pointer-events-none absolute left-2 top-1/2 -translate-y-1/2 text-[var(--an-foreground-subtle)]"
         />
         <input
           ref={inputRef}
@@ -1159,26 +1192,26 @@ function SessionKanbanToolbar({ selectedCount, onClearSelection }: { selectedCou
             }
           }}
           data-testid="kanban-search"
-          className="w-full pl-7 pr-2 py-1 text-[11px] bg-nim-secondary border border-nim rounded text-nim placeholder:text-nim-faint focus:outline-none focus:border-[var(--nim-primary)]"
+          className={kanbanSearchInputClass}
         />
 
         {/* Tag typeahead dropdown */}
         {showTagDropdown && filteredTags.length > 0 && (
           <div
             ref={dropdownRef}
-            className="absolute left-0 right-0 top-full mt-1 bg-nim-secondary border border-nim rounded shadow-lg z-50 max-h-[200px] overflow-y-auto"
+            className="absolute left-0 right-0 top-full z-50 mt-1 max-h-[200px] overflow-y-auto rounded-[var(--an-tool-border-radius)] border border-[var(--an-border-color)] bg-[var(--an-background-secondary)] shadow-[0_12px_32px_color-mix(in_srgb,var(--an-foreground)_12%,transparent)]"
           >
             {filteredTags.slice(0, 15).map((tag, i) => (
               <button
                 key={tag.name}
-                className={`w-full text-left px-2.5 py-1.5 text-[11px] flex items-center justify-between cursor-pointer transition-colors ${
-                  i === highlightedIndex ? 'bg-nim-tertiary text-nim' : 'text-nim-muted hover:bg-nim-tertiary'
+                className={`flex w-full cursor-pointer items-center justify-between px-2.5 py-1.5 text-left text-[11px] transition-colors ${
+                  i === highlightedIndex ? 'bg-[var(--an-background-tertiary)] text-[var(--an-foreground)]' : 'text-[var(--an-foreground-muted)] hover:bg-[var(--an-background-tertiary)]'
                 }`}
                 onMouseEnter={() => setHighlightedIndex(i)}
                 onClick={() => addTag(tag.name)}
               >
                 <span>#{tag.name}</span>
-                <span className="text-nim-faint text-[10px]">{tag.count}</span>
+                <span className={`text-[10px] ${kanbanSubtleTextClass}`}>{tag.count}</span>
               </button>
             ))}
           </div>
@@ -1186,9 +1219,9 @@ function SessionKanbanToolbar({ selectedCount, onClearSelection }: { selectedCou
         {showTagDropdown && filteredTags.length === 0 && tagQuery && (
           <div
             ref={dropdownRef}
-            className="absolute left-0 right-0 top-full mt-1 bg-nim-secondary border border-nim rounded shadow-lg z-50"
+            className="absolute left-0 right-0 top-full z-50 mt-1 rounded-[var(--an-tool-border-radius)] border border-[var(--an-border-color)] bg-[var(--an-background-secondary)] shadow-[0_12px_32px_color-mix(in_srgb,var(--an-foreground)_12%,transparent)]"
           >
-            <div className="px-2.5 py-2 text-[11px] text-nim-faint italic">
+            <div className={`px-2.5 py-2 text-[11px] italic ${kanbanSubtleTextClass}`}>
               No matching tags
             </div>
           </div>
@@ -1199,7 +1232,7 @@ function SessionKanbanToolbar({ selectedCount, onClearSelection }: { selectedCou
       {filter.tags.map(tag => (
         <button
           key={tag}
-          className="flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] border cursor-pointer shrink-0 bg-blue-400/[0.12] border-blue-400/30 text-blue-400"
+          className={`${kanbanPillClass} ${kanbanActivePillClass}`}
           onClick={() => removeTag(tag)}
         >
           #{tag}
@@ -1210,7 +1243,7 @@ function SessionKanbanToolbar({ selectedCount, onClearSelection }: { selectedCou
       {/* Selection indicator */}
       {selectedCount > 0 && (
         <button
-          className="flex items-center gap-1 px-2 py-0.5 rounded text-[11px] border border-[rgba(96,165,250,0.4)] text-[#60a5fa] bg-[rgba(96,165,250,0.08)] cursor-pointer shrink-0"
+          className={`${kanbanPillClass} ${kanbanActivePillClass}`}
           onClick={onClearSelection}
           title="Clear selection (Esc)"
         >
@@ -1222,16 +1255,16 @@ function SessionKanbanToolbar({ selectedCount, onClearSelection }: { selectedCou
       <div className="flex-1" />
 
       {/* Count */}
-      <span className="text-[11px] text-nim-faint shrink-0">
+      <span className={`shrink-0 text-[11px] ${kanbanSubtleTextClass}`}>
         {totalCount} session{totalCount !== 1 ? 's' : ''}
       </span>
 
       {/* Show completed toggle */}
       <button
-        className={`flex items-center gap-1 px-2 py-0.5 rounded text-[11px] border transition-colors shrink-0 ${
+        className={`${kanbanPillClass} ${
           filter.showComplete
-            ? 'border-[rgba(96,165,250,0.4)] text-[#60a5fa] bg-[rgba(96,165,250,0.08)]'
-            : 'border-nim text-nim-faint hover:text-nim'
+            ? kanbanActivePillClass
+            : kanbanInactivePillClass
         }`}
         onClick={() => setFilter({ ...filter, showComplete: !filter.showComplete })}
         data-testid="kanban-toggle-complete"
@@ -1267,7 +1300,7 @@ function ColumnHeaderContextMenu({ phase, sessionIds, position, onClose, onSelec
     onOpenChange: (open) => { if (!open) onClose(); },
   });
 
-  const menuItemClass = 'flex items-center gap-2 w-full px-2.5 py-2 bg-transparent border-none rounded text-[var(--nim-text)] text-[0.8125rem] cursor-pointer text-left transition-colors duration-150 hover:bg-[var(--nim-bg-hover)] [&_svg]:shrink-0';
+  const menuItemClass = kanbanMenuItemClass;
   const count = sessionIds.length;
 
   const [showMoveSubmenu, setShowMoveSubmenu] = useState(false);
@@ -1281,10 +1314,10 @@ function ColumnHeaderContextMenu({ phase, sessionIds, position, onClose, onSelec
           ref={menu.refs.setFloating}
           style={menu.floatingStyles}
           {...menu.getFloatingProps()}
-          className="z-[1000] min-w-[160px] p-1 bg-[var(--nim-bg)] border border-[var(--nim-border)] rounded-md shadow-[0_4px_12px_rgba(0,0,0,0.15)]"
+          className={kanbanMenuClass}
           onMouseLeave={onClose}
         >
-          <div className="px-2.5 py-2 text-[0.8125rem] text-[var(--nim-text-faint)] italic">
+          <div className={`px-2.5 py-2 text-[0.8125rem] italic ${kanbanSubtleTextClass}`}>
             No sessions in column
           </div>
         </div>
@@ -1298,7 +1331,7 @@ function ColumnHeaderContextMenu({ phase, sessionIds, position, onClose, onSelec
         ref={menu.refs.setFloating}
         style={menu.floatingStyles}
         {...menu.getFloatingProps()}
-        className="z-[1000] min-w-[180px] p-1 bg-[var(--nim-bg)] border border-[var(--nim-border)] rounded-md shadow-[0_4px_12px_rgba(0,0,0,0.15)]"
+        className={kanbanMenuClass}
         onClick={(e) => e.stopPropagation()}
         onMouseLeave={onClose}
       >
@@ -1311,7 +1344,7 @@ function ColumnHeaderContextMenu({ phase, sessionIds, position, onClose, onSelec
           Select All ({count})
         </button>
 
-        <div className="h-px bg-[var(--nim-border)] my-1" />
+        <div className={kanbanDividerClass} />
 
         {/* Move all to phase submenu */}
         <div
@@ -1335,11 +1368,11 @@ function ColumnHeaderContextMenu({ phase, sessionIds, position, onClose, onSelec
             <MaterialSymbol icon="chevron_right" size={12} />
           </button>
           {showMoveSubmenu && (
-            <div className={`absolute top-0 min-w-[140px] p-1 bg-[var(--nim-bg)] border border-[var(--nim-border)] rounded-md shadow-[0_4px_12px_rgba(0,0,0,0.15)] z-[1001] ${submenuFlipped ? 'right-full mr-0.5' : 'left-full ml-0.5'}`}>
+            <div className={`agent-elements-session-kanban-submenu absolute top-0 z-[1001] min-w-[140px] rounded-[var(--an-tool-border-radius)] border border-[var(--an-border-color)] bg-[var(--an-background)] p-1 shadow-[0_12px_32px_color-mix(in_srgb,var(--an-foreground)_12%,transparent)] ${submenuFlipped ? 'right-full mr-0.5' : 'left-full ml-0.5'}`}>
               {SESSION_PHASE_COLUMNS.filter(col => col.value !== phase).map((col) => (
                 <button
                   key={col.value}
-                  className={`flex items-center gap-2 w-full px-2.5 py-2 bg-transparent border-none rounded text-[var(--nim-text)] text-[0.8125rem] cursor-pointer text-left transition-colors duration-150 hover:bg-[var(--nim-bg-hover)]`}
+                  className={menuItemClass}
                   onClick={(e) => { e.stopPropagation(); onClose(); onMoveAll(sessionIds, col.value); }}
                 >
                   <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: col.color }} />
@@ -1348,9 +1381,9 @@ function ColumnHeaderContextMenu({ phase, sessionIds, position, onClose, onSelec
               ))}
               {phase !== 'unphased' && (
                 <>
-                  <div className="h-px bg-[var(--nim-border)] my-1" />
+                  <div className={kanbanDividerClass} />
                   <button
-                    className={`flex items-center gap-2 w-full px-2.5 py-2 bg-transparent border-none rounded text-[var(--nim-text-faint)] text-[0.8125rem] cursor-pointer text-left transition-colors duration-150 hover:bg-[var(--nim-bg-hover)]`}
+                    className={`${menuItemClass} text-[var(--an-foreground-subtle)]`}
                     onClick={(e) => { e.stopPropagation(); onClose(); onRemovePhase(sessionIds); }}
                   >
                     <MaterialSymbol icon="close" size={14} />
@@ -1362,11 +1395,11 @@ function ColumnHeaderContextMenu({ phase, sessionIds, position, onClose, onSelec
           )}
         </div>
 
-        <div className="h-px bg-[var(--nim-border)] my-1" />
+        <div className={kanbanDividerClass} />
 
         {/* Archive all */}
         <button
-          className="flex items-center gap-2 w-full px-2.5 py-2 bg-transparent border-none rounded text-[var(--nim-error)] text-[0.8125rem] cursor-pointer text-left transition-colors duration-150 hover:bg-[var(--nim-error)] hover:text-white [&_svg]:shrink-0"
+          className={`${menuItemClass} text-[var(--an-error-color)] hover:bg-[color-mix(in_srgb,var(--an-error-color)_10%,var(--an-background))] hover:text-[var(--an-error-color)]`}
           onClick={(e) => { e.stopPropagation(); onClose(); onArchiveAll(sessionIds); }}
         >
           <MaterialSymbol icon="archive" size={14} />
@@ -1410,24 +1443,25 @@ function ArchiveGutter({ onArchive }: { onArchive: (sessionIds: string[]) => voi
 
   return (
     <div
-      className={`flex flex-col items-center justify-center w-10 shrink-0 rounded-lg transition-all ${
+      className={`agent-elements-session-kanban-archive-gutter flex w-10 shrink-0 flex-col items-center justify-center rounded-[var(--an-tool-border-radius)] border border-[var(--an-border-color)] transition-[background-color,border-color,color] duration-150 ease-out ${
         isDragOver
-          ? 'bg-[rgba(239,68,68,0.1)] outline outline-2 outline-dashed outline-[rgba(239,68,68,0.4)] -outline-offset-2'
-          : 'bg-nim-secondary'
+          ? 'bg-[color-mix(in_srgb,var(--an-error-color)_10%,var(--an-background))] outline outline-2 outline-dashed outline-[color-mix(in_srgb,var(--an-error-color)_42%,transparent)] -outline-offset-2'
+          : 'bg-[var(--an-background-secondary)]'
       }`}
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
       data-testid="kanban-archive-gutter"
+      data-agent-elements-shell="session-kanban-archive-gutter"
     >
       <MaterialSymbol
         icon="archive"
         size={16}
-        className={`transition-colors ${isDragOver ? 'text-[#ef4444]' : 'text-nim-disabled'}`}
+        className={`transition-colors ${isDragOver ? 'text-[var(--an-error-color)]' : kanbanSubtleTextClass}`}
       />
       <span
-        className={`text-[10px] font-semibold uppercase tracking-wide mt-1 transition-colors ${
-          isDragOver ? 'text-[#ef4444]' : 'text-nim-disabled'
+        className={`mt-1 text-[10px] font-semibold uppercase tracking-normal transition-colors ${
+          isDragOver ? 'text-[var(--an-error-color)]' : kanbanSubtleTextClass
         }`}
         style={{ writingMode: 'vertical-lr', textOrientation: 'mixed' }}
       >
@@ -1983,25 +2017,26 @@ export const SessionKanbanBoard: React.FC<SessionKanbanBoardProps> = ({ onSessio
   return (
     <div
       ref={boardRef}
-      className="flex-1 flex flex-col overflow-hidden min-h-0 outline-none"
+      className="agent-elements-session-kanban-board flex min-h-0 flex-1 flex-col overflow-hidden bg-[var(--an-background)] text-[var(--an-foreground)] outline-none"
       data-testid="session-kanban-board"
+      data-agent-elements-shell="session-kanban-board"
       tabIndex={0}
       onKeyDown={handleKeyDown}
     >
       <SessionKanbanToolbar selectedCount={selectedIds.size} onClearSelection={() => setSelectedIds(new Set())} />
 
       {isEmpty ? (
-        <div className="flex-1 flex items-center justify-center text-nim-muted" data-testid="kanban-empty-state">
+        <div className="agent-elements-session-kanban-empty flex flex-1 items-center justify-center text-[var(--an-foreground-muted)]" data-testid="kanban-empty-state" data-agent-elements-shell="session-kanban-empty">
           <div className="text-center max-w-[300px]">
             <MaterialSymbol icon="view_kanban" size={48} className="opacity-30" />
             <p className="mt-2 text-sm">No sessions on the board</p>
-            <p className="mt-1 text-xs text-nim-faint">
+            <p className={`mt-1 text-xs ${kanbanSubtleTextClass}`}>
               Sessions appear here when an AI agent sets a phase, or you can drag sessions from the history sidebar.
             </p>
           </div>
         </div>
       ) : (
-        <div className="flex-1 flex gap-2 p-2 overflow-x-auto overflow-y-hidden">
+        <div className="agent-elements-session-kanban-columns flex flex-1 gap-[var(--an-spacing-sm)] overflow-x-auto overflow-y-hidden p-[var(--an-spacing-sm)]">
           <UnphasedColumn
             sessions={unphasedSessions}
             onSelect={handleSelect}

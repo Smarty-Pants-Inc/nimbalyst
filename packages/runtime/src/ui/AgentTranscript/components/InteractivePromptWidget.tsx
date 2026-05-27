@@ -12,13 +12,14 @@
  * - Submitting responses that sync to the provider
  */
 
-import React, { useState, useCallback, useEffect, useRef } from 'react';
+import React, { useState, useCallback, useRef } from 'react';
 import type {
   PermissionRequestContent,
   PermissionResponseContent,
   AskUserQuestionRequestContent,
   AskUserQuestionResponseContent,
 } from '../../../ai/server/types';
+import { AgentStatusPill, AgentToolCard } from '../../AgentElements';
 import { unwrapShellCommand } from '../utils/unwrapShellCommand';
 
 // Inject interactive prompt styles once (for animations and color-mix patterns)
@@ -31,21 +32,33 @@ const injectInteractivePromptStyles = () => {
   style.textContent = `
     @keyframes interactive-prompt-pulse {
       0%, 100% {
-        box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.3);
+        box-shadow: 0 0 0 0 color-mix(in srgb, var(--an-primary-color) 26%, transparent);
       }
       50% {
-        box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
+        box-shadow: 0 0 0 4px color-mix(in srgb, var(--an-primary-color) 10%, transparent);
       }
     }
     .interactive-prompt--pending {
       animation: interactive-prompt-pulse 2s ease-in-out infinite;
     }
     .interactive-prompt__option--selected {
-      background: rgba(59, 130, 246, 0.1);
+      background: color-mix(in srgb, var(--an-primary-color) 10%, var(--an-tool-background));
     }
   `;
   document.head.appendChild(style);
 };
+
+const buttonBaseClass = 'interactive-prompt__button px-3 py-1.5 text-xs font-medium rounded-md border cursor-pointer transition-colors disabled:opacity-50 disabled:cursor-not-allowed';
+const secondaryButtonClass = `${buttonBaseClass} border-[var(--an-tool-border-color)] bg-[var(--an-background-tertiary)] text-[var(--an-foreground-muted)] hover:bg-[var(--an-background-secondary)] hover:text-[var(--an-foreground)]`;
+const primaryButtonClass = `${buttonBaseClass} border-transparent bg-[var(--an-primary-color)] text-[var(--an-background)] hover:bg-[color-mix(in_srgb,var(--an-primary-color)_88%,var(--an-foreground)_12%)]`;
+const dangerButtonClass = `${buttonBaseClass} border-[var(--an-tool-border-color)] bg-[var(--an-background-tertiary)] text-[var(--an-foreground-muted)] hover:bg-[var(--an-diff-removed-bg)] hover:text-[var(--an-diff-removed-text)] hover:border-[var(--an-diff-removed-text)]`;
+const promptPanelClass = 'rounded-md border border-[var(--an-tool-border-color)] bg-[var(--an-background-tertiary)] px-3 py-2';
+const optionButtonClass = 'interactive-prompt__option flex w-full items-start gap-2 rounded-md border border-[var(--an-tool-border-color)] bg-[var(--an-tool-background)] px-2.5 py-2 text-left transition-colors hover:bg-[var(--an-background-tertiary)] disabled:cursor-not-allowed disabled:opacity-60';
+const selectedOptionClass = 'interactive-prompt__option--selected border-[var(--an-primary-color)]';
+const optionIndicatorClass = 'interactive-prompt__option-indicator mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded border border-[var(--an-tool-border-color)] text-[var(--an-primary-color)]';
+const selectedOptionIndicatorClass = 'interactive-prompt__option-indicator--selected bg-[var(--an-primary-color)] text-[var(--an-background)] border-[var(--an-primary-color)]';
+const mutedTextClass = 'text-[var(--an-foreground-muted)]';
+const subtleTextClass = 'text-[var(--an-foreground-subtle)]';
 
 // Initialize styles on module load
 if (typeof document !== 'undefined') {
@@ -90,26 +103,40 @@ const PermissionRequestWidget: React.FC<PermissionRequestWidgetProps> = ({
 
   if (content.status !== 'pending') {
     return (
-      <div className="interactive-prompt interactive-prompt--resolved bg-[var(--nim-bg-secondary)] border border-[var(--nim-border)] rounded-lg p-3 my-2 opacity-70">
-        <div className="interactive-prompt__header flex items-center gap-2 mb-2">
-          <span className="interactive-prompt__icon interactive-prompt__icon--resolved flex items-center justify-center w-5 h-5 shrink-0 text-[var(--nim-success)]">
+      <AgentToolCard
+        className="interactive-prompt interactive-prompt--resolved my-2 opacity-75"
+        data-agent-elements-shell="interactive-prompt-permission-resolved"
+        data-component="InteractivePromptWidget"
+        data-testid="interactive-prompt-widget"
+        title="Permission Resolved"
+        status="completed"
+        icon={
+          <span className="interactive-prompt__icon interactive-prompt__icon--resolved flex items-center justify-center text-[var(--an-diff-added-text)]">
             <svg width="14" height="14" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
               <path d="M13 4L6 11L3 8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
           </span>
-          <span className="interactive-prompt__title font-semibold text-sm text-[var(--nim-text)]">Permission Resolved</span>
+        }
+        trailing={<AgentStatusPill tone="success">Resolved</AgentStatusPill>}
+      >
+        <div className={`interactive-prompt__command ${promptPanelClass} overflow-x-auto`}>
+          <code className="font-mono text-xs text-[var(--an-foreground)] whitespace-pre-wrap break-all">{unwrapShellCommand(content.rawCommand || content.toolName)}</code>
         </div>
-        <div className="interactive-prompt__command bg-[var(--nim-bg-tertiary)] rounded p-2 px-3 mb-3 overflow-x-auto">
-          <code className="font-mono text-xs text-[var(--nim-text)] whitespace-pre-wrap break-all">{unwrapShellCommand(content.rawCommand || content.toolName)}</code>
-        </div>
-      </div>
+      </AgentToolCard>
     );
   }
 
   return (
-    <div className={`interactive-prompt interactive-prompt--pending bg-[var(--nim-bg-secondary)] border rounded-lg p-3 my-2 ${content.isDestructive ? 'interactive-prompt--destructive border-[var(--nim-error)]' : 'border-[var(--nim-primary)]'}`}>
-      <div className="interactive-prompt__header flex items-center gap-2 mb-2">
-        <span className={`interactive-prompt__icon flex items-center justify-center w-5 h-5 shrink-0 ${content.isDestructive ? 'interactive-prompt__icon--destructive text-[var(--nim-error)]' : 'text-[var(--nim-primary)]'}`}>
+    <AgentToolCard
+      className={`interactive-prompt interactive-prompt--pending my-2 ${content.isDestructive ? 'interactive-prompt--destructive border-[var(--an-diff-removed-text)]' : 'border-[var(--an-primary-color)]'}`}
+      data-agent-elements-shell="interactive-prompt-permission"
+      data-component="InteractivePromptWidget"
+      data-testid="interactive-prompt-widget"
+      title="Allow this tool?"
+      subtitle={content.patternDisplayName}
+      status="running"
+      icon={
+        <span className={`interactive-prompt__icon flex items-center justify-center ${content.isDestructive ? 'interactive-prompt__icon--destructive text-[var(--an-diff-removed-text)]' : 'text-[var(--an-primary-color)]'}`}>
           {content.isDestructive ? (
             <svg width="14" height="14" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
               <path d="M8 5.5v3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
@@ -124,9 +151,12 @@ const PermissionRequestWidget: React.FC<PermissionRequestWidgetProps> = ({
             </svg>
           )}
         </span>
-        <span className="interactive-prompt__title font-semibold text-sm text-[var(--nim-text)]">Allow this tool?</span>
+      }
+      trailing={<AgentStatusPill tone={content.isDestructive ? 'error' : 'running'}>{content.isDestructive ? 'Review' : 'Pending'}</AgentStatusPill>}
+    >
+      <div className="interactive-prompt__header flex items-center gap-2 mb-2">
         <button
-          className="interactive-prompt__details-toggle ml-auto text-xs text-[var(--nim-text-faint)] bg-transparent border-none cursor-pointer py-0.5 px-1.5 rounded hover:bg-[var(--nim-bg-hover)] hover:text-[var(--nim-text-muted)]"
+          className="interactive-prompt__details-toggle ml-auto text-xs text-[var(--an-foreground-subtle)] bg-transparent border-none cursor-pointer py-0.5 px-1.5 rounded-md hover:bg-[var(--an-background-tertiary)] hover:text-[var(--an-foreground-muted)]"
           onClick={() => setShowDetails(!showDetails)}
         >
           {showDetails ? 'Hide details' : 'Show details'}
@@ -137,7 +167,7 @@ const PermissionRequestWidget: React.FC<PermissionRequestWidgetProps> = ({
       {content.warnings && content.warnings.length > 0 && (
         <div className="interactive-prompt__warnings mb-2">
           {content.warnings.map((warning, i) => (
-            <div key={i} className="interactive-prompt__warning flex items-start gap-1.5 text-xs text-[var(--nim-warning)] py-1">
+            <div key={i} className="interactive-prompt__warning flex items-start gap-1.5 text-xs text-[var(--an-warning-color)] py-1">
               <svg width="12" height="12" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" className="shrink-0 mt-px">
                 <circle cx="8" cy="8" r="6" stroke="currentColor" strokeWidth="1.5"/>
                 <path d="M8 5.5v3M8 11h.01" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
@@ -149,20 +179,20 @@ const PermissionRequestWidget: React.FC<PermissionRequestWidgetProps> = ({
       )}
 
       {/* Command */}
-      <div className="interactive-prompt__command bg-[var(--nim-bg-tertiary)] rounded p-2 px-3 mb-3 overflow-x-auto">
-        <code className="font-mono text-xs text-[var(--nim-text)] whitespace-pre-wrap break-all">{unwrapShellCommand(content.rawCommand || content.toolName)}</code>
+      <div className={`interactive-prompt__command ${promptPanelClass} mb-3 overflow-x-auto`}>
+        <code className="font-mono text-xs text-[var(--an-foreground)] whitespace-pre-wrap break-all">{unwrapShellCommand(content.rawCommand || content.toolName)}</code>
       </div>
 
       {/* Details */}
       {showDetails && (
-        <div className="interactive-prompt__details bg-[var(--nim-bg-tertiary)] rounded p-2 px-3 mb-3">
+        <div className={`interactive-prompt__details ${promptPanelClass} mb-3`}>
           <div className="interactive-prompt__detail-row flex gap-2 text-xs py-0.5">
-            <span className="interactive-prompt__detail-label text-[var(--nim-text-faint)] shrink-0">Tool:</span>
-            <span className="interactive-prompt__detail-value text-[var(--nim-text-muted)] break-all">{content.toolName}</span>
+            <span className={`interactive-prompt__detail-label ${subtleTextClass} shrink-0`}>Tool:</span>
+            <span className={`interactive-prompt__detail-value ${mutedTextClass} break-all`}>{content.toolName}</span>
           </div>
           <div className="interactive-prompt__detail-row flex gap-2 text-xs py-0.5">
-            <span className="interactive-prompt__detail-label text-[var(--nim-text-faint)] shrink-0">Pattern:</span>
-            <span className="interactive-prompt__detail-value text-[var(--nim-text-muted)] break-all">{content.patternDisplayName}</span>
+            <span className={`interactive-prompt__detail-label ${subtleTextClass} shrink-0`}>Pattern:</span>
+            <span className={`interactive-prompt__detail-value ${mutedTextClass} break-all`}>{content.patternDisplayName}</span>
           </div>
         </div>
       )}
@@ -170,22 +200,22 @@ const PermissionRequestWidget: React.FC<PermissionRequestWidgetProps> = ({
       {/* Actions */}
       <div className="interactive-prompt__actions flex flex-wrap gap-2 mb-2">
         <button
-          className="interactive-prompt__button interactive-prompt__button--deny px-3 py-1.5 text-xs font-medium rounded-md border border-[var(--nim-border)] cursor-pointer transition-all bg-[var(--nim-bg-tertiary)] text-[var(--nim-text-muted)] hover:bg-[var(--nim-error)] hover:text-white hover:border-[var(--nim-error)] disabled:opacity-50 disabled:cursor-not-allowed"
+          className={`interactive-prompt__button--deny ${dangerButtonClass}`}
           onClick={() => onSubmit('deny', 'once')}
           disabled={isSubmitting}
         >
           Deny
         </button>
         <button
-          className="interactive-prompt__button interactive-prompt__button--allow px-3 py-1.5 text-xs font-medium rounded-md border border-transparent cursor-pointer transition-all bg-[var(--nim-primary)] text-white hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed"
+          className={`interactive-prompt__button--allow ${primaryButtonClass}`}
           onClick={() => onSubmit('allow', 'once')}
           disabled={isSubmitting}
         >
           Allow Once
         </button>
-        <div className="interactive-prompt__separator w-px bg-[var(--nim-border)] mx-1" />
+        <div className="interactive-prompt__separator w-px bg-[var(--an-tool-border-color)] mx-1" />
         <button
-          className="interactive-prompt__button interactive-prompt__button--session px-3 py-1.5 text-xs font-medium rounded-md border border-[var(--nim-border)] cursor-pointer transition-all bg-[var(--nim-bg-tertiary)] text-[var(--nim-text-muted)] hover:bg-[var(--nim-primary)] hover:text-white hover:border-[var(--nim-primary)] disabled:opacity-50 disabled:cursor-not-allowed"
+          className={`interactive-prompt__button--session ${secondaryButtonClass}`}
           onClick={() => onSubmit('allow', 'session')}
           disabled={isSubmitting}
           title={`Allow ${content.patternDisplayName} for this session`}
@@ -193,7 +223,7 @@ const PermissionRequestWidget: React.FC<PermissionRequestWidgetProps> = ({
           Session
         </button>
         <button
-          className="interactive-prompt__button interactive-prompt__button--always px-3 py-1.5 text-xs font-medium rounded-md border border-[var(--nim-border)] cursor-pointer transition-all bg-[var(--nim-bg-tertiary)] text-[var(--nim-text-muted)] hover:bg-[var(--nim-primary)] hover:text-white hover:border-[var(--nim-primary)] disabled:opacity-50 disabled:cursor-not-allowed"
+          className={`interactive-prompt__button--always ${secondaryButtonClass}`}
           onClick={() => onSubmit('allow', 'always')}
           disabled={isSubmitting}
           title={`Save ${content.patternDisplayName} to settings`}
@@ -203,10 +233,10 @@ const PermissionRequestWidget: React.FC<PermissionRequestWidgetProps> = ({
       </div>
 
       {/* Pattern info */}
-      <div className="interactive-prompt__pattern-info text-[11px] text-[var(--nim-text-faint)]">
-        Session/Always will allow: <span className="interactive-prompt__pattern-badge inline-block px-1.5 py-0.5 bg-[var(--nim-bg-tertiary)] rounded font-mono text-[10px]">{content.patternDisplayName}</span>
+      <div className={`interactive-prompt__pattern-info text-[11px] ${subtleTextClass}`}>
+        Session/Always will allow: <span className="interactive-prompt__pattern-badge inline-block px-1.5 py-0.5 bg-[var(--an-background-tertiary)] rounded-md font-mono text-[10px]">{content.patternDisplayName}</span>
       </div>
-    </div>
+    </AgentToolCard>
   );
 };
 
@@ -289,45 +319,58 @@ const AskUserQuestionWidgetInteractive: React.FC<AskUserQuestionWidgetProps> = (
 
   if (content.status !== 'pending') {
     return (
-      <div className="interactive-prompt interactive-prompt--resolved">
-        <div className="interactive-prompt__header">
-          <span className="interactive-prompt__icon interactive-prompt__icon--resolved">
+      <AgentToolCard
+        className="interactive-prompt interactive-prompt--resolved my-2 opacity-75"
+        data-agent-elements-shell="interactive-prompt-question-resolved"
+        data-component="InteractivePromptWidget"
+        data-testid="interactive-prompt-widget"
+        title="Questions Answered"
+        status="completed"
+        icon={
+          <span className="interactive-prompt__icon interactive-prompt__icon--resolved flex items-center justify-center text-[var(--an-diff-added-text)]">
             <svg width="14" height="14" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
               <path d="M13 4L6 11L3 8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
           </span>
-          <span className="interactive-prompt__title">Questions Answered</span>
-        </div>
-      </div>
+        }
+        trailing={<AgentStatusPill tone="success">Resolved</AgentStatusPill>}
+      />
     );
   }
 
   return (
-    <div className="interactive-prompt interactive-prompt--pending interactive-prompt--question">
-      <div className="interactive-prompt__header">
-        <span className="interactive-prompt__icon">
+    <AgentToolCard
+      className="interactive-prompt interactive-prompt--pending interactive-prompt--question my-2 border-[var(--an-primary-color)]"
+      data-agent-elements-shell="interactive-prompt-question"
+      data-component="InteractivePromptWidget"
+      data-testid="interactive-prompt-widget"
+      title="Claude has questions for you"
+      subtitle={`${content.questions.length} question${content.questions.length === 1 ? '' : 's'}`}
+      status="running"
+      icon={
+        <span className="interactive-prompt__icon flex items-center justify-center text-[var(--an-primary-color)]">
           <svg width="14" height="14" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
             <circle cx="8" cy="8" r="6" stroke="currentColor" strokeWidth="1.5"/>
             <path d="M6.06 6a2 2 0 0 1 3.88.67c0 1.33-2 2-2 2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
             <path d="M8 11h.01" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
           </svg>
         </span>
-        <span className="interactive-prompt__title">Claude has questions for you</span>
-      </div>
-
-      <div className="interactive-prompt__questions">
+      }
+      trailing={<AgentStatusPill tone="running">Waiting</AgentStatusPill>}
+    >
+      <div className="interactive-prompt__questions flex flex-col gap-3">
         {content.questions.map((question, qIndex) => (
-          <div key={qIndex} className="interactive-prompt__question-card">
-            <div className="interactive-prompt__question-header">
-              <span className="interactive-prompt__question-chip">{question.header}</span>
+          <div key={qIndex} className={`interactive-prompt__question-card ${promptPanelClass} flex flex-col gap-2`}>
+            <div className="interactive-prompt__question-header flex items-center gap-2">
+              <span className="interactive-prompt__question-chip rounded-md bg-[var(--an-tool-background)] px-1.5 py-0.5 text-[10px] font-medium text-[var(--an-foreground-muted)]">{question.header}</span>
               {question.multiSelect && (
-                <span className="interactive-prompt__multi-hint">Select multiple</span>
+                <span className={`interactive-prompt__multi-hint text-[11px] ${subtleTextClass}`}>Select multiple</span>
               )}
             </div>
-            <div className="interactive-prompt__question-text">
+            <div className="interactive-prompt__question-text text-sm leading-relaxed text-[var(--an-foreground)]">
               {question.question}
             </div>
-            <div className="interactive-prompt__options">
+            <div className="interactive-prompt__options flex flex-col gap-1.5">
               {question.options.map((option, oIndex) => {
                 const currentAnswer = answers[question.question] || '';
                 const isSelected = question.multiSelect
@@ -337,43 +380,41 @@ const AskUserQuestionWidgetInteractive: React.FC<AskUserQuestionWidgetProps> = (
                 return (
                   <button
                     key={oIndex}
-                    className={`interactive-prompt__option ${isSelected ? 'interactive-prompt__option--selected' : ''}`}
+                    className={`${optionButtonClass} ${isSelected ? selectedOptionClass : ''}`}
                     onClick={() => handleOptionSelect(question.question, option.label, question.multiSelect)}
                     disabled={isSubmitting}
                   >
-                    <div className={`interactive-prompt__option-indicator ${isSelected ? 'interactive-prompt__option-indicator--selected' : ''}`}>
+                    <div className={`${optionIndicatorClass} ${isSelected ? selectedOptionIndicatorClass : ''}`}>
                       {isSelected && (
                         <svg width="10" height="10" viewBox="0 0 10 10" fill="none" xmlns="http://www.w3.org/2000/svg">
                           <path d="M8.5 2.5L3.75 7.25L1.5 5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
                         </svg>
                       )}
                     </div>
-                    <div className="interactive-prompt__option-content">
-                      <span className="interactive-prompt__option-label">{option.label}</span>
+                    <div className="interactive-prompt__option-content flex min-w-0 flex-col gap-0.5">
+                      <span className="interactive-prompt__option-label text-sm text-[var(--an-foreground)]">{option.label}</span>
                       {option.description && (
-                        <span className="interactive-prompt__option-description">{option.description}</span>
+                        <span className={`interactive-prompt__option-description text-xs ${mutedTextClass}`}>{option.description}</span>
                       )}
                     </div>
                   </button>
                 );
               })}
               {/* "Other" option with inline text input */}
-              <div className={`interactive-prompt__option ${otherSelected[question.question] ? 'interactive-prompt__option--selected' : ''}`}
-                style={{ flexDirection: 'column', alignItems: 'stretch', cursor: 'default' }}
-              >
+              <div className={`${optionButtonClass} flex-col items-stretch cursor-default hover:bg-[var(--an-tool-background)] ${otherSelected[question.question] ? selectedOptionClass : ''}`}>
                 <button
-                  style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', width: '100%', background: 'transparent', border: 'none', cursor: 'pointer', padding: 0, textAlign: 'left' }}
+                  className="flex w-full items-start gap-2 bg-transparent border-0 p-0 text-left cursor-pointer disabled:cursor-not-allowed"
                   onClick={() => handleOtherToggle(question.question, question.multiSelect)}
                   disabled={isSubmitting}
                 >
-                  <div className={`interactive-prompt__option-indicator ${otherSelected[question.question] ? 'interactive-prompt__option-indicator--selected' : ''}`}>
+                  <div className={`${optionIndicatorClass} ${otherSelected[question.question] ? selectedOptionIndicatorClass : ''}`}>
                     {otherSelected[question.question] && (
                       <svg width="10" height="10" viewBox="0 0 10 10" fill="none" xmlns="http://www.w3.org/2000/svg">
                         <path d="M8.5 2.5L3.75 7.25L1.5 5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
                       </svg>
                     )}
                   </div>
-                  <span className="interactive-prompt__option-label">Other</span>
+                  <span className="interactive-prompt__option-label text-sm text-[var(--an-foreground)]">Other</span>
                 </button>
                 {otherSelected[question.question] && (
                   <textarea
@@ -389,17 +430,7 @@ const AskUserQuestionWidgetInteractive: React.FC<AskUserQuestionWidgetProps> = (
                     placeholder="Type your answer..."
                     disabled={isSubmitting}
                     rows={2}
-                    style={{
-                      width: '100%',
-                      padding: '8px 10px',
-                      marginTop: '6px',
-                      borderRadius: '4px',
-                      border: '1px solid var(--nim-border)',
-                      background: 'var(--nim-bg-secondary)',
-                      color: 'var(--nim-text)',
-                      fontSize: '13px',
-                      resize: 'vertical',
-                    }}
+                    className="mt-1.5 w-full resize-y rounded-md border border-[var(--an-tool-border-color)] bg-[var(--an-background-tertiary)] px-2.5 py-2 text-[13px] text-[var(--an-foreground)] placeholder:text-[var(--an-foreground-subtle)] outline-none focus-visible:ring-2 focus-visible:ring-[var(--an-focus-ring)] disabled:cursor-not-allowed disabled:opacity-60"
                   />
                 )}
               </div>
@@ -408,9 +439,9 @@ const AskUserQuestionWidgetInteractive: React.FC<AskUserQuestionWidgetProps> = (
         ))}
       </div>
 
-      <div className="interactive-prompt__actions interactive-prompt__actions--centered">
+      <div className="interactive-prompt__actions interactive-prompt__actions--centered mt-3 flex flex-wrap justify-end gap-2">
         <button
-          className="interactive-prompt__button interactive-prompt__button--submit"
+          className={`interactive-prompt__button--submit ${primaryButtonClass}`}
           onClick={handleSubmit}
           disabled={isSubmitting || !allAnswered}
         >
@@ -418,7 +449,7 @@ const AskUserQuestionWidgetInteractive: React.FC<AskUserQuestionWidgetProps> = (
         </button>
         {onCancel && (
           <button
-            className="interactive-prompt__button interactive-prompt__button--cancel"
+            className={`interactive-prompt__button--cancel ${secondaryButtonClass}`}
             onClick={onCancel}
             disabled={isSubmitting}
           >
@@ -426,7 +457,7 @@ const AskUserQuestionWidgetInteractive: React.FC<AskUserQuestionWidgetProps> = (
           </button>
         )}
       </div>
-    </div>
+    </AgentToolCard>
   );
 };
 

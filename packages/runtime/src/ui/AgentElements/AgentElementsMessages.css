@@ -3,11 +3,18 @@
  */
 
 .agent-elements-user-message-body,
-.agent-elements-markdown,
+.agent-elements-markdown {
+  max-width: min(100%, var(--an-max-width));
+  color: var(--an-foreground);
+  text-align: left;
+}
+
 .agent-elements-error-message-card,
 .agent-elements-generic-tool-card,
 .agent-elements-extension-event-card {
-  max-width: min(100%, var(--an-max-width));
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
   color: var(--an-foreground);
   text-align: left;
 }
@@ -217,9 +224,12 @@
 .agent-elements-extension-shell {
   display: flex;
   flex-direction: column;
+  width: 100%;
   gap: var(--an-spacing-sm);
   max-width: 100%;
-  padding: var(--an-spacing-sm);
+  box-sizing: border-box;
+  padding-block: var(--an-spacing-sm);
+  padding-inline: var(--agent-elements-card-inline-padding, var(--an-spacing-md));
   overflow: hidden;
   background: var(--an-background);
   border: 1px solid var(--an-tool-border-color);

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import QRCode from 'qrcode';
-import { copyToClipboard } from '@nimbalyst/runtime';
+import { copyToClipboard, MaterialSymbol } from '@nimbalyst/runtime';
 
 interface QRPairingModalProps {
   isOpen: boolean;
@@ -36,6 +36,41 @@ function replaceLocalhostWithIP(url: string, ip: string): string {
   } catch {
     return url;
   }
+}
+
+const backdropClass =
+  'qr-modal-overlay agent-elements-qr-pairing-backdrop fixed inset-0 z-[10000] flex items-center justify-center overflow-y-auto bg-[color-mix(in_srgb,var(--an-foreground)_14%,transparent)] px-[var(--an-spacing-xxl)] py-[var(--an-spacing-xxl)]';
+const dialogClass =
+  'qr-modal-content agent-elements-qr-pairing-dialog agent-elements-tool-card my-auto flex max-h-[90vh] w-[min(92vw,420px)] flex-col overflow-hidden rounded-[var(--an-border-radius)] border border-[var(--an-border-color)] bg-[var(--an-background)] text-[var(--an-foreground)]';
+const headerClass =
+  'qr-modal-header agent-elements-qr-pairing-header flex items-start justify-between gap-[var(--an-spacing-md)] border-b border-[var(--an-border-color)] bg-[var(--an-background)] px-[var(--an-spacing-xxl)] py-[var(--an-spacing-lg)]';
+const bodyClass =
+  'qr-modal-body agent-elements-qr-pairing-body nim-scrollbar flex flex-col overflow-y-auto px-[var(--an-spacing-xxl)] py-[var(--an-spacing-xl)]';
+const iconFrameClass =
+  'inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-[var(--an-tool-border-radius)] border border-[var(--an-border-color)] bg-[var(--an-background-secondary)] text-[var(--an-primary-color)]';
+const closeButtonClass =
+  'qr-modal-close inline-flex h-8 w-8 cursor-pointer items-center justify-center rounded-[var(--an-input-border-radius)] border border-transparent bg-transparent p-0 text-[var(--an-foreground-muted)] transition-[background-color,border-color,color] duration-150 ease-out hover:border-[var(--an-border-color)] hover:bg-[var(--an-background-tertiary)] hover:text-[var(--an-foreground)] focus:outline-none focus:ring-2 focus:ring-[var(--an-focus-ring)]';
+const panelBaseClass =
+  'rounded-[var(--an-tool-border-radius)] border px-[var(--an-spacing-lg)] py-[var(--an-spacing-md)]';
+const warningPanelClass =
+  `${panelBaseClass} border-[color-mix(in_srgb,var(--an-warning-color)_28%,var(--an-border-color))] bg-[color-mix(in_srgb,var(--an-warning-color)_9%,var(--an-background))] text-[var(--an-warning-color)]`;
+const successPanelClass =
+  `${panelBaseClass} border-[color-mix(in_srgb,var(--an-success-color)_24%,var(--an-border-color))] bg-[color-mix(in_srgb,var(--an-success-color)_8%,var(--an-background))] text-[var(--an-success-color)]`;
+const infoPanelClass =
+  `${panelBaseClass} border-[color-mix(in_srgb,var(--an-primary-color)_24%,var(--an-border-color))] bg-[color-mix(in_srgb,var(--an-primary-color)_7%,var(--an-background))] text-[var(--an-foreground)]`;
+const inlineCodeClass =
+  'rounded-[var(--an-input-border-radius)] border border-[var(--an-border-color)] bg-[var(--an-background-secondary)] px-1.5 py-0.5 font-mono text-[11px] text-[var(--an-foreground)]';
+const secondaryButtonClass =
+  'inline-flex min-h-8 w-full cursor-pointer items-center justify-center gap-[var(--an-spacing-xs)] rounded-[var(--an-input-border-radius)] border border-[var(--an-border-color)] bg-[var(--an-background-secondary)] px-4 py-2 text-sm font-medium text-[var(--an-foreground-muted)] transition-[background-color,border-color,color] duration-150 ease-out hover:border-[var(--an-border-color-strong)] hover:bg-[var(--an-background-tertiary)] hover:text-[var(--an-foreground)] focus:outline-none focus:ring-2 focus:ring-[var(--an-focus-ring)]';
+const primaryButtonClass =
+  'inline-flex min-h-8 cursor-pointer items-center justify-center gap-[var(--an-spacing-xs)] rounded-[var(--an-input-border-radius)] border border-[var(--an-send-button-bg)] bg-[var(--an-send-button-bg)] px-4 py-2 text-sm font-medium text-[var(--an-send-button-color)] transition-[background-color,border-color,opacity] duration-150 ease-out hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-[var(--an-focus-ring)]';
+
+function DecorativeMaterialSymbol({ icon, size, className = '' }: { icon: string; size?: number; className?: string }) {
+  return (
+    <span aria-hidden="true" className={`inline-flex ${className}`.trim()}>
+      <MaterialSymbol icon={icon} size={size} />
+    </span>
+  );
 }
 
 /**
@@ -148,59 +183,95 @@ export function QRPairingModal({ isOpen, onClose, serverUrl, preventSleepMode, o
 
   return (
     <div
-      className="qr-modal-overlay fixed inset-0 bg-black/50 flex items-center justify-center z-[10000] overflow-y-auto py-4"
+      className={backdropClass}
       onClick={onClose}
+      data-testid="agent-elements-qr-pairing-backdrop"
+      data-component="QRPairingModalBackdrop"
+      data-agent-elements-shell="qr-pairing-backdrop"
     >
       <div
-        className="qr-modal-content bg-nim rounded-xl w-[400px] max-h-[90vh] overflow-y-auto shadow-2xl my-auto"
+        className={dialogClass}
         onClick={(e) => e.stopPropagation()}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="qr-pairing-title"
+        data-testid="agent-elements-qr-pairing-dialog"
+        data-component="QRPairingModal"
+        data-agent-elements-shell="qr-pairing-dialog"
       >
-        <div className="qr-modal-header flex items-center justify-between px-5 py-4 border-b border-nim sticky top-0 bg-nim z-10">
-          <h2 className="qr-modal-title text-lg font-semibold text-nim m-0">Pair Mobile Device</h2>
+        <div
+          className={headerClass}
+          data-testid="agent-elements-qr-pairing-header"
+          data-agent-elements-shell="qr-pairing-header"
+        >
+          <div className="flex min-w-0 items-start gap-[var(--an-spacing-md)]">
+            <span className={iconFrameClass} aria-hidden="true">
+              <MaterialSymbol icon="qr_code_scanner" size={20} />
+            </span>
+            <div className="min-w-0">
+              <h2 id="qr-pairing-title" className="qr-modal-title m-0 text-base font-medium leading-snug text-[var(--an-foreground)]">
+                Pair Mobile Device
+              </h2>
+              <p className="m-0 mt-1 text-xs leading-relaxed text-[var(--an-foreground-muted)]">
+                Share your sync key with a signed-in mobile app.
+              </p>
+            </div>
+          </div>
           <button
-            className="qr-modal-close p-1 bg-transparent border-none cursor-pointer text-nim-muted hover:text-nim"
+            type="button"
+            className={closeButtonClass}
             onClick={onClose}
+            aria-label="Close"
           >
-            <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M15 5L5 15M5 5l10 10" />
-            </svg>
+            <DecorativeMaterialSymbol icon="close" size={20} />
           </button>
         </div>
 
-        <div className="qr-modal-body p-5">
+        <div
+          className={bodyClass}
+          data-testid="agent-elements-qr-pairing-body"
+          data-agent-elements-shell="qr-pairing-body"
+        >
           {/* Local dev server notice */}
           {isLocalServer && localIP && (
-            <div className="qr-dev-notice mb-4 p-3 rounded-lg bg-amber-500/10 border border-amber-500/20">
-              <div className="qr-dev-notice-header flex items-center gap-2 text-amber-500 font-medium text-sm mb-2">
-                <svg className="qr-dev-notice-icon" width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
-                  <path d="M8 1a7 7 0 100 14A7 7 0 008 1zM7 5a1 1 0 112 0v3a1 1 0 11-2 0V5zm1 7a1 1 0 100-2 1 1 0 000 2z" />
-                </svg>
+            <div
+              className={`qr-dev-notice agent-elements-qr-pairing-local-dev mb-[var(--an-spacing-lg)] ${warningPanelClass}`}
+              data-testid="agent-elements-qr-pairing-local-dev"
+              data-agent-elements-shell="qr-pairing-local-dev"
+            >
+              <div className="qr-dev-notice-header mb-[var(--an-spacing-sm)] flex items-center gap-[var(--an-spacing-xs)] text-sm font-medium">
+                <DecorativeMaterialSymbol icon="info" size={16} />
                 <span>Local Development Server</span>
               </div>
-              <p className="qr-dev-notice-text text-xs text-nim-muted mb-2">
+              <p className="qr-dev-notice-text m-0 mb-[var(--an-spacing-sm)] select-text text-xs leading-relaxed text-[var(--an-foreground-muted)]">
                 Your phone needs to connect via your local network IP instead of localhost.
               </p>
-              <label className="qr-dev-toggle flex items-center gap-2 cursor-pointer">
+              <label className="qr-dev-toggle flex cursor-pointer items-center gap-[var(--an-spacing-xs)]">
                 <input
                   type="checkbox"
                   checked={useLocalIP}
                   onChange={(e) => setUseLocalIP(e.target.checked)}
+                  className="h-3.5 w-3.5 cursor-pointer accent-[var(--an-primary-color)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--an-focus-ring)]"
                 />
-                <span className="qr-dev-toggle-text text-xs text-nim">
-                  Use LAN IP: <code className="bg-nim-secondary px-1 py-0.5 rounded">{localIP}</code>
+                <span className="qr-dev-toggle-text text-xs text-[var(--an-foreground)]">
+                  Use LAN IP: <code className={inlineCodeClass}>{localIP}</code>
                 </span>
               </label>
-              <p className="qr-dev-notice-url text-xs text-nim-faint mt-2 mb-0">
-                Server URL in QR: <code className="bg-nim-secondary px-1 py-0.5 rounded">{effectiveUrl}</code>
+              <p className="qr-dev-notice-url m-0 mt-[var(--an-spacing-sm)] select-text text-xs text-[var(--an-foreground-subtle)]">
+                Server URL in QR: <code className={inlineCodeClass}>{effectiveUrl}</code>
               </p>
             </div>
           )}
 
           {error ? (
-            <div className="qr-error text-center py-8">
-              <p className="text-nim-error mb-4">{error}</p>
+            <div
+              className="qr-error flex flex-col items-center justify-center py-[var(--an-spacing-xxl)] text-center"
+              data-agent-elements-shell="qr-pairing-error"
+            >
+              <p className="m-0 mb-[var(--an-spacing-lg)] select-text text-sm text-[var(--an-diff-removed-text)]">{error}</p>
               <button
-                className="qr-regenerate-button px-4 py-2 bg-nim-primary text-white rounded-md text-sm font-medium cursor-pointer hover:bg-nim-primary-hover"
+                type="button"
+                className={`qr-regenerate-button ${primaryButtonClass}`}
                 onClick={generateQR}
               >
                 Try Again
@@ -208,11 +279,11 @@ export function QRPairingModal({ isOpen, onClose, serverUrl, preventSleepMode, o
             </div>
           ) : qrDataUrl ? (
             <>
-              <div className="qr-code-container flex justify-center mb-4">
+              <div className="qr-code-container mb-[var(--an-spacing-xl)] flex justify-center">
                 <img
                   src={qrDataUrl}
                   alt="QR Code for mobile pairing"
-                  className="qr-code-image rounded-lg cursor-pointer"
+                  className="qr-code-image cursor-pointer rounded-[var(--an-tool-border-radius)] border border-[var(--an-border-color)] bg-[var(--an-background-secondary)] p-[var(--an-spacing-md)]"
                   onClick={(e) => {
                     if (e.metaKey && qrPayload) {
                       handleCopyPayload();
@@ -222,40 +293,48 @@ export function QRPairingModal({ isOpen, onClose, serverUrl, preventSleepMode, o
                 />
               </div>
 
-              <div className="qr-instructions text-sm text-nim-muted space-y-1 mb-4">
-                <p className="qr-step">1. Open Nimbalyst on your mobile device</p>
-                <p className="qr-step">2. Go to Settings and tap "Scan QR Code"</p>
-                <p className="qr-step">3. Point your camera at this QR code</p>
-                <p className="qr-step">4. Sign in with the same account as desktop</p>
+              <div
+                className="qr-instructions agent-elements-qr-pairing-instructions mb-[var(--an-spacing-lg)] space-y-[var(--an-spacing-xs)] text-sm text-[var(--an-foreground-muted)]"
+                data-testid="agent-elements-qr-pairing-instructions"
+                data-agent-elements-shell="qr-pairing-instructions"
+              >
+                <p className="qr-step m-0 select-text">1. Open Nimbalyst on your mobile device</p>
+                <p className="qr-step m-0 select-text">2. Go to Settings and tap "Scan QR Code"</p>
+                <p className="qr-step m-0 select-text">3. Point your camera at this QR code</p>
+                <p className="qr-step m-0 select-text">4. Sign in with the same account as desktop</p>
               </div>
 
-              <div className="qr-info mt-3 p-3 bg-green-500/10 border border-green-500/20 rounded-lg text-[13px] text-nim-muted">
-                <div className="flex items-center gap-2 mb-2">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#22c55e" strokeWidth="2">
-                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
-                    <path d="M7 11V7a5 5 0 0110 0v4" />
-                  </svg>
-                  <span className="font-semibold text-green-500">End-to-End Encrypted</span>
+              <div
+                className={`qr-info agent-elements-qr-pairing-security mt-[var(--an-spacing-md)] text-[13px] ${successPanelClass}`}
+                data-testid="agent-elements-qr-pairing-security"
+                data-agent-elements-shell="qr-pairing-security"
+              >
+                <div className="mb-[var(--an-spacing-sm)] flex items-center gap-[var(--an-spacing-xs)]">
+                  <DecorativeMaterialSymbol icon="lock" size={16} />
+                  <span className="font-medium">End-to-End Encrypted</span>
                 </div>
-                <p className="m-0">
+                <p className="m-0 select-text leading-relaxed text-[var(--an-foreground-muted)]">
                   This QR code securely transfers your encryption key. Your keys never touch our servers - only your devices can decrypt your data.
                 </p>
               </div>
 
               {/* Prevent sleep suggestion */}
               {onPreventSleepModeChange && (
-                <div className="mt-3 p-3 bg-blue-500/10 border border-blue-500/20 rounded-lg">
+                <div
+                  className={`agent-elements-qr-pairing-sleep mt-[var(--an-spacing-md)] ${infoPanelClass}`}
+                  data-agent-elements-shell="qr-pairing-sleep"
+                >
                   <div className="flex items-start gap-2.5">
                     <div className="flex-1">
-                      <span className="text-[13px] font-medium text-nim">Prevent sleep while syncing</span>
-                      <p className="text-[11px] text-nim-muted mt-1 mb-0">
+                      <span className="text-[13px] font-medium text-[var(--an-foreground)]">Prevent sleep while syncing</span>
+                      <p className="m-0 mt-1 select-text text-[11px] leading-relaxed text-[var(--an-foreground-muted)]">
                         Keeps your computer awake so you can send prompts from your phone. Display can still turn off.
                       </p>
                     </div>
                     <select
                       value={preventSleepMode ?? 'off'}
                       onChange={(e) => onPreventSleepModeChange(e.target.value as 'off' | 'always' | 'pluggedIn')}
-                      className="bg-nim-secondary border border-nim rounded px-2 py-1 text-[12px] text-nim cursor-pointer shrink-0 mt-0.5"
+                      className="mt-0.5 shrink-0 cursor-pointer rounded-[var(--an-input-border-radius)] border border-[var(--an-input-border-color)] bg-[var(--an-input-background)] px-2 py-1 text-[12px] text-[var(--an-input-color)] outline-none focus:border-[var(--an-input-focus-outline)] focus:ring-2 focus:ring-[var(--an-focus-ring)]"
                     >
                       <option value="off">Off</option>
                       <option value="always">Always</option>
@@ -265,17 +344,21 @@ export function QRPairingModal({ isOpen, onClose, serverUrl, preventSleepMode, o
                 </div>
               )}
 
-              <div className="qr-warning flex items-center gap-2 mt-3 p-3 bg-amber-500/10 border border-amber-500/20 rounded-lg text-xs text-amber-600">
-                <svg className="qr-warning-icon shrink-0" width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
-                  <path d="M8 1a7 7 0 100 14A7 7 0 008 1zM7 5a1 1 0 112 0v3a1 1 0 11-2 0V5zm1 7a1 1 0 100-2 1 1 0 000 2z" />
-                </svg>
-                <span>Only scan with your own device. This shares your encryption key.</span>
+              <div
+                className={`qr-warning agent-elements-qr-pairing-warning mt-[var(--an-spacing-md)] flex items-center gap-[var(--an-spacing-xs)] text-xs ${warningPanelClass}`}
+                data-testid="agent-elements-qr-pairing-warning"
+                data-agent-elements-shell="qr-pairing-warning"
+              >
+                <DecorativeMaterialSymbol icon="warning" size={16} className="shrink-0" />
+                <span className="select-text">Only scan with your own device. This shares your encryption key.</span>
               </div>
 
               <button
-                className="qr-regenerate-button w-full mt-4 px-4 py-2 bg-nim-secondary text-nim-muted border border-nim rounded-md text-sm font-medium cursor-pointer hover:bg-nim-hover"
+                type="button"
+                className={`qr-regenerate-button mt-[var(--an-spacing-lg)] ${secondaryButtonClass}`}
                 onClick={generateQR}
               >
+                <DecorativeMaterialSymbol icon="refresh" size={16} />
                 Regenerate QR Code
               </button>
 
@@ -283,35 +366,30 @@ export function QRPairingModal({ isOpen, onClose, serverUrl, preventSleepMode, o
               {qrPayload && (
                 <div className="qr-dev-copy">
                   <button
-                    className={`qr-dev-copy-button w-full mt-3 px-4 py-2 border border-nim rounded-md text-[13px] font-medium cursor-pointer flex items-center justify-center gap-1.5 ${
+                    type="button"
+                    className={`qr-dev-copy-button mt-[var(--an-spacing-md)] ${
                       copied
-                        ? 'bg-green-500 text-white border-green-500'
-                        : 'bg-nim-tertiary text-nim-muted hover:bg-nim-hover'
+                        ? primaryButtonClass
+                        : secondaryButtonClass
                     }`}
                     onClick={handleCopyPayload}
                   >
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      {copied ? (
-                        <path d="M20 6L9 17l-5-5" />
-                      ) : (
-                        <>
-                          <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
-                          <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1" />
-                        </>
-                      )}
-                    </svg>
+                    <DecorativeMaterialSymbol icon={copied ? 'check' : 'content_copy'} size={16} />
                     {copied ? 'Copied!' : 'Copy Pairing Data'}
                   </button>
-                  <p className="mt-2 text-[11px] text-nim-faint text-center">
+                  <p className="m-0 mt-[var(--an-spacing-sm)] select-text text-center text-[11px] text-[var(--an-foreground-subtle)]">
                     Can't scan? Paste this into the mobile app's Manual Setup
                   </p>
                 </div>
               )}
             </>
           ) : (
-            <div className="qr-loading flex flex-col items-center justify-center py-8">
-              <div className="qr-spinner w-8 h-8 border-2 border-nim-primary border-t-transparent rounded-full animate-spin mb-3" />
-              <p className="text-nim-muted text-sm">Generating QR code...</p>
+            <div
+              className="qr-loading flex flex-col items-center justify-center py-[var(--an-spacing-xxl)]"
+              data-agent-elements-shell="qr-pairing-loading"
+            >
+              <div className="qr-spinner mb-[var(--an-spacing-md)] h-8 w-8 rounded-full border-2 border-[var(--an-primary-color)] border-t-transparent animate-spin" />
+              <p className="m-0 text-sm text-[var(--an-foreground-muted)]">Generating QR code...</p>
             </div>
           )}
         </div>

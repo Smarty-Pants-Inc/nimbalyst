@@ -1,6 +1,8 @@
 // @vitest-environment jsdom
 
 import '@testing-library/jest-dom/vitest';
+import fs from 'node:fs';
+import path from 'node:path';
 import React from 'react';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -8,6 +10,14 @@ import { RosettaWarning } from '../RosettaWarning/RosettaWarning';
 import { WindowsClaudeCodeWarning } from '../WindowsClaudeCodeWarning/WindowsClaudeCodeWarning';
 
 const electronSend = vi.fn();
+const rosettaWarningSourcePath = path.join(
+  process.cwd(),
+  'packages/electron/src/renderer/components/RosettaWarning/RosettaWarning.tsx'
+);
+const windowsClaudeCodeWarningSourcePath = path.join(
+  process.cwd(),
+  'packages/electron/src/renderer/components/WindowsClaudeCodeWarning/WindowsClaudeCodeWarning.tsx'
+);
 
 vi.mock('@nimbalyst/runtime', async () => {
   const ReactModule = await vi.importActual<typeof import('react')>('react');
@@ -134,5 +144,17 @@ describe('platform warning Agent Elements shells', () => {
     fireEvent.click(screen.getByRole('button', { name: "Don't Show Again" }));
     expect(electronSend).toHaveBeenCalledWith('dismiss-claude-code-windows-warning');
     expect(onDismiss).toHaveBeenCalledTimes(1);
+  });
+
+  it('keeps platform warning visual chrome on Agent Elements aliases', () => {
+    const source = [
+      fs.readFileSync(rosettaWarningSourcePath, 'utf8'),
+      fs.readFileSync(windowsClaudeCodeWarningSourcePath, 'utf8'),
+    ].join('\n');
+
+    expect(source).toContain('data-agent-elements-shell="platform-warning"');
+    expect(source).toContain('agent-elements-tool-card');
+    expect(source).not.toMatch(/var\(--nim|--nim-|bg-nim|text-nim|border-nim/);
+    expect(source).not.toMatch(/text-white|shadow-\[[^\]]*var\(--nim/);
   });
 });

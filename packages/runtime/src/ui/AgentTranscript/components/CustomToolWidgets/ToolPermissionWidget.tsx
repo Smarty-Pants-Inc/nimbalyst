@@ -96,6 +96,16 @@ function getPatternDisplayName(pattern: string): string {
 
 type PermissionVisualState = 'pending' | 'granted' | 'denied' | 'cancelled';
 
+const permissionCommandBlockClass =
+  'max-h-[200px] overflow-x-auto rounded-[var(--an-input-border-radius)] bg-[var(--an-background-tertiary)] p-2';
+const permissionCommandCodeClass =
+  'font-mono text-xs text-[var(--an-foreground)] whitespace-pre-wrap break-all select-text';
+const permissionSecondaryButtonClass =
+  'cursor-pointer whitespace-nowrap rounded-[var(--an-input-border-radius)] border border-[var(--an-border-color)] bg-[var(--an-background-tertiary)] px-3 py-1.5 text-[11px] font-medium text-[var(--an-foreground)] transition-[background-color,border-color,color,opacity] duration-150 hover:bg-[var(--an-background-secondary)] disabled:cursor-not-allowed disabled:opacity-50';
+const permissionPrimaryButtonClass =
+  'cursor-pointer whitespace-nowrap rounded-[var(--an-input-border-radius)] border-none bg-[var(--an-primary-color)] px-3 py-1.5 text-[11px] font-medium text-[var(--an-button-primary-text)] transition-[background-color,border-color,color,opacity] duration-150 hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50';
+const permissionSeparatorClass = 'w-px h-5 bg-[var(--an-border-color)] mx-1';
+
 function getApprovalState(
   displayResult: { decision: 'allow' | 'deny'; scope: PermissionScope; cancelled?: boolean } | null | undefined,
   hasResponded: boolean
@@ -127,10 +137,10 @@ function PermissionStatusIcon({
 }) {
   const iconClassName = `agent-elements-tool-icon ${
     state === 'granted'
-      ? 'text-nim-success'
+      ? 'text-[var(--an-success-color)]'
       : state === 'denied' || state === 'cancelled' || isDestructive
-        ? 'text-[var(--nim-error)]'
-        : 'text-nim-primary'
+        ? 'text-[var(--an-error-color)]'
+        : 'text-[var(--an-primary-color)]'
   }`;
 
   if (state === 'granted') {
@@ -356,12 +366,14 @@ export const ToolPermissionWidget: React.FC<CustomToolWidgetProps> = ({
   const approvalState = getApprovalState(displayResult, hasResponded);
   const shellClassName = `tool-permission-widget agent-elements-tool-card agent-elements-permission-tool-card ${
     isDestructive && approvalState === 'pending'
-      ? 'border-[var(--nim-error)] bg-[color-mix(in_srgb,var(--nim-error)_5%,var(--nim-bg-secondary))]'
+      ? 'border-[var(--an-error-color)] bg-[color-mix(in_srgb,var(--an-error-color)_5%,var(--an-background-secondary))]'
       : ''
   } ${approvalState === 'pending' ? '' : 'opacity-85'}`;
   const shellProps = {
     'data-component': 'RichTranscriptAgentElementsToolPermission',
     'data-agent-elements-shell': 'approval-card',
+    'data-agent-elements-card-padding': 'symmetric-inline',
+    'data-agent-elements-card-width': 'bridge-fill',
     'data-approval-state': approvalState,
     'data-approval-decision': displayResult?.decision ?? undefined,
     'data-destructive': isDestructive ? 'true' : 'false',
@@ -377,10 +389,10 @@ export const ToolPermissionWidget: React.FC<CustomToolWidgetProps> = ({
         : 'Permission Denied';
 
     const statusColor = displayCancelled
-      ? 'text-nim-muted'
+      ? 'text-[var(--an-foreground-muted)]'
       : displayResult?.decision === 'allow'
-        ? 'text-nim-success'
-        : 'text-nim-error';
+        ? 'text-[var(--an-success-color)]'
+        : 'text-[var(--an-error-color)]';
 
     const scopeText = displayResult?.scope === 'always-all'
       ? 'All Domains'
@@ -402,7 +414,7 @@ export const ToolPermissionWidget: React.FC<CustomToolWidgetProps> = ({
             <span className="agent-elements-tool-title">
               {statusText}
               {teammateName && (
-                <span className="ml-2 text-xs font-normal text-nim-muted">
+                <span className="ml-2 text-xs font-normal text-[var(--an-foreground-muted)]">
                   (from teammate: {teammateName})
                 </span>
               )}
@@ -420,9 +432,9 @@ export const ToolPermissionWidget: React.FC<CustomToolWidgetProps> = ({
         </div>
 
         <div className="agent-elements-tool-primary">
-          <div className="bg-nim-tertiary rounded p-2 max-h-[200px] overflow-x-auto">
+          <div className={permissionCommandBlockClass}>
             <code
-              className="font-mono text-xs text-nim whitespace-pre-wrap break-all select-text"
+              className={permissionCommandCodeClass}
               data-testid="tool-permission-command"
             >
               {rawCommand || toolName}
@@ -435,8 +447,8 @@ export const ToolPermissionWidget: React.FC<CustomToolWidgetProps> = ({
             data-testid={displayResult?.decision === 'allow' ? 'tool-permission-granted' : 'tool-permission-denied'}
             className={`agent-elements-status-pill ${
               displayResult?.decision === 'allow'
-                ? 'text-nim-success'
-                : 'text-nim-muted'
+                ? 'text-[var(--an-success-color)]'
+                : 'text-[var(--an-foreground-muted)]'
             }`}
           >
             {scopeText}
@@ -476,7 +488,7 @@ export const ToolPermissionWidget: React.FC<CustomToolWidgetProps> = ({
           <span className="agent-elements-tool-title">
             Allow this tool?
             {teammateName && (
-              <span className="ml-2 text-xs font-normal text-nim-muted">
+              <span className="ml-2 text-xs font-normal text-[var(--an-foreground-muted)]">
                 (from teammate: {teammateName})
               </span>
             )}
@@ -489,7 +501,7 @@ export const ToolPermissionWidget: React.FC<CustomToolWidgetProps> = ({
           </AgentStatusPill>
         </span>
         <span
-          className="relative flex items-center cursor-pointer text-nim-faint hover:text-nim-muted"
+          className="relative flex items-center cursor-pointer text-[var(--an-foreground-subtle)] hover:text-[var(--an-foreground-muted)]"
           onMouseEnter={() => setShowTooltip(true)}
           onMouseLeave={() => setShowTooltip(false)}
         >
@@ -498,30 +510,30 @@ export const ToolPermissionWidget: React.FC<CustomToolWidgetProps> = ({
             <path d="M8 11V8M8 5.5h.01" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
           </svg>
           {showTooltip && (
-            <div className="absolute bottom-full right-0 mb-2 p-3 w-[300px] rounded-md border border-nim bg-nim-tertiary text-[11px] leading-relaxed text-nim-muted shadow-lg z-[100]">
-              <div className="font-semibold text-nim mb-2">
+            <div className="absolute bottom-full right-0 z-[100] mb-2 w-[300px] rounded-[var(--an-tool-border-radius)] border border-[var(--an-border-color)] bg-[var(--an-background-tertiary)] p-3 text-[11px] leading-relaxed text-[var(--an-foreground-muted)] shadow-[0_12px_32px_color-mix(in_srgb,var(--an-foreground)_12%,transparent)]">
+              <div className="mb-2 font-semibold text-[var(--an-foreground)]">
                 Permission Options
               </div>
               <div className="mb-2">
-                <span className="font-semibold text-nim">Deny:</span> Block this request
+                <span className="font-semibold text-[var(--an-foreground)]">Deny:</span> Block this request
               </div>
               <div className="mb-2">
-                <span className="font-semibold text-nim">Allow Once:</span> Allow just this request
+                <span className="font-semibold text-[var(--an-foreground)]">Allow Once:</span> Allow just this request
               </div>
               <div className="mb-2">
-                <span className="font-semibold text-nim">Session:</span> Allow{' '}
-                <span className="font-mono text-[10px] text-nim-faint bg-nim-secondary px-1 py-0.5 rounded">
+                <span className="font-semibold text-[var(--an-foreground)]">Session:</span> Allow{' '}
+                <span className="rounded-[var(--an-input-border-radius)] bg-[var(--an-background-secondary)] px-1 py-0.5 font-mono text-[10px] text-[var(--an-foreground-subtle)]">
                   {patternDisplayName}
                 </span> until you close the app
               </div>
               <div className="mb-0">
-                <span className="font-semibold text-nim">Always:</span> Save to{' '}
-                <span className="font-mono text-[10px] text-nim-faint bg-nim-secondary px-1 py-0.5 rounded">
+                <span className="font-semibold text-[var(--an-foreground)]">Always:</span> Save to{' '}
+                <span className="rounded-[var(--an-input-border-radius)] bg-[var(--an-background-secondary)] px-1 py-0.5 font-mono text-[10px] text-[var(--an-foreground-subtle)]">
                   .claude/settings.local.json
                 </span>
               </div>
-              <div className="mt-2 pt-2 border-t border-nim text-nim-faint">
-                Pattern: <span className="font-mono text-[10px] text-nim-faint bg-nim-secondary px-1 py-0.5 rounded">{pattern}</span>
+              <div className="mt-2 border-t border-[var(--an-border-color)] pt-2 text-[var(--an-foreground-subtle)]">
+                Pattern: <span className="rounded-[var(--an-input-border-radius)] bg-[var(--an-background-secondary)] px-1 py-0.5 font-mono text-[10px] text-[var(--an-foreground-subtle)]">{pattern}</span>
               </div>
             </div>
           )}
@@ -533,7 +545,7 @@ export const ToolPermissionWidget: React.FC<CustomToolWidgetProps> = ({
         {warnings.length > 0 && (
           <div className="flex flex-col gap-1.5">
             {warnings.map((warning, i) => (
-              <div key={i} className="flex items-start gap-1.5 text-xs text-nim-warning">
+              <div key={i} className="flex items-start gap-1.5 text-xs text-[var(--an-warning-color)]">
                 <svg width="14" height="14" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" className="shrink-0 mt-px">
                   <path d="M8 5.5v3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
                   <path d="M8 11h.01" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
@@ -548,7 +560,7 @@ export const ToolPermissionWidget: React.FC<CustomToolWidgetProps> = ({
         {outsidePaths.length > 0 && (
           <div
             data-testid="tool-permission-outside-paths"
-            className="rounded border border-[var(--nim-error)] bg-[color-mix(in_srgb,var(--nim-error)_8%,transparent)] px-2 py-1.5 text-xs text-[var(--nim-error)]"
+            className="rounded-[var(--an-input-border-radius)] border border-[var(--an-error-color)] bg-[color-mix(in_srgb,var(--an-error-color)_8%,transparent)] px-2 py-1.5 text-xs text-[var(--an-error-color)]"
           >
             <div className="font-semibold mb-1">Outside active workspace/worktree</div>
             {outsidePaths.map((outsidePath, i) => (
@@ -562,7 +574,7 @@ export const ToolPermissionWidget: React.FC<CustomToolWidgetProps> = ({
         {sensitivePaths.length > 0 && (
           <div
             data-testid="tool-permission-sensitive-paths"
-            className="rounded border border-[var(--nim-warning)] bg-[color-mix(in_srgb,var(--nim-warning)_8%,transparent)] px-2 py-1.5 text-xs text-nim-warning"
+            className="rounded-[var(--an-input-border-radius)] border border-[var(--an-warning-color)] bg-[color-mix(in_srgb,var(--an-warning-color)_8%,transparent)] px-2 py-1.5 text-xs text-[var(--an-warning-color)]"
           >
             <div className="font-semibold mb-1">Sensitive path</div>
             {sensitivePaths.map((sensitivePath, i) => (
@@ -574,9 +586,9 @@ export const ToolPermissionWidget: React.FC<CustomToolWidgetProps> = ({
         )}
 
         {/* Command display */}
-        <div className="bg-nim-tertiary rounded p-2 max-h-[200px] overflow-x-auto">
+        <div className={permissionCommandBlockClass}>
           <code
-            className="font-mono text-xs text-nim whitespace-pre-wrap break-all select-text"
+            className={permissionCommandCodeClass}
             data-testid="tool-permission-command"
           >
             {rawCommand || toolName}
@@ -590,7 +602,7 @@ export const ToolPermissionWidget: React.FC<CustomToolWidgetProps> = ({
         {!host && (
           <div
             data-testid="tool-permission-host-reconnecting"
-            className="text-[11px] text-nim-muted bg-nim-tertiary border border-nim rounded px-2 py-1.5"
+            className="rounded-[var(--an-input-border-radius)] border border-[var(--an-border-color)] bg-[var(--an-background-tertiary)] px-2 py-1.5 text-[11px] text-[var(--an-foreground-muted)]"
           >
             Reconnecting to permission backend. Buttons will work once the
             session view is fully loaded.
@@ -598,13 +610,13 @@ export const ToolPermissionWidget: React.FC<CustomToolWidgetProps> = ({
         )}
 
         {/* Actions row */}
-        <div className="flex items-center gap-2 flex-wrap pt-2 border-t border-nim">
+        <div className="flex items-center gap-2 flex-wrap pt-2 border-t border-[var(--an-border-color)]">
           <button
             type="button"
             data-testid="tool-permission-deny"
             onClick={handleDeny}
             disabled={isSubmitting}
-            className="px-3 py-1.5 rounded-md text-[11px] font-medium cursor-pointer border border-nim bg-nim-tertiary text-nim whitespace-nowrap transition-all duration-150 hover:bg-nim-hover disabled:opacity-50 disabled:cursor-not-allowed"
+            className={permissionSecondaryButtonClass}
           >
             Deny
           </button>
@@ -613,18 +625,18 @@ export const ToolPermissionWidget: React.FC<CustomToolWidgetProps> = ({
             data-testid="tool-permission-allow-once"
             onClick={handleAllowOnce}
             disabled={isSubmitting}
-            className="px-3 py-1.5 rounded-md text-[11px] font-medium cursor-pointer border border-nim bg-nim-tertiary text-nim whitespace-nowrap transition-all duration-150 hover:bg-nim-hover disabled:opacity-50 disabled:cursor-not-allowed"
+            className={permissionSecondaryButtonClass}
           >
             Allow Once
           </button>
-          <div className="w-px h-5 bg-nim mx-1" />
+          <div className={permissionSeparatorClass} />
           <button
             type="button"
             data-testid="tool-permission-allow-session"
             onClick={handleAllowSession}
             disabled={isSubmitting}
             title={`Allow ${patternDisplayName} for this session`}
-            className="px-3 py-1.5 rounded-md text-[11px] font-medium cursor-pointer border border-nim-primary bg-transparent text-nim-primary whitespace-nowrap transition-all duration-150 hover:bg-[color-mix(in_srgb,var(--nim-primary)_10%,transparent)] disabled:opacity-50 disabled:cursor-not-allowed"
+            className="cursor-pointer whitespace-nowrap rounded-[var(--an-input-border-radius)] border border-[var(--an-primary-color)] bg-transparent px-3 py-1.5 text-[11px] font-medium text-[var(--an-primary-color)] transition-[background-color,border-color,color,opacity] duration-150 hover:bg-[color-mix(in_srgb,var(--an-primary-color)_10%,transparent)] disabled:cursor-not-allowed disabled:opacity-50"
           >
             Session
           </button>
@@ -634,20 +646,20 @@ export const ToolPermissionWidget: React.FC<CustomToolWidgetProps> = ({
             onClick={handleAllowAlways}
             disabled={isSubmitting}
             title={`Save ${patternDisplayName} to .claude/settings.local.json`}
-            className="px-3 py-1.5 rounded-md text-[11px] font-medium cursor-pointer border-none bg-nim-primary text-white whitespace-nowrap transition-all duration-150 hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
+            className={permissionPrimaryButtonClass}
           >
             Always
           </button>
           {isWebFetchRequest && (
             <>
-              <div className="w-px h-5 bg-nim mx-1" />
+              <div className={permissionSeparatorClass} />
               <button
                 type="button"
                 data-testid="tool-permission-allow-all-domains"
                 onClick={handleAllowAllDomains}
                 disabled={isSubmitting || isAllowingAllDomains}
                 title="Allow fetching from any domain without asking"
-                className="px-3 py-1.5 rounded-md text-[11px] font-medium cursor-pointer border-none bg-nim-primary text-white whitespace-nowrap transition-all duration-150 hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
+                className={permissionPrimaryButtonClass}
               >
                 {isAllowingAllDomains ? 'Saving...' : 'All Domains'}
               </button>
@@ -656,8 +668,8 @@ export const ToolPermissionWidget: React.FC<CustomToolWidgetProps> = ({
         </div>
 
         {/* Pattern info */}
-        <div className="text-[11px] text-nim-faint">
-          Session/Always will allow: <span className="font-medium text-nim-muted bg-nim-tertiary px-1.5 py-0.5 rounded text-[10px]">{patternDisplayName}</span>
+        <div className="text-[11px] text-[var(--an-foreground-subtle)]">
+          Session/Always will allow: <span className="rounded-[var(--an-input-border-radius)] bg-[var(--an-background-tertiary)] px-1.5 py-0.5 text-[10px] font-medium text-[var(--an-foreground-muted)]">{patternDisplayName}</span>
         </div>
       </div>
     </div>

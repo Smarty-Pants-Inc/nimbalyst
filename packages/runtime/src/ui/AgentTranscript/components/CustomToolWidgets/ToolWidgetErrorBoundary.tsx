@@ -1,4 +1,6 @@
 import React from 'react';
+import { AgentStatusPill, AgentToolCard } from '../../../AgentElements/AgentElementsPrimitives';
+import { MaterialSymbol } from '../../../icons/MaterialSymbol';
 
 interface Props {
   children: React.ReactNode;
@@ -9,6 +11,31 @@ interface State {
   error: Error | null;
   showDetails: boolean;
 }
+
+function classNames(...values: Array<string | false | null | undefined>): string {
+  return values.filter(Boolean).join(' ');
+}
+
+const ErrorActionButton: React.FC<{
+  children: React.ReactNode;
+  onClick: () => void;
+  expanded?: boolean;
+}> = ({ children, onClick, expanded }) => (
+  <button
+    aria-expanded={expanded}
+    className={classNames(
+      'agent-elements-tool-widget-error-action inline-flex min-h-[1.875rem] items-center gap-[var(--an-spacing-xs)]',
+      'rounded-[var(--an-spacing-xs)] border border-[var(--an-tool-border-color)] bg-transparent',
+      'px-[var(--an-spacing-sm)] text-xs font-medium text-[var(--an-tool-color-muted)] transition-colors',
+      'hover:border-[var(--an-input-focus-border,var(--an-tool-border-color))] hover:text-[var(--an-tool-color)]',
+      'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--an-input-focus-outline,var(--an-tool-border-color))]'
+    )}
+    onClick={onClick}
+    type="button"
+  >
+    {children}
+  </button>
+);
 
 export class ToolWidgetErrorBoundary extends React.Component<Props, State> {
   constructor(props: Props) {
@@ -40,7 +67,7 @@ export class ToolWidgetErrorBoundary extends React.Component<Props, State> {
     if (!err) return;
     const text = `Tool widget: ${this.props.toolName ?? 'unknown'}\n${err.name}: ${err.message}\n${err.stack ?? ''}`;
     try {
-      await navigator.clipboard.writeText(text);
+      await navigator.clipboard?.writeText(text);
     } catch {
       // clipboard may be unavailable; swallow
     }
@@ -50,94 +77,55 @@ export class ToolWidgetErrorBoundary extends React.Component<Props, State> {
     const { error, showDetails } = this.state;
     if (!error) return this.props.children;
 
+    const toolName = this.props.toolName ?? 'unknown tool';
+    const details = error.stack ?? `${error.name}: ${error.message || 'Unknown error'}`;
+
     return (
-      <div
+      <AgentToolCard
+        className="agent-elements-tool-widget-error-card"
+        data-agent-elements-shell="tool-widget-error-card"
+        data-component="RichTranscriptAgentElementsToolWidgetErrorBoundary"
+        data-testid="agent-elements-tool-widget-error-card"
+        icon={<MaterialSymbol icon="error" size={16} />}
         role="alert"
-        style={{
-          border: '1px solid var(--nim-error, #ef4444)',
-          background: 'var(--nim-bg-tertiary)',
-          borderRadius: '6px',
-          padding: '8px 10px',
-          color: 'var(--nim-text)',
-          fontSize: '12px',
-        }}
-      >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <span style={{ fontWeight: 600, color: 'var(--nim-error, #ef4444)' }}>
-            Widget failed to render
-          </span>
-          <span style={{ color: 'var(--nim-text-muted)', fontFamily: 'monospace', fontSize: '11px' }}>
-            {this.props.toolName ?? 'unknown tool'}
-          </span>
-          <span style={{ flex: 1 }} />
-          <button
-            type="button"
-            onClick={this.toggleDetails}
-            style={{
-              background: 'transparent',
-              border: '1px solid var(--nim-border)',
-              color: 'var(--nim-text-muted)',
-              borderRadius: '4px',
-              fontSize: '11px',
-              padding: '2px 8px',
-              cursor: 'pointer',
-            }}
+        status="error"
+        subtitle={toolName}
+        title="Widget failed to render"
+        trailing={<AgentStatusPill tone="error">Error</AgentStatusPill>}
+        footer={(
+          <div
+            className="agent-elements-tool-widget-error-actions flex flex-wrap items-center gap-[var(--an-spacing-xs)]"
+            data-testid="agent-elements-tool-widget-error-actions"
           >
-            {showDetails ? 'Hide details' : 'Show details'}
-          </button>
-          <button
-            type="button"
-            onClick={this.copyError}
-            style={{
-              background: 'transparent',
-              border: '1px solid var(--nim-border)',
-              color: 'var(--nim-text-muted)',
-              borderRadius: '4px',
-              fontSize: '11px',
-              padding: '2px 8px',
-              cursor: 'pointer',
-            }}
-          >
-            Copy
-          </button>
-          <button
-            type="button"
-            onClick={this.reset}
-            style={{
-              background: 'transparent',
-              border: '1px solid var(--nim-border)',
-              color: 'var(--nim-text-muted)',
-              borderRadius: '4px',
-              fontSize: '11px',
-              padding: '2px 8px',
-              cursor: 'pointer',
-            }}
-          >
-            Retry
-          </button>
-        </div>
-        <div style={{ marginTop: '4px', color: 'var(--nim-text-muted)' }}>
-          {error.message || 'Unknown error'}
-        </div>
-        {showDetails && error.stack && (
-          <pre
-            style={{
-              marginTop: '6px',
-              maxHeight: '200px',
-              overflow: 'auto',
-              fontSize: '10px',
-              fontFamily: 'monospace',
-              color: 'var(--nim-text-faint)',
-              background: 'var(--nim-bg-secondary)',
-              padding: '6px 8px',
-              borderRadius: '4px',
-              whiteSpace: 'pre-wrap',
-            }}
-          >
-            {error.stack}
-          </pre>
+            <ErrorActionButton expanded={showDetails} onClick={this.toggleDetails}>
+              {showDetails ? 'Hide details' : 'Show details'}
+            </ErrorActionButton>
+            <ErrorActionButton onClick={this.copyError}>Copy</ErrorActionButton>
+            <ErrorActionButton onClick={this.reset}>Retry</ErrorActionButton>
+          </div>
         )}
-      </div>
+      >
+        <div
+          className="agent-elements-tool-widget-error-body flex flex-col gap-[var(--an-spacing-sm)]"
+          data-agent-elements-shell="tool-widget-error-body"
+          data-testid="agent-elements-tool-widget-error-body"
+        >
+          <div
+            className="agent-elements-tool-widget-error-message rounded-[var(--an-spacing-xs)] border border-[var(--an-tool-border-color)] bg-[var(--an-background-tertiary)] px-[var(--an-spacing-sm)] py-[var(--an-spacing-xs)] text-sm text-[var(--an-tool-color)] select-text"
+            data-testid="agent-elements-tool-widget-error-message"
+          >
+          {error.message || 'Unknown error'}
+          </div>
+          {showDetails ? (
+            <pre
+              className="agent-elements-tool-widget-error-details max-h-[12.5rem] overflow-auto whitespace-pre-wrap rounded-[var(--an-tool-border-radius)] bg-[var(--an-code-background)] p-[var(--an-spacing-sm)] font-mono text-xs leading-[1.333] text-[var(--an-code-color)] select-text"
+              data-testid="agent-elements-tool-widget-error-details"
+            >
+              {details}
+            </pre>
+          ) : null}
+        </div>
+      </AgentToolCard>
     );
   }
 }

@@ -1,29 +1,24 @@
 /**
- * Custom widget for the file_change tool (Codex)
+ * Compatibility widget for legacy file_change tool rows.
  *
- * Displays file modifications with:
- * - Compact collapsed state showing file count and names
- * - Expanded state with file list and clickable content viewer
- * - Snapshotted file contents (captured at change time)
- * - Fallback to live file reading when no snapshot is available
+ * The current live Codex file_change path is handled by AsyncEditToolResultCard
+ * when diff lookup is available. This renderer still supports older/custom
+ * transcript rows that carry path snapshots directly on the tool payload.
  */
 
-import React, { useState, useCallback } from 'react';
+import React, { useCallback, useState } from 'react';
 import { useAtomValue } from 'jotai';
-import type { CustomToolWidgetProps } from './index';
+import { AgentStatusPill, AgentToolCard, type AgentStatusTone, type AgentToolStatus } from '../../../AgentElements/AgentElementsPrimitives';
+import { MaterialSymbol } from '../../../icons/MaterialSymbol';
 import { interactiveWidgetHostAtom } from '../../../../store/atoms/interactiveWidgetHost';
+import type { CustomToolWidgetProps } from './index';
 import { useElapsedTimeRef } from './useElapsedTime';
 
-/**
- * Maximum number of lines to show before adding "show more"
- */
 const MAX_VISIBLE_LINES = 25;
-
-// --- Types ---
 
 interface FileChange {
   path: string;
-  kind: string; // 'create' | 'update' | 'delete'
+  kind?: unknown;
 }
 
 interface FileSnapshot {
@@ -33,32 +28,57 @@ interface FileSnapshot {
   truncated?: boolean;
 }
 
-// --- Helpers ---
-
-function extractChanges(tool: any): FileChange[] {
-  const args = tool?.arguments;
-  const result = tool?.result;
-  const changes = args?.changes || result?.changes;
-  if (!Array.isArray(changes)) return [];
-  return changes.filter((c: any) => c && typeof c.path === 'string');
+function classNames(...values: Array<string | false | null | undefined>): string {
+  return values.filter(Boolean).join(' ');
 }
 
-function extractSnapshots(tool: any): Record<string, FileSnapshot> {
-  const result = tool?.result;
-  if (result && typeof result === 'object' && result.fileSnapshots) {
+function parseToolResult(result: unknown): Record<string, unknown> | null {
+  if (!result) return null;
+  if (typeof result === 'object' && !Array.isArray(result)) {
+    return result as Record<string, unknown>;
+  }
+  if (typeof result !== 'string') return null;
+  try {
+    const parsed = JSON.parse(result);
+    return parsed && typeof parsed === 'object' && !Array.isArray(parsed)
+      ? parsed as Record<string, unknown>
+      : null;
+  } catch {
+    return null;
+  }
+}
+
+function extractChanges(tool: { arguments?: unknown; result?: unknown }): FileChange[] {
+  const args = tool.arguments && typeof tool.arguments === 'object'
+    ? tool.arguments as Record<string, unknown>
+    : null;
+  const result = parseToolResult(tool.result);
+  const changes = args?.changes ?? result?.changes;
+  if (!Array.isArray(changes)) return [];
+  return changes.filter((change): change is FileChange => (
+    !!change &&
+    typeof change === 'object' &&
+    typeof (change as { path?: unknown }).path === 'string'
+  ));
+}
+
+function extractSnapshots(tool: { result?: unknown }): Record<string, FileSnapshot> {
+  const result = parseToolResult(tool.result);
+  if (result?.fileSnapshots && typeof result.fileSnapshots === 'object' && !Array.isArray(result.fileSnapshots)) {
     return result.fileSnapshots as Record<string, FileSnapshot>;
   }
   return {};
 }
 
-function isToolRunning(tool: any): boolean {
+function isToolRunning(tool: { result?: unknown }): boolean {
   return tool.result === undefined || tool.result === null;
 }
 
-function isToolError(result: any, message: any): boolean {
+function isToolError(result: unknown, message: { isError?: boolean }): boolean {
   if (message.isError) return true;
-  if (result?.success === false) return true;
-  if (result?.status === 'failed') return true;
+  const parsed = parseToolResult(result);
+  if (parsed?.success === false) return true;
+  if (parsed?.status === 'failed') return true;
   return false;
 }
 
@@ -76,44 +96,82 @@ function getRelativePath(filePath: string, workspacePath?: string): string {
   return filePath;
 }
 
-function getKindLabel(kind: string): string {
-  switch (kind) {
-    case 'create': return 'Created';
-    case 'delete': return 'Deleted';
+function getRawKind(kind: unknown): string {
+  if (typeof kind === 'string') return kind;
+  if (kind && typeof kind === 'object' && typeof (kind as { type?: unknown }).type === 'string') {
+    return (kind as { type: string }).type;
+  }
+  return 'update';
+}
+
+function getNormalizedKind(kind: unknown): 'create' | 'delete' | 'update' {
+  switch (getRawKind(kind)) {
+    case 'add':
+    case 'create':
+    case 'new':
+      return 'create';
+    case 'delete':
+    case 'remove':
+      return 'delete';
     case 'update':
-    default: return 'Updated';
+    default:
+      return 'update';
   }
 }
 
-function getKindColorClass(kind: string): string {
-  switch (kind) {
-    case 'create': return 'text-nim-success';
-    case 'delete': return 'text-nim-error';
+function getKindLabel(kind: unknown): string {
+  switch (getNormalizedKind(kind)) {
+    case 'create':
+      return 'Created';
+    case 'delete':
+      return 'Deleted';
     case 'update':
-    default: return 'text-nim-primary';
+      return 'Updated';
   }
 }
 
-function getKindBgClass(kind: string): string {
-  switch (kind) {
-    case 'create': return 'bg-[color-mix(in_srgb,var(--nim-success)_15%,transparent)]';
-    case 'delete': return 'bg-[color-mix(in_srgb,var(--nim-error)_15%,transparent)]';
+function getKindTone(kind: unknown): AgentStatusTone {
+  switch (getNormalizedKind(kind)) {
+    case 'create':
+      return 'success';
+    case 'delete':
+      return 'error';
     case 'update':
-    default: return 'bg-[color-mix(in_srgb,var(--nim-primary)_15%,transparent)]';
+      return 'neutral';
+  }
+}
+
+function getKindIcon(kind: unknown): string {
+  switch (getNormalizedKind(kind)) {
+    case 'create':
+      return 'note_add';
+    case 'delete':
+      return 'delete';
+    case 'update':
+      return 'edit';
+  }
+}
+
+function getKindDotClass(kind: unknown): string {
+  switch (getNormalizedKind(kind)) {
+    case 'create':
+      return 'bg-[var(--an-diff-added-text)]';
+    case 'delete':
+      return 'bg-[var(--an-diff-removed-text)]';
+    case 'update':
+      return 'bg-[var(--an-tool-color-muted)]';
   }
 }
 
 function getSummary(changes: FileChange[]): string {
   if (changes.length === 0) return 'No file changes';
   if (changes.length === 1) {
-    const c = changes[0];
-    return `${getKindLabel(c.kind)} ${getBasename(c.path)}`;
+    const change = changes[0];
+    return `${getKindLabel(change.kind)} ${getBasename(change.path)}`;
   }
-  // Check if all same kind
-  const kinds = new Set(changes.map(c => c.kind));
+  const kinds = new Set(changes.map((change) => getNormalizedKind(change.kind)));
   if (kinds.size === 1) {
-    const kind = changes[0].kind;
-    return `${getKindLabel(kind)} ${changes.length} files`;
+    return `${getKindLabel(changes[0].kind)} ${changes.length} files`;
   }
   return `Changed ${changes.length} files`;
 }
@@ -128,7 +186,68 @@ function truncateLines(text: string, maxLines: number): string {
   return lines.slice(0, maxLines).join('\n');
 }
 
-// --- Component ---
+function getToolStatus(running: boolean, hasError: boolean): AgentToolStatus {
+  if (hasError) return 'error';
+  if (running) return 'running';
+  return 'completed';
+}
+
+function getStatusTone(status: AgentToolStatus): AgentStatusTone {
+  if (status === 'error') return 'error';
+  if (status === 'running') return 'running';
+  return 'success';
+}
+
+function getStatusLabel(status: AgentToolStatus): string {
+  if (status === 'error') return 'Failed';
+  if (status === 'running') return 'Running';
+  return 'Changed';
+}
+
+const LoadingDots: React.FC<{ className?: string }> = ({ className }) => (
+  <span
+    className={classNames('agent-elements-file-change-loading-dots inline-flex items-center gap-[var(--an-spacing-xxs)]', className)}
+    data-testid="agent-elements-file-change-loading-dots"
+  >
+    <span className="agent-elements-file-change-loading-dot h-1.5 w-1.5 rounded-full bg-[var(--an-tool-color-muted)] animate-pulse [animation-delay:0s]" />
+    <span className="agent-elements-file-change-loading-dot h-1.5 w-1.5 rounded-full bg-[var(--an-tool-color-muted)] animate-pulse [animation-delay:0.2s]" />
+    <span className="agent-elements-file-change-loading-dot h-1.5 w-1.5 rounded-full bg-[var(--an-tool-color-muted)] animate-pulse [animation-delay:0.4s]" />
+  </span>
+);
+
+const FileNotice: React.FC<{
+  children: React.ReactNode;
+  tone?: AgentStatusTone;
+  testId?: string;
+}> = ({ children, tone = 'neutral', testId }) => (
+  <div
+    className={classNames(
+      'agent-elements-file-change-notice rounded-[var(--an-spacing-xs)] border border-[var(--an-tool-border-color)]',
+      'bg-[var(--an-background-tertiary)] px-[var(--an-spacing-sm)] py-[var(--an-spacing-xs)] text-xs italic',
+      tone === 'error' ? 'text-[var(--an-diff-removed-text)]' : 'text-[var(--an-tool-color-muted)]'
+    )}
+    data-testid={testId}
+  >
+    {children}
+  </div>
+);
+
+const FileChangeStatus: React.FC<{
+  status: AgentToolStatus;
+  elapsedRef?: (node: HTMLElement | null) => void;
+}> = ({ status, elapsedRef }) => (
+  <AgentStatusPill tone={getStatusTone(status)}>
+    {status === 'running' ? (
+      <>
+        <LoadingDots />
+        <span>Running</span>
+        {elapsedRef ? <span ref={elapsedRef} className="tabular-nums" /> : null}
+      </>
+    ) : (
+      getStatusLabel(status)
+    )}
+  </AgentStatusPill>
+);
 
 export const FileChangeWidget: React.FC<CustomToolWidgetProps> = ({
   message,
@@ -153,6 +272,8 @@ export const FileChangeWidget: React.FC<CustomToolWidgetProps> = ({
   const changes = extractChanges(tool);
   const snapshots = extractSnapshots(tool);
   const hasError = isToolError(tool.result, message);
+  const status = getToolStatus(running, hasError);
+  const summary = getSummary(changes);
 
   const handleFileClick = useCallback(async (filePath: string) => {
     if (selectedFile === filePath) {
@@ -163,22 +284,26 @@ export const FileChangeWidget: React.FC<CustomToolWidgetProps> = ({
     setSelectedFile(filePath);
     setContentExpanded(false);
 
-    // If no snapshot available (e.g. older messages), try live read from disk
     const snapshot = snapshots[filePath];
-    const hasNoSnapshot = !snapshot; // No snapshot entry at all
-    const needsLiveRead = hasNoSnapshot && readFile && !liveContent[filePath];
+    const needsLiveRead = !snapshot && readFile && !liveContent[filePath];
     if (needsLiveRead) {
-      setLoadingLive(prev => new Set(prev).add(filePath));
+      setLoadingLive((prev) => new Set(prev).add(filePath));
       try {
         const result = await readFile(filePath);
-        setLiveContent(prev => ({
+        setLiveContent((prev) => ({
           ...prev,
-          [filePath]: { content: result.success ? result.content ?? null : null, error: result.success ? undefined : result.error },
+          [filePath]: {
+            content: result.success ? result.content ?? null : null,
+            error: result.success ? undefined : result.error,
+          },
         }));
       } catch {
-        setLiveContent(prev => ({ ...prev, [filePath]: { content: null, error: 'Failed to read file' } }));
+        setLiveContent((prev) => ({
+          ...prev,
+          [filePath]: { content: null, error: 'Failed to read file' },
+        }));
       } finally {
-        setLoadingLive(prev => {
+        setLoadingLive((prev) => {
           const next = new Set(prev);
           next.delete(filePath);
           return next;
@@ -187,79 +312,51 @@ export const FileChangeWidget: React.FC<CustomToolWidgetProps> = ({
     }
   }, [selectedFile, snapshots, readFile, liveContent]);
 
-  const handlePathClick = useCallback((e: React.MouseEvent, filePath: string) => {
-    e.stopPropagation();
-    if (host) {
-      host.openFile(filePath);
-    }
+  const handlePathClick = useCallback((event: React.MouseEvent, filePath: string) => {
+    event.stopPropagation();
+    host?.openFile(filePath);
   }, [host]);
 
-  const getBorderClass = () => {
-    if (hasError) return 'border-[color-mix(in_srgb,var(--nim-error)_40%,var(--nim-border))]';
-    if (running) return 'border-[color-mix(in_srgb,var(--nim-primary)_40%,var(--nim-border))]';
-    return 'border-nim';
-  };
-
-  // --- Collapsed view ---
   if (!isExpanded) {
-    const summary = getSummary(changes);
     return (
       <button
-        className={`file-change-widget rounded-md bg-nim-tertiary ${getBorderClass()} border overflow-hidden flex items-center justify-between w-full py-1.5 px-2 cursor-pointer transition-colors duration-150 text-left hover:bg-nim-hover`}
+        className={classNames(
+          'file-change-widget agent-elements-file-change-card agent-elements-tool-card',
+          'w-full cursor-pointer transition-colors hover:border-[var(--an-input-focus-border,var(--an-tool-border-color))]'
+        )}
+        data-agent-elements-shell="file-change-card"
+        data-component="RichTranscriptAgentElementsFileChange"
+        data-testid="agent-elements-file-change-card"
+        data-tool-status={status}
         onClick={onToggle}
         type="button"
       >
-        <div className="flex items-start gap-1.5 min-w-0 flex-1 overflow-hidden">
-          <div className="flex items-center justify-center shrink-0 text-nim-faint mt-0.5">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-              <polyline points="14 2 14 8 20 8"></polyline>
-              <line x1="12" y1="18" x2="12" y2="12"></line>
-              <line x1="9" y1="15" x2="15" y2="15"></line>
-            </svg>
-          </div>
-          <div className="flex flex-col gap-0.5 min-w-0 flex-1 overflow-hidden">
-            <span className="text-xs text-nim-muted font-sans whitespace-nowrap overflow-hidden text-ellipsis">{summary}</span>
-            {changes.length > 1 && (
-              <code className="text-[0.7rem] text-nim-faint whitespace-nowrap overflow-hidden text-ellipsis">
-                {changes.map(c => getBasename(c.path)).join(', ')}
+        <span className="agent-elements-tool-header w-full">
+          <span className="agent-elements-tool-icon" aria-hidden="true">
+            <MaterialSymbol icon="difference" size={16} />
+          </span>
+          <span className="agent-elements-tool-title-group text-left">
+            <span
+              className="agent-elements-tool-title"
+              data-testid="agent-elements-file-change-summary"
+            >
+              {summary}
+            </span>
+            {changes.length > 1 ? (
+              <code className="agent-elements-tool-subtitle font-mono" data-testid="agent-elements-file-change-files">
+                {changes.map((change) => getBasename(change.path)).join(', ')}
               </code>
-            )}
-          </div>
-        </div>
-        <div className="flex items-center gap-1.5 shrink-0 ml-2">
-          {running && (
-            <span className="flex items-center gap-1 text-[0.7rem] font-medium font-sans text-nim-primary">
-              <span className="w-2.5 h-2.5 border-[1.5px] border-[color-mix(in_srgb,var(--nim-primary)_30%,transparent)] border-t-nim-primary rounded-full animate-spin" />
-              <span ref={elapsedRef} className="tabular-nums" />
-            </span>
-          )}
-          {!running && !hasError && (
-            <span className="flex items-center text-nim-success">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                <polyline points="20 6 9 17 4 12"></polyline>
-              </svg>
-            </span>
-          )}
-          {!running && hasError && (
-            <span className="flex items-center text-nim-error">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                <line x1="18" y1="6" x2="6" y2="18"></line>
-                <line x1="6" y1="6" x2="18" y2="18"></line>
-              </svg>
-            </span>
-          )}
-          <svg className="text-nim-faint shrink-0 transition-transform duration-150" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <polyline points="9 18 15 12 9 6"></polyline>
-          </svg>
-        </div>
+            ) : null}
+          </span>
+          <span className="agent-elements-tool-trailing inline-flex items-center gap-[var(--an-spacing-xs)]">
+            <FileChangeStatus status={status} elapsedRef={status === 'running' ? elapsedRef : undefined} />
+            <MaterialSymbol icon="chevron_right" size={14} />
+          </span>
+        </span>
       </button>
     );
   }
 
-  // --- Expanded view ---
-
-  // Resolve content for selected file
   let selectedContent: string | null = null;
   let selectedIsBinary = false;
   let selectedTruncated = false;
@@ -282,7 +379,10 @@ export const FileChangeWidget: React.FC<CustomToolWidgetProps> = ({
     selectedIsLoading = loadingLive.has(selectedFile);
   }
 
-  const selectedChange = selectedFile ? changes.find(c => c.path === selectedFile) : null;
+  const selectedChange = selectedFile
+    ? changes.find((change) => change.path === selectedFile)
+    : null;
+  const selectedChangeKind = getNormalizedKind(selectedChange?.kind);
   const lineCount = selectedContent ? countLines(selectedContent) : 0;
   const needsTruncation = lineCount > MAX_VISIBLE_LINES;
   const displayContent = selectedContent && needsTruncation && !contentExpanded
@@ -291,180 +391,180 @@ export const FileChangeWidget: React.FC<CustomToolWidgetProps> = ({
   const hiddenLineCount = lineCount - MAX_VISIBLE_LINES;
 
   return (
-    <div className={`file-change-widget rounded-md bg-nim-tertiary ${getBorderClass()} border overflow-hidden`}>
-      {/* Header */}
-      <button
-        className="flex items-center justify-between w-full py-1.5 px-2 bg-nim-secondary border-b border-nim gap-2 cursor-pointer transition-colors duration-150 text-left hover:bg-nim-hover"
-        onClick={onToggle}
-        type="button"
+    <AgentToolCard
+      className="file-change-widget agent-elements-file-change-card"
+      data-agent-elements-shell="file-change-card"
+      data-component="RichTranscriptAgentElementsFileChange"
+      data-testid="agent-elements-file-change-card"
+      icon={<MaterialSymbol icon="difference" size={16} />}
+      onClick={onToggle}
+      status={status}
+      subtitle={summary}
+      title="File Changes"
+      trailing={(
+        <span className="agent-elements-file-change-header-actions inline-flex items-center gap-[var(--an-spacing-xs)]">
+          <FileChangeStatus status={status} elapsedRef={status === 'running' ? elapsedRef : undefined} />
+          <button
+            aria-label="Collapse file changes"
+            className={classNames(
+              'agent-elements-file-change-collapse inline-flex h-6 w-6 items-center justify-center',
+              'rounded-[var(--an-spacing-xs)] border border-[var(--an-tool-border-color)] bg-transparent',
+              'text-[var(--an-tool-color-muted)] transition-colors hover:text-[var(--an-tool-color)]',
+              'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--an-input-focus-outline,var(--an-tool-border-color))]'
+            )}
+            data-testid="agent-elements-file-change-collapse"
+            onClick={(event) => {
+              event.stopPropagation();
+              onToggle();
+            }}
+            type="button"
+          >
+            <MaterialSymbol icon="expand_less" size={14} />
+          </button>
+        </span>
+      )}
+    >
+      <div
+        className="agent-elements-file-change-body flex flex-col gap-[var(--an-spacing-sm)]"
+        data-agent-elements-shell="file-change-body"
+        data-testid="agent-elements-file-change-body"
+        onClick={(event) => event.stopPropagation()}
       >
-        <div className="flex items-center gap-1.5">
-          <div className="flex items-center justify-center text-nim-faint">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-              <polyline points="14 2 14 8 20 8"></polyline>
-              <line x1="12" y1="18" x2="12" y2="12"></line>
-              <line x1="9" y1="15" x2="15" y2="15"></line>
-            </svg>
-          </div>
-          <span className="text-[0.7rem] font-medium text-nim-faint uppercase tracking-wide font-sans">File Changes</span>
-        </div>
-        <div className="flex items-center gap-1.5">
-          {running && (
-            <span className="flex items-center gap-1 text-[0.7rem] font-medium font-sans text-nim-primary">
-              <span className="w-2.5 h-2.5 border-[1.5px] border-[color-mix(in_srgb,var(--nim-primary)_30%,transparent)] border-t-nim-primary rounded-full animate-spin" />
-              Running <span ref={elapsedRef} className="tabular-nums" />
-            </span>
-          )}
-          {!running && !hasError && (
-            <span className="flex items-center text-nim-success">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                <polyline points="20 6 9 17 4 12"></polyline>
-              </svg>
-            </span>
-          )}
-          {!running && hasError && (
-            <span className="flex items-center text-nim-error">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                <line x1="18" y1="6" x2="6" y2="18"></line>
-                <line x1="6" y1="6" x2="18" y2="18"></line>
-              </svg>
-            </span>
-          )}
-          <svg className="text-nim-faint shrink-0 transition-transform duration-150" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <polyline points="6 9 12 15 18 9"></polyline>
-          </svg>
-        </div>
-      </button>
-
-      {/* File list */}
-      <div className="divide-y divide-nim">
-        {changes.map((change, i) => {
-          const relPath = getRelativePath(change.path, workspacePath);
-          const isSelected = selectedFile === change.path;
-          return (
-            <button
-              key={change.path + i}
-              className={`flex items-center gap-2 w-full py-1.5 px-2 text-left cursor-pointer transition-colors duration-150 hover:bg-nim-hover ${isSelected ? 'bg-nim-hover' : ''}`}
-              onClick={(e) => {
-                e.stopPropagation();
-                handleFileClick(change.path);
-              }}
-              type="button"
-            >
-              {/* Kind dot */}
-              <span className={`w-2 h-2 rounded-full shrink-0 ${getKindBgClass(change.kind)} ${getKindColorClass(change.kind)}`}
-                style={{ backgroundColor: `var(--nim-${change.kind === 'create' ? 'success' : change.kind === 'delete' ? 'error' : 'primary'})` }}
-              />
-              {/* File path - clickable to open in editor */}
-              <code
-                className="text-[0.75rem] text-nim-muted flex-1 min-w-0 overflow-hidden text-ellipsis whitespace-nowrap hover:text-nim-primary hover:underline cursor-pointer"
-                onClick={(e) => handlePathClick(e, change.path)}
-                title={`Open ${relPath}`}
-              >
-                {relPath}
-              </code>
-              {/* Kind badge */}
-              <span className={`text-[0.65rem] font-medium py-0.5 px-1.5 rounded-full ${getKindColorClass(change.kind)} ${getKindBgClass(change.kind)}`}>
-                {getKindLabel(change.kind)}
-              </span>
-              {/* Expand indicator */}
-              <svg
-                className={`text-nim-faint shrink-0 transition-transform duration-150 ${isSelected ? 'rotate-90' : ''}`}
-                width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
-              >
-                <polyline points="9 18 15 12 9 6"></polyline>
-              </svg>
-            </button>
-          );
-        })}
-      </div>
-
-      {/* Selected file content */}
-      {selectedFile && (
-        <div className="border-t border-nim">
-          {/* Loading state */}
-          {selectedIsLoading && (
-            <div className="flex items-center justify-center py-3 bg-nim">
-              <span className="flex items-center gap-1">
-                <span className="w-1.5 h-1.5 bg-nim-faint rounded-full animate-bash-dot-pulse" style={{ animationDelay: '0s' }}></span>
-                <span className="w-1.5 h-1.5 bg-nim-faint rounded-full animate-bash-dot-pulse" style={{ animationDelay: '0.2s' }}></span>
-                <span className="w-1.5 h-1.5 bg-nim-faint rounded-full animate-bash-dot-pulse" style={{ animationDelay: '0.4s' }}></span>
-              </span>
-            </div>
-          )}
-
-          {/* Binary file */}
-          {!selectedIsLoading && selectedIsBinary && (
-            <div className="py-2 px-3 text-xs text-nim-faint font-sans italic bg-nim">
-              Binary file - content cannot be displayed
-            </div>
-          )}
-
-          {/* Deleted file */}
-          {!selectedIsLoading && !selectedIsBinary && selectedChange?.kind === 'delete' && !selectedContent && (
-            <div className="py-2 px-3 text-xs text-nim-faint font-sans italic bg-nim">
-              File was deleted
-            </div>
-          )}
-
-          {/* Error */}
-          {!selectedIsLoading && selectedError && !selectedContent && (
-            <div className="py-2 px-3 text-xs text-nim-error font-sans bg-nim">
-              {selectedError}
-            </div>
-          )}
-
-          {/* No snapshot, no live content, not loading */}
-          {!selectedIsLoading && !selectedContent && !selectedIsBinary && !selectedError && selectedChange?.kind !== 'delete' && (
-            <div className="py-2 px-3 text-xs text-nim-faint font-sans italic bg-nim">
-              Snapshot unavailable
-            </div>
-          )}
-
-          {/* File content */}
-          {!selectedIsLoading && displayContent && (
-            <div className="relative">
-              {selectedIsLive && (
-                <div className="py-1 px-3 text-[0.65rem] text-nim-faint font-sans bg-nim-secondary border-b border-nim">
-                  Showing current file (no snapshot available)
-                </div>
-              )}
-              {selectedTruncated && (
-                <div className="py-1 px-3 text-[0.65rem] text-nim-faint font-sans bg-nim-secondary border-b border-nim">
-                  File truncated at 100KB
-                </div>
-              )}
-              <pre className="m-0 p-2 text-xs leading-normal text-nim-muted bg-nim overflow-x-auto whitespace-pre-wrap break-words max-h-80 overflow-y-auto font-mono">
-                {displayContent}
-              </pre>
-              {needsTruncation && (
-                <button
-                  className="block w-full py-1.5 px-2 bg-nim-secondary border-t border-nim text-nim-faint text-[0.7rem] font-sans cursor-pointer text-center transition-all duration-150 hover:bg-nim-hover hover:text-nim-muted"
-                  onClick={() => setContentExpanded(!contentExpanded)}
-                  type="button"
+        {changes.length > 0 ? (
+          <div className="agent-elements-file-change-list flex flex-col gap-[var(--an-spacing-xs)]">
+            {changes.map((change, index) => {
+              const relativePath = getRelativePath(change.path, workspacePath);
+              const isSelected = selectedFile === change.path;
+              return (
+                <div
+                  className={classNames(
+                    'agent-elements-file-change-row grid grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-[var(--an-spacing-xs)]',
+                    'rounded-[var(--an-spacing-xs)] border border-[var(--an-tool-border-color)] bg-[var(--an-background-tertiary)]',
+                    isSelected && 'border-[var(--an-input-focus-border,var(--an-tool-border-color))]'
+                  )}
+                  data-agent-elements-shell="file-change-row"
+                  key={`${change.path}-${index}`}
                 >
-                  {contentExpanded
-                    ? 'Show less'
-                    : `Show ${hiddenLineCount} more line${hiddenLineCount === 1 ? '' : 's'}`
-                  }
-                </button>
-              )}
-            </div>
-          )}
-        </div>
-      )}
+                  <button
+                    className="agent-elements-file-change-row-main flex min-w-0 items-center gap-[var(--an-spacing-xs)] px-[var(--an-spacing-sm)] py-[var(--an-spacing-xs)] text-left"
+                    data-testid={`agent-elements-file-change-row-${index}`}
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      handleFileClick(change.path);
+                    }}
+                    type="button"
+                  >
+                    <span
+                      className={classNames('agent-elements-file-change-kind-dot h-2 w-2 shrink-0 rounded-full', getKindDotClass(change.kind))}
+                      data-file-kind={getRawKind(change.kind)}
+                    />
+                    <MaterialSymbol icon={getKindIcon(change.kind)} size={14} />
+                    <code className="min-w-0 overflow-hidden text-ellipsis whitespace-nowrap text-xs text-[var(--an-tool-color)]">
+                      {relativePath}
+                    </code>
+                  </button>
+                  <AgentStatusPill tone={getKindTone(change.kind)}>
+                    {getKindLabel(change.kind)}
+                  </AgentStatusPill>
+                  <button
+                    aria-label={`Open ${relativePath}`}
+                    className={classNames(
+                      'agent-elements-file-change-open mr-[var(--an-spacing-xs)] inline-flex h-6 w-6 items-center justify-center',
+                      'rounded-[var(--an-spacing-xs)] border border-[var(--an-tool-border-color)] bg-transparent',
+                      'text-[var(--an-tool-color-muted)] transition-colors hover:text-[var(--an-tool-color)]',
+                      'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--an-input-focus-outline,var(--an-tool-border-color))]'
+                    )}
+                    data-testid={`agent-elements-file-change-open-${index}`}
+                    onClick={(event) => handlePathClick(event, change.path)}
+                    title={`Open ${relativePath}`}
+                    type="button"
+                  >
+                    <MaterialSymbol icon="open_in_new" size={13} />
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+        ) : null}
 
-      {/* Running indicator with no changes yet */}
-      {running && changes.length === 0 && (
-        <div className="flex items-center justify-center py-3 border-t border-nim bg-nim">
-          <span className="flex items-center gap-1">
-            <span className="w-1.5 h-1.5 bg-nim-faint rounded-full animate-bash-dot-pulse" style={{ animationDelay: '0s' }}></span>
-            <span className="w-1.5 h-1.5 bg-nim-faint rounded-full animate-bash-dot-pulse" style={{ animationDelay: '0.2s' }}></span>
-            <span className="w-1.5 h-1.5 bg-nim-faint rounded-full animate-bash-dot-pulse" style={{ animationDelay: '0.4s' }}></span>
-          </span>
-        </div>
-      )}
-    </div>
+        {selectedFile ? (
+          <div
+            className="agent-elements-file-change-content-shell flex flex-col gap-[var(--an-spacing-xs)]"
+            data-testid="agent-elements-file-change-content-shell"
+          >
+            {selectedIsLoading ? (
+              <div className="flex items-center justify-center rounded-[var(--an-spacing-xs)] border border-[var(--an-tool-border-color)] bg-[var(--an-background-tertiary)] py-[var(--an-spacing-md)]">
+                <LoadingDots />
+              </div>
+            ) : null}
+
+            {!selectedIsLoading && selectedIsBinary ? (
+              <FileNotice testId="agent-elements-file-change-binary">Binary file, content cannot be displayed</FileNotice>
+            ) : null}
+
+            {!selectedIsLoading && !selectedIsBinary && selectedChangeKind === 'delete' && !selectedContent ? (
+              <FileNotice testId="agent-elements-file-change-deleted">File was deleted</FileNotice>
+            ) : null}
+
+            {!selectedIsLoading && selectedError && !selectedContent ? (
+              <FileNotice tone="error" testId="agent-elements-file-change-error">{selectedError}</FileNotice>
+            ) : null}
+
+            {!selectedIsLoading && !selectedContent && !selectedIsBinary && !selectedError && selectedChangeKind !== 'delete' ? (
+              <FileNotice testId="agent-elements-file-change-unavailable">Snapshot unavailable</FileNotice>
+            ) : null}
+
+            {!selectedIsLoading && displayContent ? (
+              <div className="agent-elements-file-change-content-frame overflow-hidden rounded-[var(--an-tool-border-radius)] border border-[var(--an-tool-border-color)]">
+                {selectedIsLive ? (
+                  <div
+                    className="border-b border-[var(--an-tool-border-color)] bg-[var(--an-background-tertiary)] px-[var(--an-spacing-sm)] py-[var(--an-spacing-xs)] text-xs text-[var(--an-tool-color-muted)]"
+                    data-testid="agent-elements-file-change-live-notice"
+                  >
+                    Showing current file (no snapshot available)
+                  </div>
+                ) : null}
+                {selectedTruncated ? (
+                  <div
+                    className="border-b border-[var(--an-tool-border-color)] bg-[var(--an-background-tertiary)] px-[var(--an-spacing-sm)] py-[var(--an-spacing-xs)] text-xs text-[var(--an-tool-color-muted)]"
+                    data-testid="agent-elements-file-change-truncated-notice"
+                  >
+                    File truncated at 100KB
+                  </div>
+                ) : null}
+                <pre
+                  className="m-0 max-h-80 overflow-auto whitespace-pre-wrap break-words bg-[var(--an-code-background)] p-[var(--an-spacing-sm)] font-mono text-xs leading-[1.45] text-[var(--an-code-color)] select-text"
+                  data-testid="agent-elements-file-change-content"
+                >
+                  {displayContent}
+                </pre>
+                {needsTruncation ? (
+                  <button
+                    className={classNames(
+                      'agent-elements-file-change-show-more block w-full border-t border-[var(--an-tool-border-color)]',
+                      'bg-[var(--an-background-tertiary)] px-[var(--an-spacing-sm)] py-[var(--an-spacing-xs)]',
+                      'text-center text-xs text-[var(--an-tool-color-muted)] transition-colors hover:text-[var(--an-tool-color)]'
+                    )}
+                    data-testid="agent-elements-file-change-show-more"
+                    onClick={() => setContentExpanded(!contentExpanded)}
+                    type="button"
+                  >
+                    {contentExpanded
+                      ? 'Show less'
+                      : `Show ${hiddenLineCount} more line${hiddenLineCount === 1 ? '' : 's'}`}
+                  </button>
+                ) : null}
+              </div>
+            ) : null}
+          </div>
+        ) : null}
+
+        {running && changes.length === 0 ? (
+          <div className="flex items-center justify-center rounded-[var(--an-spacing-xs)] border border-[var(--an-tool-border-color)] bg-[var(--an-background-tertiary)] py-[var(--an-spacing-md)]">
+            <LoadingDots />
+          </div>
+        ) : null}
+      </div>
+    </AgentToolCard>
   );
 };

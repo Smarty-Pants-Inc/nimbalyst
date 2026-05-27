@@ -79,6 +79,192 @@ interface GitOperationsPanelProps {
   onFileClick?: (filePath: string) => void;
 }
 
+const panelClass = [
+  'git-operations-panel',
+  'agent-elements-git-operations-panel',
+  'min-w-[200px] border-t border-[var(--an-border-color)]',
+  'bg-[var(--an-background-secondary)] text-[var(--an-foreground)] [container-type:inline-size]',
+].join(' ');
+
+const headerClass = [
+  'git-operations-panel__header',
+  'agent-elements-git-operations-header',
+  'flex items-center justify-between border-b border-[var(--an-border-color)]',
+  'px-[var(--an-spacing-lg)] py-[var(--an-spacing-sm)] text-xs font-medium text-[var(--an-foreground)]',
+].join(' ');
+
+const headerToggleClass = [
+  'git-operations-panel__header-left',
+  'agent-elements-git-operations-header-toggle',
+  'flex min-w-0 flex-1 cursor-pointer items-center gap-[var(--an-spacing-xs)] rounded-[var(--an-radius-sm)]',
+  'border border-transparent bg-transparent px-[var(--an-spacing-xs)] py-[var(--an-spacing-xxs)] text-left',
+  'outline-none transition-[background-color,border-color,color] duration-150 ease-out',
+  'hover:border-[var(--an-border-color)] hover:bg-[var(--an-background-tertiary)]',
+  'focus-visible:ring-2 focus-visible:ring-[var(--an-focus-ring)]',
+].join(' ');
+
+const contentClass = [
+  'git-operations-panel__content',
+  'agent-elements-git-operations-content',
+  'flex flex-col gap-[var(--an-spacing-md)] px-[var(--an-spacing-lg)] pb-[var(--an-spacing-lg)]',
+].join(' ');
+
+const sectionClass = [
+  'agent-elements-git-operations-section',
+  'flex flex-col gap-[var(--an-spacing-sm)] pt-[var(--an-spacing-lg)]',
+].join(' ');
+
+const sectionHeaderClass = [
+  'agent-elements-git-operations-section-header',
+  'flex items-center justify-between gap-[var(--an-spacing-sm)]',
+].join(' ');
+
+const sectionTitleClass = [
+  'agent-elements-git-operations-section-title',
+  'text-[11px] font-semibold leading-none text-[var(--an-foreground)]',
+].join(' ');
+
+const modeToggleClass = [
+  'agent-elements-git-operations-mode-toggle',
+  'flex overflow-hidden rounded-[var(--an-radius-sm)] border border-[var(--an-border-color)]',
+  'bg-[var(--an-background)] p-[var(--an-spacing-xxs)]',
+].join(' ');
+
+const modeToggleButtonClass = [
+  'agent-elements-git-operations-mode-button',
+  'cursor-pointer rounded-[calc(var(--an-radius-sm)_-_2px)] border border-transparent bg-transparent',
+  'px-[var(--an-spacing-sm)] py-[var(--an-spacing-xxs)] text-[10px] font-medium',
+  'text-[var(--an-foreground-muted)] outline-none transition-[background-color,border-color,color] duration-150 ease-out',
+  'hover:border-[var(--an-border-color)] hover:bg-[var(--an-background-tertiary)] hover:text-[var(--an-foreground)]',
+  'focus-visible:ring-2 focus-visible:ring-[var(--an-focus-ring)]',
+].join(' ');
+
+const modeToggleActiveClass = 'border-[var(--an-border-color)] bg-[var(--an-background-tertiary)] text-[var(--an-foreground)]';
+
+const textareaClass = [
+  'agent-elements-git-operations-textarea',
+  'w-full resize-y rounded-[var(--an-radius-sm)] border border-[var(--an-input-border-color)]',
+  'bg-[var(--an-input-background)] px-[var(--an-spacing-sm)] py-[var(--an-spacing-xs)]',
+  'font-mono text-[11px] leading-relaxed text-[var(--an-input-color)] outline-none',
+  'transition-[background-color,border-color,color] duration-150 ease-out',
+  'placeholder:text-[var(--an-input-placeholder-color)]',
+  'focus:border-[var(--an-input-focus-outline)] focus:ring-2 focus:ring-[var(--an-focus-ring)]',
+  'disabled:cursor-not-allowed disabled:opacity-50',
+].join(' ');
+
+const buttonBaseClass = [
+  'agent-elements-git-operations-button',
+  'flex w-full cursor-pointer items-center justify-center gap-[var(--an-spacing-xs)]',
+  'rounded-[var(--an-radius-sm)] border px-[var(--an-spacing-sm)] py-[var(--an-spacing-sm)]',
+  'text-xs font-semibold outline-none transition-[background-color,border-color,color,opacity] duration-150 ease-out',
+  'focus-visible:ring-2 focus-visible:ring-[var(--an-focus-ring)]',
+  'disabled:cursor-not-allowed disabled:opacity-50',
+].join(' ');
+
+const primaryButtonClass = [
+  buttonBaseClass,
+  'border-[var(--an-primary-color)] bg-[var(--an-primary-color)] text-[var(--an-send-button-color)]',
+  'hover:border-[color-mix(in_srgb,var(--an-primary-color)_82%,var(--an-foreground))]',
+  'hover:bg-[color-mix(in_srgb,var(--an-primary-color)_88%,var(--an-foreground))]',
+].join(' ');
+
+const secondaryButtonClass = [
+  buttonBaseClass,
+  'border-[var(--an-border-color)] bg-[var(--an-background-tertiary)] text-[var(--an-foreground)]',
+  'hover:border-[var(--an-border-color-strong)] hover:bg-[var(--an-background)]',
+].join(' ');
+
+const warningButtonClass = [
+  buttonBaseClass,
+  'border-[color-mix(in_srgb,var(--an-warning)_30%,var(--an-border-color))]',
+  'bg-[color-mix(in_srgb,var(--an-warning)_12%,var(--an-background))] text-[var(--an-warning)]',
+  'hover:border-[var(--an-warning)] hover:bg-[color-mix(in_srgb,var(--an-warning)_18%,var(--an-background))]',
+].join(' ');
+
+const inlineActionButtonClass = [
+  'agent-elements-git-operations-inline-action',
+  'cursor-pointer rounded-[var(--an-radius-xs)] border border-transparent bg-transparent px-[var(--an-spacing-xs)] py-[var(--an-spacing-xxs)]',
+  'text-[10px] font-medium text-[var(--an-primary-color)] outline-none',
+  'transition-[background-color,border-color,color] duration-150 ease-out',
+  'hover:border-[var(--an-border-color)] hover:bg-[var(--an-background-tertiary)]',
+  'focus-visible:ring-2 focus-visible:ring-[var(--an-focus-ring)]',
+].join(' ');
+
+const statusBlockClass = [
+  'agent-elements-git-operations-worktree-status',
+  'flex flex-col gap-[var(--an-spacing-xxs)] text-[11px]',
+].join(' ');
+
+const statusLineClass = [
+  'agent-elements-git-operations-status-line',
+  'flex items-center gap-[var(--an-spacing-xs)] rounded-[var(--an-radius-sm)]',
+  'border border-[var(--an-border-color)] bg-[var(--an-background)] px-[var(--an-spacing-sm)] py-[var(--an-spacing-xs)]',
+  'font-medium leading-snug',
+].join(' ');
+
+const selectionToolbarClass = [
+  'agent-elements-git-operations-squash-toolbar',
+  'flex items-center justify-between gap-[var(--an-spacing-sm)] rounded-[var(--an-radius-sm)]',
+  'border border-[var(--an-border-color)] bg-[var(--an-background-tertiary)]',
+  'px-[var(--an-spacing-sm)] py-[var(--an-spacing-xs)]',
+].join(' ');
+
+const commitListClass = [
+  'agent-elements-git-operations-commit-list',
+  'nim-scrollbar flex max-h-[200px] flex-col gap-[var(--an-spacing-xxs)] overflow-y-auto',
+  'rounded-[var(--an-radius-sm)] border border-[var(--an-border-color)] bg-[var(--an-background)]',
+  'p-[var(--an-spacing-xs)]',
+].join(' ');
+
+const historyToggleClass = [
+  'git-operations-panel__history-toggle',
+  'agent-elements-git-operations-history-toggle',
+  'border-t border-[var(--an-border-color)] pt-[var(--an-spacing-sm)] text-center',
+].join(' ');
+
+const historyClass = [
+  'git-operations-panel__history',
+  'agent-elements-git-operations-history',
+  'nim-scrollbar flex max-h-[300px] flex-col gap-[var(--an-spacing-sm)] overflow-y-auto',
+  'rounded-[var(--an-radius-sm)] border border-[var(--an-border-color)] bg-[var(--an-background)]',
+  'p-[var(--an-spacing-sm)]',
+].join(' ');
+
+function DecorativeIcon({
+  icon,
+  size,
+  className = '',
+}: {
+  icon: string;
+  size: number;
+  className?: string;
+}) {
+  return (
+    <span aria-hidden="true" className={`flex shrink-0 ${className}`}>
+      <MaterialSymbol icon={icon} size={size} />
+    </span>
+  );
+}
+
+function getModeButtonClass(active: boolean): string {
+  return `${modeToggleButtonClass} ${active ? modeToggleActiveClass : ''}`;
+}
+
+function getCommitRowClass(isSelected: boolean, isEquivalent: boolean): string {
+  const selectedClass = isSelected
+    ? 'border-[var(--an-primary-color)] bg-[color-mix(in_srgb,var(--an-primary-color)_10%,var(--an-background))]'
+    : 'border-transparent bg-transparent hover:border-[var(--an-border-color)] hover:bg-[var(--an-background-tertiary)]';
+
+  return [
+    'agent-elements-git-operations-commit-row',
+    'flex items-center gap-[var(--an-spacing-sm)] rounded-[var(--an-radius-sm)] border',
+    'px-[var(--an-spacing-sm)] py-[var(--an-spacing-xs)] text-[11px]',
+    'transition-[background-color,border-color,color,opacity] duration-150 ease-out',
+    selectedClass,
+    isEquivalent ? 'opacity-60' : '',
+  ].join(' ');
+}
+
 export const GitOperationsPanel: React.FC<GitOperationsPanelProps> = React.memo(
   ({ workspacePath, workstreamId, sessionId, editedFiles, worktreeId, worktreePath, onWorktreeArchived, onFileClick }) => {
     // Use useAtomValue for read-only, useSetAtom for write-only to minimize re-renders
@@ -1296,51 +1482,74 @@ Please proceed with this strategy.`;
     const hasChanges = editedFiles.length > 0 || gitStatus.hasUncommitted;
 
     return (
-      <div ref={panelRef} className="git-operations-panel min-w-[200px] border-t border-[var(--nim-border)] bg-[var(--nim-bg-secondary)]">
+      <div
+        ref={panelRef}
+        className={panelClass}
+        data-agent-elements-shell="git-operations-panel"
+        data-component="GitOperationsPanel"
+        data-mode={worktreeId ? 'worktree' : 'workspace'}
+        data-testid="agent-elements-git-operations-panel"
+        data-workstream-id={workstreamId}
+        data-worktree-id={worktreeId ?? undefined}
+      >
         {/* Header */}
-        <div className="git-operations-panel__header flex items-center justify-between py-2 px-3 select-none text-xs font-medium text-[var(--nim-text)] border-b border-[var(--nim-border)]">
-          <div
-            className="git-operations-panel__header-left flex items-center gap-1.5 flex-1 cursor-pointer hover:opacity-80"
+        <div className={headerClass} data-agent-elements-shell="git-operations-header">
+          <button
+            type="button"
+            aria-expanded={isExpanded}
+            className={headerToggleClass}
+            data-agent-elements-shell="git-operations-header-toggle"
+            data-testid="agent-elements-git-operations-header-toggle"
             onClick={() => setIsExpanded(!isExpanded)}
           >
-            <MaterialSymbol icon={isExpanded ? 'expand_more' : 'chevron_right'} size={16} />
-            <MaterialSymbol icon="account_tree" size={14} />
-            <span className="git-operations-panel__branch font-semibold text-[var(--nim-text)]">
+            <DecorativeIcon icon={isExpanded ? 'expand_more' : 'chevron_right'} size={16} />
+            <DecorativeIcon icon="account_tree" size={14} />
+            <span className="git-operations-panel__branch min-w-0 truncate font-semibold text-[var(--an-foreground)]">
               {worktreeId && worktreeName ? `worktree/${worktreeName}` : gitStatus.branch}
             </span>
             {!worktreeId && (gitStatus.ahead > 0 || gitStatus.behind > 0) && (
-              <span className="git-operations-panel__sync-status text-[11px] text-[var(--nim-text-faint)] font-[var(--nim-font-mono)]">
+              <span className="git-operations-panel__sync-status shrink-0 font-mono text-[11px] text-[var(--an-foreground-subtle)]">
                 {gitStatus.ahead > 0 && `↑${gitStatus.ahead}`}
                 {gitStatus.behind > 0 && ` ↓${gitStatus.behind}`}
               </span>
             )}
-          </div>
+          </button>
         </div>
 
         {isExpanded && (
-          <div className="git-operations-panel__content px-3 pb-3 flex flex-col gap-3">
+          <div className={contentClass} data-agent-elements-shell="git-operations-content">
 
             {/* Commit Section (always visible when not in worktree) */}
             {!worktreeId && (
-              <div className="flex flex-col gap-2 pt-3">
+              <div
+                className={sectionClass}
+                data-agent-elements-shell="git-operations-workspace-section"
+                data-testid="agent-elements-git-operations-workspace-section"
+              >
                 {/* Commit mode toggle and header */}
-                <div className="flex items-center justify-between">
-                  <span className="text-[11px] font-semibold text-[var(--nim-text)]">Commit</span>
+                <div className={sectionHeaderClass}>
+                  <span className={sectionTitleClass}>Commit</span>
                   <HelpTooltip testId="git-commit-mode-toggle">
-                    <div className="flex rounded-[3px] overflow-hidden border border-[var(--nim-border)]" data-testid="git-commit-mode-toggle">
+                    <div
+                      className={modeToggleClass}
+                      data-agent-elements-shell="git-operations-mode-toggle"
+                      data-testid="git-commit-mode-toggle"
+                    >
                       <button
-                        className={`px-1.5 py-0.5 border-none bg-transparent text-[var(--nim-text-muted)] text-[10px] font-medium cursor-pointer transition-all duration-150 border-r border-[var(--nim-border)] ${
-                          commitMode === 'manual' ? 'bg-[var(--nim-bg-tertiary)] text-[var(--nim-text)]' : 'hover:bg-[var(--nim-bg-tertiary)] hover:opacity-60'
-                        }`}
+                        type="button"
+                        className={getModeButtonClass(commitMode === 'manual')}
+                        data-agent-elements-shell="git-operations-mode-button"
+                        data-selected={commitMode === 'manual' ? 'true' : 'false'}
                         onClick={() => setCommitMode('manual')}
                         aria-label="Manual commit message"
                       >
                         Manual
                       </button>
                       <button
-                        className={`px-1.5 py-0.5 border-none bg-transparent text-[var(--nim-text-muted)] text-[10px] font-medium cursor-pointer transition-all duration-150 ${
-                          commitMode === 'smart' ? 'bg-[var(--nim-bg-tertiary)] text-[var(--nim-text)]' : 'hover:bg-[var(--nim-bg-tertiary)] hover:opacity-60'
-                        }`}
+                        type="button"
+                        className={getModeButtonClass(commitMode === 'smart')}
+                        data-agent-elements-shell="git-operations-mode-button"
+                        data-selected={commitMode === 'smart' ? 'true' : 'false'}
                         onClick={() => setCommitMode('smart')}
                         aria-label="AI-assisted commit"
                       >
@@ -1352,16 +1561,22 @@ Please proceed with this strategy.`;
 
                 {/* Manual commit workflow */}
                 {commitMode === 'manual' && (
-                  <div className="flex flex-col gap-2" data-testid="git-operations-manual-mode">
+                  <div
+                    className="agent-elements-git-operations-manual-mode flex flex-col gap-[var(--an-spacing-sm)]"
+                    data-agent-elements-shell="git-operations-manual-mode"
+                    data-testid="git-operations-manual-mode"
+                  >
                     <textarea
-                      className="w-full p-2 border border-[var(--nim-border)] rounded bg-[var(--nim-bg)] text-[var(--nim-text)] text-[11px] font-[var(--nim-font-mono)] resize-y focus:outline-none focus:border-[var(--nim-primary)]"
+                      className={textareaClass}
                       value={commitMessage}
                       onChange={(e) => setCommitMessage(e.target.value)}
                       placeholder="Enter commit message..."
                       rows={3}
                     />
                     <button
-                      className="w-full p-2 border-none rounded bg-[var(--nim-primary)] text-white text-xs font-semibold cursor-pointer flex items-center justify-center gap-1.5 hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
+                      type="button"
+                      className={primaryButtonClass}
+                      data-agent-elements-shell="git-operations-manual-commit"
                       onClick={handleManualCommit}
                       disabled={isCommitting || !commitMessage?.trim() || stagedFiles.size === 0}
                     >
@@ -1372,18 +1587,24 @@ Please proceed with this strategy.`;
 
                 {/* Smart commit workflow - AI proposes commit in transcript */}
                 {commitMode === 'smart' && (
-                  <div className="flex flex-col gap-2" data-testid="git-operations-smart-mode">
-                    <p className="text-xs text-[var(--nim-text-muted)] m-0 leading-normal">
+                  <div
+                    className="agent-elements-git-operations-smart-mode flex flex-col gap-[var(--an-spacing-sm)]"
+                    data-agent-elements-shell="git-operations-smart-mode"
+                    data-testid="git-operations-smart-mode"
+                  >
+                    <p className="m-0 text-xs leading-normal text-[var(--an-foreground-muted)]">
                       Let AI analyze your changes and propose a commit message.
                     </p>
                     <HelpTooltip testId="git-operations-commit-with-ai-button">
                       <button
-                        className="w-full p-2 border-none rounded text-white text-xs font-semibold cursor-pointer flex items-center justify-center gap-1.5 hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed bg-gradient-to-br from-[var(--nim-primary)] to-[var(--nim-primary-hover)]"
+                        type="button"
+                        className={primaryButtonClass}
+                        data-agent-elements-shell="git-operations-smart-commit"
                         onClick={handleSmartCommit}
                         disabled={!hasChanges}
                         data-testid="git-operations-commit-with-ai-button"
                       >
-                        <MaterialSymbol icon="auto_awesome" size={16} />
+                        <DecorativeIcon icon="auto_awesome" size={16} />
                         Commit with AI
                       </button>
                     </HelpTooltip>
@@ -1394,11 +1615,16 @@ Please proceed with this strategy.`;
 
             {/* Worktree Operations Section (only when worktreeId exists) */}
             {worktreeId && (
-              <div className="flex flex-col gap-3 pt-3">
+              <div
+                className={`${sectionClass} gap-[var(--an-spacing-md)]`}
+                data-agent-elements-shell="git-operations-worktree-section"
+                data-testid="agent-elements-git-operations-worktree-section"
+              >
                 {/* Section header with refresh button */}
-                <div className="flex items-center justify-between">
-                  <span className="text-[11px] font-semibold text-[var(--nim-text)]">Commit & Sync</span>
+                <div className={sectionHeaderClass}>
+                  <span className={sectionTitleClass}>Commit & Sync</span>
                   <button
+                    type="button"
                     onClick={async () => {
                       try {
                         // Refresh worktree data (local state for GitOperationsPanel)
@@ -1415,26 +1641,32 @@ Please proceed with this strategy.`;
                         console.error('[GitOperationsPanel] Failed to refresh worktree data:', error);
                       }
                     }}
-                    className="flex items-center gap-1 px-2 py-1 text-[10px] text-[var(--nim-primary)] hover:bg-[var(--nim-bg-hover)] rounded transition-colors"
+                    className={`${inlineActionButtonClass} flex items-center gap-[var(--an-spacing-xxs)]`}
+                    data-agent-elements-shell="git-operations-refresh"
+                    data-testid="agent-elements-git-operations-refresh"
                     title="Refresh worktree status and uncommitted files"
                   >
-                    <MaterialSymbol icon="refresh" size={14} />
+                    <DecorativeIcon icon="refresh" size={14} />
                     <span>Refresh</span>
                   </button>
                 </div>
 
                 {/* Worktree Status Info */}
                 {(worktreeCommitsBehind > 0 || worktreeIsMerged) && (
-                  <div className="flex flex-col gap-1 text-[11px]">
+                  <div
+                    className={statusBlockClass}
+                    data-agent-elements-shell="git-operations-worktree-status"
+                    data-testid="agent-elements-git-operations-worktree-status"
+                  >
                     {worktreeCommitsBehind > 0 && (
-                      <span className="flex items-center gap-1.5 text-[var(--nim-warning)] font-medium">
-                        <MaterialSymbol icon="warning" size={14} />
+                      <span className={`${statusLineClass} text-[var(--an-warning)]`}>
+                        <DecorativeIcon icon="warning" size={14} />
                         {worktreeCommitsBehind} commit{worktreeCommitsBehind !== 1 ? 's' : ''} behind {worktreeRepoRootBranch || 'base'}
                       </span>
                     )}
                     {worktreeIsMerged && (
-                      <span className="flex items-center gap-1.5 text-[var(--nim-success)] font-medium">
-                        <MaterialSymbol icon="check_circle" size={14} />
+                      <span className={`${statusLineClass} text-[var(--an-success-color)]`}>
+                        <DecorativeIcon icon="check_circle" size={14} />
                         Merged to {worktreeRepoRootBranch || 'base'}
                       </span>
                     )}
@@ -1442,9 +1674,9 @@ Please proceed with this strategy.`;
                 )}
 
                 {/* Commit Message */}
-                <div className="flex flex-col gap-2">
+                <div className="agent-elements-git-operations-worktree-message flex flex-col gap-[var(--an-spacing-sm)]">
                   <textarea
-                    className="w-full p-2 border border-[var(--nim-border)] rounded bg-[var(--nim-bg)] text-[var(--nim-text)] text-[11px] font-[var(--nim-font-mono)] resize-y focus:outline-none focus:border-[var(--nim-primary)] disabled:opacity-50 disabled:cursor-not-allowed"
+                    className={textareaClass}
                     placeholder="Commit message..."
                     value={worktreeCommitMessage}
                     onChange={(e) => setWorktreeCommitMessage(e.target.value)}
@@ -1454,33 +1686,33 @@ Please proceed with this strategy.`;
                 </div>
 
                 {/* Action Buttons */}
-                <div className="flex flex-col gap-2">
+                <div className="agent-elements-git-operations-actions flex flex-col gap-[var(--an-spacing-sm)]">
                   <button
                     type="button"
-                    className="w-full p-2 border-none rounded bg-[var(--nim-primary)] text-white text-xs font-semibold cursor-pointer flex items-center justify-center gap-1.5 hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className={primaryButtonClass}
+                    data-agent-elements-shell="git-operations-worktree-commit"
+                    data-testid="agent-elements-git-operations-worktree-commit"
                     onClick={handleWorktreeCommit}
                     disabled={!worktreeCanCommit}
                     title={worktreeStagedCount === 0 ? 'Stage files to commit' : !worktreeCommitMessage.trim() ? 'Enter commit message' : 'Commit staged changes'}
                   >
                     {worktreeIsCommitting ? (
                       <>
-                        <MaterialSymbol icon="progress_activity" size={16} />
+                        <DecorativeIcon icon="progress_activity" size={16} />
                         <span>Committing...</span>
                       </>
                     ) : (
                       <>
-                        <MaterialSymbol icon="check" size={16} />
+                        <DecorativeIcon icon="check" size={16} />
                         <span>Commit ({worktreeStagedCount})</span>
                       </>
                     )}
                   </button>
                   <button
                     type="button"
-                    className={`w-full p-2 border-none rounded text-white text-xs font-semibold cursor-pointer flex items-center justify-center gap-1.5 hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed ${
-                      worktreeCommitsBehind > 0
-                        ? 'bg-[var(--nim-warning)]'
-                        : 'bg-[var(--nim-bg-tertiary)] text-[var(--nim-text)]'
-                    }`}
+                    className={worktreeCommitsBehind > 0 ? warningButtonClass : secondaryButtonClass}
+                    data-agent-elements-shell="git-operations-worktree-rebase"
+                    data-testid="agent-elements-git-operations-worktree-rebase"
                     onClick={handleWorktreeRebase}
                     disabled={!worktreeCanRebase}
                     title={
@@ -1493,19 +1725,21 @@ Please proceed with this strategy.`;
                   >
                     {worktreeIsRebasing ? (
                       <>
-                        <MaterialSymbol icon="progress_activity" size={16} />
+                        <DecorativeIcon icon="progress_activity" size={16} />
                         <span>Rebasing...</span>
                       </>
                     ) : (
                       <>
-                        <MaterialSymbol icon="sync" size={16} />
+                        <DecorativeIcon icon="sync" size={16} />
                         <span>Rebase{worktreeCommitsBehind > 0 ? ` (${worktreeCommitsBehind})` : ''}</span>
                       </>
                     )}
                   </button>
                   <button
                     type="button"
-                    className="w-full p-2 border-none rounded bg-[var(--nim-bg-tertiary)] text-[var(--nim-text)] text-xs font-semibold cursor-pointer flex items-center justify-center gap-1.5 hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className={secondaryButtonClass}
+                    data-agent-elements-shell="git-operations-worktree-merge"
+                    data-testid="agent-elements-git-operations-worktree-merge"
                     onClick={handleWorktreeMerge}
                     disabled={!worktreeCanMerge}
                     title={
@@ -1520,12 +1754,12 @@ Please proceed with this strategy.`;
                   >
                     {worktreeIsMerging ? (
                       <>
-                        <MaterialSymbol icon="progress_activity" size={16} />
+                        <DecorativeIcon icon="progress_activity" size={16} />
                         <span>Merging...</span>
                       </>
                     ) : (
                       <>
-                        <MaterialSymbol icon="merge" size={16} />
+                        <DecorativeIcon icon="merge" size={16} />
                         <span>Merge to {worktreeRepoRootBranch || 'base'}</span>
                       </>
                     )}
@@ -1534,8 +1768,12 @@ Please proceed with this strategy.`;
 
                 {/* Worktree Commits */}
                 {worktreeCommits.length > 0 && (
-                  <div className="flex flex-col gap-2">
-                    <div className="flex items-center justify-between text-[11px] font-semibold text-[var(--nim-text)]">
+                  <div
+                    className="agent-elements-git-operations-worktree-commits flex flex-col gap-[var(--an-spacing-sm)]"
+                    data-agent-elements-shell="git-operations-worktree-commits"
+                    data-testid="agent-elements-git-operations-worktree-commits"
+                  >
+                    <div className="flex items-center justify-between text-[11px] font-semibold text-[var(--an-foreground)]">
                       <span>
                         Commits{' '}
                         {worktreeUniqueCommitsAhead !== undefined && worktreeUniqueCommitsAhead !== worktreeCommits.length ? (
@@ -1549,8 +1787,12 @@ Please proceed with this strategy.`;
                     </div>
                     {/* Squash actions - only show when commits are selected */}
                     {worktreeCommits.length > 1 && selectedCommits.size > 0 && (
-                      <div className="flex items-center justify-between gap-2 p-2 bg-[var(--nim-bg-tertiary)] rounded border border-[var(--nim-border)]">
-                        <div className="text-[11px] text-[var(--nim-text-muted)]">
+                      <div
+                        className={selectionToolbarClass}
+                        data-agent-elements-shell="git-operations-squash-toolbar"
+                        data-testid="agent-elements-git-operations-squash-toolbar"
+                      >
+                        <div className="text-[11px] text-[var(--an-foreground-muted)]">
                           {selectedCommits.size === 1 ? (
                             <span>Select at least one more commit</span>
                           ) : (
@@ -1560,14 +1802,14 @@ Please proceed with this strategy.`;
                         <div className="flex gap-2">
                           <button
                             type="button"
-                            className="bg-transparent border-none text-[var(--nim-primary)] text-[10px] font-medium cursor-pointer p-0 hover:underline"
+                            className={inlineActionButtonClass}
                             onClick={handleClearSelection}
                           >
                             Clear
                           </button>
                           <button
                             type="button"
-                            className="px-2 py-1 border-none rounded bg-[var(--nim-primary)] text-white text-[10px] font-semibold cursor-pointer hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
+                            className={`${primaryButtonClass} w-auto px-[var(--an-spacing-sm)] py-[var(--an-spacing-xs)] text-[10px]`}
                             onClick={handleSquashClick}
                             disabled={selectedCommits.size < 2 || isSquashing}
                           >
@@ -1576,37 +1818,39 @@ Please proceed with this strategy.`;
                         </div>
                       </div>
                     )}
-                    <div className="flex flex-col gap-1 max-h-[200px] overflow-y-auto border border-[var(--nim-border)] rounded p-1 bg-[var(--nim-bg)]">
+                    <div className={commitListClass}>
                       {worktreeCommits.map((commit) => {
                         const isSelected = selectedCommits.has(commit.hash);
                         const canSelect = selectableCommits.has(commit.hash);
-                        const isEquivalent = commit.hasEquivalentOnBase;
+                        const isEquivalent = Boolean(commit.hasEquivalentOnBase);
                         return (
                           <div
                             key={commit.hash}
-                            className={`flex items-center gap-2 p-2 rounded text-[11px] ${
-                              isSelected ? 'bg-[var(--nim-bg-selected)] border border-[var(--nim-primary)]' : 'hover:bg-[var(--nim-bg-tertiary)]'
-                            } ${isEquivalent ? 'opacity-60' : ''}`}
+                            className={getCommitRowClass(isSelected, isEquivalent)}
+                            data-agent-elements-shell="git-operations-commit-row"
+                            data-equivalent={isEquivalent ? 'true' : 'false'}
+                            data-selected={isSelected ? 'true' : 'false'}
                             title={isEquivalent ? `Equivalent commit exists on ${worktreeRepoRootBranch || 'base'} - will be skipped during rebase` : undefined}
                           >
                             {worktreeCommits.length > 1 && (
                               <input
                                 type="checkbox"
+                                aria-label={`Select commit ${commit.shortHash}: ${commit.message} for squashing`}
                                 checked={isSelected}
                                 disabled={!canSelect && !isSelected}
                                 onChange={() => handleToggleCommit(commit.hash)}
-                                className="cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
+                                className="h-3.5 w-3.5 cursor-pointer accent-[var(--an-primary-color)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--an-focus-ring)] disabled:cursor-not-allowed disabled:opacity-50"
                                 title={!canSelect && !isSelected ? 'Only consecutive commits can be squashed' : 'Select for squashing'}
                               />
                             )}
-                            <div className={`font-[var(--nim-font-mono)] text-[10px] font-semibold ${isEquivalent ? 'text-[var(--nim-text-muted)]' : 'text-[var(--nim-primary)]'}`}>
+                            <div className={`font-mono text-[10px] font-semibold ${isEquivalent ? 'text-[var(--an-foreground-muted)]' : 'text-[var(--an-primary-color)]'}`}>
                               {commit.shortHash}
                             </div>
-                            <div className={`flex-1 overflow-hidden text-ellipsis whitespace-nowrap ${isEquivalent ? 'text-[var(--nim-text-muted)]' : 'text-[var(--nim-text)]'}`}>
+                            <div className={`min-w-0 flex-1 overflow-hidden text-ellipsis whitespace-nowrap ${isEquivalent ? 'text-[var(--an-foreground-muted)]' : 'text-[var(--an-foreground)]'}`}>
                               {commit.message}
                             </div>
                             {isEquivalent && (
-                              <span className="text-[9px] text-[var(--nim-text-faint)] whitespace-nowrap">on {worktreeRepoRootBranch || 'base'}</span>
+                              <span className="whitespace-nowrap text-[9px] text-[var(--an-foreground-subtle)]">on {worktreeRepoRootBranch || 'base'}</span>
                             )}
                           </div>
                         );
@@ -1627,10 +1871,12 @@ Please proceed with this strategy.`;
             )}
 
             {/* History Toggle */}
-            <div className="git-operations-panel__history-toggle text-center pt-2 border-t border-[var(--nim-border)]">
+            <div className={historyToggleClass} data-agent-elements-shell="git-operations-history-toggle">
               <button
+                type="button"
                 onClick={() => setShowHistory(!showHistory)}
-                className="git-operations-panel__btn-text bg-transparent border-none text-[var(--nim-primary)] text-[10px] font-medium cursor-pointer p-0 hover:underline"
+                className={`git-operations-panel__btn-text ${inlineActionButtonClass}`}
+                data-agent-elements-shell="git-operations-history-button"
               >
                 {showHistory ? 'Hide' : 'Show'} Recent Commits
               </button>
@@ -1638,16 +1884,24 @@ Please proceed with this strategy.`;
 
             {/* Commit History */}
             {showHistory && (
-              <div className="git-operations-panel__history flex flex-col gap-2 max-h-[300px] overflow-y-auto border border-[var(--nim-border)] rounded p-2 bg-[var(--nim-bg)]">
+              <div
+                className={historyClass}
+                data-agent-elements-shell="git-operations-history"
+                data-testid="agent-elements-git-operations-history"
+              >
                 {gitCommits.map((commit) => (
-                  <div key={commit.hash} className="git-operations-panel__commit p-2 bg-[var(--nim-bg)] rounded text-[11px]">
-                    <div className="git-operations-panel__commit-hash font-[var(--nim-font-mono)] text-[var(--nim-primary)] text-[10px] mb-1">
+                  <div
+                    key={commit.hash}
+                    className="git-operations-panel__commit agent-elements-git-operations-history-commit rounded-[var(--an-radius-sm)] border border-[var(--an-border-color)] bg-[var(--an-background-secondary)] p-[var(--an-spacing-sm)] text-[11px]"
+                    data-agent-elements-shell="git-operations-history-commit"
+                  >
+                    <div className="git-operations-panel__commit-hash mb-1 font-mono text-[10px] text-[var(--an-primary-color)]">
                       {commit.hash.slice(0, 7)}
                     </div>
-                    <div className="git-operations-panel__commit-msg text-[var(--nim-text)] mb-1 font-medium">
+                    <div className="git-operations-panel__commit-msg mb-1 font-medium text-[var(--an-foreground)]">
                       {commit.message}
                     </div>
-                    <div className="git-operations-panel__commit-meta text-[var(--nim-text-faint)] text-[10px]">
+                    <div className="git-operations-panel__commit-meta text-[10px] text-[var(--an-foreground-subtle)]">
                       {commit.author} • {new Date(commit.date).toLocaleDateString()}
                     </div>
                   </div>

@@ -13,6 +13,9 @@ interface ThemeToggleButtonProps {
   className?: string;
 }
 
+const floatingMenuCardGutters =
+  '[--agent-elements-card-block-padding:var(--an-spacing-xs)] [--agent-elements-card-inline-padding:var(--an-spacing-xs)] px-[var(--agent-elements-card-inline-padding)] py-[var(--agent-elements-card-block-padding)]';
+
 export const ThemeToggleButton: React.FC<ThemeToggleButtonProps> = ({ className = '' }) => {
   // Theme state lives in themeIdAtom; updated by store/listeners/themeListeners.ts
   const currentTheme = useAtomValue(themeIdAtom) as string;
@@ -121,12 +124,14 @@ export const ThemeToggleButton: React.FC<ThemeToggleButtonProps> = ({ className 
             ref={menu.refs.setFloating as React.RefCallback<HTMLDivElement>}
             style={menu.floatingStyles}
             {...menu.getFloatingProps()}
-            className="theme-menu agent-elements-theme-toggle-menu agent-elements-tool-card z-[1000] max-h-[min(360px,calc(100vh-24px))] min-w-[208px] overflow-y-auto rounded-[var(--an-border-radius)] border border-[var(--an-border-color)] bg-[var(--an-background)] p-1 text-[var(--an-foreground)] shadow-[0_16px_48px_color-mix(in_srgb,var(--nim-text)_16%,transparent)]"
+            className={`theme-menu agent-elements-theme-toggle-menu agent-elements-tool-card z-[1000] max-h-[min(360px,calc(100vh-24px))] w-52 max-w-[calc(100vw-24px)] overflow-y-auto rounded-[var(--an-border-radius)] border border-[var(--an-border-color)] bg-[var(--an-background)] text-[var(--an-foreground)] shadow-[0_16px_48px_color-mix(in_srgb,var(--an-foreground)_16%,transparent)] ${floatingMenuCardGutters}`}
             role="menu"
             aria-label="Theme selection"
             data-testid="agent-elements-theme-toggle-menu"
             data-component="ThemeToggleMenu"
             data-agent-elements-shell="theme-toggle-menu"
+            data-agent-elements-card-padding="symmetric-inline"
+            data-agent-elements-card-width="floating-menu"
           >
             {availableThemes.map(theme => {
               const isSelected = currentTheme === theme.id;

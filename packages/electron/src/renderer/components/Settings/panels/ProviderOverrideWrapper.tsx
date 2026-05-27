@@ -8,6 +8,7 @@
 import React, { ReactNode, useEffect, useMemo } from 'react';
 import { useAtom } from 'jotai';
 import { MaterialSymbol } from '@nimbalyst/runtime';
+import { ToggleSwitch } from '../../GlobalSettings/SettingsToggle';
 import {
   workspaceAISettingsAtomFamily,
   loadWorkspaceAISettings,
@@ -25,6 +26,23 @@ interface ProviderOverrideWrapperProps {
   /** Callback when override state changes - parent should reload/update */
   onOverrideChange?: () => void;
 }
+
+const compactCardPaddingClass =
+  '[--agent-elements-card-block-padding:var(--an-spacing-lg)] [--agent-elements-card-inline-padding:var(--an-spacing-lg)]';
+const loadingClass =
+  'provider-override-wrapper agent-elements-settings-panel flex h-full w-full flex-col items-center justify-center text-sm text-[var(--an-foreground-muted)]';
+const bannerBaseClass =
+  `override-banner agent-elements-tool-card flex !flex-row !items-center !justify-between gap-[var(--an-spacing-lg)] border ${compactCardPaddingClass}`;
+const bannerOverridingClass =
+  'border-[color-mix(in_srgb,var(--an-primary-color)_30%,var(--an-border-color))] bg-[color-mix(in_srgb,var(--an-primary-color)_10%,var(--an-background))]';
+const bannerGlobalClass =
+  'border-[var(--an-border-color)] bg-[var(--an-background-secondary)]';
+const statusBaseClass = 'override-status flex items-center gap-[var(--an-spacing-sm)] text-sm';
+const overrideActiveTextClass = 'text-[var(--an-primary-color)]';
+const overrideInactiveTextClass = 'text-[var(--an-foreground-muted)]';
+const toggleLabelClass = 'toggle-label text-xs font-medium uppercase text-[var(--an-foreground-muted)]';
+const hintClass =
+  'override-hint border-t border-[var(--an-border-color)] bg-[var(--an-background-secondary)] px-[var(--an-spacing-xl)] py-[var(--an-spacing-lg)] text-center text-xs text-[var(--an-foreground-subtle)]';
 
 export function ProviderOverrideWrapper({
   providerId,
@@ -92,7 +110,7 @@ export function ProviderOverrideWrapper({
   if (loading) {
     return (
       <div
-        className="provider-override-wrapper agent-elements-settings-panel flex flex-col h-full items-center justify-center text-[var(--nim-text-muted)]"
+        className={loadingClass}
         data-agent-elements-shell="provider-override-wrapper"
         data-component="ProviderOverrideWrapper"
         data-provider-id={providerId}
@@ -106,7 +124,7 @@ export function ProviderOverrideWrapper({
 
   return (
     <div
-      className="provider-override-wrapper agent-elements-settings-panel flex flex-col h-full"
+      className="provider-override-wrapper agent-elements-settings-panel flex h-full w-full flex-col"
       data-agent-elements-shell="provider-override-wrapper"
       data-component="ProviderOverrideWrapper"
       data-provider-id={providerId}
@@ -115,20 +133,14 @@ export function ProviderOverrideWrapper({
     >
       {/* Override Banner */}
       <div
-        className={`override-banner agent-elements-tool-card flex !flex-row !items-center !justify-between !gap-4 !px-4 !py-3 border-b ${
-          isOverriding
-            ? 'bg-[var(--nim-accent-subtle)] border-[var(--nim-accent-subtle)]'
-            : 'bg-[var(--nim-bg-secondary)] border-[var(--nim-border)]'
-        }`}
+        className={`${bannerBaseClass} ${isOverriding ? bannerOverridingClass : bannerGlobalClass}`}
         data-agent-elements-shell="provider-override-banner"
         data-state={isOverriding ? 'overriding' : 'global'}
         data-testid="agent-elements-provider-override-banner"
       >
         <div className="override-info flex-1 min-w-0">
           <div
-            className={`override-status flex items-center gap-2 text-[13px] ${
-              isOverriding ? 'text-[var(--nim-primary)]' : 'text-[var(--nim-text-muted)]'
-            }`}
+            className={`${statusBaseClass} ${isOverriding ? overrideActiveTextClass : overrideInactiveTextClass}`}
             data-testid="agent-elements-provider-override-status"
           >
             {isOverriding ? (
@@ -136,7 +148,7 @@ export function ProviderOverrideWrapper({
                 <MaterialSymbol icon="tune" size={16} className="shrink-0" />
                 <span>
                   Project override active for{' '}
-                  <strong className="font-medium text-[var(--nim-primary)]">{workspaceName}</strong>
+                  <strong className="font-medium text-[var(--an-primary-color)]">{workspaceName}</strong>
                 </span>
               </>
             ) : (
@@ -149,34 +161,23 @@ export function ProviderOverrideWrapper({
             )}
           </div>
         </div>
-        <label
-          className="override-toggle agent-elements-provider-override-toggle flex items-center gap-2 cursor-pointer shrink-0"
+        <div
+          className="override-toggle agent-elements-provider-override-toggle flex shrink-0 items-center gap-[var(--an-spacing-sm)]"
           data-agent-elements-shell="provider-override-toggle"
           data-provider-id={providerId}
           data-state={isOverriding ? 'overriding' : 'global'}
         >
-          <input
-            type="checkbox"
+          <ToggleSwitch
             checked={isOverriding}
-            onChange={(e) => handleOverrideToggle(e.target.checked)}
-            className="hidden peer"
-            aria-label={`Project override for ${providerName}`}
+            onChange={handleOverrideToggle}
+            ariaLabel={`Project override for ${providerName}`}
           />
           <span
-            className={`toggle-slider relative w-9 h-5 rounded-[10px] transition-colors duration-200 ${
-              isOverriding ? 'bg-[var(--nim-primary)]' : 'bg-[var(--nim-bg-tertiary)]'
-            } before:content-[''] before:absolute before:top-0.5 before:left-0.5 before:w-4 before:h-4 before:bg-white before:rounded-full before:transition-transform before:duration-200 before:shadow-[0_1px_3px_rgba(0,0,0,0.2)] ${
-              isOverriding ? 'before:translate-x-4' : ''
-            }`}
-          ></span>
-          <span
-            className={`toggle-label text-xs font-medium uppercase tracking-[0.03em] ${
-              isOverriding ? 'text-[var(--nim-primary)]' : 'text-[var(--nim-text-muted)]'
-            }`}
+            className={`${toggleLabelClass} ${isOverriding ? overrideActiveTextClass : ''}`}
           >
             Override
           </span>
-        </label>
+        </div>
       </div>
 
       {/* Provider Panel Content */}
@@ -190,7 +191,7 @@ export function ProviderOverrideWrapper({
 
       {!isOverriding && (
         <div
-          className="override-hint px-4 py-3 text-xs text-center text-[var(--nim-text-faint)] bg-[var(--nim-bg-secondary)] border-t border-[var(--nim-border)]"
+          className={hintClass}
           data-agent-elements-shell="provider-override-hint"
           data-testid="agent-elements-provider-override-hint"
         >

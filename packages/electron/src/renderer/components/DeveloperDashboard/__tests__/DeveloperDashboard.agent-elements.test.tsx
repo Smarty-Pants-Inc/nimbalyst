@@ -120,6 +120,14 @@ describe('DeveloperDashboard Agent Elements shell', () => {
     const statCards = await screen.findAllByTestId('agent-elements-developer-dashboard-stat-card');
     expect(statCards).toHaveLength(12);
     expect(statCards[0]).toHaveTextContent('Main Memory');
+    for (const card of statCards) {
+      expect(card).toHaveClass('agent-elements-tool-card');
+      expect(card).toHaveAttribute('data-agent-elements-card-width', 'grid-cell');
+      expect(card).toHaveAttribute('data-agent-elements-card-padding', 'symmetric-inline');
+      expect(card.className).toContain('--agent-elements-card-inline-padding');
+      expect(card.className).toContain('--agent-elements-card-block-padding');
+      expect(card.className).not.toMatch(/\b(?:p-|px-|py-|pl-|pr-|rounded-\[10px\])/);
+    }
     expect(screen.getByTestId('agent-elements-developer-dashboard-section')).toHaveAttribute(
       'data-agent-elements-shell',
       'developer-dashboard-section'
@@ -133,9 +141,22 @@ describe('DeveloperDashboard Agent Elements shell', () => {
     expect(source).toContain('agent-elements-developer-dashboard-stat-card');
     expect(source).toContain('agent-elements-developer-dashboard-section');
     expect(source).toContain('agent-elements-developer-dashboard-table-row');
+    expect(source).toContain('agent-elements-tool-card');
+    expect(source).toContain('--agent-elements-card-inline-padding');
+    expect(source).toContain('--agent-elements-card-block-padding');
+    expect(source).toContain('data-agent-elements-card-width="grid-cell"');
+    expect(source).toContain('data-agent-elements-card-width="section-row"');
+    expect(source).toContain('data-agent-elements-card-padding="symmetric-inline"');
+    expect(source).toContain('--an-tool-background');
+    expect(source).toContain('--an-foreground-muted');
 
+    expect(source).not.toMatch(
+      /agent-elements-developer-dashboard-(?:stat-card|chart)[^`'"]*\b(?:p-|p-\[|px-|px-\[|py-|py-\[|pl-|pl-\[|pr-|pr-\[|rounded-\[10px\]|rounded-md|rounded-lg|rounded-xl)/
+    );
     expect(source).not.toMatch(/#(?:[0-9a-fA-F]{3}){1,2}\b|rgba\(/);
     expect(source).not.toMatch(/--nim-surface|--nim-accent|text-white|bg-white|bg-black/);
     expect(source).not.toMatch(/rounded-md|rounded-lg|rounded-xl|tracking-\[/);
+    expect(source).not.toMatch(/\b(?:bg|text|border|hover:bg|hover:text|hover:border)-nim(?:-[\w-]+)?\b/);
+    expect(source).not.toMatch(/var\(--nim-/);
   });
 });

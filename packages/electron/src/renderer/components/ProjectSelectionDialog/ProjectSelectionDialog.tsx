@@ -95,13 +95,13 @@ export const ProjectSelectionDialog: React.FC<ProjectSelectionDialogProps> = ({
 
   return (
     <div
-      className="project-selection-dialog-overlay nim-overlay agent-elements-project-selection-dialog-backdrop bg-[color-mix(in_srgb,var(--nim-text)_36%,transparent)]"
+      className="project-selection-dialog-overlay nim-overlay agent-elements-project-selection-dialog-backdrop bg-[color-mix(in_srgb,var(--an-foreground)_36%,transparent)]"
       data-testid="agent-elements-project-selection-dialog-backdrop"
       data-agent-elements-shell="project-selection-dialog-backdrop"
       onClick={onCancel}
     >
       <div
-        className="project-selection-dialog nim-modal agent-elements-project-selection-dialog agent-elements-tool-card w-[560px] max-w-[92vw] max-h-[82vh] !gap-0 !p-0 overflow-hidden rounded-[var(--an-border-radius)] bg-[var(--an-background)] border border-[var(--an-border-color)] shadow-[0_20px_60px_color-mix(in_srgb,var(--nim-text)_18%,transparent)]"
+        className="project-selection-dialog nim-modal agent-elements-project-selection-dialog agent-elements-tool-card w-[560px] max-w-[92vw] max-h-[82vh] !gap-0 !p-0 overflow-hidden rounded-[var(--an-border-radius)] bg-[var(--an-background)] border border-[var(--an-border-color)] shadow-[0_20px_60px_color-mix(in_srgb,var(--an-foreground)_18%,transparent)]"
         data-testid="agent-elements-project-selection-dialog"
         data-component="ProjectSelectionDialog"
         data-agent-elements-shell="project-selection-dialog"
@@ -151,7 +151,7 @@ export const ProjectSelectionDialog: React.FC<ProjectSelectionDialogProps> = ({
                 </div>
               </div>
               <button
-                className={`${dialogButtonBase} project-selection-button-primary w-full border-[var(--an-primary-color)] bg-[var(--an-primary-color)] text-[var(--an-background)] hover:bg-[var(--nim-primary-hover)] hover:border-[var(--nim-primary-hover)]`}
+                className={`${dialogButtonBase} project-selection-button-primary w-full border-[var(--an-primary-color)] bg-[var(--an-primary-color)] text-[var(--an-button-primary-text)] hover:border-[color-mix(in_srgb,var(--an-primary-color)_82%,var(--an-foreground))] hover:bg-[color-mix(in_srgb,var(--an-primary-color)_88%,var(--an-foreground))]`}
                 data-agent-elements-shell="project-selection-dialog-suggested-action"
                 onClick={handleUseSuggested}
               >
@@ -210,7 +210,7 @@ export const ProjectSelectionDialog: React.FC<ProjectSelectionDialogProps> = ({
                 })}
               </div>
               <button
-                className={`${dialogButtonBase} project-selection-button-primary w-full border-[var(--an-primary-color)] bg-[var(--an-primary-color)] text-[var(--an-background)] hover:bg-[var(--nim-primary-hover)] hover:border-[var(--nim-primary-hover)]`}
+                className={`${dialogButtonBase} project-selection-button-primary w-full border-[var(--an-primary-color)] bg-[var(--an-primary-color)] text-[var(--an-button-primary-text)] hover:border-[color-mix(in_srgb,var(--an-primary-color)_82%,var(--an-foreground))] hover:bg-[color-mix(in_srgb,var(--an-primary-color)_88%,var(--an-foreground))]`}
                 data-agent-elements-shell="project-selection-dialog-selected-action"
                 onClick={handleUseSelected}
                 disabled={!selectedProject}

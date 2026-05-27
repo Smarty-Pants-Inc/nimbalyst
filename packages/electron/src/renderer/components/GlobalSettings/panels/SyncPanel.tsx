@@ -73,6 +73,21 @@ interface StytchAuthState {
   } | null;
 }
 
+const cardPaddingClass =
+  '[--agent-elements-card-block-padding:var(--an-spacing-lg)] [--agent-elements-card-inline-padding:var(--an-spacing-lg)]';
+const compactCardPaddingClass =
+  '[--agent-elements-card-block-padding:var(--an-spacing-sm)] [--agent-elements-card-inline-padding:var(--an-spacing-md)]';
+const baseCardClass =
+  `agent-elements-tool-card ${cardPaddingClass} bg-[var(--an-background-secondary)]`;
+const compactRowCardClass =
+  `agent-elements-tool-card ${compactCardPaddingClass} !flex-row items-center bg-[var(--an-background-secondary)]`;
+const syncCalloutCardClass =
+  `agent-elements-tool-card agent-elements-sync-sharing-card ${cardPaddingClass} border-[color-mix(in_srgb,var(--an-primary-color)_20%,var(--an-border-color))] bg-[color-mix(in_srgb,var(--an-primary-color)_8%,var(--an-background))]`;
+const syncWarningCardClass =
+  `agent-elements-tool-card agent-elements-sync-sleep-warning ${compactCardPaddingClass} !flex-row items-center gap-2 mt-2 border-[color-mix(in_srgb,var(--an-warning-color)_24%,var(--an-border-color))] bg-[color-mix(in_srgb,var(--an-warning-color)_10%,var(--an-background))] text-[11px] text-[var(--an-warning-color)]`;
+const syncDangerCardClass =
+  `agent-elements-tool-card agent-elements-sync-delete-card ${cardPaddingClass} border-[color-mix(in_srgb,var(--an-error-color)_34%,var(--an-border-color))] bg-[var(--an-background-secondary)]`;
+
 function SharingCallout() {
   const [expanded, setExpanded] = useState(false);
 
@@ -84,7 +99,7 @@ function SharingCallout() {
       data-testid="agent-elements-sync-sharing-section"
     >
       <div
-        className="agent-elements-tool-card agent-elements-sync-sharing-card p-3.5 bg-nim-primary/8 border border-nim-primary/20 rounded-lg"
+        className={syncCalloutCardClass}
         data-agent-elements-shell="sync-sharing-card"
         data-testid="agent-elements-sync-sharing-card"
       >
@@ -512,7 +527,7 @@ export function SyncPanel() {
 
   return (
     <div
-      className="provider-panel sync-panel agent-elements-settings-panel agent-elements-sync-panel flex flex-col"
+      className="provider-panel sync-panel agent-elements-settings-panel agent-elements-sync-panel flex w-full flex-col"
       data-agent-elements-shell="sync-panel"
       data-component="SyncPanel"
       data-testid="agent-elements-sync-panel"
@@ -620,7 +635,7 @@ export function SyncPanel() {
                 return (
                   <div
                     key={acct.personalOrgId}
-                    className={`agent-elements-tool-card agent-elements-sync-account-card flex items-center gap-3 p-2.5 rounded-lg ${isSyncAccount ? 'bg-nim-primary/8 border border-nim-primary/20' : 'bg-nim-secondary'}`}
+                    className={`${compactRowCardClass} agent-elements-sync-account-card gap-3 ${isSyncAccount ? 'border-[color-mix(in_srgb,var(--an-primary-color)_22%,var(--an-border-color))] bg-[color-mix(in_srgb,var(--an-primary-color)_8%,var(--an-background))]' : ''}`}
                     data-agent-elements-shell="sync-account-card"
                     data-sync-account-active={String(isSyncAccount)}
                     data-testid={`agent-elements-sync-account-${acct.personalOrgId}`}
@@ -664,7 +679,7 @@ export function SyncPanel() {
               })
             ) : (
               <div
-                className="agent-elements-tool-card agent-elements-sync-account-card flex items-center gap-3 p-2.5 bg-nim-secondary rounded-lg"
+                className={`${compactRowCardClass} agent-elements-sync-account-card gap-3`}
                 data-agent-elements-shell="sync-account-card"
                 data-testid="agent-elements-sync-primary-account"
               >
@@ -705,7 +720,7 @@ export function SyncPanel() {
           </div>
         ) : showAuthForm ? (
           <div
-            className="agent-elements-tool-card agent-elements-sync-auth-card p-4 bg-nim-secondary rounded-lg"
+            className={`${baseCardClass} agent-elements-sync-auth-card`}
             data-agent-elements-shell="sync-auth-card"
             data-testid="agent-elements-sync-auth-card"
           >
@@ -802,7 +817,7 @@ export function SyncPanel() {
           </div>
         ) : (
           <div
-            className="agent-elements-tool-card agent-elements-sync-auth-card p-4 bg-nim-secondary rounded-lg text-center"
+            className={`${baseCardClass} agent-elements-sync-auth-card text-center`}
             data-agent-elements-shell="sync-auth-card"
             data-testid="agent-elements-sync-auth-card"
           >
@@ -843,7 +858,7 @@ export function SyncPanel() {
           >
             <h4 className="provider-panel-section-title text-[15px] font-semibold mb-3 text-[var(--nim-text)]">Mobile App</h4>
             <div
-              className="agent-elements-tool-card agent-elements-sync-mobile-card flex gap-3.5 p-3.5 bg-nim-secondary rounded-lg"
+              className={`${baseCardClass} agent-elements-sync-mobile-card !flex-row gap-3.5`}
               data-agent-elements-shell="sync-mobile-card"
               data-testid="agent-elements-sync-mobile-card"
             >
@@ -937,7 +952,7 @@ export function SyncPanel() {
           </div>
           {(config.preventSleepMode ?? (config.preventSleepWhenSyncing ? 'always' : 'off')) === 'off' && enabledProjectCount > 0 && (
             <div
-              className="agent-elements-tool-card agent-elements-sync-sleep-warning flex items-center gap-2 mt-2 p-2 bg-amber-500/10 border border-amber-500/20 rounded-lg text-[11px] text-amber-500"
+              className={syncWarningCardClass}
               data-agent-elements-shell="sync-sleep-warning"
               data-testid="agent-elements-sync-sleep-warning"
             >
@@ -987,7 +1002,7 @@ export function SyncPanel() {
           </button>
         ) : (
           <div
-            className="agent-elements-tool-card agent-elements-sync-project-list bg-nim-secondary rounded-lg overflow-hidden"
+            className="agent-elements-tool-card agent-elements-sync-project-list bg-[var(--an-background-secondary)] overflow-hidden"
             data-agent-elements-shell="sync-project-list"
             data-testid="agent-elements-sync-project-list"
           >
@@ -1091,7 +1106,7 @@ export function SyncPanel() {
           {connectedDevices.map((device) => (
             <div
               key={device.deviceId}
-              className="agent-elements-tool-card agent-elements-sync-device-row flex items-center gap-2.5 px-2.5 py-2 bg-nim-secondary rounded-md mb-1.5 last:mb-0"
+              className={`${compactRowCardClass} agent-elements-sync-device-row gap-2.5 mb-1.5 last:mb-0`}
               data-agent-elements-shell="sync-device-row"
               data-device-id={device.deviceId}
             >
@@ -1122,7 +1137,7 @@ export function SyncPanel() {
         data-testid="agent-elements-sync-encryption-section"
       >
         <div
-          className="agent-elements-tool-card agent-elements-sync-encryption-card p-3.5 bg-nim-secondary border border-nim rounded-lg"
+          className={`${baseCardClass} agent-elements-sync-encryption-card`}
           data-agent-elements-shell="sync-encryption-card"
           data-testid="agent-elements-sync-encryption-card"
         >
@@ -1168,7 +1183,7 @@ export function SyncPanel() {
             </button>
           ) : (
             <div
-              className="agent-elements-tool-card agent-elements-sync-delete-card p-4 bg-nim-secondary rounded-lg border border-red-500/30"
+              className={syncDangerCardClass}
               data-agent-elements-shell="sync-delete-card"
               data-testid="agent-elements-sync-delete-card"
             >

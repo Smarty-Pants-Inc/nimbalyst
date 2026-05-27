@@ -2,11 +2,17 @@
 
 import '@testing-library/jest-dom/vitest';
 import React from 'react';
+import fs from 'node:fs';
+import path from 'node:path';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { DiscordInvitation } from '../DiscordInvitation';
 
 const posthogCaptureMock = vi.hoisted(() => vi.fn());
+const discordInvitationSourcePath = path.join(
+  process.cwd(),
+  'packages/electron/src/renderer/components/DiscordInvitation/DiscordInvitation.tsx',
+);
 
 vi.mock('posthog-js/react', () => ({
   usePostHog: () => ({
@@ -151,5 +157,15 @@ describe('DiscordInvitation Agent Elements shell', () => {
     fireEvent.click(screen.getByRole('button', { name: /don't show again/i }));
     expect(send).toHaveBeenCalledWith('dismiss-discord-invitation');
     expect(onDismiss).toHaveBeenCalledTimes(1);
+  });
+
+  it('keeps Discord invitation visual chrome on Agent Elements aliases', () => {
+    const source = fs.readFileSync(discordInvitationSourcePath, 'utf8');
+
+    expect(source).toContain('--an-primary-color');
+    expect(source).toContain('--an-foreground');
+    expect(source).toContain('--an-button-primary-text');
+    expect(source).not.toMatch(/var\(--nim-(text|primary-hover)\)/);
+    expect(source).not.toMatch(/shadow-\[[^\]]*var\(--nim/);
   });
 });

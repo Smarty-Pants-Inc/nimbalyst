@@ -1,5 +1,8 @@
 import React, { Component, ErrorInfo, ReactNode } from 'react';
 
+const ERROR_BOUNDARY_CARD_PADDING_CLASS =
+  '[--agent-elements-card-block-padding:var(--an-spacing-xxl)] [--agent-elements-card-inline-padding:var(--an-spacing-xxl)] px-[var(--agent-elements-card-inline-padding)] py-[var(--agent-elements-card-block-padding)]';
+
 interface ErrorBoundaryProps {
   children: ReactNode;
   fallback?: ReactNode;
@@ -49,10 +52,12 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
         <div
           role="alert"
           aria-live="assertive"
-          className="error-boundary-fallback agent-elements-error-boundary agent-elements-tool-card flex min-h-[240px] w-full items-center justify-center rounded-[var(--an-tool-border-radius)] border border-[var(--an-border-color)] bg-[var(--an-background-secondary)] p-[var(--an-spacing-xxl)] text-[var(--an-foreground)] [container-type:inline-size]"
+          className={`error-boundary-fallback agent-elements-error-boundary agent-elements-tool-card flex min-h-[240px] w-full items-center justify-center rounded-[var(--an-tool-border-radius)] border border-[var(--an-border-color)] bg-[var(--an-tool-background)] text-[var(--an-foreground)] [container-type:inline-size] ${ERROR_BOUNDARY_CARD_PADDING_CLASS}`}
           data-testid="agent-elements-error-boundary"
           data-component="ErrorBoundary"
           data-agent-elements-shell="error-boundary"
+          data-agent-elements-card-padding="symmetric-inline"
+          data-agent-elements-card-width="bounded-fallback"
         >
           <div
             className="agent-elements-error-boundary-content flex w-full max-w-[520px] flex-col items-start gap-[var(--an-spacing-lg)] text-left"
@@ -60,7 +65,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
           >
             <div className="flex items-start gap-3">
               <span
-                className="agent-elements-error-boundary-icon inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-[var(--an-tool-border-radius)] border border-[color-mix(in_srgb,var(--nim-error)_30%,var(--an-border-color))] bg-[color-mix(in_srgb,var(--nim-error)_10%,var(--an-background))] text-[var(--nim-error)]"
+                className="agent-elements-error-boundary-icon inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-[var(--an-tool-border-radius)] border border-[color-mix(in_srgb,var(--an-diff-removed-text)_30%,var(--an-border-color))] bg-[color-mix(in_srgb,var(--an-diff-removed-text)_10%,var(--an-background))] text-[var(--an-diff-removed-text)]"
                 aria-hidden="true"
                 data-agent-elements-shell="error-boundary-icon"
               >
@@ -81,7 +86,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
             </div>
             <button
               onClick={this.handleReset}
-              className="agent-elements-error-boundary-retry rounded-[var(--an-input-border-radius)] border border-[var(--an-send-button-bg)] bg-[var(--an-send-button-bg)] px-4 py-2 text-sm font-medium text-[var(--an-send-button-color)] transition-colors duration-150 ease-out hover:bg-[var(--nim-primary-hover)] focus:outline-none focus:ring-2 focus:ring-[var(--an-input-focus-outline)]"
+              className="agent-elements-error-boundary-retry rounded-[var(--an-input-border-radius)] border border-[var(--an-send-button-bg)] bg-[var(--an-send-button-bg)] px-4 py-2 text-sm font-medium text-[var(--an-send-button-color)] transition-colors duration-150 ease-out hover:bg-[color-mix(in_srgb,var(--an-primary-color)_88%,var(--an-foreground))] focus:outline-none focus:ring-2 focus:ring-[var(--an-input-focus-outline)]"
               data-testid="agent-elements-error-boundary-retry"
               data-agent-elements-shell="error-boundary-retry"
             >

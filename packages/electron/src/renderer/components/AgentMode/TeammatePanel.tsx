@@ -12,7 +12,7 @@
  * Clicking a teammate item scrolls the transcript to its spawn point via scrollToTeammateAtom.
  */
 
-import React, { useCallback, useMemo, useState, useEffect } from 'react';
+import React, { useCallback, useMemo, useState, useEffect, useId } from 'react';
 import { useAtomValue, useSetAtom } from 'jotai';
 import { MaterialSymbol } from '@nimbalyst/runtime';
 import {
@@ -37,6 +37,74 @@ export interface TeammateInfo {
 interface TeammatePanelProps {
   /** The session ID to get teammates from */
   sessionId: string;
+}
+
+const panelClass = [
+  'teammate-panel',
+  'agent-elements-teammate-panel',
+  'flex shrink-0 flex-col border-t border-[var(--an-border-color)]',
+  'bg-[var(--an-background-secondary)] text-[var(--an-foreground)] [container-type:inline-size]',
+].join(' ');
+
+const sectionClass = [
+  'agent-elements-teammate-section',
+  'flex flex-col',
+].join(' ');
+
+const sectionHeaderClass = [
+  'agent-elements-teammate-section-header',
+  'flex min-h-[34px] w-full cursor-pointer items-center gap-[var(--an-spacing-sm)]',
+  'border border-transparent bg-transparent px-[var(--an-spacing-lg)] py-[var(--an-spacing-sm)]',
+  'text-left text-[var(--an-foreground-muted)] outline-none',
+  'transition-[background-color,border-color,color] duration-150 ease-out',
+  'hover:bg-[var(--an-background-tertiary)] hover:text-[var(--an-foreground)]',
+  'focus-visible:ring-2 focus-visible:ring-[var(--an-focus-ring)]',
+].join(' ');
+
+const sectionContentClass = [
+  'agent-elements-teammate-section-content',
+  'nim-scrollbar max-h-[200px] overflow-y-auto px-[var(--an-spacing-lg)]',
+  'pb-[var(--an-spacing-md)] pt-[var(--an-spacing-xs)]',
+].join(' ');
+
+const itemClass = [
+  'flex w-full items-start gap-[var(--an-spacing-sm)]',
+  'rounded-[calc(var(--an-tool-border-radius)_-_4px)] border border-transparent',
+  'bg-transparent px-[var(--an-spacing-sm)] py-[var(--an-spacing-xs)] text-left text-xs outline-none',
+  'transition-[background-color,border-color,color,opacity] duration-150 ease-out',
+  'data-[active=true]:border-[color-mix(in_srgb,var(--agent-panel-accent)_18%,var(--an-border-color))]',
+  'data-[active=true]:bg-[color-mix(in_srgb,var(--agent-panel-accent)_10%,var(--an-background-tertiary))]',
+  'data-[done=true]:opacity-70',
+].join(' ');
+
+const clickableItemClass = [
+  itemClass,
+  'cursor-pointer hover:border-[var(--an-border-color)] hover:bg-[var(--an-background-tertiary)]',
+  'focus-visible:ring-2 focus-visible:ring-[var(--an-input-focus-outline)]',
+].join(' ');
+
+function getStatusTone(status: string | undefined): string {
+  if (!status) return 'neutral';
+  if (status === 'running') return 'running';
+  if (status === 'idle') return 'neutral';
+  if (status === 'completed') return 'success';
+  if (status === 'failed' || status === 'stopped' || status === 'errored') return 'error';
+  return 'neutral';
+}
+
+function getStatusIcon(status: string | undefined): string {
+  if (status === 'running') return 'progress_activity';
+  if (status === 'completed') return 'check_circle';
+  if (status === 'failed' || status === 'stopped' || status === 'errored') return 'error';
+  if (status === 'idle') return 'radio_button_unchecked';
+  return 'circle';
+}
+
+function getStatusAccent(status: string | undefined): string {
+  if (status === 'completed') return 'var(--an-diff-added-text)';
+  if (status === 'failed' || status === 'stopped' || status === 'errored') return 'var(--an-diff-removed-text)';
+  if (status === 'running') return 'var(--an-primary-color)';
+  return 'var(--an-foreground-muted)';
 }
 
 export const TeammatePanel: React.FC<TeammatePanelProps> = React.memo(({
@@ -73,7 +141,15 @@ export const TeammatePanel: React.FC<TeammatePanelProps> = React.memo(({
   }
 
   return (
-    <div className="teammate-panel border-t border-[var(--nim-border)] bg-[var(--nim-bg-secondary)]">
+    <section
+      className={panelClass}
+      data-agent-elements-shell="teammate-panel"
+      data-component="TeammatePanel"
+      data-session-id={sessionId}
+      data-task-count={tasks.length}
+      data-teammate-count={teammates.length}
+      data-testid="agent-elements-teammate-panel"
+    >
       {teammates.length > 0 && (
         <TeammateSection
           entries={teammates}
@@ -87,10 +163,10 @@ export const TeammatePanel: React.FC<TeammatePanelProps> = React.memo(({
           tasks={tasks}
           isCollapsed={isTasksCollapsed}
           onToggle={handleToggleTasks}
-          className={teammates.length > 0 ? 'border-t border-[var(--nim-border)]' : undefined}
+          className={teammates.length > 0 ? 'border-t border-[var(--an-border-color)]' : undefined}
         />
       )}
-    </div>
+    </section>
   );
 });
 
@@ -112,35 +188,44 @@ const TeammateSection: React.FC<TeammateSectionProps> = React.memo(({
   onTeammateClick,
 }) => {
   const runningCount = entries.filter(t => t.status === 'running' || t.status === 'idle').length;
+  const contentId = useId();
 
   return (
-    <div>
+    <section
+      className={sectionClass}
+      data-agent-elements-shell="teammate-section"
+      data-testid="agent-elements-teammate-section"
+    >
       <button
-        className="w-full flex items-center gap-2 px-3 py-2 bg-transparent border-none cursor-pointer text-left hover:bg-[var(--nim-bg-hover)]"
+        aria-controls={contentId}
+        aria-expanded={!isCollapsed}
+        className={sectionHeaderClass}
         onClick={onToggle}
+        data-testid="agent-elements-teammate-section-toggle"
+        type="button"
       >
         <MaterialSymbol
           icon={isCollapsed ? 'chevron_right' : 'expand_more'}
           size={16}
-          className="text-[var(--nim-text-muted)] shrink-0"
+          className="shrink-0"
         />
-        <MaterialSymbol icon="group" size={16} className="text-[var(--nim-text-muted)] shrink-0" />
-        <span className="text-xs font-medium text-[var(--nim-text)]">Teammates</span>
-        <span className="ml-auto text-[11px] text-[var(--nim-text-muted)] font-mono">
+        <MaterialSymbol icon="group" size={16} className="shrink-0" />
+        <span className="min-w-0 flex-1 text-xs font-medium leading-none text-[var(--an-foreground)]">Teammates</span>
+        <span className="agent-elements-status-pill ml-auto font-mono" data-tone="running">
           {runningCount}/{entries.length}
         </span>
       </button>
 
       {!isCollapsed && (
-        <div className="px-3 pb-2 max-h-[200px] overflow-y-auto">
-          <div className="flex flex-col gap-1">
+        <div className={sectionContentClass} id={contentId}>
+          <div className="agent-elements-teammate-list flex flex-col gap-[var(--an-spacing-xxs)]">
             {entries.map((entry) => (
               <TeammateItem key={entry.agentId} teammate={entry} onClick={onTeammateClick} />
             ))}
           </div>
         </div>
       )}
-    </div>
+    </section>
   );
 });
 
@@ -162,35 +247,44 @@ const TaskSection: React.FC<TaskSectionProps> = React.memo(({
   className,
 }) => {
   const runningCount = tasks.filter(t => t.status === 'running').length;
+  const contentId = useId();
 
   return (
-    <div className={className}>
+    <section
+      className={[sectionClass, className].filter(Boolean).join(' ')}
+      data-agent-elements-shell="task-section"
+      data-testid="agent-elements-task-section"
+    >
       <button
-        className="w-full flex items-center gap-2 px-3 py-2 bg-transparent border-none cursor-pointer text-left hover:bg-[var(--nim-bg-hover)]"
+        aria-controls={contentId}
+        aria-expanded={!isCollapsed}
+        className={sectionHeaderClass}
         onClick={onToggle}
+        data-testid="agent-elements-task-section-toggle"
+        type="button"
       >
         <MaterialSymbol
           icon={isCollapsed ? 'chevron_right' : 'expand_more'}
           size={16}
-          className="text-[var(--nim-text-muted)] shrink-0"
+          className="shrink-0"
         />
-        <MaterialSymbol icon="swap_horiz" size={16} className="text-[var(--nim-text-muted)] shrink-0" />
-        <span className="text-xs font-medium text-[var(--nim-text)]">Sub-agents</span>
-        <span className="ml-auto text-[11px] text-[var(--nim-text-muted)] font-mono">
+        <MaterialSymbol icon="swap_horiz" size={16} className="shrink-0" />
+        <span className="min-w-0 flex-1 text-xs font-medium leading-none text-[var(--an-foreground)]">Sub-agents</span>
+        <span className="agent-elements-status-pill ml-auto font-mono" data-tone="running">
           {runningCount}/{tasks.length}
         </span>
       </button>
 
       {!isCollapsed && (
-        <div className="px-3 pb-2 max-h-[200px] overflow-y-auto">
-          <div className="flex flex-col gap-1">
+        <div className={sectionContentClass} id={contentId}>
+          <div className="agent-elements-task-list flex flex-col gap-[var(--an-spacing-xxs)]">
             {tasks.map((task) => (
               <TaskItem key={task.taskId} task={task} />
             ))}
           </div>
         </div>
       )}
-    </div>
+    </section>
   );
 });
 
@@ -259,30 +353,29 @@ const TaskItem: React.FC<TaskItemProps> = React.memo(({ task }) => {
 
   return (
     <div
-      className={`task-item flex items-start gap-2 py-1 px-1 rounded text-xs ${
-        isRunning ? 'bg-[var(--nim-bg-hover)]' : ''
-      } ${isDone ? 'opacity-60' : ''}`}
+      className={`task-item agent-elements-task-item ${itemClass}`}
+      data-active={isRunning}
+      data-agent-elements-shell="task-item"
+      data-done={isDone}
       data-status={task.status}
+      data-task-id={task.taskId}
+      data-testid="agent-elements-task-item"
+      data-tone={getStatusTone(task.status)}
+      style={{ '--agent-panel-accent': getStatusAccent(task.status) } as React.CSSProperties}
     >
-      <div className="shrink-0 w-4 h-4 flex items-center justify-center mt-0.5">
-        {isRunning && (
-          <span className="inline-block w-3 h-3 border-2 border-[var(--nim-bg-tertiary)] border-t-[var(--nim-primary)] rounded-full animate-spin" />
-        )}
-        {task.status === 'completed' && (
-          <span className="text-[#4ade80] text-[10px]">&#x25CF;</span>
-        )}
-        {(task.status === 'failed' || task.status === 'stopped') && (
-          <span className="text-[var(--nim-error)] text-[10px]">&#x25CF;</span>
-        )}
+      <div className="agent-elements-task-item-icon mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center text-[var(--agent-panel-accent)]">
+        <MaterialSymbol
+          icon={getStatusIcon(task.status)}
+          size={14}
+          className={isRunning ? 'animate-spin' : undefined}
+        />
       </div>
-      <div className="flex-1 min-w-0">
-        <div className={`leading-[1.4] break-words ${
-          isDone ? 'text-[var(--nim-text-muted)]' : 'text-[var(--nim-text)]'
-        }`}>
+      <div className="min-w-0 flex-1">
+        <div className={`break-words leading-snug ${isDone ? 'text-[var(--an-foreground-muted)]' : 'text-[var(--an-foreground)]'}`}>
           {task.description}
         </div>
         {stats.length > 0 && (
-          <div className="text-[10px] text-[var(--nim-text-faint)] truncate font-mono">
+          <div className="truncate font-mono text-[10px] text-[var(--an-foreground-muted)]">
             {stats.join(' \u00B7 ')}
           </div>
         )}
@@ -308,13 +401,6 @@ const TeammateItem: React.FC<TeammateItemProps> = React.memo(({ teammate, onClic
     onClick(teammate.agentId);
   }, [onClick, teammate.agentId]);
 
-  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' || e.key === ' ') {
-      e.preventDefault();
-      onClick(teammate.agentId);
-    }
-  }, [onClick, teammate.agentId]);
-
   // Build stats line
   const stats: string[] = [];
   if (teammate.startedAt) {
@@ -329,48 +415,44 @@ const TeammateItem: React.FC<TeammateItemProps> = React.memo(({ teammate, onClic
   }
 
   return (
-    <div
-      className={`teammate-item flex items-start gap-2 py-1 px-1 rounded text-xs cursor-pointer hover:bg-[var(--nim-bg-hover)] ${
-        teammate.status === 'running' ? 'bg-[var(--nim-bg-hover)]' : ''
-      } ${teammate.status === 'completed' || teammate.status === 'errored' ? 'opacity-60' : ''}`}
+    <button
+      className={`teammate-item agent-elements-teammate-item ${clickableItemClass}`}
+      data-active={isActive}
+      data-agent-elements-shell="teammate-item"
+      data-agent-id={teammate.agentId}
+      data-done={teammate.status === 'completed' || teammate.status === 'errored'}
       data-status={teammate.status}
+      data-testid={`agent-elements-teammate-item-${teammate.agentId}`}
+      data-tone={getStatusTone(teammate.status)}
       onClick={handleClick}
-      onKeyDown={handleKeyDown}
-      role="button"
-      tabIndex={0}
+      style={{ '--agent-panel-accent': getStatusAccent(teammate.status) } as React.CSSProperties}
+      type="button"
     >
-      <div className="teammate-item-icon shrink-0 w-4 h-4 flex items-center justify-center mt-0.5">
-        {teammate.status === 'running' && (
-          <span className="inline-block w-3 h-3 border-2 border-[var(--nim-bg-tertiary)] border-t-[var(--nim-primary)] rounded-full animate-spin" />
-        )}
-        {teammate.status === 'idle' && (
-          <span className="text-[var(--nim-primary)] text-[10px]">&#x25CB;</span>
-        )}
-        {teammate.status === 'completed' && (
-          <span className="text-[var(--nim-success)] text-[10px]">&#x25CF;</span>
-        )}
-        {teammate.status === 'errored' && (
-          <span className="text-[var(--nim-error)] text-[10px]">&#x25CF;</span>
-        )}
+      <div className="teammate-item-icon mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center text-[var(--agent-panel-accent)]">
+        <MaterialSymbol
+          icon={getStatusIcon(teammate.status)}
+          size={14}
+          className={teammate.status === 'running' ? 'animate-spin' : undefined}
+        />
       </div>
-      <div className="flex-1 min-w-0">
-        <div className={`teammate-item-name leading-[1.4] break-words ${
+      <div className="min-w-0 flex-1">
+        <div className={`teammate-item-name break-words leading-snug ${
           teammate.status === 'completed'
-            ? 'line-through text-[var(--nim-text-muted)]'
-            : 'text-[var(--nim-text)]'
+            ? 'line-through text-[var(--an-foreground-muted)]'
+            : 'text-[var(--an-foreground)]'
         }`}>
           {teammate.name}
         </div>
-        <div className="text-[10px] text-[var(--nim-text-faint)] truncate">
+        <div className="truncate text-[10px] text-[var(--an-foreground-muted)]">
           {teammate.agentType}{teammate.status === 'idle' ? ' (idle)' : ''}
         </div>
         {stats.length > 0 && (
-          <div className="text-[10px] text-[var(--nim-text-faint)] truncate font-mono">
+          <div className="truncate font-mono text-[10px] text-[var(--an-foreground-muted)]">
             {stats.join(' \u00B7 ')}
           </div>
         )}
       </div>
-    </div>
+    </button>
   );
 });
 

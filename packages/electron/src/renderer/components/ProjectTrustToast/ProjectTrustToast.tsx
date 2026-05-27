@@ -88,7 +88,7 @@ const secondaryButtonClass =
   'inline-flex min-h-8 cursor-pointer items-center justify-center gap-2 rounded-[var(--an-input-border-radius)] border border-[var(--an-border-color)] bg-transparent px-3 py-1.5 text-sm font-medium text-[var(--an-foreground-muted)] transition-[background-color,border-color,color] duration-150 ease-out hover:bg-[var(--an-background-tertiary)] hover:text-[var(--an-foreground)] focus:outline-none focus:ring-2 focus:ring-[var(--an-input-focus-outline)] disabled:cursor-not-allowed disabled:opacity-50';
 
 const primaryButtonClass =
-  'inline-flex min-h-9 cursor-pointer items-center justify-center gap-2 rounded-[var(--an-input-border-radius)] border border-[var(--an-send-button-bg)] bg-[var(--an-send-button-bg)] px-4 py-2 text-sm font-medium text-[var(--an-send-button-color)] transition-[background-color,border-color,color,opacity] duration-150 ease-out hover:bg-[var(--nim-primary-hover)] focus:outline-none focus:ring-2 focus:ring-[var(--an-input-focus-outline)] disabled:cursor-not-allowed disabled:opacity-70';
+  'inline-flex min-h-9 cursor-pointer items-center justify-center gap-2 rounded-[var(--an-input-border-radius)] border border-[var(--an-send-button-bg)] bg-[var(--an-send-button-bg)] px-4 py-2 text-sm font-medium text-[var(--an-send-button-color)] transition-[background-color,border-color,color,opacity] duration-150 ease-out hover:bg-[color-mix(in_srgb,var(--an-primary-color)_88%,var(--an-foreground))] focus:outline-none focus:ring-2 focus:ring-[var(--an-input-focus-outline)] disabled:cursor-not-allowed disabled:opacity-70';
 
 /**
  * One-time toast that appears when an untrusted project is opened.
@@ -323,7 +323,7 @@ export const ProjectTrustToast: React.FC<ProjectTrustToastProps> = ({
       data-agent-elements-shell="project-trust-toast-backdrop"
     >
       <div
-        className="project-trust-toast agent-elements-project-trust-toast agent-elements-tool-card w-[calc(100%-32px)] max-w-[540px] overflow-hidden rounded-[var(--an-border-radius)] border border-[var(--an-border-color)] bg-[var(--an-background)] p-[var(--an-spacing-xxl)] text-[var(--an-foreground)] shadow-[0_20px_60px_color-mix(in_srgb,var(--nim-text)_18%,transparent)] [container-type:inline-size]"
+        className="project-trust-toast agent-elements-project-trust-toast agent-elements-tool-card w-[calc(100%-32px)] max-w-[540px] overflow-hidden rounded-[var(--an-border-radius)] border border-[var(--an-border-color)] bg-[var(--an-background)] p-[var(--an-spacing-xxl)] text-[var(--an-foreground)] shadow-[0_20px_60px_color-mix(in_srgb,var(--an-foreground)_18%,transparent)] [container-type:inline-size]"
         data-testid="agent-elements-project-trust-toast"
         data-component="ProjectTrustToast"
         data-agent-elements-shell="project-trust-toast"
@@ -364,12 +364,12 @@ export const ProjectTrustToast: React.FC<ProjectTrustToastProps> = ({
         </div>
 
         <div
-          className="project-trust-toast-warning agent-elements-project-trust-toast-warning mb-[var(--an-spacing-xl)] flex items-start gap-[var(--an-spacing-sm)] rounded-[var(--an-tool-border-radius)] border border-[color-mix(in_srgb,var(--nim-warning)_30%,var(--an-border-color))] bg-[color-mix(in_srgb,var(--nim-warning)_9%,var(--an-background))] p-[var(--an-spacing-lg)] text-[13px] leading-relaxed text-[var(--an-foreground-muted)]"
+          className="project-trust-toast-warning agent-elements-project-trust-toast-warning mb-[var(--an-spacing-xl)] flex items-start gap-[var(--an-spacing-sm)] rounded-[var(--an-tool-border-radius)] border border-[color-mix(in_srgb,var(--an-warning-color)_30%,var(--an-border-color))] bg-[color-mix(in_srgb,var(--an-warning-color)_9%,var(--an-background))] p-[var(--an-spacing-lg)] text-[13px] leading-relaxed text-[var(--an-foreground-muted)]"
           data-testid="agent-elements-project-trust-toast-warning"
           data-agent-elements-shell="project-trust-toast-warning"
           data-tone="warning"
         >
-          <MaterialSymbol icon="warning" size={16} className="mt-0.5 shrink-0 text-[var(--nim-warning)]" />
+          <MaterialSymbol icon="warning" size={16} className="mt-0.5 shrink-0 text-[var(--an-warning-color)]" />
           <span className="select-text">
             Untrusted projects can contain malicious code. Only trust projects from sources you know.
           </span>
@@ -427,7 +427,7 @@ export const ProjectTrustToast: React.FC<ProjectTrustToastProps> = ({
           <p
             className={`project-trust-toast-mode-summary m-0 mb-[var(--an-spacing-lg)] text-[13px] leading-normal select-text ${
               selectedDetails.tone === 'warning'
-                ? 'text-[var(--nim-warning)]'
+                ? 'text-[var(--an-warning-color)]'
                 : 'text-[var(--an-foreground-muted)]'
             }`}
           >
@@ -444,7 +444,7 @@ export const ProjectTrustToast: React.FC<ProjectTrustToastProps> = ({
                   size={14}
                   className={`mt-0.5 shrink-0 ${
                     item.iconTone === 'warning'
-                      ? 'text-[var(--nim-warning)]'
+                      ? 'text-[var(--an-warning-color)]'
                       : 'text-[var(--an-primary-color)]'
                   }`}
                 />

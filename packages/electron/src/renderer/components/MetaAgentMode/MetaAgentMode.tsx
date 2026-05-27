@@ -48,6 +48,8 @@ interface TimelineWindow {
   durationMs: number;
 }
 
+const sharedEmptyCardClassName = 'agent-elements-tool-card border-dashed [--agent-elements-card-block-padding:var(--an-spacing-xxl)] [--agent-elements-card-inline-padding:var(--an-spacing-xxl)] text-sm leading-relaxed text-[var(--an-foreground-muted)]';
+
 function formatAbsoluteTime(timestamp: number): string {
   return new Date(timestamp).toLocaleTimeString([], {
     hour: 'numeric',
@@ -92,12 +94,12 @@ function formatTokensShort(tokens: number): string {
 function getBarTone(status: string): string {
   switch (status) {
     case 'running':
-      return 'bg-[var(--an-primary-color)] text-[var(--an-background)]';
+      return 'bg-[var(--an-primary-color)] text-[var(--an-button-primary-text)]';
     case 'waiting_for_input':
-      return 'bg-[var(--nim-warning)] text-[var(--an-background)]';
+      return 'bg-[var(--an-warning-color)] text-[var(--an-button-primary-text)]';
     case 'error':
     case 'interrupted':
-      return 'bg-[var(--nim-error)] text-[var(--an-background)]';
+      return 'bg-[var(--an-error-color)] text-[var(--an-button-primary-text)]';
     default:
       return 'bg-[var(--an-background-tertiary)] text-[var(--an-foreground-muted)]';
   }
@@ -134,7 +136,7 @@ function TimelineRowLabel({ window }: { window: TimelineWindow }) {
               {formatTokensShort(ctxTokens)}/{formatTokensShort(ctxWindow)} ctx
               <span className="inline-flex h-1.5 w-10 overflow-hidden rounded-full bg-[var(--an-background-tertiary)]">
                 <span
-                  className={`h-full rounded-full ${ctxPct > 80 ? 'bg-[var(--nim-warning)]' : 'bg-[var(--an-primary-color)]'}`}
+                  className={`h-full rounded-full ${ctxPct > 80 ? 'bg-[var(--an-warning-color)]' : 'bg-[var(--an-primary-color)]'}`}
                   style={{ width: `${Math.min(ctxPct, 100)}%` }}
                 />
               </span>
@@ -514,7 +516,7 @@ export function MetaAgentMode({
             <div className="agent-elements-meta-agent-loading px-[var(--an-spacing-sm)] py-[var(--an-spacing-xl)] text-sm text-[var(--an-foreground-muted)]">Loading child sessions...</div>
           ) : childSessions.length === 0 ? (
             <div
-              className="agent-elements-meta-agent-empty-state rounded-[var(--an-tool-border-radius)] border border-dashed border-[var(--an-border-color)] bg-[var(--an-background)] p-[var(--an-spacing-xxl)] text-sm leading-relaxed text-[var(--an-foreground-muted)]"
+              className={`agent-elements-meta-agent-empty-state ${sharedEmptyCardClassName}`}
               data-agent-elements-shell="meta-agent-empty-state"
               data-testid="meta-agent-empty-state"
             >
@@ -563,7 +565,7 @@ export function MetaAgentMode({
                   )}
                   {session.pendingPrompt && (
                     <div
-                      className="agent-elements-meta-agent-pending-prompt rounded-[var(--an-tool-border-radius)] border border-[var(--an-border-color)] bg-[var(--an-background-tertiary)] px-[var(--an-spacing-sm)] py-[var(--an-spacing-sm)] text-[var(--nim-warning)]"
+                      className="agent-elements-meta-agent-pending-prompt rounded-[var(--an-tool-border-radius)] border border-[var(--an-border-color)] bg-[var(--an-background-tertiary)] px-[var(--an-spacing-sm)] py-[var(--an-spacing-sm)] text-[var(--an-warning-color)]"
                       data-testid="agent-elements-meta-agent-pending-prompt"
                     >
                       Waiting for {session.pendingPrompt.promptType}
@@ -627,7 +629,7 @@ export function MetaAgentMode({
 
           <div className="flex-1 overflow-auto px-[var(--an-spacing-xxl)] py-[var(--an-spacing-xl)]">
             {timeline.windows.length === 0 ? (
-              <div className="rounded-[var(--an-tool-border-radius)] border border-dashed border-[var(--an-border-color)] px-[var(--an-spacing-xxl)] py-6 text-sm text-[var(--an-foreground-muted)]">
+              <div className={`agent-elements-meta-agent-timeline-empty-state ${sharedEmptyCardClassName}`}>
                 No delegated sessions yet.
               </div>
             ) : (

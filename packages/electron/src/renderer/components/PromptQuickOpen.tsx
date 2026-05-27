@@ -297,13 +297,13 @@ export const PromptQuickOpen: React.FC<PromptQuickOpenProps> = ({
   return (
     <>
       <div
-        className="prompt-quick-open-backdrop agent-elements-prompt-quick-open-backdrop fixed inset-0 z-[99998] nim-animate-fade-in bg-[color-mix(in_srgb,var(--nim-text)_36%,transparent)]"
+        className="prompt-quick-open-backdrop agent-elements-prompt-quick-open-backdrop fixed inset-0 z-[99998] nim-animate-fade-in bg-[color-mix(in_srgb,var(--an-foreground)_36%,transparent)]"
         onClick={onClose}
         data-testid="agent-elements-prompt-quick-open-backdrop"
         data-agent-elements-shell="prompt-quick-open-backdrop"
       />
       <div
-        className="prompt-quick-open-modal agent-elements-prompt-quick-open agent-elements-tool-card fixed top-[18%] left-1/2 -translate-x-1/2 w-[90vw] max-w-[700px] max-h-[62vh] !gap-0 !p-0 flex flex-col overflow-hidden rounded-[var(--an-border-radius)] z-[99999] bg-[var(--an-background)] border border-[var(--an-border-color)] shadow-[0_20px_60px_color-mix(in_srgb,var(--nim-text)_18%,transparent)]"
+        className="prompt-quick-open-modal agent-elements-prompt-quick-open agent-elements-tool-card fixed top-[18%] left-1/2 -translate-x-1/2 w-[90vw] max-w-[700px] max-h-[62vh] !gap-0 !p-0 flex flex-col overflow-hidden rounded-[var(--an-border-radius)] z-[99999] bg-[var(--an-background)] border border-[var(--an-border-color)] shadow-[0_20px_60px_color-mix(in_srgb,var(--an-foreground)_18%,transparent)]"
         data-testid="agent-elements-prompt-quick-open"
         data-component="PromptQuickOpen"
         data-agent-elements-shell="prompt-quick-open"

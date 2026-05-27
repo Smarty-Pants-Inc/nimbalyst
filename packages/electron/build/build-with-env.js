@@ -14,6 +14,7 @@ try {
   const cwd = path.join(__dirname, '..');
   for (const command of [
     'node build/normalize-extra-resources.js',
+    'node build/ensure-node-pty-spawn-helper.js',
     'node build/validate-extra-resources.js',
   ]) {
     execSync(command, {

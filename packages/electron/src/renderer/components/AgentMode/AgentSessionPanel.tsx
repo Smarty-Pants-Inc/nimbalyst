@@ -16,6 +16,13 @@ import React, { memo, useRef, useCallback, forwardRef, useImperativeHandle } fro
 import { SessionTranscript, SessionTranscriptRef } from '../UnifiedAI/SessionTranscript';
 import type { SerializableDocumentContext } from '../../hooks/useDocumentContext';
 
+const panelClass = [
+  'agent-session-panel',
+  'agent-elements-agent-session-panel',
+  'flex flex-col overflow-hidden bg-[var(--an-background)] text-[var(--an-foreground)]',
+  'transition-[background-color,color] duration-150 ease-out [container-type:inline-size]',
+].join(' ');
+
 export interface AgentSessionPanelRef {
   focusInput: () => void;
 }
@@ -65,8 +72,12 @@ const AgentSessionPanelComponent = forwardRef<AgentSessionPanelRef, AgentSession
 
   return (
     <div
-      className={`agent-session-panel flex flex-col overflow-hidden ${collapseTranscript ? '' : 'h-full min-h-0'}`}
+      className={`${panelClass} ${collapseTranscript ? '' : 'h-full min-h-0'}`}
+      data-agent-elements-shell="agent-session-panel"
+      data-collapse-transcript={String(collapseTranscript)}
+      data-component="AgentSessionPanel"
       data-session-id={sessionId}
+      data-testid="agent-elements-agent-session-panel"
     >
       <SessionTranscript
         ref={transcriptRef}

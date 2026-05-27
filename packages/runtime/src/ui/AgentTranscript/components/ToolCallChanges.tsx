@@ -1,7 +1,7 @@
 /**
  * ToolCallChanges - Shows file changes caused by a tool call.
  *
- * Renders a collapsible "File Changes" section with:
+ * Renders a collapsible file changes section with:
  * - Compact summary header showing file count and +/- stats
  * - DiffViewer for edit operations (old_string/new_string)
  * - NewFilePreview for create operations (full content)
@@ -13,6 +13,7 @@ import type { ToolCallDiffResult } from './CustomToolWidgets';
 import { DiffViewer } from './DiffViewer';
 import { NewFilePreview } from './NewFilePreview';
 import { toProjectRelative } from '../utils/pathResolver';
+import { MaterialSymbol } from '../../icons/MaterialSymbol';
 
 interface ToolCallChangesProps {
   toolCallItemId: string;
@@ -34,31 +35,43 @@ interface ToolCallChangesProps {
   canEmbedFile?: (filePath: string) => boolean;
 }
 
-function getOperationBadge(operation: string): { label: string; colorClass: string; bgClass: string } {
+function classNames(...values: Array<string | false | null | undefined>): string {
+  return values.filter(Boolean).join(' ');
+}
+
+function getOperationBadge(operation: string): { label: string; colorClass: string; bgClass: string; dotClass: string; icon: string } {
   switch (operation) {
     case 'create':
       return {
         label: 'Created',
-        colorClass: 'text-nim-success',
-        bgClass: 'bg-[color-mix(in_srgb,var(--nim-success)_15%,transparent)]',
+        colorClass: 'text-[var(--an-diff-added-text)]',
+        bgClass: 'bg-[var(--an-diff-added-bg)]',
+        dotClass: 'bg-[var(--an-diff-added-text)]',
+        icon: 'note_add',
       };
     case 'delete':
       return {
         label: 'Deleted',
-        colorClass: 'text-nim-error',
-        bgClass: 'bg-[color-mix(in_srgb,var(--nim-error)_15%,transparent)]',
+        colorClass: 'text-[var(--an-diff-removed-text)]',
+        bgClass: 'bg-[var(--an-diff-removed-bg)]',
+        dotClass: 'bg-[var(--an-diff-removed-text)]',
+        icon: 'delete',
       };
     case 'bash':
       return {
         label: 'Shell',
-        colorClass: 'text-nim-faint',
-        bgClass: 'bg-[color-mix(in_srgb,var(--nim-text-faint)_15%,transparent)]',
+        colorClass: 'text-[var(--an-foreground-muted)]',
+        bgClass: 'bg-[var(--an-background-tertiary)]',
+        dotClass: 'bg-[var(--an-foreground-muted)]',
+        icon: 'terminal',
       };
     default:
       return {
         label: 'Edited',
-        colorClass: 'text-nim-primary',
-        bgClass: 'bg-[color-mix(in_srgb,var(--nim-primary)_15%,transparent)]',
+        colorClass: 'text-[var(--an-primary-color)]',
+        bgClass: 'bg-[color-mix(in_srgb,var(--an-primary-color)_10%,var(--an-tool-background))]',
+        dotClass: 'bg-[var(--an-primary-color)]',
+        icon: 'edit',
       };
   }
 }
@@ -110,40 +123,47 @@ export const ToolCallChanges: React.FC<ToolCallChangesProps> = ({
   const summary = summaryParts.join(' ');
 
   return (
-    <div className="tool-call-changes mt-2 rounded-md border border-nim overflow-hidden bg-nim-tertiary">
+    <div
+      className="tool-call-changes agent-elements-tool-call-changes mt-2 overflow-hidden rounded-[var(--an-tool-border-radius)] border border-[var(--an-tool-border-color)] bg-[var(--an-tool-background)] text-[var(--an-tool-color)]"
+      data-agent-elements-shell="tool-call-changes"
+      data-testid="agent-elements-tool-call-changes"
+    >
       {/* Header */}
       <button
-        className="flex items-center justify-between w-full py-1.5 px-2 bg-nim-secondary border-b border-nim gap-2 cursor-pointer transition-colors duration-150 text-left hover:bg-nim-hover"
+        className="agent-elements-tool-call-changes-toggle flex w-full cursor-pointer items-center justify-between gap-[var(--an-spacing-sm)] border-0 border-b border-[var(--an-tool-border-color)] bg-[var(--an-background-tertiary)] px-[var(--an-spacing-sm)] py-[var(--an-spacing-xs)] text-left text-[var(--an-tool-color)] motion-safe:transition-colors motion-safe:duration-150 hover:bg-[var(--an-background-secondary)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-[var(--an-input-focus-outline)]"
         onClick={() => setChangesExpanded(!changesExpanded)}
         type="button"
+        aria-expanded={changesExpanded}
+        data-testid="agent-elements-tool-call-changes-toggle"
       >
-        <div className="flex items-center gap-1.5">
-          <div className="flex items-center justify-center text-nim-faint">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-              <polyline points="14 2 14 8 20 8"></polyline>
-              <line x1="12" y1="18" x2="12" y2="12"></line>
-              <line x1="9" y1="15" x2="15" y2="15"></line>
-            </svg>
-          </div>
-          <span className="text-[0.7rem] font-medium text-nim-faint uppercase tracking-wide font-sans">
-            File Changes
+        <div className="flex min-w-0 items-center gap-[var(--an-spacing-xs)]">
+          <span aria-hidden="true" className="shrink-0 text-[var(--an-foreground-muted)]">
+            <MaterialSymbol icon="description" size={15} />
           </span>
-          <span className="text-[0.65rem] text-nim-faint font-sans">
-            ({summary})
+          <span className="text-[0.75rem] font-medium leading-none text-[var(--an-tool-color)]">
+            File changes
+          </span>
+          <span
+            className="min-w-0 truncate text-[0.6875rem] leading-none text-[var(--an-foreground-muted)]"
+            data-testid="agent-elements-tool-call-changes-summary"
+          >
+            {summary}
           </span>
         </div>
-        <svg
-          className={`text-nim-faint shrink-0 transition-transform duration-150 ${changesExpanded ? 'rotate-90' : ''}`}
-          width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+        <span
+          aria-hidden="true"
+          className={classNames(
+            'shrink-0 text-[var(--an-foreground-muted)] motion-safe:transition-transform motion-safe:duration-150',
+            changesExpanded && 'rotate-90',
+          )}
         >
-          <polyline points="9 18 15 12 9 6"></polyline>
-        </svg>
+          <MaterialSymbol icon="chevron_right" size={16} />
+        </span>
       </button>
 
       {/* Expanded content */}
       {changesExpanded && (
-        <div className="flex flex-col">
+        <div className="agent-elements-tool-call-changes-list flex flex-col">
           {diffs.map((diff, idx) => {
             const relPath = toProjectRelative(diff.filePath, workspacePath);
             const badge = getOperationBadge(diff.operation);
@@ -153,16 +173,21 @@ export const ToolCallChanges: React.FC<ToolCallChangesProps> = ({
               !!renderEmbeddedFile && !!canEmbedFile?.(diff.filePath);
 
             return (
-              <div key={`${diff.filePath}-${idx}`} className="border-t border-nim first:border-t-0">
+              <div
+                key={`${diff.filePath}-${idx}`}
+                className="agent-elements-tool-call-changes-file border-t border-[var(--an-tool-border-color)] first:border-t-0"
+                data-testid="agent-elements-tool-call-changes-file-row"
+                data-operation={diff.operation}
+              >
                 {/* File header row - always shown */}
-                <div className="flex items-center gap-2 py-1.5 px-2">
+                <div className="flex items-center gap-[var(--an-spacing-xs)] px-[var(--an-spacing-sm)] py-[var(--an-spacing-xs)]">
                   <span
-                    className="w-2 h-2 rounded-full shrink-0"
-                    style={{ backgroundColor: `var(--nim-${diff.operation === 'create' ? 'success' : diff.operation === 'delete' ? 'error' : 'primary'})` }}
+                    className={classNames('h-2 w-2 shrink-0 rounded-full', badge.dotClass)}
+                    aria-hidden="true"
                   />
                   {onOpenFile ? (
                     <button
-                      className="text-[0.75rem] text-nim-muted flex-1 min-w-0 overflow-hidden text-ellipsis whitespace-nowrap hover:text-nim-primary hover:underline cursor-pointer bg-transparent border-none p-0 m-0 font-[inherit] text-left"
+                      className="min-w-0 flex-1 cursor-pointer overflow-hidden text-ellipsis whitespace-nowrap border-0 bg-transparent p-0 text-left font-mono text-[0.75rem] text-[var(--an-tool-color-muted)] hover:text-[var(--an-primary-color)] hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--an-input-focus-outline)]"
                       onClick={() => onOpenFile(diff.filePath)}
                       title={`Open ${relPath}`}
                       type="button"
@@ -170,28 +195,35 @@ export const ToolCallChanges: React.FC<ToolCallChangesProps> = ({
                       <code>{relPath}</code>
                     </button>
                   ) : (
-                    <code className="text-[0.75rem] text-nim-muted flex-1 min-w-0 overflow-hidden text-ellipsis whitespace-nowrap">
+                    <code className="min-w-0 flex-1 overflow-hidden text-ellipsis whitespace-nowrap font-mono text-[0.75rem] text-[var(--an-tool-color-muted)]">
                       {relPath}
                     </code>
                   )}
                   {/* Line count stats */}
                   {(diff.linesAdded != null || diff.linesRemoved != null) && (
-                    <span className="text-[0.65rem] text-nim-faint shrink-0 font-mono">
+                    <span className="shrink-0 font-mono text-[0.6875rem] text-[var(--an-foreground-muted)]">
                       {diff.linesAdded != null && diff.linesAdded > 0 && (
-                        <span className="text-nim-success">+{diff.linesAdded}</span>
+                        <span className="text-[var(--an-diff-added-text)]">+{diff.linesAdded}</span>
                       )}
                       {diff.linesAdded != null && diff.linesAdded > 0 && diff.linesRemoved != null && diff.linesRemoved > 0 && ' '}
                       {diff.linesRemoved != null && diff.linesRemoved > 0 && (
-                        <span className="text-nim-error">-{diff.linesRemoved}</span>
+                        <span className="text-[var(--an-diff-removed-text)]">-{diff.linesRemoved}</span>
                       )}
                     </span>
                   )}
-                  <span className={`text-[0.6rem] font-medium py-0.5 px-1.5 rounded-full ${badge.colorClass} ${badge.bgClass}`}>
+                  <span className={classNames(
+                    'inline-flex shrink-0 items-center gap-1 rounded-[var(--an-radius-sm)] px-1.5 py-0.5 text-[0.625rem] font-medium leading-none',
+                    badge.colorClass,
+                    badge.bgClass,
+                  )}>
+                    <span aria-hidden="true" className="inline-flex">
+                      <MaterialSymbol icon={badge.icon} size={12} />
+                    </span>
                     {badge.label}
                   </span>
                   {diff.debugInfo && process.env.NODE_ENV !== 'production' && (
                     <span
-                      className="text-[0.6rem] text-nim-faint shrink-0 cursor-help opacity-40 hover:opacity-100 transition-opacity"
+                      className="shrink-0 cursor-help text-[0.625rem] text-[var(--an-foreground-muted)] opacity-60 motion-safe:transition-opacity motion-safe:duration-150 hover:opacity-100"
                       title={diff.debugInfo}
                     >
                       (i)
@@ -201,13 +233,13 @@ export const ToolCallChanges: React.FC<ToolCallChangesProps> = ({
 
                 {/* Diff content */}
                 {shouldUseEmbeddedPreview && (
-                  <div className="px-2 pb-2">
+                  <div className="px-[var(--an-spacing-sm)] pb-[var(--an-spacing-sm)]">
                     {renderEmbeddedFile?.({ filePath: diff.filePath, defaultExpanded: diff.operation === 'create' })}
                   </div>
                 )}
 
                 {!shouldUseEmbeddedPreview && hasDiffContent && (
-                  <div className="px-2 pb-2">
+                  <div className="px-[var(--an-spacing-sm)] pb-[var(--an-spacing-sm)]">
                     {diff.diffs.map((d, dIdx) => (
                       <DiffViewer
                         key={`diff-${dIdx}`}
@@ -223,7 +255,7 @@ export const ToolCallChanges: React.FC<ToolCallChangesProps> = ({
 
                 {/* New file content */}
                 {!shouldUseEmbeddedPreview && hasNewContent && (
-                  <div className="px-2 pb-2">
+                  <div className="px-[var(--an-spacing-sm)] pb-[var(--an-spacing-sm)]">
                     <NewFilePreview
                       content={diff.content!}
                       filePath={relPath}

@@ -2,6 +2,8 @@ import React, { useMemo } from 'react';
 import { MaterialSymbol } from '@nimbalyst/runtime';
 import { useFloatingMenu, FloatingPortal, virtualElement } from '../hooks/useFloatingMenu';
 
+const floatingMenuCardGutters = '[--agent-elements-card-block-padding:var(--an-spacing-xs)] [--agent-elements-card-inline-padding:var(--an-spacing-xs)] px-[var(--agent-elements-card-inline-padding)] py-[var(--agent-elements-card-block-padding)]';
+
 export type FileTreeFilter = 'all' | 'markdown' | 'known' | 'git-uncommitted' | 'git-worktree' | 'ai-read' | 'ai-written';
 
 interface FileTreeFilterMenuProps {
@@ -159,12 +161,14 @@ export function FileTreeFilterMenu({
         ref={menu.refs.setFloating}
         style={menu.floatingStyles}
         {...menu.getFloatingProps()}
-        className="file-tree-filter-menu agent-elements-file-tree-filter-menu agent-elements-tool-card z-[10000] min-w-[220px] rounded-[var(--an-border-radius)] border border-[var(--an-border-color)] bg-[var(--an-background)] p-1 text-[13px] text-[var(--an-foreground)] shadow-[0_12px_32px_color-mix(in_srgb,var(--an-foreground)_10%,transparent)]"
+        className={`file-tree-filter-menu agent-elements-file-tree-filter-menu agent-elements-tool-card z-[10000] min-w-[220px] rounded-[var(--an-tool-border-radius)] border border-[var(--an-border-color)] bg-[var(--an-background)] text-[13px] text-[var(--an-foreground)] shadow-[0_12px_32px_color-mix(in_srgb,var(--an-foreground)_10%,transparent)] ${floatingMenuCardGutters}`}
         role="menu"
         aria-label="File tree filters"
         data-testid="agent-elements-file-tree-filter-menu"
         data-component="FileTreeFilterMenu"
         data-agent-elements-shell="file-tree-filter-menu"
+        data-agent-elements-card-padding="symmetric-inline"
+        data-agent-elements-card-width="floating-menu"
       >
         <FilterMenuSectionLabel>Show Files</FilterMenuSectionLabel>
 

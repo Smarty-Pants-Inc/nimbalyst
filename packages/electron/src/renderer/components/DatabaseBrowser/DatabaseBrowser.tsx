@@ -29,29 +29,29 @@ interface QueryResult {
 type ViewTab = 'data' | 'schema';
 
 const browserShellClass =
-  "database-browser agent-elements-database-browser flex h-screen w-screen overflow-hidden font-[-apple-system,BlinkMacSystemFont,'Segoe_UI',Roboto,Oxygen,Ubuntu,Cantarell,sans-serif] before:content-[''] before:fixed before:inset-x-0 before:top-0 before:h-10 before:z-[1000] before:pointer-events-none before:[-webkit-app-region:drag] bg-nim text-nim";
+  "database-browser agent-elements-database-browser flex h-screen w-screen overflow-hidden bg-[var(--an-background)] font-[-apple-system,BlinkMacSystemFont,'Segoe_UI',Roboto,Oxygen,Ubuntu,Cantarell,sans-serif] text-[var(--an-foreground)] before:content-[''] before:fixed before:inset-x-0 before:top-0 before:h-10 before:z-[1000] before:pointer-events-none before:[-webkit-app-region:drag]";
 const sidebarShellClass =
-  'database-browser-sidebar agent-elements-database-browser-sidebar flex w-[260px] flex-col border-r border-[var(--nim-border)] bg-nim-secondary';
+  'database-browser-sidebar agent-elements-database-browser-sidebar flex w-[260px] flex-col border-r border-[var(--an-border-color)] bg-[var(--an-tool-background)]';
 const sidebarHeaderClass =
-  'sidebar-header relative z-[1001] flex items-center justify-between border-b border-[var(--nim-border)] p-4';
+  'sidebar-header relative z-[1001] flex items-center justify-between border-b border-[var(--an-border-color)] p-4';
 const browserIconButtonClass =
-  'rounded-[8px] border border-transparent bg-transparent p-1 text-sm text-[var(--nim-text-muted)] transition-colors duration-150 hover:bg-[var(--nim-bg-hover)] hover:text-[var(--nim-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--nim-primary)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--nim-bg)]';
+  'rounded-[8px] border border-transparent bg-transparent p-1 text-sm text-[var(--an-foreground-muted)] transition-colors duration-150 hover:bg-[var(--an-background-tertiary)] hover:text-[var(--an-foreground)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--an-focus-ring)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--an-background)]';
 const browserPrimaryButtonClass =
-  'rounded-[8px] border border-[var(--nim-primary)] bg-[var(--nim-primary)] px-3 py-1.5 text-[13px] font-medium text-[var(--nim-bg)] transition-colors duration-150 hover:enabled:bg-[var(--nim-primary-hover)] disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--nim-primary)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--nim-bg)]';
+  'rounded-[8px] border border-[var(--an-primary-color)] bg-[var(--an-primary-color)] px-3 py-1.5 text-[13px] font-medium text-[var(--an-send-button-color)] transition-colors duration-150 hover:enabled:bg-[color-mix(in_srgb,var(--an-primary-color)_88%,var(--an-foreground))] disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--an-focus-ring)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--an-background)]';
 const browserSecondaryButtonClass =
-  'rounded-[8px] border border-[var(--nim-border)] bg-[var(--nim-bg-tertiary)] px-3 py-1.5 text-[13px] text-[var(--nim-text)] transition-colors duration-150 hover:enabled:bg-[var(--nim-bg-hover)] disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--nim-primary)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--nim-bg)]';
+  'rounded-[8px] border border-[var(--an-border-color)] bg-[var(--an-background-tertiary)] px-3 py-1.5 text-[13px] text-[var(--an-foreground)] transition-colors duration-150 hover:enabled:bg-[var(--an-background-secondary)] disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--an-focus-ring)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--an-background)]';
 const browserPanelClass =
-  'rounded-[10px] border border-[var(--nim-border)] bg-nim-secondary';
+  'rounded-[var(--an-tool-border-radius)] border border-[var(--an-border-color)] bg-[var(--an-tool-background)]';
 const browserTableShellClass =
-  'agent-elements-database-browser-virtual-table virtual-table-container flex-1 overflow-x-auto rounded-[10px] border border-[var(--nim-border)] bg-nim min-h-0';
+  'agent-elements-database-browser-virtual-table virtual-table-container flex-1 overflow-x-auto rounded-[var(--an-tool-border-radius)] border border-[var(--an-border-color)] bg-[var(--an-background)] min-h-0';
 const browserTableHeaderCellClass =
-  'border-b border-r border-[var(--nim-border)] bg-nim-tertiary px-3 py-2 text-left text-[13px] font-semibold text-nim-muted last:border-r-0';
+  'border-b border-r border-[var(--an-border-color)] bg-[var(--an-background-tertiary)] px-3 py-2 text-left text-[13px] font-semibold text-[var(--an-foreground-muted)] last:border-r-0';
 const browserTableCellClass =
-  'virtual-table-cell clickable cursor-pointer overflow-hidden text-ellipsis whitespace-nowrap border-r border-[var(--nim-border)] px-3 py-2 text-[13px] last:border-r-0 hover:bg-[var(--nim-bg-hover)]';
+  'virtual-table-cell clickable cursor-pointer overflow-hidden text-ellipsis whitespace-nowrap border-r border-[var(--an-border-color)] px-3 py-2 text-[13px] last:border-r-0 hover:bg-[var(--an-background-tertiary)]';
 const browserErrorClass =
-  'agent-elements-database-browser-error rounded-[8px] border border-[var(--nim-border)] bg-[var(--nim-bg-tertiary)] p-3 text-[13px] text-[var(--nim-error)]';
+  'agent-elements-database-browser-error rounded-[8px] border border-[var(--an-border-color)] bg-[var(--an-background-tertiary)] p-3 text-[13px] text-[var(--an-diff-removed-text)]';
 const browserModalClass =
-  'cell-modal agent-elements-database-browser-cell-modal flex max-h-[80vh] w-[90vw] max-w-[800px] flex-col overflow-hidden rounded-[10px] border border-[var(--nim-border)] bg-nim shadow-[0_8px_32px_var(--nim-border)]';
+  'cell-modal agent-elements-database-browser-cell-modal flex max-h-[80vh] w-[90vw] max-w-[800px] flex-col overflow-hidden rounded-[var(--an-tool-border-radius)] border border-[var(--an-border-color)] bg-[var(--an-background)] shadow-[0_8px_32px_color-mix(in_srgb,var(--an-foreground)_12%,transparent)]';
 
 function handleKeyboardActivation(event: React.KeyboardEvent<HTMLElement>, action: () => void): void {
   if (event.key !== 'Enter' && event.key !== ' ') return;
@@ -88,11 +88,11 @@ const injectDBJsonStyles = () => {
   const style = document.createElement('style');
   style.id = id;
   style.textContent = `
-    .db-json-key { color: var(--nim-info); font-weight: 500; }
-    .db-json-string { color: var(--nim-success); }
-    .db-json-number { color: var(--nim-warning); }
-    .db-json-bool { color: var(--nim-primary); font-weight: 600; }
-    .db-json-null { color: var(--nim-text-muted); font-weight: 600; font-style: italic; }
+    .db-json-key { color: var(--an-primary-color); font-weight: 500; }
+    .db-json-string { color: var(--an-success-color); }
+    .db-json-number { color: var(--an-warning-color); }
+    .db-json-bool { color: var(--an-primary-color); font-weight: 600; }
+    .db-json-null { color: var(--an-foreground-muted); font-weight: 600; font-style: italic; }
   `;
   document.head.appendChild(style);
 };
@@ -120,34 +120,34 @@ function SyntaxHighlightedJSON({ data }: { data: object }) {
       if (value.length === 0) {
         elements.push(<span key={getKey('a')}>[]</span>);
       } else {
-        elements.push(<span key={getKey('ao')} className="text-[var(--nim-text-muted)] font-semibold">[</span>);
+        elements.push(<span key={getKey('ao')} className="text-[var(--an-foreground-muted)] font-semibold">[</span>);
         elements.push(<br key={getKey('br')} />);
         value.forEach((item, idx) => {
           elements.push(<span key={getKey('i')}>{pad}  </span>);
           elements.push(...renderValue(item, indent + 1));
-          if (idx < value.length - 1) elements.push(<span key={getKey('c')} className="text-[var(--nim-text-faint)]">,</span>);
+          if (idx < value.length - 1) elements.push(<span key={getKey('c')} className="text-[var(--an-foreground-subtle)]">,</span>);
           elements.push(<br key={getKey('br')} />);
         });
         elements.push(<span key={getKey('i')}>{pad}</span>);
-        elements.push(<span key={getKey('ac')} className="text-[var(--nim-text-muted)] font-semibold">]</span>);
+        elements.push(<span key={getKey('ac')} className="text-[var(--an-foreground-muted)] font-semibold">]</span>);
       }
     } else if (typeof value === 'object') {
       const keys = Object.keys(value);
       if (keys.length === 0) {
         elements.push(<span key={getKey('o')}>{'{}'}</span>);
       } else {
-        elements.push(<span key={getKey('oo')} className="text-[var(--nim-text-muted)] font-semibold">{'{'}</span>);
+        elements.push(<span key={getKey('oo')} className="text-[var(--an-foreground-muted)] font-semibold">{'{'}</span>);
         elements.push(<br key={getKey('br')} />);
         keys.forEach((key, idx) => {
           elements.push(<span key={getKey('i')}>{pad}  </span>);
           elements.push(<span key={getKey('k')} className="db-json-key">"{key}"</span>);
-          elements.push(<span key={getKey('cl')} className="text-[var(--nim-text-faint)]">: </span>);
+          elements.push(<span key={getKey('cl')} className="text-[var(--an-foreground-subtle)]">: </span>);
           elements.push(...renderValue(value[key], indent + 1));
-          if (idx < keys.length - 1) elements.push(<span key={getKey('c')} className="text-[var(--nim-text-faint)]">,</span>);
+          if (idx < keys.length - 1) elements.push(<span key={getKey('c')} className="text-[var(--an-foreground-subtle)]">,</span>);
           elements.push(<br key={getKey('br')} />);
         });
         elements.push(<span key={getKey('i')}>{pad}</span>);
-        elements.push(<span key={getKey('oc')} className="text-[var(--nim-text-muted)] font-semibold">{'}'}</span>);
+        elements.push(<span key={getKey('oc')} className="text-[var(--an-foreground-muted)] font-semibold">{'}'}</span>);
       }
     }
 
@@ -155,7 +155,7 @@ function SyntaxHighlightedJSON({ data }: { data: object }) {
   };
 
   return (
-    <pre className="m-0 whitespace-pre font-mono text-[13px] leading-relaxed text-[var(--nim-text)]">
+    <pre className="m-0 whitespace-pre font-mono text-[13px] leading-relaxed text-[var(--an-foreground)]">
       {renderValue(data)}
     </pre>
   );
@@ -580,12 +580,12 @@ export function DatabaseBrowser() {
         </div>
 
         <div className="tables-list flex-1 overflow-y-auto p-2">
-          {loading && tables.length === 0 && <div className="loading py-5 text-center text-[var(--nim-text-muted)]">Loading tables...</div>}
+          {loading && tables.length === 0 && <div className="loading py-5 text-center text-[var(--an-foreground-muted)]">Loading tables...</div>}
           {error && <div className={`error mt-2 ${browserErrorClass}`}>{error}</div>}
           {tables.map(table => (
             <div
               key={table}
-              className={`table-item agent-elements-database-browser-table-item mb-1 cursor-pointer rounded-[8px] px-3 py-2 text-sm transition-colors duration-150 hover:bg-[var(--nim-bg-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--nim-primary)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--nim-bg)] ${selectedTable === table ? 'bg-[var(--nim-primary)] text-[var(--nim-bg)]' : ''}`}
+              className={`table-item agent-elements-database-browser-table-item mb-1 cursor-pointer rounded-[8px] px-3 py-2 text-sm transition-colors duration-150 hover:bg-[var(--an-background-tertiary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--an-focus-ring)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--an-background)] ${selectedTable === table ? 'bg-[var(--an-primary-color)] text-[var(--an-send-button-color)]' : ''}`}
               data-agent-elements-shell="database-browser-table-item"
               data-testid="agent-elements-database-browser-table-item"
               onClick={() => handleTableSelect(table)}
@@ -606,14 +606,14 @@ export function DatabaseBrowser() {
           data-testid="agent-elements-database-browser-query-panel"
         >
           <div
-            className={`query-header flex items-center justify-between cursor-pointer select-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--nim-primary)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--nim-bg)] ${!sqlExpanded ? 'py-3 px-4' : 'mb-3'}`}
+            className={`query-header flex items-center justify-between cursor-pointer select-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--an-focus-ring)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--an-background)] ${!sqlExpanded ? 'py-3 px-4' : 'mb-3'}`}
             onClick={() => setSqlExpanded(!sqlExpanded)}
             role="button"
             tabIndex={0}
             onKeyDown={(event) => handleKeyboardActivation(event, () => setSqlExpanded(!sqlExpanded))}
           >
             <div className="query-title flex items-center gap-2">
-              <span className="expand-icon material-symbols-outlined text-[16px] text-[var(--nim-text-muted)] transition-transform duration-200" aria-hidden="true">
+              <span className="expand-icon material-symbols-outlined text-[16px] text-[var(--an-foreground-muted)] transition-transform duration-200" aria-hidden="true">
                 {sqlExpanded ? 'expand_more' : 'chevron_right'}
               </span>
               <h3 className="text-sm font-semibold m-0">SQL Query</h3>
@@ -631,7 +631,7 @@ export function DatabaseBrowser() {
           {sqlExpanded && (
             <>
               <textarea
-                className="query-input w-full rounded-[8px] border border-[var(--nim-border)] bg-[var(--nim-bg)] p-3 font-mono text-[13px] text-[var(--nim-text)] placeholder:text-[var(--nim-text-faint)] resize-y focus:border-[var(--nim-primary)] focus:outline-none"
+                className="query-input w-full rounded-[8px] border border-[var(--an-border-color)] bg-[var(--an-background)] p-3 font-mono text-[13px] text-[var(--an-foreground)] placeholder:text-[var(--an-foreground-subtle)] resize-y focus:border-[var(--an-primary-color)] focus:outline-none"
                 value={sqlQuery}
                 onChange={(e) => setSqlQuery(e.target.value)}
                 onKeyDown={(e) => {
@@ -654,17 +654,17 @@ export function DatabaseBrowser() {
             data-agent-elements-shell="database-browser-table-view"
             data-testid="agent-elements-database-browser-table-view"
           >
-            <div className="table-header flex items-center justify-between p-4 border-b border-[var(--nim-border)]">
+            <div className="table-header flex items-center justify-between p-4 border-b border-[var(--an-border-color)]">
               <h3 className="text-base font-semibold m-0">Table: {selectedTable}</h3>
               <div className="tab-buttons flex gap-2">
                 <button
-                  className={`tab-button cursor-pointer rounded-[8px] border px-4 py-1.5 text-[13px] font-medium transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--nim-primary)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--nim-bg)] ${activeTab === 'data' ? 'border-[var(--nim-primary)] bg-[var(--nim-primary)] text-[var(--nim-bg)]' : 'border-[var(--nim-border)] bg-[var(--nim-bg-tertiary)] text-[var(--nim-text-muted)] hover:bg-[var(--nim-bg-hover)]'}`}
+                  className={`tab-button cursor-pointer rounded-[8px] border px-4 py-1.5 text-[13px] font-medium transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--an-focus-ring)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--an-background)] ${activeTab === 'data' ? 'border-[var(--an-primary-color)] bg-[var(--an-primary-color)] text-[var(--an-send-button-color)]' : 'border-[var(--an-border-color)] bg-[var(--an-background-tertiary)] text-[var(--an-foreground-muted)] hover:bg-[var(--an-background-secondary)]'}`}
                   onClick={() => setActiveTab('data')}
                 >
                   Data
                 </button>
                 <button
-                  className={`tab-button cursor-pointer rounded-[8px] border px-4 py-1.5 text-[13px] font-medium transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--nim-primary)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--nim-bg)] ${activeTab === 'schema' ? 'border-[var(--nim-primary)] bg-[var(--nim-primary)] text-[var(--nim-bg)]' : 'border-[var(--nim-border)] bg-[var(--nim-bg-tertiary)] text-[var(--nim-text-muted)] hover:bg-[var(--nim-bg-hover)]'}`}
+                  className={`tab-button cursor-pointer rounded-[8px] border px-4 py-1.5 text-[13px] font-medium transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--an-focus-ring)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--an-background)] ${activeTab === 'schema' ? 'border-[var(--an-primary-color)] bg-[var(--an-primary-color)] text-[var(--an-send-button-color)]' : 'border-[var(--an-border-color)] bg-[var(--an-background-tertiary)] text-[var(--an-foreground-muted)] hover:bg-[var(--an-background-secondary)]'}`}
                   onClick={() => setActiveTab('schema')}
                 >
                   Schema
@@ -674,7 +674,7 @@ export function DatabaseBrowser() {
 
             {activeTab === 'schema' && tableSchema.length > 0 && (
               <div className="schema-tab flex-1 overflow-auto p-4">
-                <div className="table-container flex-1 overflow-auto rounded-[10px] border border-[var(--nim-border)] bg-nim">
+                <div className="table-container flex-1 overflow-auto rounded-[var(--an-tool-border-radius)] border border-[var(--an-border-color)] bg-[var(--an-background)]">
                   <table className="schema-table w-full border-collapse text-[13px]">
                     <thead>
                       <tr>
@@ -687,10 +687,10 @@ export function DatabaseBrowser() {
                     <tbody>
                       {tableSchema.map(col => (
                         <tr key={col.column_name}>
-                          <td className="border-b border-r border-[var(--nim-border)] px-3 py-2 text-left"><code className="rounded-[6px] bg-nim-tertiary px-1.5 py-0.5 font-mono text-xs">{col.column_name}</code></td>
-                          <td className="border-b border-r border-[var(--nim-border)] px-3 py-2 text-left">{col.data_type}</td>
-                          <td className="border-b border-r border-[var(--nim-border)] px-3 py-2 text-left">{col.is_nullable}</td>
-                          <td className="border-b border-r border-[var(--nim-border)] px-3 py-2 text-left">{col.column_default || '—'}</td>
+                          <td className="border-b border-r border-[var(--an-border-color)] px-3 py-2 text-left"><code className="rounded-[6px] bg-[var(--an-background-tertiary)] px-1.5 py-0.5 font-mono text-xs">{col.column_name}</code></td>
+                          <td className="border-b border-r border-[var(--an-border-color)] px-3 py-2 text-left">{col.data_type}</td>
+                          <td className="border-b border-r border-[var(--an-border-color)] px-3 py-2 text-left">{col.is_nullable}</td>
+                          <td className="border-b border-r border-[var(--an-border-color)] px-3 py-2 text-left">{col.column_default || '—'}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -703,7 +703,7 @@ export function DatabaseBrowser() {
               <div className="data-tab flex-1 flex flex-col overflow-hidden p-4 gap-3">
                 <div className="data-header flex items-center justify-between">
                   <div className="data-header-left flex items-center gap-3">
-                    <h4 className="text-sm font-semibold m-0">{tableData.totalCount} total rows{tableLoadTimeMs !== null && <span className="query-time font-normal text-[var(--nim-text-muted)] text-[13px]"> - {tableLoadTimeMs}ms</span>}</h4>
+                    <h4 className="text-sm font-semibold m-0">{tableData.totalCount} total rows{tableLoadTimeMs !== null && <span className="query-time font-normal text-[var(--an-foreground-muted)] text-[13px]"> - {tableLoadTimeMs}ms</span>}</h4>
                     <button
                       className={`column-picker-button cursor-pointer ${browserSecondaryButtonClass}`}
                       onClick={() => setShowColumnPicker(!showColumnPicker)}
@@ -737,8 +737,8 @@ export function DatabaseBrowser() {
                 </div>
 
                 {showColumnPicker && tableData.rows.length > 0 && (
-                  <div className="column-picker mb-2 rounded-[10px] border border-[var(--nim-border)] bg-nim-secondary p-3 shadow-sm">
-                    <div className="column-picker-header flex items-center justify-between mb-3 pb-2 border-b border-[var(--nim-border)]">
+                  <div className="column-picker mb-2 rounded-[var(--an-tool-border-radius)] border border-[var(--an-border-color)] bg-[var(--an-tool-background)] p-3 shadow-sm">
+                    <div className="column-picker-header flex items-center justify-between mb-3 pb-2 border-b border-[var(--an-border-color)]">
                       <strong className="text-[13px]">Show/Hide Columns</strong>
                       <button className={`flex h-6 w-6 cursor-pointer items-center justify-center ${browserIconButtonClass}`} onClick={() => setShowColumnPicker(false)} aria-label="Close column picker">
                         <span className="material-symbols-outlined text-[16px]" aria-hidden="true">close</span>
@@ -746,7 +746,7 @@ export function DatabaseBrowser() {
                     </div>
                     <div className="column-picker-list grid grid-cols-[repeat(auto-fill,minmax(200px,1fr))] gap-2 max-h-[300px] overflow-y-auto">
                       {Object.keys(tableData.rows[0]).map(col => (
-                        <label key={col} className="column-picker-item flex cursor-pointer select-none items-center gap-2 rounded-[8px] px-2 py-1 text-[13px] hover:bg-[var(--nim-bg-hover)]">
+                        <label key={col} className="column-picker-item flex cursor-pointer select-none items-center gap-2 rounded-[8px] px-2 py-1 text-[13px] hover:bg-[var(--an-background-tertiary)]">
                           <input
                             type="checkbox"
                             className="cursor-pointer"
@@ -760,7 +760,7 @@ export function DatabaseBrowser() {
                   </div>
                 )}
 
-                {loading && <div className="loading py-5 text-center text-[var(--nim-text-muted)]">Loading...</div>}
+                {loading && <div className="loading py-5 text-center text-[var(--an-foreground-muted)]">Loading...</div>}
 
                 {!loading && tableData.rows.length > 0 && (() => {
                   const allColumns = Object.keys(tableData.rows[0]);
@@ -768,13 +768,13 @@ export function DatabaseBrowser() {
 
                   return (
                     <div className={browserTableShellClass} style={{ display: 'grid', gridTemplateRows: 'auto 1fr' }}>
-                      <div className="virtual-table-header bg-nim-tertiary" style={{ minWidth: visibleColumns.length * 180 }}>
+                      <div className="virtual-table-header bg-[var(--an-background-tertiary)]" style={{ minWidth: visibleColumns.length * 180 }}>
                         <div style={{ display: 'grid', gridTemplateColumns: `repeat(${visibleColumns.length}, 1fr)` }}>
                           {visibleColumns.map(key => (
                             <div
                               key={key}
                               onClick={() => handleSort(key)}
-                              className={`${browserTableHeaderCellClass} cursor-pointer select-none overflow-hidden text-ellipsis whitespace-nowrap hover:bg-nim-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--nim-primary)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--nim-bg)]`}
+                              className={`${browserTableHeaderCellClass} cursor-pointer select-none overflow-hidden text-ellipsis whitespace-nowrap hover:bg-[var(--an-background-secondary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--an-focus-ring)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--an-background)]`}
                               role="button"
                               tabIndex={0}
                               onKeyDown={(event) => handleKeyboardActivation(event, () => handleSort(key))}
@@ -792,7 +792,7 @@ export function DatabaseBrowser() {
                       <div className="min-h-0" style={{ minWidth: visibleColumns.length * 180 }}>
                         <VList className="virtual-table-body !h-full" style={{ overflowX: 'hidden' }}>
                           {tableData.rows.map((row, idx) => (
-                            <div key={idx} className="virtual-table-row border-b border-[var(--nim-border)] hover:bg-[var(--nim-bg-hover)]" style={{ display: 'grid', gridTemplateColumns: `repeat(${visibleColumns.length}, 1fr)` }}>
+                            <div key={idx} className="virtual-table-row border-b border-[var(--an-border-color)] hover:bg-[var(--an-background-tertiary)]" style={{ display: 'grid', gridTemplateColumns: `repeat(${visibleColumns.length}, 1fr)` }}>
                               {visibleColumns.map(col => {
                                 const value = row[col];
                                 return (
@@ -806,9 +806,9 @@ export function DatabaseBrowser() {
                                     title="Click to view/edit"
                                   >
                                     {value === null ? (
-                                      <span className="null-value text-[var(--nim-text-faint)] italic">NULL</span>
+                                      <span className="null-value text-[var(--an-foreground-subtle)] italic">NULL</span>
                                     ) : typeof value === 'object' ? (
-                                      <span className="json-preview text-[var(--nim-text-muted)] font-mono text-xs">{JSON.stringify(value)}</span>
+                                      <span className="json-preview text-[var(--an-foreground-muted)] font-mono text-xs">{JSON.stringify(value)}</span>
                                     ) : (
                                       String(value)
                                     )}
@@ -824,7 +824,7 @@ export function DatabaseBrowser() {
                 })()}
 
                 {!loading && tableData.rows.length === 0 && (
-                  <div className="no-data py-5 text-center text-[var(--nim-text-muted)]">No data</div>
+                  <div className="no-data py-5 text-center text-[var(--an-foreground-muted)]">No data</div>
                 )}
               </div>
             )}
@@ -838,10 +838,10 @@ export function DatabaseBrowser() {
             data-testid="agent-elements-database-browser-query-results"
           >
             <div className="data-header flex items-center justify-between">
-              <h4 className="text-sm font-semibold m-0">Query Results ({queryResult.rowCount} rows){queryTimeMs !== null && <span className="query-time font-normal text-[var(--nim-text-muted)] text-[13px]"> - {queryTimeMs}ms</span>}</h4>
+              <h4 className="text-sm font-semibold m-0">Query Results ({queryResult.rowCount} rows){queryTimeMs !== null && <span className="query-time font-normal text-[var(--an-foreground-muted)] text-[13px]"> - {queryTimeMs}ms</span>}</h4>
             </div>
 
-            {loading && <div className="loading py-5 text-center text-[var(--nim-text-muted)]">Loading...</div>}
+            {loading && <div className="loading py-5 text-center text-[var(--an-foreground-muted)]">Loading...</div>}
 
             {!loading && queryResult.rows.length > 0 && (() => {
               const columns = Object.keys(queryResult.rows[0]);
@@ -849,13 +849,13 @@ export function DatabaseBrowser() {
 
               return (
                 <div className={browserTableShellClass} style={{ display: 'grid', gridTemplateRows: 'auto 1fr' }}>
-                  <div className="virtual-table-header bg-nim-tertiary" style={{ minWidth: columns.length * 180 }}>
+                  <div className="virtual-table-header bg-[var(--an-background-tertiary)]" style={{ minWidth: columns.length * 180 }}>
                     <div style={{ display: 'grid', gridTemplateColumns: `repeat(${columns.length}, 1fr)` }}>
                       {columns.map(key => (
                         <div
                           key={key}
                           onClick={() => handleSort(key)}
-                          className={`${browserTableHeaderCellClass} cursor-pointer select-none overflow-hidden text-ellipsis whitespace-nowrap hover:bg-nim-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--nim-primary)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--nim-bg)]`}
+                          className={`${browserTableHeaderCellClass} cursor-pointer select-none overflow-hidden text-ellipsis whitespace-nowrap hover:bg-[var(--an-background-secondary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--an-focus-ring)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--an-background)]`}
                           role="button"
                           tabIndex={0}
                           onKeyDown={(event) => handleKeyboardActivation(event, () => handleSort(key))}
@@ -873,7 +873,7 @@ export function DatabaseBrowser() {
                   <div className="min-h-0" style={{ minWidth: columns.length * 180 }}>
                     <VList className="virtual-table-body !h-full" style={{ overflowX: 'hidden' }}>
                       {sortedRows.map((row, idx) => (
-                        <div key={idx} className="virtual-table-row border-b border-[var(--nim-border)] hover:bg-[var(--nim-bg-hover)]" style={{ display: 'grid', gridTemplateColumns: `repeat(${columns.length}, 1fr)` }}>
+                        <div key={idx} className="virtual-table-row border-b border-[var(--an-border-color)] hover:bg-[var(--an-background-tertiary)]" style={{ display: 'grid', gridTemplateColumns: `repeat(${columns.length}, 1fr)` }}>
                           {columns.map((col, colIdx) => {
                             const value = row[col];
                             return (
@@ -887,9 +887,9 @@ export function DatabaseBrowser() {
                                 title="Click to expand"
                               >
                                 {value === null ? (
-                                  <span className="null-value text-[var(--nim-text-faint)] italic">NULL</span>
+                                  <span className="null-value text-[var(--an-foreground-subtle)] italic">NULL</span>
                                 ) : typeof value === 'object' ? (
-                                  <span className="json-preview text-[var(--nim-text-muted)] font-mono text-xs">{JSON.stringify(value)}</span>
+                                  <span className="json-preview text-[var(--an-foreground-muted)] font-mono text-xs">{JSON.stringify(value)}</span>
                                 ) : (
                                   String(value)
                                 )}
@@ -905,7 +905,7 @@ export function DatabaseBrowser() {
             })()}
 
             {!loading && queryResult.rows.length === 0 && (
-              <div className="no-data py-5 text-center text-[var(--nim-text-muted)]">No results</div>
+              <div className="no-data py-5 text-center text-[var(--an-foreground-muted)]">No results</div>
             )}
           </div>
         )}
@@ -917,15 +917,15 @@ export function DatabaseBrowser() {
 
       {/* Cell Detail Modal */}
       {expandedCell && (
-        <div className="cell-modal-overlay fixed inset-0 z-[2000] flex items-center justify-center bg-[var(--nim-bg-active)]" onClick={() => { setExpandedCell(null); setModalEditing(false); }}>
+        <div className="cell-modal-overlay fixed inset-0 z-[2000] flex items-center justify-center bg-[color-mix(in_srgb,var(--an-background)_82%,var(--an-foreground))]" onClick={() => { setExpandedCell(null); setModalEditing(false); }}>
           <div
             className={browserModalClass}
             data-agent-elements-shell="database-browser-cell-modal"
             data-testid="agent-elements-database-browser-cell-modal"
             onClick={e => e.stopPropagation()}
           >
-            <div className="cell-modal-header flex items-center justify-between border-b border-[var(--nim-border)] bg-nim-secondary px-4 py-3">
-              <h3 className="m-0 text-sm font-semibold text-[var(--nim-text)]">{expandedCell.column}</h3>
+            <div className="cell-modal-header flex items-center justify-between border-b border-[var(--an-border-color)] bg-[var(--an-tool-background)] px-4 py-3">
+              <h3 className="m-0 text-sm font-semibold text-[var(--an-foreground)]">{expandedCell.column}</h3>
               <div className="cell-modal-actions flex items-center gap-2">
                 {modalEditing ? (
                   <>
@@ -977,7 +977,7 @@ export function DatabaseBrowser() {
             <div className="cell-modal-content flex-1 overflow-auto p-4 min-h-[100px]">
               {modalEditing ? (
                 <textarea
-                  className="h-full min-h-[200px] w-full resize-y rounded-[8px] border border-[var(--nim-border)] bg-[var(--nim-bg)] p-3 font-mono text-[13px] leading-relaxed text-[var(--nim-text)] outline-none focus:border-[var(--nim-primary)]"
+                  className="h-full min-h-[200px] w-full resize-y rounded-[8px] border border-[var(--an-border-color)] bg-[var(--an-background)] p-3 font-mono text-[13px] leading-relaxed text-[var(--an-foreground)] outline-none focus:border-[var(--an-primary-color)]"
                   value={modalEditValue}
                   onChange={e => setModalEditValue(e.target.value)}
                   onKeyDown={e => {
@@ -992,7 +992,7 @@ export function DatabaseBrowser() {
                   if (jsonData) {
                     return <SyntaxHighlightedJSON data={jsonData} />;
                   }
-                  return <pre className="m-0 whitespace-pre-wrap break-all font-mono text-[13px] leading-relaxed text-[var(--nim-text)]">{formatCellValue(expandedCell.value)}</pre>;
+                  return <pre className="m-0 whitespace-pre-wrap break-all font-mono text-[13px] leading-relaxed text-[var(--an-foreground)]">{formatCellValue(expandedCell.value)}</pre>;
                 })()
               )}
             </div>

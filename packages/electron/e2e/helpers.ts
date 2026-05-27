@@ -53,6 +53,22 @@ async function clearTestDatabase(preserveTestDatabase?: boolean): Promise<void> 
 }
 
 async function findDevServerUrl(): Promise<string> {
+  const explicitUrl = process.env.NIMBALYST_E2E_RENDERER_URL;
+  if (explicitUrl) {
+    try {
+      const response = await fetch(explicitUrl, { method: 'HEAD' });
+      if (response.ok) {
+        return explicitUrl;
+      }
+      throw new Error(`HTTP ${response.status}`);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      throw new Error(
+        `NIMBALYST_E2E_RENDERER_URL is set to ${explicitUrl}, but it is not reachable: ${message}`
+      );
+    }
+  }
+
   const devServerUrls = ['http://127.0.0.1:5273', 'http://[::1]:5273'];
   let lastError: Error | null = null;
 
@@ -93,6 +109,7 @@ function buildTestEnv(
   options?: {
     env?: Record<string, string>;
     permissionMode?: TestPermissionMode;
+    cdpPort?: string;
   }
 ): Record<string, string | undefined> {
   const { ELECTRON_RUN_AS_NODE, ELECTRON_NO_ATTACH_CONSOLE, NODE_PATH, ...cleanEnv } = process.env;
@@ -102,7 +119,7 @@ function buildTestEnv(
     ELECTRON_DISABLE_SECURITY_WARNINGS: '1',
     ELECTRON_RENDERER_URL: devServerUrl,
     PLAYWRIGHT: '1',
-    NIMBALYST_CDP_PORT: '9333',
+    NIMBALYST_CDP_PORT: options?.cdpPort ?? '0',
     ...options?.env,
   };
 
@@ -205,6 +222,7 @@ export async function launchElectronApp(options?: {
   const testEnv = buildTestEnv(devServerUrl, {
     env: options?.env,
     permissionMode: options?.permissionMode,
+    cdpPort: options?.env?.NIMBALYST_CDP_PORT ?? '0',
   });
 
   const app = await _electron.launch({
@@ -230,7 +248,7 @@ export async function launchElectronAppViaCdp(options?: {
 }): Promise<CdpElectronApp> {
   const electronMain = path.resolve(__dirname, '../out/main/index.js');
   const electronCwd = path.resolve(__dirname, '../../../');
-  const cdpPort = options?.env?.NIMBALYST_CDP_PORT ?? '9333';
+  const cdpPort = options?.env?.NIMBALYST_CDP_PORT ?? process.env.NIMBALYST_CDP_PORT ?? '9333';
 
   await clearTestDatabase(options?.preserveTestDatabase);
   const devServerUrl = await findDevServerUrl();
@@ -238,6 +256,7 @@ export async function launchElectronAppViaCdp(options?: {
   const testEnv = buildTestEnv(devServerUrl, {
     env: options?.env,
     permissionMode: options?.permissionMode,
+    cdpPort,
   });
 
   const electronBinary = (await import('electron')).default as unknown as string;

@@ -4,6 +4,8 @@ import '@testing-library/jest-dom/vitest';
 import React from 'react';
 import { fireEvent, render, screen, within } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import fs from 'node:fs';
+import path from 'node:path';
 import { TabBar } from '../TabManager/TabBar';
 import type { Tab } from '../TabManager/TabManager';
 
@@ -124,6 +126,10 @@ describe('TabBar Agent Elements shell', () => {
     expect(menu).toHaveClass('tab-context-menu', 'agent-elements-tab-context-menu', 'agent-elements-tool-card');
     expect(menu).toHaveAttribute('data-component', 'TabBarContextMenu');
     expect(menu).toHaveAttribute('data-agent-elements-shell', 'tab-context-menu');
+    expect(menu).toHaveAttribute('data-agent-elements-card-padding', 'symmetric-inline');
+    expect(menu).toHaveAttribute('data-agent-elements-card-width', 'floating-menu');
+    expect(menu.className).toContain('--agent-elements-card-inline-padding');
+    expect(menu.className).toContain('--agent-elements-card-block-padding');
     expect(menu.className).not.toMatch(/backdrop.*blur|text-white|bg-white|bg-black|scale-/);
 
     const pinAction = screen.getByTestId('agent-elements-tab-context-menu-pin');
@@ -151,6 +157,10 @@ describe('TabBar Agent Elements shell', () => {
     expect(menu).toHaveClass('tab-menu-dropdown', 'agent-elements-tab-menu', 'agent-elements-tool-card');
     expect(menu).toHaveAttribute('data-component', 'TabBarOverflowMenu');
     expect(menu).toHaveAttribute('data-agent-elements-shell', 'tab-menu');
+    expect(menu).toHaveAttribute('data-agent-elements-card-padding', 'symmetric-inline');
+    expect(menu).toHaveAttribute('data-agent-elements-card-width', 'floating-menu');
+    expect(menu.className).toContain('--agent-elements-card-inline-padding');
+    expect(menu.className).toContain('--agent-elements-card-block-padding');
     expect(menu.className).not.toMatch(/backdrop.*blur|text-white|bg-white|bg-black|scale-/);
 
     const closeAll = screen.getByTestId('agent-elements-tab-menu-close-all');
@@ -177,5 +187,18 @@ describe('TabBar Agent Elements shell', () => {
 
     fireEvent.click(toggle);
     expect(props.onToggleAIChat).toHaveBeenCalledTimes(1);
+  });
+
+  it('keeps tab floating menu chrome on Agent Elements aliases instead of legacy one-off gutters', () => {
+    const source = fs.readFileSync(
+      path.join(process.cwd(), 'packages/electron/src/renderer/components/TabManager/TabBar.tsx'),
+      'utf8',
+    );
+
+    expect(source).toContain('data-agent-elements-card-width="floating-menu"');
+    expect(source).toContain('--agent-elements-card-inline-padding');
+    expect(source).toContain('--agent-elements-card-block-padding');
+    expect(source).not.toMatch(/(?:tabMenuShellClasses|contextMenuShellClasses)\s*=\s*[^;]*(?:border-nim|bg-nim|text-nim|var\(--nim-|p-1|rounded-\[10px\])/s);
+    expect(source).not.toMatch(/(?:tabMenuItemClasses|contextMenuItemClasses)\s*=\s*[^;]*(?:text-nim|hover:bg-nim|var\(--nim-)/s);
   });
 });

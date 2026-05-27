@@ -1,6 +1,7 @@
 import React from 'react';
 import { ProviderConfig } from '../../Settings/SettingsView';
 import { SettingsToggle } from '../SettingsToggle';
+import { createProviderPanelChrome, getProviderTestButtonClass } from './providerPanelChrome';
 
 interface SmartyServerPanelProps {
   config: ProviderConfig;
@@ -17,6 +18,35 @@ interface SmartyServerPanelProps {
 
 const DEFAULT_BASE_URL = 'http://127.0.0.1:8788';
 const DEFAULT_ASSISTANT_ID = 'smarty_coding_agent';
+
+const chrome = createProviderPanelChrome({
+  headerClassName: 'provider-panel-header smarty-server-panel-header',
+  sectionClassName: 'provider-panel-section smarty-server-section',
+  configCardClassName: 'smarty-server-card',
+  inputClassName: 'smarty-server-input',
+  loadingClassName: 'smarty-server-loading',
+  modelRowClassName: 'smarty-server-model-row',
+  testButtonClassName: 'test-button smarty-server-test-button',
+  testErrorClassName: 'test-error smarty-server-test-error',
+  emptyClassName: 'smarty-server-empty',
+});
+
+const fieldClass =
+  'smarty-server-field mb-[var(--an-spacing-md)] flex flex-col gap-[var(--an-spacing-xs)]';
+const fieldLabelClass =
+  'text-[13px] font-medium text-[var(--an-foreground)]';
+const healthCardClass =
+  `${chrome.configCard} text-xs text-[var(--an-foreground)]`;
+const healthGridClass =
+  'smarty-server-health-grid grid grid-cols-2 gap-x-[var(--an-spacing-xxl)] gap-y-[var(--an-spacing-md)]';
+const healthLabelClass =
+  'text-[10px] uppercase tracking-normal text-[var(--an-foreground-subtle)]';
+const healthValueClass =
+  'min-w-0 overflow-hidden text-ellipsis whitespace-nowrap text-[var(--an-foreground)]';
+const mutedTextClass =
+  'text-[var(--an-foreground-muted)]';
+const degradedCardClass =
+  'smarty-server-optional-capability flex items-start justify-between gap-[var(--an-spacing-lg)] rounded-[calc(var(--an-tool-border-radius)_-_4px)] bg-[var(--an-background-tertiary)] px-[var(--an-spacing-sm)] py-[var(--an-spacing-xs)] text-[var(--an-foreground-muted)]';
 
 function assistantIdFromModel(modelId?: string): string {
   if (!modelId) return DEFAULT_ASSISTANT_ID;
@@ -75,10 +105,19 @@ export function SmartyServerPanel({
     .filter((capability) => capability.status !== 'ready');
 
   return (
-    <div className="smarty-server-panel provider-panel flex flex-col" data-component="SmartyServerPanel">
-      <div className="provider-panel-header mb-6 pb-4 border-b border-[var(--nim-border)]">
-        <h3 className="provider-panel-title text-xl font-semibold leading-tight mb-2 text-[var(--nim-text)]">Smarty Server</h3>
-        <p className="provider-panel-description text-sm leading-relaxed text-[var(--nim-text-muted)]">
+    <div
+      className="smarty-server-panel provider-panel agent-elements-settings-panel agent-elements-smarty-server-panel flex flex-col"
+      data-agent-elements-shell="smarty-server-panel"
+      data-component="SmartyServerPanel"
+      data-testid="agent-elements-smarty-server-panel"
+    >
+      <div
+        className={chrome.header}
+        data-agent-elements-shell="smarty-server-header"
+        data-testid="agent-elements-smarty-server-header"
+      >
+        <h3 className={chrome.title}>Smarty Server</h3>
+        <p className={chrome.description}>
           Local LangGraph/DeepAgents runtime for Smarty Code agent sessions.
         </p>
       </div>
@@ -88,55 +127,57 @@ export function SmartyServerPanel({
         name="Enable Smarty Server"
         checked={config.enabled || false}
         onChange={onToggle}
+        testId="agent-elements-smarty-server-enable-toggle"
       />
 
       {config.enabled && (
-        <div className="provider-panel-section py-4 mb-4 border-b border-[var(--nim-border)] last:border-b-0 last:mb-0 last:pb-0">
-          <h4 className="provider-panel-section-title text-base font-semibold mb-3 text-[var(--nim-text)]">Connection</h4>
+        <div
+          className={`${chrome.section} smarty-server-connection-section`}
+          data-agent-elements-shell="smarty-server-connection-section"
+          data-section="connection"
+          data-testid="agent-elements-smarty-server-connection-section"
+        >
+          <h4 className={chrome.sectionTitle}>Connection</h4>
 
-          <label className="smarty-server-field flex flex-col gap-1.5 mb-3">
-            <span className="text-[13px] font-medium text-[var(--nim-text)]">Server URL</span>
+          <label className={fieldClass}>
+            <span className={fieldLabelClass}>Server URL</span>
             <input
               type="url"
               value={baseUrl}
               onChange={(e) => onConfigChange({ baseUrl: e.target.value })}
-              className="smarty-server-input py-2 px-3 rounded-md bg-[var(--nim-bg-secondary)] border border-[var(--nim-border)] text-[var(--nim-text)] outline-none font-mono text-sm focus:border-[var(--nim-primary)]"
+              className={`w-full ${chrome.input}`}
               placeholder={DEFAULT_BASE_URL}
               data-testid="smarty-server-base-url"
             />
           </label>
 
-          <label className="smarty-server-field flex flex-col gap-1.5 mb-3">
-            <span className="text-[13px] font-medium text-[var(--nim-text)]">Assistant ID</span>
+          <label className={fieldClass}>
+            <span className={fieldLabelClass}>Assistant ID</span>
             <input
               type="text"
               value={assistantId}
               onChange={(e) => onConfigChange({ defaultModel: modelFromAssistantId(e.target.value) })}
-              className="smarty-server-input py-2 px-3 rounded-md bg-[var(--nim-bg-secondary)] border border-[var(--nim-border)] text-[var(--nim-text)] outline-none font-mono text-sm focus:border-[var(--nim-primary)]"
+              className={`w-full ${chrome.input}`}
               placeholder={DEFAULT_ASSISTANT_ID}
               data-testid="smarty-server-assistant-id"
             />
           </label>
 
-          <label className="smarty-server-field flex flex-col gap-1.5 mb-4">
-            <span className="text-[13px] font-medium text-[var(--nim-text)]">API Key</span>
+          <label className={fieldClass}>
+            <span className={fieldLabelClass}>API Key</span>
             <input
               type="password"
               value={apiKeys['smarty-server'] || ''}
               onChange={(e) => onApiKeyChange('smarty-server', e.target.value)}
               onFocus={(e) => e.target.select()}
-              className="smarty-server-input py-2 px-3 rounded-md bg-[var(--nim-bg-secondary)] border border-[var(--nim-border)] text-[var(--nim-text)] outline-none font-mono text-sm focus:border-[var(--nim-primary)]"
+              className={`w-full ${chrome.input}`}
               placeholder="Optional"
               data-testid="smarty-server-api-key"
             />
           </label>
 
           <button
-            className={`test-button inline-flex items-center justify-center py-2 px-4 rounded-md text-sm font-medium whitespace-nowrap cursor-pointer transition-all bg-[var(--nim-bg-tertiary)] text-[var(--nim-text)] border border-[var(--nim-border)] hover:bg-[var(--nim-bg-hover)] hover:border-[var(--nim-primary)] ${
-              config.testStatus === 'testing' ? 'opacity-60 cursor-wait' : ''
-            } ${config.testStatus === 'success' ? 'text-[var(--nim-success)] border-[var(--nim-success)]' : ''} ${
-              config.testStatus === 'error' ? 'text-[var(--nim-error)] border-[var(--nim-error)]' : ''
-            }`}
+            className={getProviderTestButtonClass(config.testStatus, chrome)}
             onClick={onTestConnection}
             disabled={config.testStatus === 'testing'}
             data-testid="smarty-server-test-connection"
@@ -147,12 +188,15 @@ export function SmartyServerPanel({
           </button>
 
           {config.testMessage && config.testStatus === 'error' && (
-            <div className="test-error text-xs mt-2 text-[var(--nim-error)]" data-testid="smarty-server-test-error">{config.testMessage}</div>
+            <div className={chrome.testError} data-testid="smarty-server-test-error">{config.testMessage}</div>
           )}
 
           {(runtimeHealth || config.runtimeHealthRecovery || config.testStatus === 'error') && (
             <div
-              className="smarty-server-runtime-health mt-4 rounded-md border border-[var(--nim-border)] bg-[var(--nim-bg-secondary)] p-3 text-xs text-[var(--nim-text)]"
+              className={healthCardClass}
+              data-agent-elements-card-padding="symmetric-inline"
+              data-agent-elements-card-width="section-row"
+              data-agent-elements-shell="smarty-server-runtime-health"
               data-testid="smarty-server-runtime-health"
               data-runtime={statusLabel(runtimeHealth?.runtime)}
               data-cli-proxy-status={runtimeHealth ? (cliProxyReachable ? 'ready' : 'unavailable') : 'unknown'}
@@ -161,55 +205,55 @@ export function SmartyServerPanel({
               data-local-only={localModeDataValue(localMode)}
               data-degraded-count={String(degradedCapabilities.length)}
             >
-              <div className="smarty-server-health-grid grid grid-cols-2 gap-x-4 gap-y-2">
+              <div className={healthGridClass}>
                 <div>
-                  <div className="text-[10px] uppercase tracking-normal text-[var(--nim-text-faint)]">Runtime</div>
-                  <div data-testid="smarty-server-health-runtime">{statusLabel(runtimeHealth?.runtime)}</div>
+                  <div className={healthLabelClass}>Runtime</div>
+                  <div className={healthValueClass} data-testid="smarty-server-health-runtime">{statusLabel(runtimeHealth?.runtime)}</div>
                 </div>
                 <div>
-                  <div className="text-[10px] uppercase tracking-normal text-[var(--nim-text-faint)]">Mode</div>
-                  <div data-testid="smarty-server-health-local-mode">{localModeLabel(localMode)}</div>
+                  <div className={healthLabelClass}>Mode</div>
+                  <div className={healthValueClass} data-testid="smarty-server-health-local-mode">{localModeLabel(localMode)}</div>
                 </div>
                 <div>
-                  <div className="text-[10px] uppercase tracking-normal text-[var(--nim-text-faint)]">Backend</div>
-                  <div data-testid="smarty-server-health-backend">{statusLabel(runtimeHealth?.modelBackend?.backend)}</div>
+                  <div className={healthLabelClass}>Backend</div>
+                  <div className={healthValueClass} data-testid="smarty-server-health-backend">{statusLabel(runtimeHealth?.modelBackend?.backend)}</div>
                 </div>
                 <div>
-                  <div className="text-[10px] uppercase tracking-normal text-[var(--nim-text-faint)]">Model</div>
-                  <div data-testid="smarty-server-health-model">{statusLabel(runtimeHealth?.modelBackend?.selectedModel)}</div>
+                  <div className={healthLabelClass}>Model</div>
+                  <div className={healthValueClass} data-testid="smarty-server-health-model">{statusLabel(runtimeHealth?.modelBackend?.selectedModel)}</div>
                 </div>
                 <div>
-                  <div className="text-[10px] uppercase tracking-normal text-[var(--nim-text-faint)]">CLIProxyAPI</div>
-                  <div data-testid="smarty-server-health-cliproxy">{runtimeHealth ? (cliProxyReachable ? 'ready' : 'unavailable') : 'unknown'}</div>
+                  <div className={healthLabelClass}>CLIProxyAPI</div>
+                  <div className={healthValueClass} data-testid="smarty-server-health-cliproxy">{runtimeHealth ? (cliProxyReachable ? 'ready' : 'unavailable') : 'unknown'}</div>
                 </div>
                 <div>
-                  <div className="text-[10px] uppercase tracking-normal text-[var(--nim-text-faint)]">Tracing</div>
-                  <div data-testid="smarty-server-health-tracing">
+                  <div className={healthLabelClass}>Tracing</div>
+                  <div className={healthValueClass} data-testid="smarty-server-health-tracing">
                     {tracing?.enabled === true ? `enabled ${tracing?.project || ''}`.trim() : 'disabled'}
                   </div>
                 </div>
               </div>
 
               {runtimeHealth?.workspace?.path && (
-                <div className="smarty-server-health-workspace mt-3 text-[var(--nim-text-muted)]" data-testid="smarty-server-health-workspace">
+                <div className={`smarty-server-health-workspace mt-[var(--an-spacing-md)] overflow-hidden text-ellipsis whitespace-nowrap ${mutedTextClass}`} data-testid="smarty-server-health-workspace">
                   {runtimeHealth.workspace.path}
                 </div>
               )}
 
               {degradedCapabilities.length > 0 && (
-                <div className="smarty-server-health-degraded mt-3" data-testid="smarty-server-degraded-capabilities">
-                  <div className="mb-1 text-[10px] uppercase tracking-normal text-[var(--nim-warning)]">Optional degraded</div>
-                  <div className="flex flex-col gap-1">
+                <div className="smarty-server-health-degraded mt-[var(--an-spacing-md)]" data-testid="smarty-server-degraded-capabilities">
+                  <div className="mb-[var(--an-spacing-xs)] text-[10px] uppercase tracking-normal text-[var(--an-warning-color)]">Optional degraded</div>
+                  <div className="flex flex-col gap-[var(--an-spacing-xs)]">
                     {degradedCapabilities.map((capability) => (
                       <div
                         key={capability.id || capability.label}
-                        className="smarty-server-optional-capability flex items-start justify-between gap-3 rounded bg-[var(--nim-bg-tertiary)] px-2 py-1 text-[var(--nim-text-muted)]"
+                        className={degradedCardClass}
                         data-testid="smarty-server-optional-capability"
                         data-capability-id={capability.id}
                         data-status={capability.status}
                       >
                         <span>{capability.label}</span>
-                        <span className="text-[var(--nim-warning)]">{capability.status}</span>
+                        <span className="text-[var(--an-warning-color)]">{capability.status}</span>
                       </div>
                     ))}
                   </div>
@@ -217,7 +261,7 @@ export function SmartyServerPanel({
               )}
 
               {(config.runtimeHealthRecovery || runtimeHealth?.recovery?.cliProxy) && (
-                <div className="smarty-server-health-recovery mt-3 text-[var(--nim-text-muted)]" data-testid="smarty-server-health-recovery">
+                <div className={`smarty-server-health-recovery mt-[var(--an-spacing-md)] ${mutedTextClass}`} data-testid="smarty-server-health-recovery">
                   {config.runtimeHealthRecovery || runtimeHealth?.recovery?.cliProxy}
                 </div>
               )}

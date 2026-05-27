@@ -35,7 +35,7 @@ export const ModelComparison: React.FC<ModelComparisonProps> = ({ workspaceId })
 
   if (loading) {
     return (
-      <div className="model-comparison-loading agent-elements-ai-usage-loading flex min-h-[400px] items-center justify-center text-base text-nim-muted">
+      <div className="model-comparison-loading agent-elements-ai-usage-loading flex min-h-[400px] items-center justify-center text-base text-[var(--an-foreground-muted)]">
         Loading...
       </div>
     );
@@ -52,28 +52,28 @@ export const ModelComparison: React.FC<ModelComparisonProps> = ({ workspaceId })
       className="model-comparison agent-elements-ai-usage-model-comparison flex flex-col gap-6"
       data-agent-elements-shell="ai-usage-model-comparison"
     >
-      <h3 className="m-0 text-base font-semibold leading-6 text-nim">Usage by Model</h3>
+      <h3 className="m-0 text-base font-semibold leading-6 text-[var(--an-foreground)]">Usage by Model</h3>
 
       {chartData.length > 0 ? (
         <ResponsiveContainer width="100%" height={400}>
           <BarChart data={chartData}>
-            <CartesianGrid strokeDasharray="3 3" stroke="var(--nim-border)" />
-            <XAxis dataKey="name" stroke="var(--nim-text-muted)" />
-            <YAxis stroke="var(--nim-text-muted)" />
+            <CartesianGrid strokeDasharray="3 3" stroke="var(--an-border-color)" />
+            <XAxis dataKey="name" stroke="var(--an-foreground-muted)" />
+            <YAxis stroke="var(--an-foreground-muted)" />
             <Tooltip
               contentStyle={{
-                background: 'var(--nim-bg-secondary)',
-                border: '1px solid var(--nim-border)',
+                background: 'var(--an-tool-background)',
+                border: '1px solid var(--an-tool-border-color)',
                 borderRadius: '8px',
-                color: 'var(--nim-text)',
+                color: 'var(--an-foreground)',
               }}
             />
             <Legend />
-            <Bar dataKey="Total Tokens" fill="var(--nim-primary)" />
+            <Bar dataKey="Total Tokens" fill="var(--an-primary-color)" />
           </BarChart>
         </ResponsiveContainer>
       ) : (
-        <div className="no-data agent-elements-ai-usage-empty flex min-h-[400px] items-center justify-center text-base text-nim-muted">
+        <div className="no-data agent-elements-ai-usage-empty flex min-h-[400px] items-center justify-center text-base text-[var(--an-foreground-muted)]">
           No model usage data available
         </div>
       )}

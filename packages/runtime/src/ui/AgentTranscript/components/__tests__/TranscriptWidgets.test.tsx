@@ -14,9 +14,13 @@
  * - InteractivePromptWidget (permission and question prompt types)
  * - UpdateSessionMetaWidget (name/phase/tags transitions, fallback states)
  * - TrackerToolWidget (structured tracker results, legacy tag normalization)
+ * - ToolWidgetErrorBoundary (custom-widget crash fallback, retry/copy/details)
  */
 
 import React from 'react';
+import { readFileSync } from 'node:fs';
+import { dirname, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 import * as rtl from '@testing-library/react';
 import { createStore, Provider as JotaiProvider } from 'jotai';
@@ -24,7 +28,52 @@ import type { TranscriptViewMessage } from '../../../../ai/server/transcript/Tra
 import type { CustomToolWidgetProps } from '../CustomToolWidgets/index';
 import type { InteractiveWidgetHost } from '../CustomToolWidgets/InteractiveWidgetHost';
 
-const { render, screen, fireEvent } = rtl;
+const { render, screen, fireEvent, waitFor } = rtl;
+const sourceDir = dirname(fileURLToPath(import.meta.url));
+const fileChangeWidgetSourcePath = resolve(
+  sourceDir,
+  '../CustomToolWidgets/FileChangeWidget.tsx'
+);
+const updateSessionMetaWidgetSourcePath = resolve(
+  sourceDir,
+  '../CustomToolWidgets/UpdateSessionMetaWidget.tsx'
+);
+const superProgressSnapshotWidgetSourcePath = resolve(
+  sourceDir,
+  '../CustomToolWidgets/SuperProgressSnapshotWidget.tsx'
+);
+const superLoopProgressWidgetSourcePath = resolve(
+  sourceDir,
+  '../CustomToolWidgets/SuperLoopProgressWidget.tsx'
+);
+const trackerToolWidgetSourcePath = resolve(
+  sourceDir,
+  '../CustomToolWidgets/TrackerToolWidget.tsx'
+);
+const toolWidgetErrorBoundarySourcePath = resolve(
+  sourceDir,
+  '../CustomToolWidgets/ToolWidgetErrorBoundary.tsx'
+);
+const editorScreenshotWidgetSourcePath = resolve(
+  sourceDir,
+  '../CustomToolWidgets/EditorScreenshotWidget.tsx'
+);
+const interactivePromptWidgetSourcePath = resolve(
+  sourceDir,
+  '../InteractivePromptWidget.tsx'
+);
+const toolPermissionWidgetSourcePath = resolve(
+  sourceDir,
+  '../CustomToolWidgets/ToolPermissionWidget.tsx'
+);
+const gitCommitConfirmationWidgetSourcePath = resolve(
+  sourceDir,
+  '../CustomToolWidgets/GitCommitConfirmationWidget.tsx'
+);
+const toolCallChangesSourcePath = resolve(
+  sourceDir,
+  '../ToolCallChanges.tsx'
+);
 
 // Mock clipboard
 vi.mock('../../../../utils/clipboard', () => ({
@@ -49,6 +98,31 @@ interface StructuredSessionMetaResult {
   summary: string;
   before: { name: string | null; tags: string[]; phase: string | null };
   after: { name: string | null; tags: string[]; phase: string | null };
+}
+
+interface SuperProgressSnapshotResult {
+  timing: 'iteration-start' | 'iteration-end';
+  iterationNumber: number;
+  superLoopId: string;
+  progress: {
+    currentIteration: number;
+    phase: string;
+    status: string;
+    completionSignal: boolean;
+    learnings: Array<{ iteration: number; summary: string; filesChanged: string[] }>;
+    blockers: string[];
+    userFeedback?: string;
+  };
+  capturedAt: number;
+}
+
+interface SuperLoopProgressUpdateArgs {
+  phase: 'planning' | 'building';
+  status: 'running' | 'completed' | 'blocked';
+  completionSignal: boolean;
+  learnings: Array<{ iteration: number; summary: string; filesChanged: string[] }>;
+  blockers: string[];
+  currentIteration: number;
 }
 
 // ============================================================================
@@ -756,6 +830,19 @@ describe('ToolPermissionWidget', () => {
     expect(screen.getByTestId('tool-permission-outside-paths')).toBeDefined();
     expect(screen.getByText('Outside active workspace/worktree')).toBeDefined();
     expect(screen.getByText(outsidePath)).toBeDefined();
+  });
+
+  it('keeps ToolPermissionWidget source on Agent Elements-compatible visual rules', () => {
+    const source = readFileSync(toolPermissionWidgetSourcePath, 'utf8');
+
+    expect(source).toContain('agent-elements-permission-tool-card');
+    expect(source).toContain('data-agent-elements-shell');
+    expect(source).toContain('RichTranscriptAgentElementsToolPermission');
+    expect(source).toContain('data-agent-elements-card-padding');
+    expect(source).toContain('data-agent-elements-card-width');
+    expect(source).not.toMatch(/\b(?:bg|text|border|hover:bg|hover:text|hover:border)-nim(?:-[\w-]+)?\b/);
+    expect(source).not.toMatch(/var\(--nim-/);
+    expect(source).not.toMatch(/text-white|rounded-md|transition-all|shadow-lg/);
   });
 });
 
@@ -1656,6 +1743,19 @@ describe('GitCommitConfirmationWidget', () => {
     GitCommitConfirmationWidget = mod.GitCommitConfirmationWidget;
   });
 
+  it('keeps the commit approval shell on Agent Elements card intent and token chrome', () => {
+    const source = readFileSync(gitCommitConfirmationWidgetSourcePath, 'utf8');
+
+    expect(source).toContain('data-agent-elements-card-padding');
+    expect(source).toContain('data-agent-elements-card-width');
+    expect(source).not.toMatch(/var\(--nim-/);
+    expect(source).not.toMatch(/\b(?:text|bg|border)-nim/);
+    expect(source).not.toContain('text-white');
+    expect(source).not.toContain('<svg');
+    expect(source).not.toContain('rounded-[3px]');
+    expect(source).not.toContain('transition-all');
+  });
+
   it('renders pending state with commit message and files', () => {
     const message = makeToolMessage('git_commit_proposal', {
       commitMessage: 'fix: resolve null check\n\nAdded guard clause',
@@ -2153,35 +2253,82 @@ describe('FileChangeWidget', () => {
         />
       </Wrapper>
     );
-    // Should show summary
-    expect(screen.getByText('Changed 2 files')).toBeDefined();
-    // Should show file names
-    expect(screen.getByText('app.ts, utils.ts')).toBeDefined();
-    // Should be a button
+    const shell = screen.getByTestId('agent-elements-file-change-card');
+    expect(shell.getAttribute('data-component')).toBe('RichTranscriptAgentElementsFileChange');
+    expect(shell.getAttribute('data-agent-elements-shell')).toBe('file-change-card');
+    expect(shell.className).toContain('agent-elements-file-change-card');
+    expect(shell.className).toContain('agent-elements-tool-card');
+    expect(shell.getAttribute('data-tool-status')).toBe('completed');
     expect(container.querySelector('button.file-change-widget')).not.toBeNull();
+    expect(screen.getByText('Changed 2 files')).toBeDefined();
+    expect(screen.getByText('app.ts, utils.ts')).toBeDefined();
   });
 
   it('renders expanded view with file list and kind badges', () => {
     const message = makeToolMessage('file_change', {
       changes: [
-        { path: '/workspace/src/new-file.ts', kind: 'create' },
+        { path: '/workspace/src/new-file.ts', kind: 'add' },
         { path: '/workspace/src/deleted.ts', kind: 'delete' },
       ],
     }, { status: 'completed' });
-    render(
+    const onToggle = vi.fn();
+    const { container } = render(
       <Wrapper>
         <FileChangeWidget
           message={message}
           isExpanded={true}
-          onToggle={() => {}}
+          onToggle={onToggle}
           sessionId="fc-expanded"
           workspacePath="/workspace"
         />
       </Wrapper>
     );
+    const shell = screen.getByTestId('agent-elements-file-change-card');
+    expect(shell.getAttribute('data-component')).toBe('RichTranscriptAgentElementsFileChange');
+    expect(shell.getAttribute('data-agent-elements-shell')).toBe('file-change-card');
+    expect(shell.className).toContain('agent-elements-file-change-card');
+    expect(shell.className).toContain('agent-elements-tool-card');
+    expect(shell.getAttribute('data-tool-status')).toBe('completed');
+    expect(screen.getByTestId('agent-elements-file-change-body').getAttribute('data-agent-elements-shell')).toBe(
+      'file-change-body'
+    );
     expect(screen.getByText('File Changes')).toBeDefined();
     expect(screen.getByText('Created')).toBeDefined();
     expect(screen.getByText('Deleted')).toBeDefined();
+    expect(container.textContent).toContain('src/new-file.ts');
+    expect(container.textContent).toContain('src/deleted.ts');
+    expect(container.querySelector('[data-file-kind="add"]')).not.toBeNull();
+
+    const header = container.querySelector('.agent-elements-tool-header');
+    expect(header).not.toBeNull();
+    fireEvent.click(header!);
+    expect(onToggle).toHaveBeenCalledTimes(1);
+  });
+
+  it('renders object-form deleted file changes as deleted, not unavailable', () => {
+    const message = makeToolMessage('file_change', {
+      changes: [
+        { path: '/workspace/src/removed.ts', kind: { type: 'delete' } },
+      ],
+    }, { status: 'completed' });
+
+    const { container } = render(
+      <Wrapper>
+        <FileChangeWidget
+          message={message}
+          isExpanded={true}
+          onToggle={() => {}}
+          sessionId="fc-object-delete"
+          workspacePath="/workspace"
+        />
+      </Wrapper>
+    );
+
+    expect(screen.getByText('Deleted')).toBeDefined();
+    fireEvent.click(screen.getByTestId('agent-elements-file-change-row-0'));
+    expect(screen.getByTestId('agent-elements-file-change-deleted').textContent).toContain('File was deleted');
+    expect(screen.queryByTestId('agent-elements-file-change-unavailable')).toBeNull();
+    expect(container.querySelector('[data-file-kind="delete"]')).not.toBeNull();
   });
 
   it('shows running indicator when no result', () => {
@@ -2198,8 +2345,96 @@ describe('FileChangeWidget', () => {
         />
       </Wrapper>
     );
-    // Should show dot pulse animation
-    expect(container.querySelector('.animate-bash-dot-pulse')).not.toBeNull();
+    const shell = screen.getByTestId('agent-elements-file-change-card');
+    expect(shell.getAttribute('data-tool-status')).toBe('running');
+    expect(container.querySelector('.agent-elements-file-change-loading-dot')).not.toBeNull();
+    expect(container.querySelector('.animate-bash-dot-pulse')).toBeNull();
+  });
+
+  it('preserves selected snapshot, truncation toggle, live fallback, and open-file behavior', async () => {
+    const { interactiveWidgetHostAtom } = await import('../../../../store/atoms/interactiveWidgetHost');
+    const sessionId = 'fc-expanded-behavior';
+    const host: InteractiveWidgetHost = {
+      sessionId,
+      workspacePath: '/workspace',
+      worktreeId: null,
+      askUserQuestionSubmit: vi.fn().mockResolvedValue(undefined),
+      askUserQuestionCancel: vi.fn().mockResolvedValue(undefined),
+      requestUserInputSubmit: vi.fn().mockResolvedValue(undefined),
+      requestUserInputCancel: vi.fn().mockResolvedValue(undefined),
+      exitPlanModeApprove: vi.fn().mockResolvedValue(undefined),
+      exitPlanModeStartNewSession: vi.fn().mockResolvedValue(undefined),
+      exitPlanModeDeny: vi.fn().mockResolvedValue(undefined),
+      exitPlanModeCancel: vi.fn().mockResolvedValue(undefined),
+      toolPermissionSubmit: vi.fn().mockResolvedValue(undefined),
+      toolPermissionCancel: vi.fn().mockResolvedValue(undefined),
+      autoCommitEnabled: false,
+      setAutoCommitEnabled: vi.fn(),
+      gitCommit: vi.fn().mockResolvedValue({ success: true }),
+      gitCommitCancel: vi.fn().mockResolvedValue(undefined),
+      superLoopBlockedFeedback: vi.fn().mockResolvedValue({ success: true }),
+      openFile: vi.fn().mockResolvedValue(undefined),
+      trackEvent: vi.fn(),
+    };
+    const longContent = Array.from({ length: 30 }, (_, index) => `line ${index + 1}`).join('\n');
+    const message = makeToolMessage('file_change', {
+      changes: [
+        { path: '/workspace/src/snapshot.ts', kind: 'update' },
+        { path: '/workspace/src/live.ts', kind: 'create' },
+      ],
+    }, {
+      status: 'completed',
+      fileSnapshots: {
+        '/workspace/src/snapshot.ts': { content: longContent },
+      },
+    });
+    const readFile = vi.fn().mockResolvedValue({ success: true, content: 'live file content' });
+    const testStore = createStore();
+    testStore.set(interactiveWidgetHostAtom(sessionId), host);
+
+    render(
+      <JotaiProvider store={testStore}>
+        <FileChangeWidget
+          message={message}
+          isExpanded={true}
+          onToggle={() => {}}
+          sessionId={sessionId}
+          workspacePath="/workspace"
+          readFile={readFile}
+        />
+      </JotaiProvider>
+    );
+
+    fireEvent.click(screen.getByTestId('agent-elements-file-change-row-0'));
+    expect(screen.getByTestId('agent-elements-file-change-content').textContent).toContain('line 25');
+    expect(screen.getByTestId('agent-elements-file-change-show-more').textContent).toContain('Show 5 more lines');
+    fireEvent.click(screen.getByTestId('agent-elements-file-change-show-more'));
+    expect(screen.getByTestId('agent-elements-file-change-content').textContent).toContain('line 30');
+
+    fireEvent.click(screen.getByTestId('agent-elements-file-change-open-0'));
+    expect(host.openFile).toHaveBeenCalledWith('/workspace/src/snapshot.ts');
+
+    fireEvent.click(screen.getByTestId('agent-elements-file-change-row-1'));
+    await waitFor(() => {
+      expect(readFile).toHaveBeenCalledWith('/workspace/src/live.ts');
+    });
+    await waitFor(() => {
+      expect(screen.getByTestId('agent-elements-file-change-content').textContent).toContain('live file content');
+    });
+    expect(screen.getByTestId('agent-elements-file-change-live-notice').textContent).toContain('Showing current file');
+  });
+
+  it('keeps FileChangeWidget source on Agent Elements-compatible visual rules', () => {
+    const source = readFileSync(fileChangeWidgetSourcePath, 'utf8');
+
+    expect(source).toContain('AgentToolCard');
+    expect(source).toContain('AgentStatusPill');
+    expect(source).toContain('agent-elements-file-change-card');
+    expect(source).toContain('data-agent-elements-shell="file-change-card"');
+    expect(source).toContain('RichTranscriptAgentElementsFileChange');
+    expect(source).not.toMatch(/#(?:[0-9a-fA-F]{3}){1,2}\b|rgba\(/);
+    expect(source).not.toMatch(/--nim-/);
+    expect(source).not.toMatch(/style=\{\{|borderRadius|letterSpacing|text-white|bg-white|bg-black|shadow-|animate-bash-dot-pulse/);
   });
 });
 
@@ -2345,6 +2580,18 @@ describe('InteractivePromptWidget', () => {
     expect(response.scope).toBe('once');
     expect(response.requestId).toBe('perm-click');
   });
+
+  it('keeps InteractivePromptWidget source on Agent Elements-compatible visual rules', () => {
+    const source = readFileSync(interactivePromptWidgetSourcePath, 'utf8');
+
+    expect(source).toContain('AgentToolCard');
+    expect(source).toContain('AgentStatusPill');
+    expect(source).toContain('data-component="InteractivePromptWidget"');
+    expect(source).toContain('data-agent-elements-shell="interactive-prompt');
+    expect(source).toContain('--an-tool-background');
+    expect(source).toContain('--an-foreground-muted');
+    expect(source).not.toMatch(/--nim-|rgba\(|style=\{\{|borderRadius|text-white|bg-white|bg-black|shadow-|rounded-lg|transition-all/);
+  });
 });
 
 // ============================================================================
@@ -2368,6 +2615,297 @@ describe('ToolCallChanges', () => {
       />
     );
     expect(container.innerHTML).toBe('');
+  });
+
+  it('renders fetched diffs with Agent Elements shell markers and token-backed chrome', async () => {
+    const getToolCallDiffs = vi.fn().mockResolvedValue([
+      {
+        filePath: '/repo/src/app.ts',
+        operation: 'edit',
+        diffs: [{ oldString: 'const value = 1;', newString: 'const value = 2;' }],
+        linesAdded: 1,
+        linesRemoved: 1,
+      },
+    ]);
+    const onOpenFile = vi.fn();
+
+    render(
+      <ToolCallChanges
+        toolCallItemId="tc-agent-elements"
+        toolCallTimestamp={Date.parse('2026-05-25T12:58:00Z')}
+        getToolCallDiffs={getToolCallDiffs}
+        isExpanded
+        workspacePath="/repo"
+        onOpenFile={onOpenFile}
+      />
+    );
+
+    await waitFor(() => {
+      expect(screen.getByTestId('agent-elements-tool-call-changes')).toBeDefined();
+    });
+
+    const shell = screen.getByTestId('agent-elements-tool-call-changes');
+    expect(shell.className).toContain('agent-elements-tool-call-changes');
+    expect(shell.getAttribute('data-agent-elements-shell')).toBe('tool-call-changes');
+    const toggle = screen.getByTestId('agent-elements-tool-call-changes-toggle');
+    expect(toggle.getAttribute('aria-expanded')).toBe('false');
+    expect(screen.getByRole('button', { name: 'File changes 1 file changed +1 -1' })).toBe(toggle);
+
+    fireEvent.click(toggle);
+    expect(toggle.getAttribute('aria-expanded')).toBe('true');
+    expect(screen.getByTestId('agent-elements-tool-call-changes-file-row').textContent).toContain('src/app.ts');
+    fireEvent.click(screen.getByTitle('Open src/app.ts'));
+    expect(onOpenFile).toHaveBeenCalledWith('/repo/src/app.ts');
+  });
+
+  it('uses Agent Elements source styling instead of legacy transcript chrome', () => {
+    const source = readFileSync(toolCallChangesSourcePath, 'utf8');
+
+    expect(source).toContain('MaterialSymbol');
+    expect(source).toContain('data-agent-elements-shell="tool-call-changes"');
+    expect(source).toContain('agent-elements-tool-call-changes');
+    expect(source).toContain('--an-tool-background');
+    expect(source).toContain('--an-foreground-muted');
+    expect(source).not.toMatch(/bg-nim|text-nim|border-nim|--nim-|<svg|tracking-wide|rounded-md|transition-all|rgba\(|#[0-9a-fA-F]{3,8}/);
+  });
+});
+
+// ============================================================================
+// SuperProgressSnapshotWidget Tests
+// ============================================================================
+
+describe('SuperProgressSnapshotWidget', () => {
+  let SuperProgressSnapshotWidget: React.FC<CustomToolWidgetProps>;
+
+  beforeEach(async () => {
+    const mod = await import('../CustomToolWidgets/SuperProgressSnapshotWidget');
+    SuperProgressSnapshotWidget = mod.SuperProgressSnapshotWidget;
+  });
+
+  it('renders progress snapshots inside the Agent Elements card shell without primary raw JSON', () => {
+    const snapshot: SuperProgressSnapshotResult = {
+      timing: 'iteration-end',
+      iterationNumber: 3,
+      superLoopId: 'super-loop-123',
+      capturedAt: Date.UTC(2026, 4, 25, 3, 40, 0),
+      progress: {
+        currentIteration: 3,
+        phase: 'building',
+        status: 'blocked',
+        completionSignal: false,
+        userFeedback: 'Focus on the renderer shell first.',
+        blockers: ['Need product approval before launching the real loop.'],
+        learnings: [
+          {
+            iteration: 2,
+            summary: 'The session meta widget can reuse Agent Elements primitives.',
+            filesChanged: ['packages/runtime/src/ui/AgentTranscript/components/CustomToolWidgets/UpdateSessionMetaWidget.tsx'],
+          },
+        ],
+      },
+    };
+    const message = makeToolMessage('SuperProgressSnapshot', snapshot as unknown as Record<string, unknown>);
+
+    render(
+      <Wrapper>
+        <SuperProgressSnapshotWidget
+          message={message}
+          isExpanded={false}
+          onToggle={() => {}}
+          sessionId="super-progress-snapshot-shell"
+        />
+      </Wrapper>
+    );
+
+    const shell = screen.getByTestId('agent-elements-super-progress-snapshot-card');
+    expect(shell.getAttribute('data-component')).toBe('RichTranscriptAgentElementsSuperProgressSnapshot');
+    expect(shell.getAttribute('data-agent-elements-shell')).toBe('super-progress-snapshot-card');
+    expect(shell.className).toContain('agent-elements-super-progress-snapshot-card');
+    expect(shell.className).toContain('agent-elements-tool-card');
+    expect(shell.getAttribute('data-tool-status')).toBe('interrupted');
+
+    expect(screen.getByTestId('agent-elements-super-progress-snapshot-body').getAttribute('data-agent-elements-shell')).toBe(
+      'super-progress-snapshot-body'
+    );
+    expect(screen.getByTestId('agent-elements-super-progress-snapshot-phase').textContent).toContain('building');
+    expect(screen.getByTestId('agent-elements-super-progress-snapshot-status').textContent).toContain('blocked');
+    expect(screen.getByTestId('agent-elements-super-progress-snapshot-feedback').textContent).toContain(
+      'Focus on the renderer shell first.'
+    );
+    expect(screen.getByTestId('agent-elements-super-progress-snapshot-blocker-0').textContent).toContain(
+      'Need product approval before launching the real loop.'
+    );
+    expect(screen.getByTestId('agent-elements-super-progress-snapshot-learning-0').textContent).toContain(
+      'The session meta widget can reuse Agent Elements primitives.'
+    );
+
+    const primary = screen.getByTestId('agent-elements-tool-primary');
+    expect(primary.textContent).not.toContain('"blockers"');
+    expect(primary.textContent).not.toContain('"filesChanged"');
+    expect(screen.getByTestId('agent-elements-debug-disclosure').getAttribute('data-debug-only')).toBe('true');
+    expect(screen.getByTestId('agent-elements-debug-payload').textContent).toContain('blockers');
+  });
+
+  it('keeps SuperProgressSnapshotWidget source on Agent Elements-compatible visual rules', () => {
+    const source = readFileSync(superProgressSnapshotWidgetSourcePath, 'utf8');
+
+    expect(source).toContain('agent-elements-super-progress-snapshot-card');
+    expect(source).toContain('data-agent-elements-shell="super-progress-snapshot-card"');
+    expect(source).toContain('RichTranscriptAgentElementsSuperProgressSnapshot');
+    expect(source).not.toMatch(/#(?:[0-9a-fA-F]{3}){1,2}\b|rgba\(/);
+    expect(source).not.toMatch(/--nim-bg-tertiary|--nim-border|--nim-text|--nim-primary/);
+    expect(source).not.toMatch(/style=\{\{|borderRadius|letterSpacing|text-white|bg-white|bg-black/);
+    expect(source).not.toMatch(/\\u25B6|\\u25A0|&#9888;/);
+  });
+});
+
+// ============================================================================
+// SuperLoopProgressWidget Tests
+// ============================================================================
+
+describe('SuperLoopProgressWidget', () => {
+  let SuperLoopProgressWidget: React.FC<CustomToolWidgetProps>;
+
+  beforeEach(async () => {
+    const mod = await import('../CustomToolWidgets/SuperLoopProgressWidget');
+    SuperLoopProgressWidget = mod.SuperLoopProgressWidget;
+  });
+
+  it('renders progress updates inside the Agent Elements card shell without primary raw JSON', () => {
+    const args: SuperLoopProgressUpdateArgs = {
+      phase: 'building',
+      status: 'completed',
+      completionSignal: true,
+      currentIteration: 4,
+      blockers: [],
+      learnings: [
+        {
+          iteration: 4,
+          summary: 'The snapshot widget now uses shared Agent Elements primitives.',
+          filesChanged: ['packages/runtime/src/ui/AgentTranscript/components/CustomToolWidgets/SuperProgressSnapshotWidget.tsx'],
+        },
+      ],
+    };
+    const message = makeToolMessage('super_loop_progress_update', args as unknown as Record<string, unknown>);
+
+    render(
+      <Wrapper>
+        <SuperLoopProgressWidget
+          message={message}
+          isExpanded={false}
+          onToggle={() => {}}
+          sessionId="super-loop-progress-shell"
+        />
+      </Wrapper>
+    );
+
+    const shell = screen.getByTestId('agent-elements-super-loop-progress-card');
+    expect(shell.getAttribute('data-component')).toBe('RichTranscriptAgentElementsSuperLoopProgress');
+    expect(shell.getAttribute('data-agent-elements-shell')).toBe('super-loop-progress-card');
+    expect(shell.className).toContain('agent-elements-super-loop-progress-card');
+    expect(shell.className).toContain('agent-elements-tool-card');
+    expect(shell.getAttribute('data-tool-status')).toBe('completed');
+
+    expect(screen.getByTestId('agent-elements-super-loop-progress-phase').textContent).toContain('building');
+    expect(screen.getByTestId('agent-elements-super-loop-progress-status').textContent).toContain('completed');
+    expect(screen.getByTestId('agent-elements-super-loop-progress-completion').textContent).toContain('complete');
+    expect(screen.getByTestId('agent-elements-super-loop-progress-learning').textContent).toContain(
+      'The snapshot widget now uses shared Agent Elements primitives.'
+    );
+
+    const primary = screen.getByTestId('agent-elements-tool-primary');
+    expect(primary.textContent).not.toContain('"learnings"');
+    expect(primary.textContent).not.toContain('"filesChanged"');
+    expect(screen.getByTestId('agent-elements-debug-disclosure').getAttribute('data-debug-only')).toBe('true');
+    expect(screen.getByTestId('agent-elements-debug-payload').textContent).toContain('filesChanged');
+  });
+
+  it('preserves blocked feedback submission inside the Agent Elements shell', async () => {
+    const { interactiveWidgetHostAtom } = await import('../../../../store/atoms/interactiveWidgetHost');
+    const sessionId = 'super-loop-blocked-shell';
+    const feedbackHost: InteractiveWidgetHost = {
+      sessionId,
+      workspacePath: '/',
+      worktreeId: null,
+      askUserQuestionSubmit: vi.fn().mockResolvedValue(undefined),
+      askUserQuestionCancel: vi.fn().mockResolvedValue(undefined),
+      requestUserInputSubmit: vi.fn().mockResolvedValue(undefined),
+      requestUserInputCancel: vi.fn().mockResolvedValue(undefined),
+      exitPlanModeApprove: vi.fn().mockResolvedValue(undefined),
+      exitPlanModeStartNewSession: vi.fn().mockResolvedValue(undefined),
+      exitPlanModeDeny: vi.fn().mockResolvedValue(undefined),
+      exitPlanModeCancel: vi.fn().mockResolvedValue(undefined),
+      toolPermissionSubmit: vi.fn().mockResolvedValue(undefined),
+      toolPermissionCancel: vi.fn().mockResolvedValue(undefined),
+      autoCommitEnabled: false,
+      setAutoCommitEnabled: vi.fn(),
+      gitCommit: vi.fn().mockResolvedValue({ success: true }),
+      gitCommitCancel: vi.fn().mockResolvedValue(undefined),
+      superLoopBlockedFeedback: vi.fn().mockResolvedValue({ success: true }),
+      openFile: vi.fn().mockResolvedValue(undefined),
+      trackEvent: vi.fn(),
+    };
+    const args: SuperLoopProgressUpdateArgs = {
+      phase: 'planning',
+      status: 'blocked',
+      completionSignal: false,
+      currentIteration: 5,
+      blockers: ['Need a product call before continuing.'],
+      learnings: [
+        {
+          iteration: 5,
+          summary: 'Blocked progress should keep the latest learning visible.',
+          filesChanged: [],
+        },
+      ],
+    };
+    const message = makeToolMessage('super_loop_progress_update', args as unknown as Record<string, unknown>);
+    const testStore = createStore();
+    testStore.set(interactiveWidgetHostAtom(sessionId), feedbackHost);
+
+    render(
+      <JotaiProvider store={testStore}>
+        <SuperLoopProgressWidget
+          message={message}
+          isExpanded={false}
+          onToggle={() => {}}
+          sessionId={sessionId}
+        />
+      </JotaiProvider>
+    );
+
+    const shell = screen.getByTestId('agent-elements-super-loop-progress-card');
+    expect(shell.getAttribute('data-tool-status')).toBe('interrupted');
+    expect(screen.getByTestId('agent-elements-super-loop-progress-blocker-0').textContent).toContain(
+      'Need a product call before continuing.'
+    );
+    expect(screen.getByTestId('agent-elements-super-loop-progress-learning').textContent).toContain(
+      'Blocked progress should keep the latest learning visible.'
+    );
+
+    const input = screen.getByTestId('agent-elements-super-loop-progress-feedback-input') as HTMLTextAreaElement;
+    fireEvent.change(input, { target: { value: '  use the existing card shell  ' } });
+    fireEvent.keyDown(input, { key: 'Enter', metaKey: true });
+
+    await waitFor(() => {
+      expect(feedbackHost.superLoopBlockedFeedback).toHaveBeenCalledWith('use the existing card shell');
+    });
+    expect(screen.getByTestId('agent-elements-super-loop-progress-submitted').textContent).toContain('Feedback sent');
+    expect(screen.getByTestId('agent-elements-super-loop-progress-submitted').textContent).toContain(
+      'use the existing card shell'
+    );
+  });
+
+  it('keeps SuperLoopProgressWidget source on Agent Elements-compatible visual rules', () => {
+    const source = readFileSync(superLoopProgressWidgetSourcePath, 'utf8');
+
+    expect(source).toContain('agent-elements-super-loop-progress-card');
+    expect(source).toContain('data-agent-elements-shell="super-loop-progress-card"');
+    expect(source).toContain('RichTranscriptAgentElementsSuperLoopProgress');
+    expect(source).not.toMatch(/#(?:[0-9a-fA-F]{3}){1,2}\b|rgba\(/);
+    expect(source).not.toMatch(/--nim-bg-tertiary|--nim-border|--nim-text|--nim-primary/);
+    expect(source).not.toMatch(/style=\{\{|borderRadius|letterSpacing|text-white|bg-white|bg-black/);
+    expect(source).not.toMatch(/color:\s*'white'|color:\s*"white"|&#9888;/);
   });
 });
 
@@ -2415,6 +2953,62 @@ describe('UpdateSessionMetaWidget', () => {
     expect(screen.getByText(/feature/)).toBeDefined();
     expect(screen.getByText(/ui/)).toBeDefined();
     // Should NOT render raw JSON
+    expect(container.textContent).not.toContain('"before"');
+    expect(container.textContent).not.toContain('"after"');
+  });
+
+  it('renders structured session metadata inside the Agent Elements card shell', () => {
+    const result: StructuredSessionMetaResult = {
+      summary: 'Set name, changed phase, updated tags',
+      before: { name: 'Planning pass', tags: ['old', 'ux'], phase: 'planning' },
+      after: { name: 'Implementation pass', tags: ['ux', 'agent-elements'], phase: 'implementing' },
+    };
+    const message = makeToolMessage(
+      'update_session_meta',
+      { name: 'Implementation pass', add: ['agent-elements'], remove: ['old'], phase: 'implementing' },
+      JSON.stringify(result)
+    );
+
+    const { container } = render(
+      <Wrapper>
+        <UpdateSessionMetaWidget
+          message={message}
+          isExpanded={false}
+          onToggle={() => {}}
+          sessionId="meta-agent-elements-shell"
+        />
+      </Wrapper>
+    );
+
+    const shell = screen.getByTestId('agent-elements-session-meta-card');
+    expect(shell.getAttribute('data-component')).toBe('RichTranscriptAgentElementsSessionMeta');
+    expect(shell.getAttribute('data-agent-elements-shell')).toBe('session-meta-card');
+    expect(shell.className).toContain('agent-elements-session-meta-card');
+    expect(shell.className).toContain('agent-elements-tool-card');
+
+    expect(screen.getByTestId('agent-elements-session-meta-body').getAttribute('data-agent-elements-shell')).toBe(
+      'session-meta-body'
+    );
+    expect(screen.getByTestId('agent-elements-session-meta-name').getAttribute('data-agent-elements-shell')).toBe(
+      'session-meta-row'
+    );
+    expect(screen.getByTestId('agent-elements-session-meta-phase').getAttribute('data-agent-elements-shell')).toBe(
+      'session-meta-row'
+    );
+    expect(screen.getByTestId('agent-elements-session-meta-tags').getAttribute('data-agent-elements-shell')).toBe(
+      'session-meta-row'
+    );
+
+    const addedTag = screen.getByTestId('agent-elements-session-meta-tag-added-agent-elements');
+    expect(addedTag.getAttribute('data-session-meta-tag-state')).toBe('added');
+    expect(addedTag.getAttribute('data-tone')).toBe('success');
+    const removedTag = screen.getByTestId('agent-elements-session-meta-tag-removed-old');
+    expect(removedTag.getAttribute('data-session-meta-tag-state')).toBe('removed');
+    expect(removedTag.getAttribute('data-tone')).toBe('error');
+
+    expect(container.textContent).toContain('Planning pass');
+    expect(container.textContent).toContain('Implementation pass');
+    expect(container.textContent).toContain('\u2192');
     expect(container.textContent).not.toContain('"before"');
     expect(container.textContent).not.toContain('"after"');
   });
@@ -2610,6 +3204,17 @@ describe('UpdateSessionMetaWidget', () => {
     // Should show the "set" badge since name changed from null
     expect(container.textContent).toContain('set');
   });
+
+  it('keeps UpdateSessionMetaWidget source on Agent Elements-compatible visual rules', () => {
+    const source = readFileSync(updateSessionMetaWidgetSourcePath, 'utf8');
+
+    expect(source).toContain('agent-elements-session-meta-card');
+    expect(source).toContain('data-agent-elements-shell="session-meta-card"');
+    expect(source).toContain('RichTranscriptAgentElementsSessionMeta');
+    expect(source).not.toMatch(/#(?:[0-9a-fA-F]{3}){1,2}\b|rgba\(/);
+    expect(source).not.toMatch(/--nim-bg-tertiary|--nim-border|--nim-text|--nim-primary/);
+    expect(source).not.toMatch(/style=\{\{|borderRadius|letterSpacing|text-white|bg-white|bg-black/);
+  });
 });
 
 describe('TrackerToolWidget', () => {
@@ -2618,6 +3223,54 @@ describe('TrackerToolWidget', () => {
   beforeEach(async () => {
     const mod = await import('../CustomToolWidgets/TrackerToolWidget');
     TrackerToolWidget = mod.TrackerToolWidget;
+  });
+
+  it('renders created tracker results inside the Agent Elements card shell without primary raw JSON', () => {
+    const result = {
+      structured: {
+        action: 'created',
+        item: {
+          id: 'task_123',
+          type: 'task',
+          typeTags: ['task', 'daily-driver'],
+          title: 'Replace tracker transcript chrome',
+          status: 'active',
+          priority: 'high',
+          tags: ['agent-elements', 'transcript'],
+        },
+      },
+      summary: 'Created tracker item',
+    };
+
+    render(
+      <Wrapper>
+        <TrackerToolWidget
+          message={makeToolMessage('tracker_create', { type: 'task' }, JSON.stringify(result))}
+          isExpanded={false}
+          onToggle={() => {}}
+          sessionId="tracker-create-shell"
+        />
+      </Wrapper>
+    );
+
+    const shell = screen.getByTestId('agent-elements-tracker-tool-card');
+    expect(shell.getAttribute('data-component')).toBe('RichTranscriptAgentElementsTrackerTool');
+    expect(shell.getAttribute('data-agent-elements-shell')).toBe('tracker-tool-card');
+    expect(shell.className).toContain('agent-elements-tracker-tool-card');
+    expect(shell.className).toContain('agent-elements-tool-card');
+    expect(shell.getAttribute('data-tool-status')).toBe('completed');
+
+    expect(screen.getByTestId('agent-elements-tracker-tool-type').textContent).toContain('task');
+    expect(screen.getByTestId('agent-elements-tracker-tool-title').textContent).toContain('Replace tracker transcript chrome');
+    expect(screen.getByTestId('agent-elements-tracker-tool-status').textContent).toContain('active');
+    expect(screen.getByTestId('agent-elements-tracker-tool-priority').textContent).toContain('high');
+    expect(screen.getByTestId('agent-elements-tracker-tool-tag-0').textContent).toContain('agent-elements');
+
+    const primary = screen.getByTestId('agent-elements-tool-primary');
+    expect(primary.textContent).not.toContain('"structured"');
+    expect(primary.textContent).not.toContain('"tags"');
+    expect(screen.getByTestId('agent-elements-debug-disclosure').getAttribute('data-debug-only')).toBe('true');
+    expect(screen.getByTestId('agent-elements-debug-payload').textContent).toContain('tracker_create');
   });
 
   it('normalizes legacy string tag values before rendering tracker_update diffs', () => {
@@ -2649,10 +3302,121 @@ describe('TrackerToolWidget', () => {
       </Wrapper>
     );
 
+    const shell = screen.getByTestId('agent-elements-tracker-tool-card');
+    expect(shell.getAttribute('data-component')).toBe('RichTranscriptAgentElementsTrackerTool');
+    expect(shell.getAttribute('data-agent-elements-shell')).toBe('tracker-tool-card');
     expect(screen.getByText('Tracker Updated')).toBeDefined();
     expect(screen.getByText('#alpha')).toBeDefined();
     expect(screen.getByText('#beta')).toBeDefined();
     expect(screen.getByText('#gamma')).toBeDefined();
+  });
+
+  it('keeps TrackerToolWidget source on Agent Elements-compatible visual rules', () => {
+    const source = readFileSync(trackerToolWidgetSourcePath, 'utf8');
+
+    expect(source).toContain('agent-elements-tracker-tool-card');
+    expect(source).toContain('data-agent-elements-shell="tracker-tool-card"');
+    expect(source).toContain('RichTranscriptAgentElementsTrackerTool');
+    expect(source).not.toMatch(/#(?:[0-9a-fA-F]{3}){1,2}\b|rgba\(/);
+    expect(source).not.toMatch(/--nim-bg-tertiary|--nim-border|--nim-text|--nim-primary/);
+    expect(source).not.toMatch(/style=\{\{|borderRadius|letterSpacing|text-white|bg-white|bg-black/);
+  });
+});
+
+describe('ToolWidgetErrorBoundary', () => {
+  let ToolWidgetErrorBoundary: typeof import('../CustomToolWidgets/ToolWidgetErrorBoundary').ToolWidgetErrorBoundary;
+
+  beforeEach(async () => {
+    const mod = await import('../CustomToolWidgets/ToolWidgetErrorBoundary');
+    ToolWidgetErrorBoundary = mod.ToolWidgetErrorBoundary;
+  });
+
+  it('renders custom-widget crashes inside the Agent Elements error card shell', () => {
+    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const BrokenWidget = () => {
+      throw new Error('Renderer exploded');
+    };
+
+    try {
+      render(
+        <ToolWidgetErrorBoundary toolName="tracker_create">
+          <BrokenWidget />
+        </ToolWidgetErrorBoundary>
+      );
+
+      const shell = screen.getByTestId('agent-elements-tool-widget-error-card');
+      expect(shell.getAttribute('data-component')).toBe('RichTranscriptAgentElementsToolWidgetErrorBoundary');
+      expect(shell.getAttribute('data-agent-elements-shell')).toBe('tool-widget-error-card');
+      expect(shell.className).toContain('agent-elements-tool-widget-error-card');
+      expect(shell.className).toContain('agent-elements-tool-card');
+      expect(shell.getAttribute('data-tool-status')).toBe('error');
+      expect(screen.getByText('Widget failed to render')).toBeDefined();
+      expect(screen.getByText('tracker_create')).toBeDefined();
+      expect(screen.getByText('Renderer exploded')).toBeDefined();
+      expect(screen.getByTestId('agent-elements-tool-widget-error-message').textContent).toContain('Renderer exploded');
+    } finally {
+      consoleError.mockRestore();
+    }
+  });
+
+  it('preserves details, copy, and retry actions from the crash fallback', async () => {
+    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    const previousClipboardDescriptor = Object.getOwnPropertyDescriptor(navigator, 'clipboard');
+    Object.defineProperty(navigator, 'clipboard', {
+      configurable: true,
+      value: { writeText },
+    });
+
+    let shouldThrow = true;
+    const MaybeBrokenWidget = () => {
+      if (shouldThrow) throw new Error('Retryable crash');
+      return <div data-testid="tool-widget-recovered">Recovered widget</div>;
+    };
+
+    try {
+      render(
+        <ToolWidgetErrorBoundary toolName="Bash">
+          <MaybeBrokenWidget />
+        </ToolWidgetErrorBoundary>
+      );
+
+      expect(screen.queryByTestId('agent-elements-tool-widget-error-details')).toBeNull();
+      fireEvent.click(screen.getByRole('button', { name: 'Show details' }));
+      expect(screen.getByTestId('agent-elements-tool-widget-error-details').textContent).toContain('Retryable crash');
+
+      fireEvent.click(screen.getByRole('button', { name: 'Copy' }));
+      await waitFor(() => {
+        expect(writeText).toHaveBeenCalledWith(expect.stringContaining('Tool widget: Bash'));
+      });
+
+      shouldThrow = false;
+      fireEvent.click(screen.getByRole('button', { name: 'Retry' }));
+      await waitFor(() => {
+        expect(screen.getByTestId('tool-widget-recovered')).toBeDefined();
+      });
+      expect(screen.queryByTestId('agent-elements-tool-widget-error-card')).toBeNull();
+    } finally {
+      consoleError.mockRestore();
+      if (previousClipboardDescriptor) {
+        Object.defineProperty(navigator, 'clipboard', previousClipboardDescriptor);
+      } else {
+        Reflect.deleteProperty(navigator, 'clipboard');
+      }
+    }
+  });
+
+  it('keeps ToolWidgetErrorBoundary source on Agent Elements-compatible visual rules', () => {
+    const source = readFileSync(toolWidgetErrorBoundarySourcePath, 'utf8');
+
+    expect(source).toContain('AgentToolCard');
+    expect(source).toContain('AgentStatusPill');
+    expect(source).toContain('agent-elements-tool-widget-error-card');
+    expect(source).toContain('data-agent-elements-shell="tool-widget-error-card"');
+    expect(source).toContain('RichTranscriptAgentElementsToolWidgetErrorBoundary');
+    expect(source).not.toMatch(/#(?:[0-9a-fA-F]{3}){1,2}\b|rgba\(/);
+    expect(source).not.toMatch(/--nim-/);
+    expect(source).not.toMatch(/style=\{\{|borderRadius|letterSpacing|text-white|bg-white|bg-black|shadow-/);
   });
 });
 
@@ -2696,5 +3460,110 @@ describe('EditorScreenshotWidget', () => {
     const img = container.querySelector('img');
     expect(img).not.toBeNull();
     expect(img?.getAttribute('src')).toContain('data:image/png;base64,');
+  });
+
+  it('renders screenshots inside the Agent Elements card shell with stable markers', () => {
+    const mcpContent = [
+      {
+        type: 'image',
+        source: {
+          type: 'base64',
+          data: 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=',
+          media_type: 'image/png',
+        },
+      },
+    ];
+    const message = makeToolMessage(
+      'mcp__nimbalyst-mcp__capture_editor_screenshot',
+      { file_path: '/tmp/feedback-intake-dialog.mockup.html' },
+      mcpContent,
+    );
+    const { container } = render(
+      <Wrapper>
+        <EditorScreenshotWidget
+          message={message}
+          isExpanded={false}
+          onToggle={() => {}}
+          sessionId="screenshot-shell"
+        />
+      </Wrapper>
+    );
+
+    const card = screen.getByTestId('agent-elements-editor-screenshot-card');
+    expect(card.getAttribute('data-component')).toBe('RichTranscriptAgentElementsEditorScreenshot');
+    expect(card.getAttribute('data-agent-elements-shell')).toBe('editor-screenshot-card');
+    expect(card.classList.contains('agent-elements-tool-card')).toBe(true);
+    expect(card.classList.contains('agent-elements-editor-screenshot-card')).toBe(true);
+    expect(screen.getByTestId('agent-elements-editor-screenshot-preview')).toBeDefined();
+    expect(screen.getByTestId('agent-elements-editor-screenshot-status').textContent).toContain('Captured');
+    expect(container.querySelector('.editor-screenshot-widget')).not.toBeNull();
+  });
+
+  it('opens and closes the Agent Elements screenshot lightbox without raw svg chrome', () => {
+    const mcpContent = [
+      {
+        type: 'image',
+        source: {
+          type: 'base64',
+          data: 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=',
+          media_type: 'image/png',
+        },
+      },
+    ];
+    const message = makeToolMessage(
+      'capture_editor_screenshot',
+      { file_path: '/tmp/diagram.excalidraw' },
+      mcpContent,
+    );
+    render(
+      <Wrapper>
+        <EditorScreenshotWidget
+          message={message}
+          isExpanded={false}
+          onToggle={() => {}}
+          sessionId="screenshot-lightbox"
+        />
+      </Wrapper>
+    );
+
+    fireEvent.click(screen.getByTestId('agent-elements-editor-screenshot-preview'));
+    const dialog = screen.getByRole('dialog', { name: 'Editor screenshot preview' });
+    expect(dialog.getAttribute('data-agent-elements-shell')).toBe('editor-screenshot-lightbox');
+    expect(screen.getByTestId('agent-elements-editor-screenshot-lightbox-close')).toBeDefined();
+
+    fireEvent.click(screen.getByTestId('agent-elements-editor-screenshot-lightbox-close'));
+    expect(screen.queryByRole('dialog', { name: 'Editor screenshot preview' })).toBeNull();
+  });
+
+  it('renders screenshot errors in the Agent Elements error state', () => {
+    const message = makeToolMessage(
+      'capture_editor_screenshot',
+      { file_path: '/tmp/missing.mockup.html' },
+      { isError: true, content: [{ type: 'text', text: 'Unable to capture editor screenshot' }] },
+    );
+    render(
+      <Wrapper>
+        <EditorScreenshotWidget
+          message={message}
+          isExpanded={false}
+          onToggle={() => {}}
+          sessionId="screenshot-error"
+        />
+      </Wrapper>
+    );
+
+    const card = screen.getByTestId('agent-elements-editor-screenshot-card');
+    expect(card.getAttribute('data-tool-status')).toBe('error');
+    expect(screen.getByTestId('agent-elements-editor-screenshot-status').textContent).toContain('Failed');
+    expect(screen.getByTestId('agent-elements-editor-screenshot-error').textContent).toContain('Unable to capture editor screenshot');
+  });
+
+  it('keeps EditorScreenshotWidget source on Agent Elements-compatible visual rules', () => {
+    const source = readFileSync(editorScreenshotWidgetSourcePath, 'utf8');
+    expect(source).toContain('AgentToolCard');
+    expect(source).toContain('AgentStatusPill');
+    expect(source).toContain('data-agent-elements-shell="editor-screenshot-card"');
+    expect(source).not.toMatch(/--nim-/);
+    expect(source).not.toMatch(/style=\{\{|borderRadius|letterSpacing|text-white|bg-white|bg-black|shadow-|backdrop-blur|<svg/);
   });
 });

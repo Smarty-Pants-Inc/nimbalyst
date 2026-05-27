@@ -497,13 +497,13 @@ export function FlatFileTree({
     dragImage.style.top = '-1000px';
     dragImage.style.left = '-1000px';
     dragImage.style.padding = '4px 8px';
-    dragImage.style.backgroundColor = '#ffffff';
-    dragImage.style.border = '1px solid #e5e7eb';
-    dragImage.style.borderRadius = '4px';
+    dragImage.style.backgroundColor = 'var(--an-background)';
+    dragImage.style.border = '1px solid var(--an-border-color)';
+    dragImage.style.borderRadius = 'var(--an-message-radius-inner)';
     dragImage.style.fontSize = '13px';
     dragImage.style.fontFamily = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif';
-    dragImage.style.color = '#1f2937';
-    dragImage.style.boxShadow = '0 2px 4px rgba(0,0,0,0.1)';
+    dragImage.style.color = 'var(--an-foreground)';
+    dragImage.style.boxShadow = '0 2px 4px color-mix(in srgb, var(--an-foreground) 10%, transparent)';
     dragImage.style.zIndex = '10000';
     dragImage.style.pointerEvents = 'none';
     document.body.appendChild(dragImage);

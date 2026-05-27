@@ -51,13 +51,17 @@ export function DownloadProgressToast({
   const percent = progress ? Math.round(progress.percent) : 0;
   const secondaryButton =
     'update-toast-btn update-toast-btn-secondary inline-flex items-center justify-center gap-2 rounded-[var(--an-input-border-radius)] border border-[var(--an-border-color)] bg-[var(--an-background)] px-3 py-2 text-sm font-medium text-[var(--an-foreground-muted)] transition-[background-color,border-color,color] duration-150 ease-out hover:bg-[var(--an-background-tertiary)] hover:text-[var(--an-foreground)] focus:outline-none focus:ring-2 focus:ring-[var(--an-input-focus-outline)]';
+  const toastCardClass =
+    'update-toast update-toast-download agent-elements-update-toast agent-elements-tool-card relative w-[360px] max-w-[calc(100vw-32px)] overflow-hidden rounded-[var(--an-tool-border-radius)] border border-[var(--an-border-color)] bg-[var(--an-background)] [--agent-elements-card-block-padding:var(--an-spacing-xl)] [--agent-elements-card-inline-padding:var(--an-spacing-xl)] px-[var(--agent-elements-card-inline-padding)] py-[var(--agent-elements-card-block-padding)] text-[var(--an-foreground)] shadow-[0_14px_42px_color-mix(in_srgb,var(--an-foreground)_16%,transparent)]';
 
   return (
     <div
-      className="update-toast update-toast-download agent-elements-update-toast agent-elements-tool-card relative w-[360px] max-w-[calc(100vw-32px)] overflow-hidden rounded-[var(--an-tool-border-radius)] border border-[var(--an-border-color)] bg-[var(--an-background)] p-[var(--an-spacing-xl)] text-[var(--an-foreground)] shadow-[0_14px_42px_color-mix(in_srgb,var(--nim-text)_16%,transparent)]"
+      className={toastCardClass}
       data-testid="download-progress-toast"
       data-component="DownloadProgressToast"
       data-agent-elements-shell="download-progress-toast"
+      data-agent-elements-card-padding="symmetric-inline"
+      data-agent-elements-card-width="floating-toast"
     >
       <div
         className="update-toast-header agent-elements-update-toast-header mb-[var(--an-spacing-xl)] flex items-start gap-3"

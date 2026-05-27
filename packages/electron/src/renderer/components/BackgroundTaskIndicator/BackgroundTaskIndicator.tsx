@@ -18,6 +18,9 @@ interface BackgroundTaskIndicatorProps {
   onOpenSession?: (sessionId: string) => void;
 }
 
+const sectionedPopoverCardGutters =
+  '[--agent-elements-card-block-padding:var(--an-spacing-lg)] [--agent-elements-card-inline-padding:var(--an-spacing-xxl)] !gap-0 !p-0';
+
 function formatDuration(startedAt?: number, now: number = Date.now()): string {
   if (!startedAt) {
     return '';
@@ -89,11 +92,11 @@ function getTaskStatusLabel(task: BackgroundTask): string {
 function getTaskStatusClasses(task: BackgroundTask): string {
   switch (task.status) {
     case 'running':
-      return 'border-[color-mix(in_srgb,var(--nim-info)_26%,var(--an-border-color))] bg-[color-mix(in_srgb,var(--nim-info)_10%,var(--an-background))] text-[var(--nim-info)]';
+      return 'border-[color-mix(in_srgb,var(--an-info-color)_26%,var(--an-border-color))] bg-[color-mix(in_srgb,var(--an-info-color)_10%,var(--an-background))] text-[var(--an-info-color)]';
     case 'connected':
-      return 'border-[color-mix(in_srgb,var(--nim-success)_26%,var(--an-border-color))] bg-[color-mix(in_srgb,var(--nim-success)_10%,var(--an-background))] text-[var(--nim-success)]';
+      return 'border-[color-mix(in_srgb,var(--an-success-color)_26%,var(--an-border-color))] bg-[color-mix(in_srgb,var(--an-success-color)_10%,var(--an-background))] text-[var(--an-success-color)]';
     case 'error':
-      return 'border-[color-mix(in_srgb,var(--nim-error)_26%,var(--an-border-color))] bg-[color-mix(in_srgb,var(--nim-error)_10%,var(--an-background))] text-[var(--nim-error)]';
+      return 'border-[color-mix(in_srgb,var(--an-error-color)_26%,var(--an-border-color))] bg-[color-mix(in_srgb,var(--an-error-color)_10%,var(--an-background))] text-[var(--an-error-color)]';
     default:
       return 'border-[var(--an-border-color)] bg-[var(--an-background-secondary)] text-[var(--an-foreground-muted)]';
   }
@@ -102,11 +105,11 @@ function getTaskStatusClasses(task: BackgroundTask): string {
 function getTaskIconClasses(task: BackgroundTask): string {
   switch (task.status) {
     case 'running':
-      return 'border-[color-mix(in_srgb,var(--nim-info)_22%,var(--an-border-color))] bg-[color-mix(in_srgb,var(--nim-info)_8%,var(--an-background))] text-[var(--nim-info)]';
+      return 'border-[color-mix(in_srgb,var(--an-info-color)_22%,var(--an-border-color))] bg-[color-mix(in_srgb,var(--an-info-color)_8%,var(--an-background))] text-[var(--an-info-color)]';
     case 'connected':
-      return 'border-[color-mix(in_srgb,var(--nim-success)_22%,var(--an-border-color))] bg-[color-mix(in_srgb,var(--nim-success)_8%,var(--an-background))] text-[var(--nim-success)]';
+      return 'border-[color-mix(in_srgb,var(--an-success-color)_22%,var(--an-border-color))] bg-[color-mix(in_srgb,var(--an-success-color)_8%,var(--an-background))] text-[var(--an-success-color)]';
     case 'error':
-      return 'border-[color-mix(in_srgb,var(--nim-error)_22%,var(--an-border-color))] bg-[color-mix(in_srgb,var(--nim-error)_8%,var(--an-background))] text-[var(--nim-error)]';
+      return 'border-[color-mix(in_srgb,var(--an-error-color)_22%,var(--an-border-color))] bg-[color-mix(in_srgb,var(--an-error-color)_8%,var(--an-background))] text-[var(--an-error-color)]';
     default:
       return 'border-[var(--an-border-color)] bg-[var(--an-background-secondary)] text-[var(--an-foreground-muted)]';
   }
@@ -160,7 +163,7 @@ const TaskRow: React.FC<{
           {canOpenSession && task.sessionId ? (
             <button
               type="button"
-              className="agent-elements-background-task-action rounded-[var(--an-tool-border-radius)] border border-transparent px-2 py-0.5 text-[11px] font-medium text-[var(--an-primary-color)] transition-[background-color,border-color,color] duration-150 ease-out hover:border-[var(--an-border-color)] hover:bg-[var(--an-background-tertiary)] hover:text-[var(--nim-primary-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--an-input-focus-outline)]"
+              className="agent-elements-background-task-action rounded-[var(--an-tool-border-radius)] border border-transparent px-2 py-0.5 text-[11px] font-medium text-[var(--an-primary-color)] transition-[background-color,border-color,color] duration-150 ease-out hover:border-[var(--an-border-color)] hover:bg-[var(--an-background-tertiary)] hover:text-[color-mix(in_srgb,var(--an-primary-color)_82%,var(--an-foreground))] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--an-input-focus-outline)]"
               onClick={() => {
                 if (task.sessionId) {
                   onOpenSession?.(task.sessionId);
@@ -281,7 +284,7 @@ export const BackgroundTaskIndicator: React.FC<BackgroundTaskIndicatorProps> = (
           ref={menu.refs.setReference}
           {...menu.getReferenceProps()}
           type="button"
-          className={`nav-button agent-elements-background-task-button relative flex h-9 w-9 items-center justify-center rounded-[var(--an-tool-border-radius)] border border-transparent bg-transparent p-0 transition-[background-color,border-color,color,box-shadow] duration-150 ease-out hover:border-[var(--an-border-color)] hover:bg-[var(--an-background-tertiary)] hover:text-[var(--an-foreground)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--an-input-focus-outline)] ${hasError ? 'text-[var(--nim-error)]' : 'text-[var(--an-foreground-muted)]'}`}
+          className={`nav-button agent-elements-background-task-button relative flex h-9 w-9 items-center justify-center rounded-[var(--an-tool-border-radius)] border border-transparent bg-transparent p-0 transition-[background-color,border-color,color,box-shadow] duration-150 ease-out hover:border-[var(--an-border-color)] hover:bg-[var(--an-background-tertiary)] hover:text-[var(--an-foreground)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--an-input-focus-outline)] ${hasError ? 'text-[var(--an-error-color)]' : 'text-[var(--an-foreground-muted)]'}`}
           onClick={() => menu.setIsOpen(!menu.isOpen)}
           aria-label={buttonLabel}
           aria-expanded={menu.isOpen}
@@ -304,7 +307,7 @@ export const BackgroundTaskIndicator: React.FC<BackgroundTaskIndicatorProps> = (
           ) : null}
           {hasError ? (
             <span
-              className="agent-elements-background-task-error-dot absolute right-1 top-1 h-2.5 w-2.5 rounded-[999px] border border-[var(--an-background)] bg-[var(--nim-error)]"
+              className="agent-elements-background-task-error-dot absolute right-1 top-1 h-2.5 w-2.5 rounded-[999px] border border-[var(--an-background)] bg-[var(--an-error-color)]"
               data-agent-elements-shell="background-task-error-dot"
             />
           ) : null}
@@ -317,12 +320,14 @@ export const BackgroundTaskIndicator: React.FC<BackgroundTaskIndicatorProps> = (
             ref={menu.refs.setFloating}
             style={menu.floatingStyles}
             {...menu.getFloatingProps()}
-            className="background-tasks-popover agent-elements-background-tasks-popover agent-elements-tool-card z-50 max-h-[min(480px,calc(100vh-24px))] w-80 overflow-y-auto rounded-[var(--an-border-radius)] border border-[var(--an-border-color)] bg-[var(--an-background)] text-[var(--an-foreground)] shadow-[0_20px_60px_color-mix(in_srgb,var(--nim-text)_18%,transparent)]"
+            className={`background-tasks-popover agent-elements-background-tasks-popover agent-elements-tool-card z-50 max-h-[min(480px,calc(100vh-24px))] w-80 overflow-y-auto rounded-[var(--an-border-radius)] border border-[var(--an-border-color)] bg-[var(--an-background)] text-[var(--an-foreground)] shadow-[0_20px_60px_color-mix(in_srgb,var(--an-foreground)_18%,transparent)] ${sectionedPopoverCardGutters}`}
             data-component="BackgroundTaskIndicatorPopover"
             data-agent-elements-shell="background-tasks-popover"
+            data-agent-elements-card-padding="sectioned-symmetric"
+            data-agent-elements-card-width="floating-popover"
             data-testid="background-tasks-popover"
           >
-            <div className="agent-elements-background-tasks-header flex items-center justify-between border-b border-[var(--an-border-color)] px-4 py-3">
+            <div className="agent-elements-background-tasks-header flex items-center justify-between border-b border-[var(--an-border-color)] px-[var(--agent-elements-card-inline-padding)] py-[var(--agent-elements-card-block-padding)]">
               <div>
                 <div className="text-[14px] font-semibold leading-5 text-[var(--an-foreground)]">Background Tasks</div>
                 <div className="mt-0.5 text-[11px] leading-4 text-[var(--an-foreground-muted)]">
@@ -339,7 +344,7 @@ export const BackgroundTaskIndicator: React.FC<BackgroundTaskIndicatorProps> = (
               </button>
             </div>
 
-            <div className="agent-elements-background-tasks-sections space-y-4 px-4 py-3">
+            <div className="agent-elements-background-tasks-sections space-y-4 px-[var(--agent-elements-card-inline-padding)] py-[var(--agent-elements-card-block-padding)]">
               <section>
                 <div className="mb-2 flex items-center justify-between">
                   <h3 className="m-0 text-[12px] font-semibold leading-5 text-[var(--an-foreground-muted)]">

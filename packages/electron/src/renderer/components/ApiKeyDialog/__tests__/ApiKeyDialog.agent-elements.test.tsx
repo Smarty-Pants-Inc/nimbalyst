@@ -4,6 +4,8 @@ import '@testing-library/jest-dom/vitest';
 import React from 'react';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
+import fs from 'node:fs';
+import path from 'node:path';
 import { ApiKeyDialog } from '../ApiKeyDialog';
 
 vi.mock('@nimbalyst/runtime', async () => {
@@ -27,6 +29,32 @@ vi.mock('@nimbalyst/runtime', async () => {
 });
 
 describe('ApiKeyDialog Agent Elements shell', () => {
+  it('keeps API key dialog visual chrome on Agent Elements aliases', () => {
+    const sourcePath = [
+      path.join(
+        process.cwd(),
+        'src/renderer/components/ApiKeyDialog/ApiKeyDialog.tsx',
+      ),
+      path.join(
+        process.cwd(),
+        'packages/electron/src/renderer/components/ApiKeyDialog/ApiKeyDialog.tsx',
+      ),
+    ].find((candidate) => fs.existsSync(candidate));
+
+    expect(sourcePath).toBeTruthy();
+    const source = fs.readFileSync(
+      sourcePath!,
+      'utf8',
+    );
+
+    expect(source).toContain('--an-foreground');
+    expect(source).toContain('--an-button-primary-text');
+    expect(source).toContain('--an-primary-color');
+    expect(source).not.toMatch(/var\(--nim-(?:text|primary-hover)\)/);
+    expect(source).not.toMatch(/shadow-\[[^\]]*var\(--nim-/);
+    expect(source).not.toContain('text-[var(--an-background)]');
+  });
+
   it('renders an Agent Elements API key shell while preserving provider links and settings action', () => {
     const onClose = vi.fn();
     const onOpenPreferences = vi.fn();

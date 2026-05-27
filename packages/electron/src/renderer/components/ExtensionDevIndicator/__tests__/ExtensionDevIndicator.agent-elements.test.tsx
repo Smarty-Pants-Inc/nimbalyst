@@ -10,6 +10,8 @@ import { ExtensionDevIndicator } from '../ExtensionDevIndicator';
 
 const sourcePath = resolve(__dirname, '../ExtensionDevIndicator.tsx');
 const consoleSourcePath = resolve(__dirname, '../ExtensionErrorConsole.tsx');
+const legacyVisualTokenPattern =
+  /\b(?:bg|text|border|hover:bg|hover:text|hover:border)-nim(?:-[\w-]+)?\b|var\(--nim-|rgba\(|#(?:[0-9a-fA-F]{3}){1,2}\b|rounded-md|rounded-lg|rounded-xl|tracking-\[/;
 
 vi.mock('jotai', async () => {
   const actual = await vi.importActual<typeof import('jotai')>('jotai');
@@ -136,6 +138,8 @@ describe('ExtensionDevIndicator Agent Elements shell', () => {
     const menu = await screen.findByTestId('agent-elements-extension-dev-menu');
     expect(menu).toHaveClass('extension-dev-menu', 'agent-elements-extension-dev-menu', 'agent-elements-tool-card');
     expect(menu).toHaveAttribute('data-agent-elements-shell', 'extension-dev-menu');
+    expect(menu).toHaveAttribute('data-agent-elements-card-padding', 'symmetric-inline');
+    expect(menu).toHaveAttribute('data-agent-elements-card-width', 'floating-menu');
 
     expect(screen.getByTestId('agent-elements-extension-dev-status')).toHaveTextContent(
       'Development tools active'
@@ -146,10 +150,10 @@ describe('ExtensionDevIndicator Agent Elements shell', () => {
     );
 
     fireEvent.click(screen.getByTestId('agent-elements-extension-dev-rebuild-trigger'));
-    expect(screen.getByTestId('agent-elements-extension-dev-rebuild-menu')).toHaveAttribute(
-      'data-agent-elements-shell',
-      'extension-dev-rebuild-menu'
-    );
+    const rebuildMenu = screen.getByTestId('agent-elements-extension-dev-rebuild-menu');
+    expect(rebuildMenu).toHaveAttribute('data-agent-elements-shell', 'extension-dev-rebuild-menu');
+    expect(rebuildMenu).toHaveAttribute('data-agent-elements-card-padding', 'symmetric-inline');
+    expect(rebuildMenu).toHaveAttribute('data-agent-elements-card-width', 'floating-menu');
 
     fireEvent.click(screen.getByRole('menuitem', { name: /extension settings/i }));
     expect(onOpenSettings).toHaveBeenCalledTimes(1);
@@ -162,11 +166,17 @@ describe('ExtensionDevIndicator Agent Elements shell', () => {
     expect(source).toContain('FloatingPortal');
     expect(source).toContain('agent-elements-extension-dev-menu');
     expect(source).toContain('data-agent-elements-shell="extension-dev-menu"');
+    expect(source).toContain('data-agent-elements-card-padding="symmetric-inline"');
+    expect(source).toContain('data-agent-elements-card-width="floating-menu"');
+    expect(source).toContain('--agent-elements-card-inline-padding');
     expect(source).toContain('agent-elements-extension-dev-rebuild-menu');
     expect(source).toContain('data-agent-elements-shell="extension-dev-rebuild-menu"');
+    expect(source).toContain('--an-tool-background');
+    expect(source).toContain('--an-foreground-muted');
 
     expect(source).not.toMatch(/active:scale|bg-purple|text-white|rounded-lg|backdrop.*blur|rgba\(/);
     expect(source).not.toMatch(/submenu\\.style|left = parentRect|style=\\{\\{[^}]*left|style=\\{\\{[^}]*top/);
+    expect(source).not.toMatch(legacyVisualTokenPattern);
   });
 
   it('opens the log console with Agent Elements modal and log-row markers', async () => {
@@ -202,9 +212,12 @@ describe('ExtensionDevIndicator Agent Elements shell', () => {
     expect(source).toContain('data-agent-elements-shell="extension-error-console"');
     expect(source).toContain('agent-elements-extension-log-entry');
     expect(source).toContain('data-agent-elements-shell="extension-log-entry"');
+    expect(source).toContain('--an-tool-background');
+    expect(source).toContain('--an-foreground-muted');
 
     expect(source).not.toMatch(/#000|#fff|#ffffff|bg-white|text-white|bg-black/);
     expect(source).not.toMatch(/rounded-md|rounded-lg|rounded-xl|backdrop.*blur|rgba\(/);
     expect(source).not.toMatch(/text-\\[#a855f7\\]|#a855f7|#c084fc/);
+    expect(source).not.toMatch(legacyVisualTokenPattern);
   });
 });

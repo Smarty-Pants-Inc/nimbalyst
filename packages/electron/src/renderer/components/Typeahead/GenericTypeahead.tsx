@@ -45,6 +45,33 @@ interface GenericTypeaheadProps {
   sectionOrder?: string[];
 }
 
+const typeaheadRootClass =
+  'generic-typeahead agent-elements-generic-typeahead agent-elements-tool-card z-[1000] flex flex-col overflow-hidden !gap-0 !p-0 [--agent-elements-card-block-padding:var(--an-spacing-sm)] [--agent-elements-card-inline-padding:var(--an-spacing-md)] rounded-[var(--an-tool-border-radius)] border border-[var(--an-border-color)] bg-[var(--an-background)] text-[var(--an-foreground)] shadow-[0_12px_32px_color-mix(in_srgb,var(--an-foreground)_12%,transparent)]';
+
+const typeaheadContentClass =
+  'generic-typeahead-content agent-elements-generic-typeahead-content min-h-0 flex-1 overflow-y-auto overflow-x-hidden';
+
+const typeaheadSectionClass =
+  'generic-typeahead-section agent-elements-generic-typeahead-section py-[var(--an-spacing-xxs)] [&:not(:last-child)]:border-b [&:not(:last-child)]:border-[var(--an-border-color)]';
+
+const typeaheadSectionHeaderClass =
+  'generic-typeahead-section-header agent-elements-generic-typeahead-section-header px-[var(--agent-elements-card-inline-padding)] pb-[var(--an-spacing-xxs)] pt-[var(--an-spacing-xs)] text-[0.6875rem] font-medium uppercase text-[var(--an-foreground-subtle)]';
+
+const typeaheadOptionBaseClass =
+  'generic-typeahead-option agent-elements-generic-typeahead-option flex cursor-pointer items-center gap-[var(--an-spacing-sm)] px-[var(--agent-elements-card-inline-padding)] py-[var(--an-spacing-sm)] transition-[background-color,color,opacity] duration-150 ease-out';
+
+const typeaheadOptionSelectedClass =
+  'selected bg-[color-mix(in_srgb,var(--an-primary-color)_9%,var(--an-background))]';
+
+const typeaheadOptionDisabledClass = 'disabled cursor-not-allowed opacity-50';
+
+function getTypeaheadTestIdSegment(value: string | null, fallback: string): string {
+  return (value || fallback)
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '') || fallback;
+}
+
 export function GenericTypeahead({
   anchorElement,
   options,
@@ -257,7 +284,10 @@ export function GenericTypeahead({
   const menuElement = (
     <div
       ref={menuRef}
-      className={`generic-typeahead bg-nim-secondary border border-nim rounded-md shadow-lg z-[1000] overflow-hidden flex flex-col ${className}`}
+      className={`${typeaheadRootClass} ${className}`}
+      data-component="GenericTypeahead"
+      data-agent-elements-shell="generic-typeahead"
+      data-testid="agent-elements-generic-typeahead"
       style={{
         position: 'fixed',
         top: `${position.top}px`,
@@ -266,47 +296,57 @@ export function GenericTypeahead({
         minWidth: `${minWidth}px`,
         maxWidth: `${maxWidth}px`,
         opacity: isPositioned ? 1 : 0,
-        transition: 'opacity 0.1s ease-in'
+        transition: 'opacity 150ms cubic-bezier(0.16, 1, 0.3, 1)'
       }}
     >
-      <div className="generic-typeahead-content overflow-y-auto overflow-x-hidden flex-1 min-h-0">
+      <div className={typeaheadContentClass} data-agent-elements-shell="generic-typeahead-content">
         {groupedOptions.map(({ section, options: sectionOptions }, groupIndex) => (
-          <div key={section || groupIndex} className="generic-typeahead-section py-0.5 [&:not(:last-child)]:border-b [&:not(:last-child)]:border-nim">
+          <div
+            key={section || groupIndex}
+            className={typeaheadSectionClass}
+            data-agent-elements-shell="generic-typeahead-section"
+            data-testid={`agent-elements-generic-typeahead-section-${getTypeaheadTestIdSegment(section, `group-${groupIndex}`)}`}
+          >
             {section && (
-              <div className="generic-typeahead-section-header px-3 pt-1.5 pb-1 text-[0.6875rem] font-semibold text-nim-faint uppercase tracking-wide">{section}</div>
+              <div className={typeaheadSectionHeaderClass}>{section}</div>
             )}
             {sectionOptions.map((option) => {
               // Calculate visual index based on flat ordered list (matches navigation order)
               const visualIndex = flatOrderedOptions.findIndex(opt => opt.id === option.id);
               const isSelected = selectedIndex === visualIndex;
+              const optionId = getTypeaheadTestIdSegment(option.id, `option-${visualIndex}`);
 
               return (
                 <div
                   key={option.id}
                   data-option-index={visualIndex}
-                  className={`generic-typeahead-option flex items-center gap-2 px-3 py-1.5 cursor-pointer transition-colors duration-150 ${
-                    isSelected ? 'selected bg-nim-hover' : ''
-                  } ${option.disabled ? 'disabled opacity-50 cursor-not-allowed' : ''}`}
+                  className={`${typeaheadOptionBaseClass} ${
+                    isSelected ? typeaheadOptionSelectedClass : 'hover:bg-[var(--an-background-tertiary)]'
+                  } ${option.disabled ? typeaheadOptionDisabledClass : ''}`}
+                  data-agent-elements-shell="generic-typeahead-option"
+                  data-disabled={option.disabled ? 'true' : 'false'}
+                  data-selected={isSelected ? 'true' : 'false'}
+                  data-testid={`agent-elements-generic-typeahead-option-${optionId}`}
                   onMouseDown={(e) => handleOptionMouseDown(e, option)}
                   onMouseEnter={() => handleOptionMouseEnter(visualIndex)}
                 >
                   {option.icon && (
                     typeof option.icon === 'string' ? (
-                      <span className="material-symbols-outlined generic-typeahead-option-icon text-lg shrink-0 text-nim-muted">
+                      <span className="material-symbols-outlined generic-typeahead-option-icon agent-elements-generic-typeahead-option-icon shrink-0 text-lg text-[var(--an-foreground-muted)]">
                         {option.icon}
                       </span>
                     ) : (
-                      <span className="generic-typeahead-option-icon text-lg shrink-0 text-nim-muted">
+                      <span className="generic-typeahead-option-icon agent-elements-generic-typeahead-option-icon shrink-0 text-lg text-[var(--an-foreground-muted)]">
                         {option.icon}
                       </span>
                     )
                   )}
-                  <div className="generic-typeahead-option-text flex-1 min-w-0 flex flex-col gap-0.5">
-                    <div className="generic-typeahead-option-label text-sm text-nim-primary whitespace-nowrap overflow-hidden text-ellipsis">
+                  <div className="generic-typeahead-option-text agent-elements-generic-typeahead-option-text flex min-w-0 flex-1 flex-col gap-[var(--an-spacing-xxs)]">
+                    <div className="generic-typeahead-option-label agent-elements-generic-typeahead-option-label overflow-hidden text-ellipsis whitespace-nowrap text-sm font-medium text-[var(--an-foreground)]">
                       {option.label}
                     </div>
                     {option.description && (
-                      <div className="generic-typeahead-option-description text-xs text-nim-faint break-words leading-snug">
+                      <div className="generic-typeahead-option-description agent-elements-generic-typeahead-option-description break-words text-xs leading-snug text-[var(--an-foreground-subtle)]">
                         {option.description}
                       </div>
                     )}

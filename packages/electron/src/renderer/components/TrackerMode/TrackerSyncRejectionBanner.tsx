@@ -117,7 +117,7 @@ export const TrackerSyncRejectionBanner: React.FC<TrackerSyncRejectionBannerProp
       ) : (
         <>
           <span
-            className={`${iconShellClass} text-[var(--nim-warning)]`}
+            className={`${iconShellClass} text-[var(--an-warning-color)]`}
             data-testid="agent-elements-tracker-sync-rejection-icon"
             data-agent-elements-shell="tracker-sync-rejection-icon"
           >

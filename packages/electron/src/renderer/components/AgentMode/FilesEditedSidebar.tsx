@@ -82,6 +82,12 @@ interface GitDiscardChangesResult {
   error?: string;
 }
 
+const DecorativeMaterialSymbol: React.FC<React.ComponentProps<typeof MaterialSymbol>> = (props) => (
+  <span aria-hidden="true" className="inline-flex shrink-0 items-center justify-center">
+    <MaterialSymbol {...props} />
+  </span>
+);
+
 export const FilesEditedSidebar: React.FC<FilesEditedSidebarProps> = React.memo(({
   workstreamId,
   activeSessionId,
@@ -633,7 +639,7 @@ export const FilesEditedSidebar: React.FC<FilesEditedSidebarProps> = React.memo(
 
   return (
     <div
-      className="files-edited-sidebar agent-elements-files-edited-agent-mode agent-elements-edit-panel shrink-0 flex flex-col h-full bg-[var(--nim-bg-secondary)]"
+      className="files-edited-sidebar agent-elements-files-edited-agent-mode agent-elements-edit-panel flex h-full shrink-0 flex-col bg-[var(--an-tool-background)] text-[var(--an-tool-color)]"
       data-agent-elements-shell="agent-mode-files-edited"
       data-component="FilesEditedSidebar"
       data-testid="agent-elements-agent-mode-files-edited-sidebar"
@@ -641,7 +647,7 @@ export const FilesEditedSidebar: React.FC<FilesEditedSidebarProps> = React.memo(
     >
       {/* Header with scope dropdown and controls */}
       <div
-        className="files-edited-sidebar__header agent-elements-files-edited-header flex items-center gap-2 px-3 py-2 border-b border-[var(--nim-border)] bg-[var(--nim-bg-secondary)] shrink-0"
+        className="files-edited-sidebar__header agent-elements-files-edited-header flex shrink-0 items-center gap-2 border-b border-[var(--an-border-color)] bg-[var(--an-tool-background)] px-3 py-2"
         data-agent-elements-shell="files-edited-header"
         data-testid="agent-elements-files-edited-header"
       >
@@ -669,34 +675,34 @@ export const FilesEditedSidebar: React.FC<FilesEditedSidebarProps> = React.memo(
             onClick={handleRevertSelected}
             disabled={isReverting || selectedSessionOwnedUncommittedFiles.length === 0}
             data-testid="files-edited-revert-selected"
-            className="files-edited-sidebar__control-btn flex items-center justify-center w-6 h-6 border-none rounded bg-transparent text-[var(--nim-text-muted)] cursor-pointer hover:enabled:bg-[var(--nim-bg-tertiary)] hover:enabled:text-[var(--nim-danger)] disabled:text-[var(--nim-text-disabled)] disabled:cursor-default disabled:opacity-50"
+            className="files-edited-sidebar__control-btn flex h-6 w-6 cursor-pointer items-center justify-center rounded-[var(--an-radius-xs)] border-none bg-transparent text-[var(--an-tool-color-muted)] transition-colors hover:enabled:bg-[var(--an-background-tertiary)] hover:enabled:text-[var(--an-diff-removed-text)] disabled:cursor-default disabled:text-[var(--an-foreground-subtle)] disabled:opacity-50"
             title={
               selectedSessionOwnedUncommittedFiles.length > 0
                 ? `Revert ${selectedSessionOwnedUncommittedFiles.length} selected agent-owned file${selectedSessionOwnedUncommittedFiles.length === 1 ? '' : 's'}`
                 : 'Select agent-owned uncommitted files to revert'
             }
           >
-            <MaterialSymbol icon={isReverting ? 'progress_activity' : 'undo'} size={16} />
+            <DecorativeMaterialSymbol icon={isReverting ? 'progress_activity' : 'undo'} size={16} />
           </button>
           <button
             onClick={() => {
               window.dispatchEvent(new CustomEvent('file-edits-sidebar:expand-all'));
             }}
             disabled={!groupByDirectory}
-            className="files-edited-sidebar__control-btn agent-elements-files-edited-control flex items-center justify-center w-6 h-6 border-none rounded bg-transparent text-[var(--nim-text-muted)] cursor-pointer hover:enabled:bg-[var(--nim-bg-tertiary)] disabled:text-[var(--nim-text-disabled)] disabled:cursor-default disabled:opacity-50"
+            className="files-edited-sidebar__control-btn agent-elements-files-edited-control flex h-6 w-6 cursor-pointer items-center justify-center rounded-[var(--an-radius-xs)] border-none bg-transparent text-[var(--an-tool-color-muted)] transition-colors hover:enabled:bg-[var(--an-background-tertiary)] hover:enabled:text-[var(--an-tool-color)] disabled:cursor-default disabled:text-[var(--an-foreground-subtle)] disabled:opacity-50"
             title="Expand all"
           >
-            <MaterialSymbol icon="unfold_more" size={16} />
+            <DecorativeMaterialSymbol icon="unfold_more" size={16} />
           </button>
           <button
             onClick={() => {
               window.dispatchEvent(new CustomEvent('file-edits-sidebar:collapse-all'));
             }}
             disabled={!groupByDirectory}
-            className="files-edited-sidebar__control-btn agent-elements-files-edited-control flex items-center justify-center w-6 h-6 border-none rounded bg-transparent text-[var(--nim-text-muted)] cursor-pointer hover:enabled:bg-[var(--nim-bg-tertiary)] disabled:text-[var(--nim-text-disabled)] disabled:cursor-default disabled:opacity-50"
+            className="files-edited-sidebar__control-btn agent-elements-files-edited-control flex h-6 w-6 cursor-pointer items-center justify-center rounded-[var(--an-radius-xs)] border-none bg-transparent text-[var(--an-tool-color-muted)] transition-colors hover:enabled:bg-[var(--an-background-tertiary)] hover:enabled:text-[var(--an-tool-color)] disabled:cursor-default disabled:text-[var(--an-foreground-subtle)] disabled:opacity-50"
             title="Collapse all"
           >
-            <MaterialSymbol icon="unfold_less" size={16} />
+            <DecorativeMaterialSymbol icon="unfold_less" size={16} />
           </button>
         </div>
       </div>
@@ -704,13 +710,13 @@ export const FilesEditedSidebar: React.FC<FilesEditedSidebarProps> = React.memo(
       {/* Keep All button - show when there are pending files (only in non-git repos) */}
       {!isGitRepo && pendingReviewFiles.size > 0 && (
         <div
-          className="files-edited-sidebar__keep-all-banner agent-elements-files-edited-review-banner agent-elements-edit-approval flex items-center justify-between px-3 py-2 bg-[color-mix(in_srgb,var(--nim-warning)_10%,var(--nim-bg))] border-b border-[color-mix(in_srgb,var(--nim-warning)_30%,transparent)] shrink-0"
+          className="files-edited-sidebar__keep-all-banner agent-elements-files-edited-review-banner agent-elements-edit-approval flex shrink-0 items-center justify-between border-b border-[color-mix(in_srgb,var(--an-warning-color)_30%,transparent)] bg-[color-mix(in_srgb,var(--an-warning-color)_10%,var(--an-background))] px-3 py-2"
           data-agent-elements-shell="files-edited-review-banner"
           data-testid="agent-elements-files-edited-review-banner"
         >
           <div className="files-edited-sidebar__keep-all-info flex items-center gap-2">
-            <MaterialSymbol icon="rate_review" size={16} className="files-edited-sidebar__keep-all-icon text-[var(--nim-warning)]" />
-            <span className="files-edited-sidebar__keep-all-text text-xs text-[var(--nim-warning)] font-medium">
+            <DecorativeMaterialSymbol icon="rate_review" size={16} className="files-edited-sidebar__keep-all-icon text-[var(--an-warning-color)]" />
+            <span className="files-edited-sidebar__keep-all-text text-xs font-medium text-[var(--an-warning-color)]">
               <span
                 className="files-edited-sidebar__keep-all-count agent-elements-status-pill font-semibold"
                 data-testid="agent-elements-files-edited-review-count"
@@ -722,12 +728,12 @@ export const FilesEditedSidebar: React.FC<FilesEditedSidebarProps> = React.memo(
             </span>
           </div>
           <button
-            className="files-edited-sidebar__keep-all-btn agent-elements-files-edited-keep-all flex items-center gap-1 px-2.5 py-1 bg-transparent border border-[var(--nim-warning)] rounded text-[var(--nim-warning)] text-[11px] font-medium cursor-pointer transition-all duration-200 font-inherit hover:enabled:bg-[color-mix(in_srgb,var(--nim-warning)_15%,transparent)] disabled:opacity-50 disabled:cursor-not-allowed"
+            className="files-edited-sidebar__keep-all-btn agent-elements-files-edited-keep-all flex cursor-pointer items-center gap-1 rounded-[var(--an-radius-sm)] border border-[var(--an-warning-color)] bg-transparent px-2.5 py-1 font-inherit text-[11px] font-medium text-[var(--an-warning-color)] transition-colors hover:enabled:bg-[color-mix(in_srgb,var(--an-warning-color)_15%,transparent)] disabled:cursor-not-allowed disabled:opacity-50"
             onClick={handleKeepAll}
             disabled={isClearing}
             title="Accept all pending AI changes"
           >
-            <MaterialSymbol icon="check_circle" size={14} />
+            <DecorativeMaterialSymbol icon="check_circle" size={14} />
             {isClearing ? 'Keeping...' : 'Keep All'}
           </button>
         </div>
@@ -738,8 +744,8 @@ export const FilesEditedSidebar: React.FC<FilesEditedSidebarProps> = React.memo(
           data-testid="files-edited-revert-status"
           className={`files-edited-sidebar__revert-status px-3 py-2 border-b text-[11px] shrink-0 ${
             revertStatus.type === 'success'
-              ? 'bg-[color-mix(in_srgb,var(--nim-success)_10%,var(--nim-bg))] border-[color-mix(in_srgb,var(--nim-success)_30%,transparent)] text-[var(--nim-success)]'
-              : 'bg-[color-mix(in_srgb,var(--nim-danger)_10%,var(--nim-bg))] border-[color-mix(in_srgb,var(--nim-danger)_30%,transparent)] text-[var(--nim-danger)]'
+              ? 'bg-[color-mix(in_srgb,var(--an-success-color)_10%,var(--an-background))] border-[color-mix(in_srgb,var(--an-success-color)_30%,transparent)] text-[var(--an-success-color)]'
+              : 'bg-[color-mix(in_srgb,var(--an-diff-removed-text)_10%,var(--an-background))] border-[color-mix(in_srgb,var(--an-diff-removed-text)_30%,transparent)] text-[var(--an-diff-removed-text)]'
           }`}
         >
           {revertStatus.message}

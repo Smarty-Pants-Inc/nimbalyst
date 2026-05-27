@@ -4,6 +4,8 @@ import '@testing-library/jest-dom/vitest';
 import React from 'react';
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import fs from 'node:fs';
+import path from 'node:path';
 import { ProjectQuickOpen } from '../ProjectQuickOpen';
 
 vi.mock('@nimbalyst/runtime', async () => {
@@ -24,6 +26,11 @@ vi.mock('@nimbalyst/runtime', async () => {
     }) => ReactModule.createElement('span', { 'data-icon': icon, 'data-size': size, 'data-fill': fill, className, title }),
   };
 });
+
+const projectQuickOpenSourcePath = path.join(
+  process.cwd(),
+  'packages/electron/src/renderer/components/ProjectQuickOpen.tsx',
+);
 
 describe('ProjectQuickOpen Agent Elements shell', () => {
   beforeEach(() => {
@@ -125,5 +132,13 @@ describe('ProjectQuickOpen Agent Elements shell', () => {
       expect(window.electronAPI.workspaceManager.openWorkspace).toHaveBeenCalledWith('/workspace/tools');
     });
     expect(onClose).toHaveBeenCalled();
+  });
+
+  it('keeps project quick-open chrome on Agent Elements visual aliases', () => {
+    const source = fs.readFileSync(projectQuickOpenSourcePath, 'utf8');
+
+    expect(source).toContain('agent-elements-project-quick-open-backdrop');
+    expect(source).toContain('var(--an-foreground)');
+    expect(source).not.toMatch(/var\(--nim-[^)]+\)/);
   });
 });

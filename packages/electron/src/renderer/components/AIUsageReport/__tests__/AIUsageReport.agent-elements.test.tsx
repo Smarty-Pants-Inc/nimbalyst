@@ -65,6 +65,14 @@ describe('AIUsageReport Agent Elements shell', () => {
       'ai-usage-header'
     );
     expect(screen.getAllByTestId('agent-elements-ai-usage-section')).toHaveLength(3);
+    for (const section of screen.getAllByTestId('agent-elements-ai-usage-section')) {
+      expect(section).toHaveClass('agent-elements-tool-card');
+      expect(section).toHaveAttribute('data-agent-elements-card-width', 'section-row');
+      expect(section).toHaveAttribute('data-agent-elements-card-padding', 'symmetric-inline');
+      expect(section.className).toContain('--agent-elements-card-inline-padding');
+      expect(section.className).toContain('--agent-elements-card-block-padding');
+      expect(section.className).not.toMatch(/\b(?:p-|px-|py-|pl-|pr-|rounded-\[10px\])/);
+    }
     expect(screen.getByTestId('mock-overview-dashboard')).toBeInTheDocument();
     expect(screen.getByTestId('mock-activity-heatmap')).toBeInTheDocument();
     expect(screen.getByTestId('mock-historical-graph')).toBeInTheDocument();
@@ -83,10 +91,22 @@ describe('AIUsageReport Agent Elements shell', () => {
     expect(sources).toContain('agent-elements-ai-usage-heatmap-cell');
     expect(sources).toContain('agent-elements-ai-usage-chart');
     expect(sources).toContain('agent-elements-ai-usage-project-card');
+    expect(sources).toContain('--agent-elements-card-inline-padding');
+    expect(sources).toContain('--agent-elements-card-block-padding');
+    expect(sources).toContain('data-agent-elements-card-width="section-row"');
+    expect(sources).toContain('data-agent-elements-card-width="grid-cell"');
+    expect(sources).toContain('data-agent-elements-card-padding="symmetric-inline"');
+    expect(sources).toContain('--an-tool-background');
+    expect(sources).toContain('--an-foreground-muted');
 
+    expect(sources).not.toMatch(
+      /agent-elements-ai-usage-(?:section|stat-card|project-card)[^`'"]*\b(?:p-|p-\[|px-|px-\[|py-|py-\[|pl-|pl-\[|pr-|pr-\[|rounded-\[10px\]|rounded-md|rounded-lg|rounded-xl)/
+    );
     expect(sources).not.toMatch(/rounded-md|rounded-lg|rounded-xl/);
     expect(sources).not.toMatch(/#(?:[0-9a-fA-F]{3}){1,2}\b|rgba\(/);
     expect(sources).not.toMatch(/bg-white|text-white|bg-black|hover:scale|tracking-\[/);
     expect(sources).not.toMatch(/legend-gradient|linear-gradient|--nim-accent|--nim-surface|text-nim-fg/);
+    expect(sources).not.toMatch(/\b(?:bg|text|border|hover:bg|hover:text|hover:border)-nim(?:-[\w-]+)?\b/);
+    expect(sources).not.toMatch(/var\(--nim-/);
   });
 });

@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
+import { MaterialSymbol } from '@nimbalyst/runtime';
 import { getRelativeTimeString } from '../../utils/dateFormatting';
 import { getFileName } from '../../utils/pathUtils';
 import type { TokenUsageCategory } from '@nimbalyst/runtime/ai/server/types';
@@ -30,6 +31,42 @@ interface SessionImportDialogProps {
   onImport: (sessionIds: string[]) => Promise<void>;
   currentWorkspacePath: string;
   filterByWorkspace?: boolean; // If true, only show sessions for current workspace
+}
+
+const secondaryButtonClass =
+  'rounded-[var(--an-message-radius-inner)] border border-[var(--an-border-color)] bg-[var(--an-background-secondary)] px-3 py-1.5 text-[13px] font-medium text-[var(--an-foreground)] outline-none transition-[background-color,border-color,color,opacity] duration-150 ease-out hover:enabled:border-[var(--an-primary-color)] hover:enabled:bg-[var(--an-background-tertiary)] focus-visible:ring-2 focus-visible:ring-[var(--an-focus-ring)] disabled:cursor-not-allowed disabled:opacity-50';
+
+const primaryButtonClass =
+  'rounded-[var(--an-message-radius-inner)] border border-[var(--an-primary-color)] bg-[var(--an-primary-color)] px-3 py-1.5 text-[13px] font-medium text-[var(--an-send-button-color)] outline-none transition-[background-color,border-color,opacity] duration-150 ease-out hover:enabled:opacity-90 focus-visible:ring-2 focus-visible:ring-[var(--an-focus-ring)] disabled:cursor-not-allowed disabled:opacity-50';
+
+const iconButtonClass =
+  'flex h-7 w-7 cursor-pointer items-center justify-center rounded-[var(--an-message-radius-inner)] border border-transparent bg-transparent p-0 text-[var(--an-foreground-muted)] outline-none transition-[background-color,border-color,color] duration-150 ease-out hover:border-[var(--an-border-color)] hover:bg-[var(--an-background-tertiary)] hover:text-[var(--an-foreground)] focus-visible:ring-2 focus-visible:ring-[var(--an-focus-ring)]';
+
+const checkboxClass =
+  'h-3.5 w-3.5 cursor-pointer accent-[var(--an-primary-color)]';
+
+function getSyncStatusMeta(status: SessionToImport['syncStatus']) {
+  if (status === 'new') {
+    return {
+      label: 'New',
+      tone: 'success',
+      className: 'border-[color-mix(in_srgb,var(--an-success-color)_26%,var(--an-border-color))] bg-[color-mix(in_srgb,var(--an-success-color)_10%,var(--an-background))] text-[var(--an-success-color)]',
+    };
+  }
+
+  if (status === 'needs-update') {
+    return {
+      label: 'Has Updates',
+      tone: 'warning',
+      className: 'border-[color-mix(in_srgb,var(--an-warning-color)_28%,var(--an-border-color))] bg-[color-mix(in_srgb,var(--an-warning-color)_9%,var(--an-background))] text-[var(--an-warning-color)]',
+    };
+  }
+
+  return {
+    label: 'In Sync',
+    tone: 'muted',
+    className: 'border-[var(--an-border-color)] bg-[var(--an-background-secondary)] text-[var(--an-foreground-subtle)]',
+  };
 }
 
 export const SessionImportDialog: React.FC<SessionImportDialogProps> = ({
@@ -207,33 +244,56 @@ export const SessionImportDialog: React.FC<SessionImportDialogProps> = ({
   }
 
   return (
-    <div className="session-import-dialog-overlay nim-overlay" onClick={onClose}>
+    <div
+      className="session-import-dialog-overlay nim-overlay agent-elements-session-import-backdrop"
+      data-agent-elements-shell="session-import-backdrop"
+      data-testid="agent-elements-session-import-backdrop"
+      onClick={onClose}
+    >
       <div
-        className="session-import-dialog flex flex-col w-[90%] max-w-[900px] max-h-[85vh] rounded-lg border border-[var(--nim-border)] bg-[var(--nim-bg)] shadow-[0_8px_32px_rgba(0,0,0,0.3)]"
+        className="session-import-dialog agent-elements-session-import-dialog agent-elements-tool-card flex w-[90%] max-w-[900px] max-h-[85vh] flex-col overflow-hidden rounded-[var(--an-tool-border-radius)] border border-[var(--an-border-color)] bg-[var(--an-background)] text-[var(--an-foreground)]"
+        data-component="SessionImportDialog"
+        data-agent-elements-shell="session-import-dialog"
+        data-testid="agent-elements-session-import-dialog"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="session-import-dialog-header flex items-center justify-between px-5 py-4 border-b border-[var(--nim-border)]">
-          <h2 className="m-0 text-base font-semibold text-[var(--nim-text)]">Import Claude Agent Sessions</h2>
+        <div
+          className="session-import-dialog-header agent-elements-session-import-header flex items-center justify-between gap-[var(--an-spacing-xl)] border-b border-[var(--an-border-color)] px-[var(--an-spacing-xxl)] py-[var(--an-spacing-xl)]"
+          data-agent-elements-shell="session-import-header"
+          data-testid="agent-elements-session-import-header"
+        >
+          <div className="min-w-0">
+            <h2 className="m-0 text-base font-semibold leading-tight text-[var(--an-foreground)]">Import Claude Agent Sessions</h2>
+          </div>
           <button
-            className="session-import-dialog-close bg-transparent border-none text-[var(--nim-text-muted)] cursor-pointer p-1 flex items-center justify-center rounded transition-colors duration-150 hover:bg-[var(--nim-bg-hover)] hover:text-[var(--nim-text)]"
+            className={`session-import-dialog-close agent-elements-session-import-close ${iconButtonClass}`}
             onClick={onClose}
             aria-label="Close dialog"
           >
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M12 4L4 12M4 4L12 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-            </svg>
+            <span aria-hidden="true" className="flex items-center">
+              <MaterialSymbol icon="close" size={16} />
+            </span>
           </button>
         </div>
 
         {loading ? (
-          <div className="session-import-dialog-loading py-10 px-5 text-center text-[var(--nim-text-muted)]">
+          <div
+            className="session-import-dialog-loading agent-elements-session-import-loading flex items-center justify-center gap-[var(--an-spacing-sm)] px-[var(--an-spacing-xxl)] py-10 text-center text-sm text-[var(--an-foreground-muted)]"
+            data-agent-elements-shell="session-import-loading"
+            data-testid="agent-elements-session-import-loading"
+          >
+            <MaterialSymbol icon="progress_activity" size={16} className="animate-spin" />
             <p>Scanning ~/.claude/projects/...</p>
           </div>
         ) : error ? (
-          <div className="session-import-dialog-error py-10 px-5 text-center text-[var(--nim-text-muted)]">
+          <div
+            className="session-import-dialog-error agent-elements-session-import-error px-[var(--an-spacing-xxl)] py-10 text-center text-sm text-[var(--an-foreground-muted)]"
+            data-agent-elements-shell="session-import-error"
+            data-testid="agent-elements-session-import-error"
+          >
             <p>{error}</p>
             <button
-              className="mt-3 px-4 py-2 bg-[var(--nim-primary)] text-white border-none rounded cursor-pointer"
+              className={`session-import-retry-button agent-elements-session-import-retry mt-3 ${primaryButtonClass}`}
               onClick={loadSessions}
             >
               Retry
@@ -241,29 +301,37 @@ export const SessionImportDialog: React.FC<SessionImportDialogProps> = ({
           </div>
         ) : (
           <>
-            <div className="session-import-dialog-stats flex gap-4 px-5 py-4 border-b border-[var(--nim-border)] bg-[var(--nim-bg-secondary)]">
-              <div className="session-import-stat flex flex-col items-center gap-1">
-                <span className="session-import-stat-value text-lg font-semibold text-[var(--nim-text)]">{totalSessions}</span>
-                <span className="session-import-stat-label text-[11px] text-[var(--nim-text-faint)] uppercase tracking-[0.5px]">Total</span>
+            <div
+              className="session-import-dialog-stats agent-elements-session-import-stats grid grid-cols-4 gap-[var(--an-spacing-sm)] border-b border-[var(--an-border-color)] bg-[var(--an-background-secondary)] px-[var(--an-spacing-xxl)] py-[var(--an-spacing-xl)]"
+              data-agent-elements-shell="session-import-stats"
+              data-testid="agent-elements-session-import-stats"
+            >
+              <div className="session-import-stat agent-elements-session-import-stat flex flex-col gap-[var(--an-spacing-xxs)] rounded-[var(--an-message-radius-inner)] border border-[var(--an-border-color)] bg-[var(--an-background)] px-[var(--an-spacing-lg)] py-[var(--an-spacing-sm)]" data-testid="agent-elements-session-import-stat">
+                <span className="session-import-stat-value text-lg font-semibold leading-none text-[var(--an-foreground)]">{totalSessions}</span>
+                <span className="session-import-stat-label text-[11px] font-medium leading-4 text-[var(--an-foreground-subtle)]">Total</span>
               </div>
-              <div className="session-import-stat flex flex-col items-center gap-1">
-                <span className="session-import-stat-value text-lg font-semibold text-[var(--nim-text)]">{newSessions}</span>
-                <span className="session-import-stat-label text-[11px] text-[var(--nim-text-faint)] uppercase tracking-[0.5px]">New</span>
+              <div className="session-import-stat agent-elements-session-import-stat flex flex-col gap-[var(--an-spacing-xxs)] rounded-[var(--an-message-radius-inner)] border border-[var(--an-border-color)] bg-[var(--an-background)] px-[var(--an-spacing-lg)] py-[var(--an-spacing-sm)]" data-testid="agent-elements-session-import-stat">
+                <span className="session-import-stat-value text-lg font-semibold leading-none text-[var(--an-foreground)]">{newSessions}</span>
+                <span className="session-import-stat-label text-[11px] font-medium leading-4 text-[var(--an-foreground-subtle)]">New</span>
               </div>
-              <div className="session-import-stat flex flex-col items-center gap-1">
-                <span className="session-import-stat-value text-lg font-semibold text-[var(--nim-text)]">{needsUpdate}</span>
-                <span className="session-import-stat-label text-[11px] text-[var(--nim-text-faint)] uppercase tracking-[0.5px]">Updates</span>
+              <div className="session-import-stat agent-elements-session-import-stat flex flex-col gap-[var(--an-spacing-xxs)] rounded-[var(--an-message-radius-inner)] border border-[var(--an-border-color)] bg-[var(--an-background)] px-[var(--an-spacing-lg)] py-[var(--an-spacing-sm)]" data-testid="agent-elements-session-import-stat">
+                <span className="session-import-stat-value text-lg font-semibold leading-none text-[var(--an-foreground)]">{needsUpdate}</span>
+                <span className="session-import-stat-label text-[11px] font-medium leading-4 text-[var(--an-foreground-subtle)]">Updates</span>
               </div>
-              <div className="session-import-stat flex flex-col items-center gap-1">
-                <span className="session-import-stat-value text-lg font-semibold text-[var(--nim-text)]">{inSync}</span>
-                <span className="session-import-stat-label text-[11px] text-[var(--nim-text-faint)] uppercase tracking-[0.5px]">In Sync</span>
+              <div className="session-import-stat agent-elements-session-import-stat flex flex-col gap-[var(--an-spacing-xxs)] rounded-[var(--an-message-radius-inner)] border border-[var(--an-border-color)] bg-[var(--an-background)] px-[var(--an-spacing-lg)] py-[var(--an-spacing-sm)]" data-testid="agent-elements-session-import-stat">
+                <span className="session-import-stat-value text-lg font-semibold leading-none text-[var(--an-foreground)]">{inSync}</span>
+                <span className="session-import-stat-label text-[11px] font-medium leading-4 text-[var(--an-foreground-subtle)]">In Sync</span>
               </div>
             </div>
 
-            <div className="session-import-dialog-search px-5 py-3 border-b border-[var(--nim-border)]">
+            <div
+              className="session-import-dialog-search agent-elements-session-import-search border-b border-[var(--an-border-color)] px-[var(--an-spacing-xxl)] py-[var(--an-spacing-lg)]"
+              data-agent-elements-shell="session-import-search"
+              data-testid="agent-elements-session-import-search"
+            >
               <input
                 type="text"
-                className="session-import-search-input nim-input text-sm"
+                className="session-import-search-input agent-elements-session-import-search-input h-9 w-full rounded-[var(--an-input-border-radius)] border border-[var(--an-input-border-color)] bg-[var(--an-input-background)] px-3 text-sm text-[var(--an-input-color)] outline-none transition-[border-color,background-color] duration-150 ease-out placeholder:text-[var(--an-input-placeholder-color)] focus:border-[var(--an-input-focus-outline)] focus:ring-2 focus:ring-[var(--an-focus-ring)]"
                 placeholder="Search sessions by title..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
@@ -271,36 +339,51 @@ export const SessionImportDialog: React.FC<SessionImportDialogProps> = ({
             </div>
 
             {scopeNotice && (
-              <div className="session-import-scope-notice px-5 py-2.5 border-b border-[var(--nim-border)] bg-[rgba(59,130,246,0.08)] text-[13px] text-[var(--nim-text-muted)]">
+              <div
+                className="session-import-scope-notice agent-elements-session-import-scope-notice border-b border-[color-mix(in_srgb,var(--an-primary-color)_22%,var(--an-border-color))] bg-[color-mix(in_srgb,var(--an-primary-color)_8%,var(--an-background))] px-[var(--an-spacing-xxl)] py-[var(--an-spacing-md)] text-[13px] leading-5 text-[var(--an-foreground-muted)]"
+                data-agent-elements-shell="session-import-scope-notice"
+              >
                 {scopeNotice}
               </div>
             )}
 
-            <div className="session-import-dialog-actions flex gap-2 px-5 py-3 border-b border-[var(--nim-border)]">
+            <div
+              className="session-import-dialog-actions agent-elements-session-import-actions flex gap-[var(--an-spacing-sm)] border-b border-[var(--an-border-color)] px-[var(--an-spacing-xxl)] py-[var(--an-spacing-lg)]"
+              data-agent-elements-shell="session-import-actions"
+              data-testid="agent-elements-session-import-actions"
+            >
               <button
                 onClick={selectAll}
-                className="session-import-action-button px-3 py-1.5 text-[13px] bg-[var(--nim-bg-secondary)] border border-[var(--nim-border)] rounded text-[var(--nim-text)] cursor-pointer transition-colors duration-150 hover:bg-[var(--nim-bg-hover)]"
+                className={`session-import-action-button agent-elements-session-import-action ${secondaryButtonClass}`}
               >
                 Select All
               </button>
               <button
                 onClick={deselectAll}
-                className="session-import-action-button px-3 py-1.5 text-[13px] bg-[var(--nim-bg-secondary)] border border-[var(--nim-border)] rounded text-[var(--nim-text)] cursor-pointer transition-colors duration-150 hover:bg-[var(--nim-bg-hover)]"
+                className={`session-import-action-button agent-elements-session-import-action ${secondaryButtonClass}`}
               >
                 Deselect All
               </button>
             </div>
 
-            <div className="session-import-dialog-content flex-1 overflow-y-auto py-3">
+            <div
+              className="session-import-dialog-content agent-elements-session-import-content nim-scrollbar flex-1 overflow-y-auto bg-[var(--an-background)] py-[var(--an-spacing-sm)]"
+              data-agent-elements-shell="session-import-content"
+              data-testid="agent-elements-session-import-content"
+            >
               {workspacePaths.length === 0 ? (
-                <div className="session-import-empty py-10 px-5 text-center text-[var(--nim-text-muted)]">
+                <div
+                  className="session-import-empty agent-elements-session-import-empty px-[var(--an-spacing-xxl)] py-10 text-center text-sm text-[var(--an-foreground-muted)]"
+                  data-agent-elements-shell="session-import-empty"
+                  data-testid="agent-elements-session-import-empty"
+                >
                   <p>No Claude Agent sessions found</p>
-                  <p className="session-import-empty-hint text-[13px] mt-2 text-[var(--nim-text-faint)]">
+                  <p className="session-import-empty-hint mt-2 text-[13px] text-[var(--an-foreground-subtle)]">
                     Sessions from the CLI will appear here
                   </p>
                 </div>
               ) : (
-                workspacePaths.map(workspacePath => {
+                workspacePaths.map((workspacePath, workspaceIndex) => {
                   const workspaceSessions = sessionsByWorkspace[workspacePath];
                   const isExpanded = expandedWorkspaces.has(workspacePath);
                   const workspaceName = getFileName(workspacePath) || workspacePath;
@@ -308,24 +391,33 @@ export const SessionImportDialog: React.FC<SessionImportDialogProps> = ({
                   const someSelected = workspaceSessions.some(s => s.selected);
 
                   return (
-                    <div key={workspacePath} className="session-import-workspace-group m-0">
-                      <div className="session-import-workspace-header flex items-center gap-2 px-5 py-2.5 bg-[var(--nim-bg-secondary)] border-t border-[var(--nim-border)] cursor-pointer transition-colors duration-150 hover:bg-[var(--nim-bg-hover)]">
+                    <div
+                      key={workspacePath}
+                      className="session-import-workspace-group agent-elements-session-import-workspace m-0"
+                      data-agent-elements-shell="session-import-workspace"
+                      data-testid={`agent-elements-session-import-workspace-${workspaceIndex}`}
+                    >
+                      <div
+                        className="session-import-workspace-header agent-elements-session-import-workspace-header flex items-center gap-[var(--an-spacing-sm)] border-t border-[var(--an-border-color)] bg-[var(--an-background-secondary)] px-[var(--an-spacing-xxl)] py-[var(--an-spacing-md)] transition-[background-color] duration-150 ease-out hover:bg-[var(--an-background-tertiary)]"
+                        data-agent-elements-shell="session-import-workspace-header"
+                        data-testid="agent-elements-session-import-workspace-header"
+                      >
                         <button
-                          className="session-import-workspace-toggle bg-transparent border-none text-[var(--nim-text-muted)] cursor-pointer p-0 flex items-center justify-center"
+                          className={`session-import-workspace-toggle agent-elements-session-import-workspace-toggle ${iconButtonClass} h-6 w-6`}
                           onClick={() => toggleExpandWorkspace(workspacePath)}
+                          aria-label={`${isExpanded ? 'Collapse' : 'Expand'} sessions in ${workspaceName}`}
+                          aria-expanded={isExpanded}
                         >
-                          <svg
-                            width="12"
-                            height="12"
-                            viewBox="0 0 16 16"
-                            fill="none"
-                            className="transition-transform duration-200"
+                          <span
+                            aria-hidden="true"
+                            className="flex items-center transition-transform duration-150 ease-out"
                             style={{ transform: isExpanded ? 'rotate(90deg)' : 'none' }}
                           >
-                            <path d="M6 12L10 8L6 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                          </svg>
+                            <MaterialSymbol icon="chevron_right" size={16} />
+                          </span>
                         </button>
                         <input
+                          className={`session-import-workspace-checkbox agent-elements-session-import-checkbox ${checkboxClass}`}
                           type="checkbox"
                           checked={allSelected}
                           ref={input => {
@@ -336,53 +428,51 @@ export const SessionImportDialog: React.FC<SessionImportDialogProps> = ({
                           onChange={() => toggleWorkspace(workspacePath)}
                           aria-label={`Select all sessions in ${workspaceName}`}
                         />
-                        <span className="session-import-workspace-name flex-1 font-medium text-[var(--nim-text)] text-sm">{workspaceName}</span>
-                        <span className="session-import-workspace-count text-xs text-[var(--nim-text-faint)]">
+                        <span className="session-import-workspace-name agent-elements-session-import-workspace-name min-w-0 flex-1 truncate text-sm font-medium text-[var(--an-foreground)]">{workspaceName}</span>
+                        <span className="session-import-workspace-count agent-elements-status-pill shrink-0 text-xs text-[var(--an-foreground-muted)]">
                           ({workspaceSessions.length})
                         </span>
                       </div>
 
                       {isExpanded && (
-                        <div className="session-import-session-list p-0">
-                          {workspaceSessions.map(session => (
-                            <div
-                              key={session.sessionId}
-                              data-id={session.sessionId}
-                              className="session-import-session-item flex items-start gap-2.5 py-3 pr-5 pl-[50px] border-t border-[var(--nim-border)] transition-colors duration-150 hover:bg-[var(--nim-bg-hover)]"
-                            >
-                              <input
-                                type="checkbox"
-                                checked={session.selected}
-                                onChange={() => toggleSession(session.sessionId)}
-                                aria-label={`Select ${session.title}`}
-                                className="mt-0.5 cursor-pointer"
-                              />
-                              <div className="session-import-session-info flex-1 min-w-0">
-                                <div className="session-import-session-title text-sm text-[var(--nim-text)] font-medium mb-1">{session.title}</div>
-                                <div className="session-import-session-meta text-xs text-[var(--nim-text-muted)] flex items-center gap-1.5">
-                                  <span>{getRelativeTimeString(session.updatedAt)}</span>
-                                  <span>•</span>
-                                  <span>{session.messageCount} messages</span>
-                                  <span>•</span>
-                                  <span>{session.tokenUsage.totalTokens.toLocaleString()} tokens</span>
-                                  <span>•</span>
-                                  <span
-                                    className={`session-import-status-badge px-1.5 py-0.5 rounded text-[11px] font-medium ${
-                                      session.syncStatus === 'new'
-                                        ? 'bg-[rgba(76,175,80,0.15)] text-[rgb(76,175,80)]'
-                                        : session.syncStatus === 'needs-update'
-                                          ? 'bg-[rgba(255,152,0,0.15)] text-[rgb(255,152,0)]'
-                                          : 'bg-[rgba(158,158,158,0.15)] text-[rgb(158,158,158)]'
-                                    }`}
-                                  >
-                                    {session.syncStatus === 'new' && 'New'}
-                                    {session.syncStatus === 'up-to-date' && 'In Sync'}
-                                    {session.syncStatus === 'needs-update' && 'Has Updates'}
-                                  </span>
+                        <div className="session-import-session-list agent-elements-session-import-session-list p-0" data-agent-elements-shell="session-import-session-list">
+                          {workspaceSessions.map(session => {
+                            const statusMeta = getSyncStatusMeta(session.syncStatus);
+
+                            return (
+                              <div
+                                key={session.sessionId}
+                                data-id={session.sessionId}
+                                className="session-import-session-item agent-elements-session-import-session flex items-start gap-[var(--an-spacing-md)] border-t border-[var(--an-border-color)] px-[var(--an-spacing-xxl)] py-[var(--an-spacing-lg)] transition-[background-color] duration-150 ease-out hover:bg-[var(--an-background-tertiary)]"
+                                data-agent-elements-shell="session-import-session"
+                                data-testid={`agent-elements-session-import-session-${session.sessionId}`}
+                              >
+                                <input
+                                  type="checkbox"
+                                  checked={session.selected}
+                                  onChange={() => toggleSession(session.sessionId)}
+                                  aria-label={`Select ${session.title}`}
+                                  className={`mt-0.5 ${checkboxClass}`}
+                                />
+                                <div className="session-import-session-info min-w-0 flex-1">
+                                  <div className="session-import-session-title mb-1 truncate text-sm font-medium text-[var(--an-foreground)]">{session.title}</div>
+                                  <div className="session-import-session-meta flex flex-wrap items-center gap-x-[var(--an-spacing-sm)] gap-y-[var(--an-spacing-xs)] text-xs text-[var(--an-foreground-muted)]">
+                                    <span>{getRelativeTimeString(session.updatedAt)}</span>
+                                    <span aria-hidden="true" className="text-[var(--an-foreground-subtle)]">/</span>
+                                    <span>{session.messageCount} messages</span>
+                                    <span aria-hidden="true" className="text-[var(--an-foreground-subtle)]">/</span>
+                                    <span>{session.tokenUsage.totalTokens.toLocaleString()} tokens</span>
+                                    <span
+                                      className={`session-import-status-badge agent-elements-status-pill shrink-0 border px-1.5 py-0.5 text-[11px] font-medium ${statusMeta.className}`}
+                                      data-tone={statusMeta.tone}
+                                    >
+                                      {statusMeta.label}
+                                    </span>
+                                  </div>
                                 </div>
                               </div>
-                            </div>
-                          ))}
+                            );
+                          })}
                         </div>
                       )}
                     </div>
@@ -391,16 +481,20 @@ export const SessionImportDialog: React.FC<SessionImportDialogProps> = ({
               )}
             </div>
 
-            <div className="session-import-dialog-footer flex gap-2 justify-end px-5 py-4 border-t border-[var(--nim-border)]">
+            <div
+              className="session-import-dialog-footer agent-elements-session-import-footer flex justify-end gap-[var(--an-spacing-sm)] border-t border-[var(--an-border-color)] px-[var(--an-spacing-xxl)] py-[var(--an-spacing-xl)]"
+              data-agent-elements-shell="session-import-footer"
+              data-testid="agent-elements-session-import-footer"
+            >
               <button
-                className="session-import-button-secondary nim-btn-secondary"
+                className={`session-import-button-secondary agent-elements-session-import-secondary ${secondaryButtonClass}`}
                 onClick={onClose}
                 disabled={importing}
               >
                 Cancel
               </button>
               <button
-                className="session-import-button-primary nim-btn-primary"
+                className={`session-import-button-primary agent-elements-session-import-primary ${primaryButtonClass}`}
                 onClick={handleImport}
                 disabled={importing || selectedCount === 0}
               >

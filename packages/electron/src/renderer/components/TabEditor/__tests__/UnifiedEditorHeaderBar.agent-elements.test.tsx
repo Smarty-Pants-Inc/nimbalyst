@@ -213,7 +213,11 @@ describe('UnifiedEditorHeaderBar Agent Elements shell', () => {
     const menu = screen.getByTestId('agent-elements-editor-header-actions-menu');
     expect(menu).toHaveClass('unified-header-actions-dropdown', 'agent-elements-editor-header-actions-menu', 'agent-elements-tool-card');
     expect(menu).toHaveAttribute('data-agent-elements-shell', 'editor-header-actions-menu');
-    expect(menu.className).not.toMatch(/rgba|rounded-md|backdrop.*blur|text-white|bg-white|bg-black/);
+    expect(menu).toHaveAttribute('data-agent-elements-card-padding', 'symmetric-inline');
+    expect(menu).toHaveAttribute('data-agent-elements-card-width', 'floating-menu');
+    expect(menu.className).toContain('--agent-elements-card-inline-padding');
+    expect(menu.className).toContain('--agent-elements-card-block-padding');
+    expect(menu.className).not.toMatch(/border-nim|bg-nim|text-nim|--nim-|rgba|rounded-md|backdrop.*blur|text-white|bg-white|bg-black/);
 
     const history = screen.getByTestId('agent-elements-editor-header-action-history');
     expect(history.tagName).toBe('BUTTON');
@@ -242,7 +246,11 @@ describe('UnifiedEditorHeaderBar Agent Elements shell', () => {
     const aiMenu = await screen.findByTestId('agent-elements-editor-header-ai-menu');
     expect(aiMenu).toHaveClass('unified-header-ai-dropdown', 'agent-elements-editor-header-ai-menu', 'agent-elements-tool-card');
     expect(aiMenu).toHaveAttribute('data-agent-elements-shell', 'editor-header-ai-menu');
-    expect(aiMenu.className).not.toMatch(/rgba|rounded-md|backdrop.*blur|text-white|bg-white|bg-black/);
+    expect(aiMenu).toHaveAttribute('data-agent-elements-card-padding', 'symmetric-inline');
+    expect(aiMenu).toHaveAttribute('data-agent-elements-card-width', 'floating-menu');
+    expect(aiMenu.className).toContain('--agent-elements-card-inline-padding');
+    expect(aiMenu.className).toContain('--agent-elements-card-block-padding');
+    expect(aiMenu.className).not.toMatch(/border-nim|bg-nim|text-nim|--nim-|rgba|rounded-md|backdrop.*blur|text-white|bg-white|bg-black/);
     await waitFor(() => expect(within(aiMenu).getByText('Refactor editor menu')).toBeInTheDocument());
     expect(testState.electronInvoke).toHaveBeenCalledWith('sessions:get-by-file', '/workspace', '/workspace/docs/plan.md');
 
@@ -251,11 +259,31 @@ describe('UnifiedEditorHeaderBar Agent Elements shell', () => {
     const tocMenu = screen.getByTestId('agent-elements-editor-header-toc-menu');
     expect(tocMenu).toHaveClass('unified-header-toc-dropdown', 'agent-elements-editor-header-toc-menu', 'agent-elements-tool-card');
     expect(tocMenu).toHaveAttribute('data-agent-elements-shell', 'editor-header-toc-menu');
-    expect(tocMenu.className).not.toMatch(/rgba|rounded-md|backdrop.*blur|text-white|bg-white|bg-black/);
+    expect(tocMenu).toHaveAttribute('data-agent-elements-card-padding', 'symmetric-inline');
+    expect(tocMenu).toHaveAttribute('data-agent-elements-card-width', 'floating-menu');
+    expect(tocMenu.className).toContain('--agent-elements-card-inline-padding');
+    expect(tocMenu.className).toContain('--agent-elements-card-block-padding');
+    expect(tocMenu.className).not.toMatch(/border-nim|bg-nim|text-nim|--nim-|rgba|rounded-md|backdrop.*blur|text-white|bg-white|bg-black/);
 
     const tocItem = screen.getByTestId('agent-elements-editor-header-toc-heading-1');
     expect(tocItem.tagName).toBe('BUTTON');
     expect(tocItem).toHaveClass('agent-elements-editor-header-toc-item');
     expect(within(tocItem).getByText('Implementation Notes')).toBeInTheDocument();
+  });
+
+  it('keeps editor header floating menu source on shared Agent Elements gutters', async () => {
+    const { readFile } = await import('node:fs/promises');
+    const { join } = await import('node:path');
+    const source = await readFile(
+      join(process.cwd(), 'packages/electron/src/renderer/components/TabEditor/UnifiedEditorHeaderBar.tsx'),
+      'utf8'
+    );
+
+    expect(source).toContain('data-agent-elements-card-padding="symmetric-inline"');
+    expect(source).toContain('data-agent-elements-card-width="floating-menu"');
+    expect(source).toContain('--agent-elements-card-inline-padding');
+    expect(source).toContain('--agent-elements-card-block-padding');
+    expect(source).not.toMatch(/agent-elements-tool-card[^'"]*(?:border-nim|bg-nim|text-nim|p-1|rounded-\[10px\]|--nim-)/);
+    expect(source).not.toMatch(/shadow-\[[^\]]*rgba|shadow-\[[^\]]*--nim-text/);
   });
 });

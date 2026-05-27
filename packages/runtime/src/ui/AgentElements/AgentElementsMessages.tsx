@@ -1,6 +1,13 @@
 import type { CSSProperties, HTMLAttributes, ReactNode } from 'react';
 import { MaterialSymbol } from '../icons/MaterialSymbol';
-import { AgentStatusPill, AgentToolCard, type AgentStatusTone, type AgentToolStatus } from './AgentElementsPrimitives';
+import {
+  AgentStatusPill,
+  AgentToolCard,
+  agentToolStatusToTone,
+  type AgentStatusTone,
+  type AgentToolStatus,
+} from './AgentElementsPrimitives';
+import { AgentProgressUpdateList, type AgentProgressUpdate } from './AgentElementsStreamEvents';
 import './AgentElementsMessages.css';
 
 type MessageDivProps = Omit<HTMLAttributes<HTMLDivElement>, 'content' | 'title'>;
@@ -11,14 +18,6 @@ interface DataTestIdAttribute {
 
 function classNames(...values: Array<string | false | null | undefined>): string {
   return values.filter(Boolean).join(' ');
-}
-
-function statusToTone(status: AgentToolStatus): AgentStatusTone {
-  if (status === 'running') return 'running';
-  if (status === 'completed') return 'success';
-  if (status === 'error') return 'error';
-  if (status === 'interrupted') return 'warning';
-  return 'neutral';
 }
 
 export type AgentUserAttachmentKind = 'file' | 'image' | 'link';
@@ -258,6 +257,7 @@ export interface AgentGenericToolCardProps extends MessageDivProps, DataTestIdAt
   result?: ReactNode;
   metadata?: AgentMetadataChip[];
   status?: AgentToolStatus;
+  progressUpdates?: AgentProgressUpdate[];
   emptyLabel?: ReactNode;
   debugPayload?: unknown;
 }
@@ -268,6 +268,7 @@ export function AgentGenericToolCard({
   result,
   metadata = [],
   status = 'completed',
+  progressUpdates = [],
   emptyLabel = 'No structured output.',
   debugPayload,
   className,
@@ -284,7 +285,7 @@ export function AgentGenericToolCard({
       icon={<MaterialSymbol icon="view_list" size={14} />}
       status={status}
       title={title}
-      trailing={<AgentStatusPill tone={statusToTone(status)}>{status}</AgentStatusPill>}
+      trailing={<AgentStatusPill tone={agentToolStatusToTone(status)}>{status}</AgentStatusPill>}
     >
       <div className="agent-elements-generic-shell" data-testid="agent-elements-generic-shell">
         {summary ? (
@@ -302,6 +303,7 @@ export function AgentGenericToolCard({
             ))}
           </dl>
         ) : null}
+        <AgentProgressUpdateList updates={progressUpdates} showEmpty={false} />
         <div className="agent-elements-generic-result" data-testid="agent-elements-generic-result">
           {result ?? emptyLabel}
         </div>
@@ -342,7 +344,7 @@ export function AgentExtensionEventCard({
       status={status}
       subtitle={<span className="agent-elements-extension-source" data-testid="agent-elements-extension-source">{source}</span>}
       title={eventName}
-      trailing={<AgentStatusPill tone={statusToTone(status)}>{status}</AgentStatusPill>}
+      trailing={<AgentStatusPill tone={agentToolStatusToTone(status)}>{status}</AgentStatusPill>}
     >
       <div className="agent-elements-extension-shell" data-testid="agent-elements-extension-shell">
         {summary ? (

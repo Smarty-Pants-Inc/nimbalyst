@@ -24,6 +24,8 @@ import { isAppleMobileWebKit } from '../../../utils/platform';
 import {
   AgentElementsEventRenderer,
   AgentTranscriptRow,
+  filterAgentElementsModelsForNormalTranscript,
+  getAgentElementsBridgeWidth,
   projectTranscriptViewMessageToAgentElementsModels,
 } from '../../AgentElements';
 
@@ -89,13 +91,13 @@ const injectRichTranscriptStyles = () => {
     .rich-transcript-tool-card.teammate {
       background-color: color-mix(in srgb, var(--nim-primary) 8%, var(--nim-bg-secondary));
       border-color: color-mix(in srgb, var(--nim-primary) 30%, var(--nim-border));
-      border-left: 3px solid var(--nim-primary);
     }
 
     /* Teammate message notification styling */
     .rich-transcript-teammate-notification {
-      background-color: transparent;
-      border-left: 2px solid color-mix(in srgb, var(--nim-primary) 25%, transparent);
+      background-color: color-mix(in srgb, var(--nim-primary) 5%, transparent);
+      border: 1px solid color-mix(in srgb, var(--nim-primary) 22%, transparent);
+      border-radius: var(--an-tool-border-radius, 6px);
       padding: 0.25rem 0.5rem;
     }
     .rich-transcript-teammate-notification details > summary {
@@ -145,12 +147,24 @@ const injectRichTranscriptStyles = () => {
     .rich-transcript-vlist > div {
       display: flex;
       flex-direction: column;
-      max-width: 64rem;
+      box-sizing: border-box;
+      width: 100%;
+      max-width: calc(var(--agent-elements-wide-max-width, 44rem) + 1.5rem);
       margin: 0 auto;
       padding: 0 0.75rem;
     }
+    .agent-transcript-panel[data-floating-transcript-actions="true"] .rich-transcript-vlist > div {
+      padding-top: var(--agent-elements-floating-action-clearance, 3rem);
+    }
+    .agent-transcript-panel[data-floating-transcript-actions="true"] .rich-transcript-scroll-container {
+      box-sizing: border-box;
+      padding-top: var(--agent-elements-floating-action-clearance, 3rem);
+    }
+    .agent-transcript-panel[data-floating-transcript-actions="true"] .rich-transcript-scroll-container > .rich-transcript-content {
+      height: calc(100% - var(--agent-elements-floating-action-clearance, 3rem));
+    }
     .rich-transcript-content.compact .rich-transcript-vlist > div {
-      max-width: 72rem;
+      max-width: calc(var(--agent-elements-wide-max-width, 44rem) + 1.5rem);
     }
 
     /* Copy button hover visibility */
@@ -538,6 +552,16 @@ const isEditToolName = (name?: string): boolean => {
   return false;
 };
 
+const isTodoToolName = (name?: string): boolean => {
+  if (!name) return false;
+  return name.toLowerCase().includes('todo');
+};
+
+const isTodoUpdateEchoText = (text?: string | null): boolean => {
+  const trimmed = text?.trim() ?? '';
+  return /^Updated todo list to\s+\[/i.test(trimmed) || /^Todo list updated\.?$/i.test(trimmed);
+};
+
 const WRITE_TOOL_NAMES = new Set(['write', 'notebookedit']);
 
 /**
@@ -670,6 +694,23 @@ const getTranscriptToolKey = (
   // same depth, which would collide if we keyed by stableId alone.
   return `tool-${depth}-${stableId}-i${fallbackIndex}`;
 };
+
+const getNestedToolContainerStyle = (depth: number): React.CSSProperties | undefined => {
+  if (depth <= 0) return undefined;
+  return {
+    marginLeft: '1rem',
+    width: 'calc(100% - 1rem)',
+  };
+};
+
+const AGENT_ELEMENTS_TOOL_BRIDGE_MARKERS = {
+  tool: 'rich-transcript-agent-elements-tool-bridge',
+  prompt: 'rich-transcript-agent-elements-prompt-bridge',
+  subagent: 'rich-transcript-agent-elements-subagent-bridge',
+} as const;
+
+const AGENT_ELEMENTS_EDIT_BRIDGE_MARKER = 'rich-transcript-agent-elements-edit-bridge';
+const AGENT_ELEMENTS_CUSTOM_WIDGET_BRIDGE_MARKER = 'rich-transcript-agent-elements-custom-widget-bridge';
 
 const stableSerialize = (value: unknown): string => {
   if (value === null || value === undefined) return String(value);
@@ -1745,61 +1786,63 @@ export const RichTranscriptView = React.forwardRef<
   // Recursive tool rendering helper
   const renderToolCard = (toolMsg: TranscriptViewMessage, toolIndex: number, depth: number = 0): JSX.Element | null => {
     const toolRenderKey = getTranscriptToolKey(toolMsg, toolIndex, depth);
+    const renderAgentElementsLiveBridge = ({
+      bridgeClassName,
+      children,
+      component,
+      testId,
+      width,
+    }: {
+      bridgeClassName: string;
+      children: React.ReactNode;
+      component: string;
+      testId: string;
+      width: 'content' | 'wide' | 'full';
+    }) => (
+      <div
+        key={toolRenderKey}
+        className={`rich-transcript-tool-container ${bridgeClassName} agent-elements-live-bridge mb-2 ${depth > 0 ? 'nested ml-0' : ''}`}
+        style={getNestedToolContainerStyle(depth)}
+        data-agent-elements-padding="aligned"
+        data-agent-elements-width={width}
+        data-component={component}
+        data-testid={testId}
+      >
+        {children}
+      </div>
+    );
     const renderAgentElementsToolBridge = (
       agentElementsModels: ReturnType<typeof projectTranscriptViewMessageToAgentElementsModels>,
       bridgeKind: 'tool' | 'prompt' | 'subagent',
       trailingContent?: React.ReactNode,
     ) => {
-      const children = agentElementsModels.map((model, modelIndex) => (
+      const visibleModels = filterAgentElementsModelsForNormalTranscript(agentElementsModels);
+      if (visibleModels.length === 0) {
+        return null;
+      }
+
+      const children = visibleModels.map((model, modelIndex) => (
         <AgentElementsEventRenderer
           key={`${toolRenderKey}-agent-elements-${model.kind}-${modelIndex}`}
           model={model}
         />
       ));
+      const bridgeWidth = getAgentElementsBridgeWidth(visibleModels);
+      const bridgeMarker = AGENT_ELEMENTS_TOOL_BRIDGE_MARKERS[bridgeKind];
 
-      if (bridgeKind === 'subagent') {
-        return (
-          <div
-            key={toolRenderKey}
-            className={`rich-transcript-tool-container agent-elements-live-bridge mb-2 ${depth > 0 ? 'nested ml-0' : ''}`}
-            style={{ marginLeft: depth > 0 ? '1rem' : '0' }}
-          data-component="rich-transcript-agent-elements-subagent-bridge"
-          data-testid="rich-transcript-agent-elements-subagent-bridge"
-        >
-          {children}
-          {trailingContent}
-        </div>
-      );
-    }
-
-      if (bridgeKind === 'prompt') {
-        return (
-          <div
-            key={toolRenderKey}
-            className={`rich-transcript-tool-container agent-elements-live-bridge mb-2 ${depth > 0 ? 'nested ml-0' : ''}`}
-            style={{ marginLeft: depth > 0 ? '1rem' : '0' }}
-          data-component="rich-transcript-agent-elements-prompt-bridge"
-          data-testid="rich-transcript-agent-elements-prompt-bridge"
-        >
-          {children}
-          {trailingContent}
-        </div>
-      );
-    }
-
-      return (
-        <div
-          key={toolRenderKey}
-          className={`rich-transcript-tool-container agent-elements-live-bridge mb-2 ${depth > 0 ? 'nested ml-0' : ''}`}
-          style={{ marginLeft: depth > 0 ? '1rem' : '0' }}
-        data-component="rich-transcript-agent-elements-tool-bridge"
-        data-testid="rich-transcript-agent-elements-tool-bridge"
-      >
-        {children}
-        {trailingContent}
-      </div>
-    );
-  };
+      return renderAgentElementsLiveBridge({
+        bridgeClassName: bridgeMarker,
+        component: bridgeMarker,
+        testId: bridgeMarker,
+        width: bridgeWidth,
+        children: (
+          <>
+            {children}
+            {trailingContent}
+          </>
+        ),
+      });
+    };
 
     if (!toolMsg.toolCall) {
       if (toolMsg.type === 'interactive_prompt' && toolMsg.interactivePrompt) {
@@ -1845,17 +1888,13 @@ export const RichTranscriptView = React.forwardRef<
       return <LazyMount placeholderHeight={placeholderHeight}>{render}</LazyMount>;
     };
 
-    const renderAgentElementsEditBridge = (children: React.ReactNode) => (
-      <div
-        key={toolRenderKey}
-        className={`rich-transcript-tool-container rich-transcript-agent-elements-edit-bridge agent-elements-live-bridge mb-2 ${depth > 0 ? 'nested ml-0' : ''}`}
-        style={{ marginLeft: depth > 0 ? '1rem' : '0' }}
-        data-component="rich-transcript-agent-elements-edit-bridge"
-        data-testid="rich-transcript-agent-elements-edit-bridge"
-      >
-        {children}
-      </div>
-    );
+    const renderAgentElementsEditBridge = (children: React.ReactNode) => renderAgentElementsLiveBridge({
+      bridgeClassName: AGENT_ELEMENTS_EDIT_BRIDGE_MARKER,
+      component: AGENT_ELEMENTS_EDIT_BRIDGE_MARKER,
+      testId: AGENT_ELEMENTS_EDIT_BRIDGE_MARKER,
+      width: 'wide',
+      children,
+    });
 
     const renderAttachedToolCallChanges = (forceFetch: boolean = false) => {
       if (isSubAgent || !getToolCallDiffs || !tool.providerToolCallId || tool.result === undefined || tool.result === null) {
@@ -1879,12 +1918,15 @@ export const RichTranscriptView = React.forwardRef<
     // Check for custom widget first
     const CustomWidget = tool.toolName ? getCustomToolWidget(tool.toolName) : undefined;
     if (CustomWidget) {
-      return (
-        <div
-          key={toolRenderKey}
-          className={`rich-transcript-tool-container mb-2 ${depth > 0 ? 'nested ml-0' : ''}`}
-          style={{ marginLeft: depth > 0 ? '1rem' : '0' }}
-        >
+      const customWidgetBridgeWidth = getAgentElementsBridgeWidth(
+        projectTranscriptViewMessageToAgentElementsModels(toolMsg)
+      );
+      return renderAgentElementsLiveBridge({
+        bridgeClassName: AGENT_ELEMENTS_CUSTOM_WIDGET_BRIDGE_MARKER,
+        component: AGENT_ELEMENTS_CUSTOM_WIDGET_BRIDGE_MARKER,
+        testId: AGENT_ELEMENTS_CUSTOM_WIDGET_BRIDGE_MARKER,
+        width: customWidgetBridgeWidth,
+        children: (
           <ToolWidgetErrorBoundary toolName={tool.toolName}>
             <CustomWidget
               message={toolMsg}
@@ -1896,8 +1938,8 @@ export const RichTranscriptView = React.forwardRef<
               getToolCallDiffs={getToolCallDiffs}
             />
           </ToolWidgetErrorBoundary>
-        </div>
-      );
+        ),
+      });
     }
 
     // Codex SDK's `file_change` tool's raw item.completed payload only carries
@@ -1966,7 +2008,7 @@ export const RichTranscriptView = React.forwardRef<
           : 'rich-transcript-tool-card rounded border border-[var(--nim-border)] overflow-hidden bg-[var(--nim-bg-secondary)]';
 
     return (
-      <div key={toolRenderKey} className={`rich-transcript-tool-container mb-2 ${depth > 0 ? 'nested ml-0' : ''}`} style={{ marginLeft: depth > 0 ? '1rem' : '0' }}>
+      <div key={toolRenderKey} className={`rich-transcript-tool-container mb-2 ${depth > 0 ? 'nested ml-0' : ''}`} style={getNestedToolContainerStyle(depth)}>
         <div className={cardClass}>
           <button onClick={() => toggleToolExpand(toolId)} className="rich-transcript-tool-button w-full py-1 px-2 flex items-center gap-1.5 text-left border-none cursor-pointer text-sm bg-transparent">
             {isTeammate ? (
@@ -2263,6 +2305,46 @@ export const RichTranscriptView = React.forwardRef<
     }
     const isNewGroup = !effectivePrevMessage || effectivePrevMessage.type !== message.type;
 
+    if (
+      message.type === 'assistant_message' &&
+      isTodoUpdateEchoText(message.text) &&
+      toolMessagesBefore.some(({ message: toolMsg }) => isTodoToolName(toolMsg.toolCall?.toolName))
+    ) {
+      const visibleToolMessages = settings.showToolCalls
+        ? toolMessagesBefore
+        : toolMessagesBefore.filter(
+            ({ message: toolMsg }) =>
+              (toolMsg.type === 'interactive_prompt' && !!toolMsg.interactivePrompt) ||
+              (!!toolMsg.toolCall?.toolName && INTERACTIVE_WIDGET_TOOLS.has(toolMsg.toolCall.toolName))
+          );
+
+      if (visibleToolMessages.length === 0) {
+        return <div key={messageKey} style={{ display: 'none' }} />;
+      }
+
+      return (
+        <div
+          key={messageKey}
+          data-agent-elements-suppressed-todo-echo="true"
+          data-message-index={index}
+          ref={(el) => {
+            if (el) {
+              messageRefs.current.set(index, el);
+            } else {
+              messageRefs.current.delete(index);
+            }
+          }}
+          className="rich-transcript-message assistant agent-elements-message-row rounded-md relative max-w-full overflow-x-hidden break-words mb-2 bg-transparent normal px-2 py-2"
+        >
+          <div className="rich-transcript-tool-messages flex flex-col gap-2 mb-1.5">
+            {visibleToolMessages.map(({ message: toolMsg, index: toolIndex }) =>
+              renderToolCard(toolMsg, toolIndex, 0)
+            )}
+          </div>
+        </div>
+      );
+    }
+
     // Render orphaned tool calls.
     // When settings.showToolCalls is false, hide non-interactive tool
     // rows from the chat view but always render interactive widgets
@@ -2274,30 +2356,45 @@ export const RichTranscriptView = React.forwardRef<
       if (!settings.showToolCalls && !isInteractiveWidget) {
         return null;
       }
+      const renderedTool = renderToolCard(message, index, 0);
+      if (!renderedTool) {
+        return null;
+      }
       return (
-        <div key={messageKey} className="rich-transcript-tool-container orphan ml-6 mb-2">
-          {renderToolCard(message, index, 0)}
+        <div key={messageKey} className="rich-transcript-tool-container orphan mb-2">
+          {renderedTool}
         </div>
       );
     }
     if (isTool && message.type === 'subagent' && message.subagent) {
+      const renderedTool = renderToolCard(message, index, 0);
+      if (!renderedTool) {
+        return null;
+      }
       return (
-        <div key={messageKey} className="rich-transcript-tool-container orphan ml-6 mb-2">
-          {renderToolCard(message, index, 0)}
+        <div key={messageKey} className="rich-transcript-tool-container orphan mb-2">
+          {renderedTool}
         </div>
       );
     }
     if (isTool && message.type === 'interactive_prompt' && message.interactivePrompt) {
+      const renderedTool = renderToolCard(message, index, 0);
+      if (!renderedTool) {
+        return null;
+      }
       return (
-        <div key={messageKey} className="rich-transcript-tool-container orphan ml-6 mb-2">
-          {renderToolCard(message, index, 0)}
+        <div key={messageKey} className="rich-transcript-tool-container orphan mb-2">
+          {renderedTool}
         </div>
       );
     }
 
     if (message.type === 'tool_progress' || message.type === 'turn_ended') {
-      const agentElementsModels = projectTranscriptViewMessageToAgentElementsModels(message);
+      const agentElementsModels = filterAgentElementsModelsForNormalTranscript(
+        projectTranscriptViewMessageToAgentElementsModels(message)
+      );
       if (agentElementsModels.length > 0) {
+        const streamBridgeWidth = getAgentElementsBridgeWidth(agentElementsModels, 'wide');
         return (
           <div
             key={messageKey}
@@ -2310,6 +2407,8 @@ export const RichTranscriptView = React.forwardRef<
               }
             }}
             className="rich-transcript-tool-container rich-transcript-agent-elements-stream-bridge agent-elements-live-bridge mb-2"
+            data-agent-elements-padding="aligned"
+            data-agent-elements-width={streamBridgeWidth}
             data-component="rich-transcript-agent-elements-stream-bridge"
             data-testid="rich-transcript-agent-elements-stream-bridge"
           >
@@ -2322,6 +2421,7 @@ export const RichTranscriptView = React.forwardRef<
           </div>
         );
       }
+      return null;
     }
 
     // Render teammate/sub-agent messages as compact inline notifications
@@ -2389,6 +2489,7 @@ export const RichTranscriptView = React.forwardRef<
     if (message.type === 'system_message' && !shouldKeepSystemMessageOnSpecialWidgetPath(message)) {
       const agentElementsModels = projectTranscriptViewMessageToAgentElementsModels(message);
       if (agentElementsModels.length > 0) {
+        const systemBridgeWidth = getAgentElementsBridgeWidth(agentElementsModels, 'wide');
         return (
           <div
             key={messageKey}
@@ -2401,6 +2502,8 @@ export const RichTranscriptView = React.forwardRef<
               }
             }}
             className="rich-transcript-tool-container rich-transcript-agent-elements-system-bridge agent-elements-live-bridge mb-2"
+            data-agent-elements-padding="aligned"
+            data-agent-elements-width={systemBridgeWidth}
             data-component="rich-transcript-agent-elements-system-bridge"
             data-testid="rich-transcript-agent-elements-system-bridge"
           >
@@ -2418,7 +2521,7 @@ export const RichTranscriptView = React.forwardRef<
     const useAgentElementsMessageShell = message.type === 'user_message' || message.type === 'assistant_message';
     const useAgentElementsRowShell = useAgentElementsMessageShell;
     const messageRowClassName = useAgentElementsRowShell
-      ? `rich-transcript-message agent-elements-message-row rounded-md relative max-w-full overflow-x-hidden break-words mb-2 bg-transparent ${settings.compactMode ? 'compact px-2 py-1.5' : 'normal px-2 py-2'} ${!isNewGroup ? 'continuation -mt-1' : ''}`
+      ? `rich-transcript-message ${isUser ? 'user' : 'assistant'} agent-elements-message-row rounded-md relative max-w-full overflow-x-hidden break-words mb-2 bg-transparent ${settings.compactMode ? 'compact px-2 py-1.5' : 'normal px-2 py-2'} ${!isNewGroup ? 'continuation -mt-1' : ''}`
       : `rich-transcript-message rounded-md relative max-w-full overflow-x-hidden break-words mb-2 ${isUser ? 'user bg-[var(--nim-bg-secondary)]' : 'assistant bg-[var(--nim-bg)]'} ${settings.compactMode ? 'compact p-2' : 'normal p-3'} ${!isNewGroup ? 'continuation -mt-1' : ''}`;
 
     const renderCollapseButton = () => {
@@ -2471,6 +2574,8 @@ export const RichTranscriptView = React.forwardRef<
           {agentElementsThinkingModels.length > 0 && (
             <div
               className="rich-transcript-agent-elements-thinking-bridge agent-elements-live-bridge mb-2"
+              data-agent-elements-padding="aligned"
+              data-agent-elements-width="content"
               data-component="rich-transcript-agent-elements-thinking-bridge"
               data-testid="rich-transcript-agent-elements-thinking-bridge"
             >
@@ -2569,7 +2674,7 @@ export const RichTranscriptView = React.forwardRef<
               );
           if (visibleToolMessages.length === 0) return null;
           return (
-            <div className={`rich-transcript-tool-messages flex flex-col gap-2 mb-1.5 ${isNewGroup ? 'indented ml-6' : ''}`}>
+            <div className={`rich-transcript-tool-messages flex flex-col gap-2 mb-1.5 ${isNewGroup && !useAgentElementsRowShell ? 'indented ml-6' : ''}`}>
               {visibleToolMessages.map(({ message: toolMsg, index: toolIndex }) =>
                 renderToolCard(toolMsg, toolIndex, 0)
               )}
@@ -2580,6 +2685,8 @@ export const RichTranscriptView = React.forwardRef<
         {useAgentElementsMessageShell ? (
           <div
             className="rich-transcript-agent-elements-message-bridge agent-elements-live-bridge"
+            data-agent-elements-padding="aligned"
+            data-agent-elements-width="content"
             data-component="rich-transcript-agent-elements-message-bridge"
             data-testid="rich-transcript-agent-elements-message-bridge"
           >

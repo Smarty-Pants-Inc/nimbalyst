@@ -8,6 +8,25 @@ import { MaterialSymbol } from '../../icons/MaterialSymbol';
 import '../../AgentElements/AgentElementsPrimitives.css';
 import '../../AgentElements/AgentElementsToolRenderers.css';
 
+const EDIT_TOOL_CARD_ROOT_CLASS =
+  'rich-transcript-edit-card agent-elements-edit-tool-card agent-elements-tool-card';
+const EDIT_TOOL_TITLE_CLASS =
+  'rich-transcript-edit-card__title agent-elements-tool-title flex flex-wrap items-baseline gap-1';
+const EDIT_TOOL_SEPARATOR_CLASS =
+  'rich-transcript-edit-card__file-separator mx-1 text-[var(--an-foreground-subtle)]';
+const EDIT_TOOL_FILE_LINK_CLASS =
+  'rich-transcript-edit-card__file-link cursor-pointer border-0 bg-transparent p-0 text-left font-[inherit] text-[var(--an-primary-color)] no-underline hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--an-input-focus-outline)]';
+const EDIT_TOOL_FILE_TEXT_CLASS =
+  'rich-transcript-edit-card__file font-normal text-[var(--an-tool-color-muted)]';
+const EDIT_TOOL_META_CLASS =
+  'rich-transcript-edit-card__meta agent-elements-tool-subtitle flex items-center gap-[var(--an-spacing-xs)]';
+const EDIT_TOOL_OPEN_BUTTON_CLASS =
+  'rich-transcript-edit-card__open-button flex h-5 w-5 shrink-0 cursor-pointer items-center justify-center rounded-[var(--an-radius-sm)] border-0 bg-transparent p-0 text-[var(--an-foreground-muted)] motion-safe:transition-colors motion-safe:duration-150 hover:bg-[var(--an-background-secondary)] hover:text-[var(--an-primary-color)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--an-input-focus-outline)]';
+const EDIT_TOOL_INSTRUCTION_CLASS =
+  'rich-transcript-edit-card__instruction whitespace-pre-wrap break-words rounded-[var(--an-radius-sm)] bg-[var(--an-background-tertiary)] p-[var(--an-spacing-sm)] text-[0.8rem] leading-[1.5] text-[var(--an-tool-color-muted)]';
+const EDIT_TOOL_STACK_CLASS =
+  'flex flex-col gap-[var(--an-spacing-sm)]';
+
 /** Returns true if the edit represents a new file creation (content only, no diff) */
 const isNewFileEdit = (edit: any): boolean => {
   if (!edit.content || typeof edit.content !== 'string') return false;
@@ -100,52 +119,56 @@ export const EditToolResultCard: React.FC<EditToolResultCardProps> = ({
 
   return (
     <div
-      className="rich-transcript-edit-card agent-elements-edit-tool-card agent-elements-tool-card"
+      className={EDIT_TOOL_CARD_ROOT_CLASS}
       data-component="RichTranscriptAgentElementsEditCard"
       data-testid="rich-transcript-agent-elements-edit-card"
+      data-agent-elements-shell="edit-tool-card"
     >
       <div className="rich-transcript-edit-card__header agent-elements-tool-header">
         <div className="rich-transcript-edit-card__icon agent-elements-tool-icon" aria-hidden="true">
           <MaterialSymbol icon={allNewFiles ? "note_add" : "edit"} size={16} />
         </div>
         <div className="rich-transcript-edit-card__details agent-elements-tool-title-group">
-          <div className="rich-transcript-edit-card__title agent-elements-tool-title flex flex-wrap items-baseline gap-1">
+          <div className={EDIT_TOOL_TITLE_CLASS}>
             {toolDisplayName}
             {prettyPath && (
               <>
-                <span className="rich-transcript-edit-card__file-separator text-nim-faint mx-1">·</span>
+                <span className={EDIT_TOOL_SEPARATOR_CLASS}>·</span>
                 {firstEditPath && onOpenFile ? (
                   <button
-                    className="rich-transcript-edit-card__file-link bg-transparent border-none p-0 m-0 font-[inherit] text-nim-link cursor-pointer no-underline hover:underline"
+                    className={EDIT_TOOL_FILE_LINK_CLASS}
                     onClick={handleOpenFile}
+                    aria-label={`Open ${prettyPath}`}
                     title={`Open ${firstEditPath}`}
+                    type="button"
                   >
                     {prettyPath}
                   </button>
                 ) : (
-                  <span className="rich-transcript-edit-card__file text-nim-muted font-normal">{prettyPath}</span>
+                  <span className={EDIT_TOOL_FILE_TEXT_CLASS}>{prettyPath}</span>
                 )}
               </>
             )}
           </div>
-          <div className="rich-transcript-edit-card__meta agent-elements-tool-subtitle flex items-center gap-1">
+          <div className={EDIT_TOOL_META_CLASS}>
             <span>{editCountLabel}</span>
-            {instruction && <span className="rich-transcript-edit-card__meta-divider text-nim-faint">•</span>}
+            {instruction && <span className="rich-transcript-edit-card__meta-divider text-[var(--an-foreground-subtle)]">•</span>}
             {instruction && <span>Instruction</span>}
           </div>
         </div>
         {firstEditPath && onOpenFile && (
           <button
-            className="rich-transcript-edit-card__open-button flex items-center justify-center w-5 h-5 p-0 border-none rounded bg-transparent text-nim-faint cursor-pointer shrink-0 transition-colors duration-150 hover:bg-nim-hover hover:text-nim"
+            className={EDIT_TOOL_OPEN_BUTTON_CLASS}
             onClick={handleOpenFile}
             title="Open file"
             aria-label="Open file"
+            type="button"
           >
             <MaterialSymbol icon="open_in_new" size={14} />
           </button>
         )}
         <span
-          className={`rich-transcript-edit-card__status rich-transcript-edit-card__status--${statusClass} agent-elements-status-pill ${statusClass === 'success' ? 'text-nim-success' : 'text-nim-error'}`}
+          className={`rich-transcript-edit-card__status rich-transcript-edit-card__status--${statusClass} agent-elements-status-pill`}
           data-tone={statusClass}
         >
           {statusLabel}
@@ -153,12 +176,12 @@ export const EditToolResultCard: React.FC<EditToolResultCardProps> = ({
       </div>
 
       {instruction && (
-        <div className="rich-transcript-edit-card__instruction text-[0.8rem] text-nim-muted bg-nim-tertiary rounded p-2 whitespace-pre-wrap break-words leading-[1.5]">
+        <div className={EDIT_TOOL_INSTRUCTION_CLASS}>
           {instruction}
         </div>
       )}
 
-      <div className="rich-transcript-edit-card__diffs flex flex-col gap-2">
+      <div className={`rich-transcript-edit-card__diffs ${EDIT_TOOL_STACK_CLASS}`}>
         {edits.map((edit, idx) => {
           const absolutePath = resolveEditFilePath(edit, toolMessage);
           const relativePath = absolutePath ? toProjectRelative(absolutePath, workspacePath) : undefined;
@@ -197,7 +220,7 @@ export const EditToolResultCard: React.FC<EditToolResultCardProps> = ({
       </div>
 
       {renderEmbeddedFile && previewFilePaths.length > 0 && (
-        <div className="rich-transcript-edit-card__previews flex flex-col gap-2">
+        <div className={`rich-transcript-edit-card__previews ${EDIT_TOOL_STACK_CLASS}`}>
           {previewFilePaths.map((filePath) => (
             <React.Fragment key={filePath}>
               {renderEmbeddedFile({ filePath, defaultExpanded: allNewFiles })}

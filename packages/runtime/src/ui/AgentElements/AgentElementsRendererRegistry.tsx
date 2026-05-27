@@ -6,8 +6,8 @@ import {
   type AgentToolStatus,
 } from './AgentElementsPrimitives';
 import {
+  AgentTodoCard,
   AgentPlanCard,
-  AgentTodoList,
   type AgentPlanStatus,
   type AgentPlanStep,
   type AgentTodoItem,
@@ -80,6 +80,7 @@ export const knownAgentElementsRendererKinds = [
 ] as const;
 
 export type AgentElementsRendererKind = typeof knownAgentElementsRendererKinds[number];
+export type AgentElementsBridgeWidth = 'content' | 'wide' | 'full';
 export type AgentElementsFallbackClass =
   | 'known'
   | 'supported-generic'
@@ -157,6 +158,22 @@ export interface AgentElementsEventRendererProps {
   model: AgentElementsRendererModel;
 }
 
+const inlineContentRendererKinds = new Set<string>([
+  'userMessage',
+  'assistantMessage',
+  'thinking',
+]);
+
+export function getAgentElementsBridgeWidth(
+  models: readonly AgentElementsRendererModel[],
+  fallback: AgentElementsBridgeWidth = 'content',
+): AgentElementsBridgeWidth {
+  if (fallback === 'full') return 'full';
+  return models.some((model) => !inlineContentRendererKinds.has(model.kind))
+    ? 'wide'
+    : fallback;
+}
+
 const rendererComponentNames: Record<AgentElementsRendererKind, string> = {
   userMessage: 'AgentTranscriptRow + AgentUserMessageBody',
   assistantMessage: 'AgentTranscriptRow + AgentMarkdown',
@@ -171,7 +188,7 @@ const rendererComponentNames: Record<AgentElementsRendererKind, string> = {
   genericTool: 'AgentGenericToolCard',
   humanInput: 'AgentQuestionCard',
   plan: 'AgentPlanCard',
-  todo: 'AgentTodoList',
+  todo: 'AgentTodoCard + AgentTodoList',
   subagent: 'AgentSubagentCard',
   stateUpdate: 'AgentStateSnapshotCard',
   checkpointTaskDebug: 'AgentLifecycleCard',
@@ -397,6 +414,7 @@ function renderKnownModel(kind: AgentElementsRendererKind, model: AgentElementsR
           deniedReason={model.deniedReason}
           exitCode={model.exitCode}
           output={model.output ?? model.body}
+          progressUpdates={model.progressUpdates}
           status={toolStatus(model.status, model.exitCode && model.exitCode !== 0 ? 'error' : 'completed')}
         />
       );
@@ -414,6 +432,7 @@ function renderKnownModel(kind: AgentElementsRendererKind, model: AgentElementsR
       return (
         <AgentSearchToolCard
           debugPayload={model.rawPayload}
+          progressUpdates={model.progressUpdates}
           query={model.query ?? text(model.title, 'search')}
           results={model.searchResults}
           source={model.searchSource}
@@ -428,6 +447,7 @@ function renderKnownModel(kind: AgentElementsRendererKind, model: AgentElementsR
           debugPayload={model.rawPayload}
           displayName={model.displayName}
           error={model.error}
+          progressUpdates={model.progressUpdates}
           result={model.result ?? model.body}
           serverName={model.serverName}
           status={toolStatus(model.status)}
@@ -439,6 +459,7 @@ function renderKnownModel(kind: AgentElementsRendererKind, model: AgentElementsR
         <AgentGenericToolCard
           debugPayload={model.rawPayload}
           metadata={model.metadata}
+          progressUpdates={model.progressUpdates}
           result={model.result ?? model.body}
           status={toolStatus(model.status)}
           summary={model.summary}
@@ -470,9 +491,12 @@ function renderKnownModel(kind: AgentElementsRendererKind, model: AgentElementsR
       );
     case 'todo':
       return (
-        <AgentTodoList
+        <AgentTodoCard
+          debugPayload={model.rawPayload}
           isStreaming={model.isStreaming ?? toolStatus(model.status, 'completed') === 'running'}
           items={model.todos ?? [{ content: content(model.body, model.title ?? 'Todo update'), status: 'pending' }]}
+          status={toolStatus(model.status)}
+          title={text(model.title, 'Todo update')}
         />
       );
     case 'subagent':

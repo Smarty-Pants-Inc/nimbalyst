@@ -116,7 +116,7 @@ export function UpdateToast(): React.ReactElement | null {
   }
 
   const toastCardClass =
-    'update-toast agent-elements-update-toast agent-elements-tool-card relative max-w-[calc(100vw-32px)] overflow-hidden rounded-[var(--an-tool-border-radius)] border border-[var(--an-border-color)] bg-[var(--an-background)] p-[var(--an-spacing-xl)] text-[var(--an-foreground)] shadow-[0_14px_42px_color-mix(in_srgb,var(--nim-text)_16%,transparent)]';
+    'update-toast agent-elements-update-toast agent-elements-tool-card relative max-w-[calc(100vw-32px)] overflow-hidden rounded-[var(--an-tool-border-radius)] border border-[var(--an-border-color)] bg-[var(--an-background)] [--agent-elements-card-block-padding:var(--an-spacing-xl)] [--agent-elements-card-inline-padding:var(--an-spacing-xl)] px-[var(--agent-elements-card-inline-padding)] py-[var(--agent-elements-card-block-padding)] text-[var(--an-foreground)] shadow-[0_14px_42px_color-mix(in_srgb,var(--an-foreground)_16%,transparent)]';
   const dismissButtonClass =
     'update-toast-dismiss agent-elements-update-toast-dismiss absolute right-3 top-3 inline-flex h-8 w-8 cursor-pointer items-center justify-center rounded-[var(--an-input-border-radius)] border border-transparent bg-transparent p-0 text-[var(--an-foreground-muted)] transition-[background-color,border-color,color] duration-150 ease-out hover:border-[var(--an-border-color)] hover:bg-[var(--an-background-tertiary)] hover:text-[var(--an-foreground)] focus:outline-none focus:ring-2 focus:ring-[var(--an-input-focus-outline)]';
   const secondaryButtonClass =
@@ -137,6 +137,8 @@ export function UpdateToast(): React.ReactElement | null {
               data-testid="update-checking-toast"
               data-component="UpdateToastChecking"
               data-agent-elements-shell="update-checking-toast"
+              data-agent-elements-card-padding="symmetric-inline"
+              data-agent-elements-card-width="floating-toast"
             >
               <span
                 className="update-toast-icon agent-elements-update-toast-icon inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-[var(--an-tool-border-radius)] border border-[var(--an-border-color)] bg-[var(--an-background-secondary)] text-[var(--an-primary-color)]"
@@ -156,6 +158,8 @@ export function UpdateToast(): React.ReactElement | null {
               data-testid="update-up-to-date-toast"
               data-component="UpdateToastUpToDate"
               data-agent-elements-shell="update-up-to-date-toast"
+              data-agent-elements-card-padding="symmetric-inline"
+              data-agent-elements-card-width="floating-toast"
             >
               <button
                 className={dismissButtonClass}
@@ -168,7 +172,7 @@ export function UpdateToast(): React.ReactElement | null {
                 <MaterialSymbol icon="close" size={18} />
               </button>
               <span
-                className="update-toast-check-icon agent-elements-status-pill agent-elements-update-toast-icon mb-3 inline-flex h-8 w-8 items-center justify-center rounded-[var(--an-tool-border-radius)] border border-[color-mix(in_srgb,var(--nim-success)_28%,var(--an-border-color))] bg-[color-mix(in_srgb,var(--nim-success)_10%,var(--an-background))] text-[var(--nim-success)]"
+                className="update-toast-check-icon agent-elements-status-pill agent-elements-update-toast-icon mb-3 inline-flex h-8 w-8 items-center justify-center rounded-[var(--an-tool-border-radius)] border border-[color-mix(in_srgb,var(--an-success-color)_28%,var(--an-border-color))] bg-[color-mix(in_srgb,var(--an-success-color)_10%,var(--an-background))] text-[var(--an-success-color)]"
                 data-testid="agent-elements-update-toast-icon"
                 data-agent-elements-shell="update-toast-icon"
                 aria-hidden="true"
@@ -211,10 +215,12 @@ export function UpdateToast(): React.ReactElement | null {
 
           {state === 'error' && (
             <div
-              className={`${toastCardClass} update-toast-error w-[380px] border-[color-mix(in_srgb,var(--nim-error)_38%,var(--an-border-color))]`}
+              className={`${toastCardClass} update-toast-error w-[380px] border-[color-mix(in_srgb,var(--an-error-color)_38%,var(--an-border-color))]`}
               data-testid="update-error-toast"
               data-component="UpdateToastError"
               data-agent-elements-shell="update-error-toast"
+              data-agent-elements-card-padding="symmetric-inline"
+              data-agent-elements-card-width="floating-toast"
             >
               <button
                 className={dismissButtonClass}
@@ -228,7 +234,7 @@ export function UpdateToast(): React.ReactElement | null {
               </button>
               <div className="update-toast-header agent-elements-update-toast-header flex items-start gap-3 pr-8" data-agent-elements-shell="update-toast-header">
                 <span
-                  className="update-toast-icon agent-elements-update-toast-icon inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-[var(--an-tool-border-radius)] border border-[color-mix(in_srgb,var(--nim-error)_28%,var(--an-border-color))] bg-[color-mix(in_srgb,var(--nim-error)_10%,var(--an-background))] text-[var(--nim-error)]"
+                  className="update-toast-icon agent-elements-update-toast-icon inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-[var(--an-tool-border-radius)] border border-[color-mix(in_srgb,var(--an-error-color)_28%,var(--an-border-color))] bg-[color-mix(in_srgb,var(--an-error-color)_10%,var(--an-background))] text-[var(--an-error-color)]"
                   data-testid="agent-elements-update-toast-icon"
                   data-agent-elements-shell="update-toast-icon"
                   aria-hidden="true"
@@ -236,7 +242,7 @@ export function UpdateToast(): React.ReactElement | null {
                   <MaterialSymbol icon="error" size={19} />
                 </span>
                 <div className="min-w-0">
-                  <div className="update-toast-title m-0 text-sm font-medium text-[var(--nim-error)]">Update Error</div>
+                  <div className="update-toast-title m-0 text-sm font-medium text-[var(--an-error-color)]">Update Error</div>
                   <div className="update-toast-subtitle select-text mt-1 text-xs leading-relaxed text-[var(--an-foreground-muted)]" data-testid="error-message">{errorMessage}</div>
                 </div>
               </div>

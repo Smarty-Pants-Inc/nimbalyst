@@ -6,7 +6,7 @@
  * with ProjectPermissionsPanel.
  */
 
-import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import React, { useEffect, useCallback, useMemo } from 'react';
 import { useAtom, useAtomValue } from 'jotai';
 import { MaterialSymbol } from '@nimbalyst/runtime';
 import {
@@ -15,6 +15,7 @@ import {
 } from '../../store/atoms/appSettings';
 import { permissionsChangedVersionAtom } from '../../store/atoms/permissions';
 import { HelpTooltip } from '../../help';
+import { FloatingPortal, useFloatingMenu } from '../../hooks/useFloatingMenu';
 
 export interface TrustStatus {
   trustedAt?: number;
@@ -27,14 +28,15 @@ interface TrustIndicatorProps {
   onChangeMode?: () => void;
 }
 
+const floatingPopoverCardGutters =
+  '[--agent-elements-card-block-padding:var(--an-spacing-xs)] [--agent-elements-card-inline-padding:var(--an-spacing-xs)] px-[var(--agent-elements-card-inline-padding)] py-[var(--agent-elements-card-block-padding)]';
+
 export const TrustIndicator: React.FC<TrustIndicatorProps> = ({
   workspacePath,
   onOpenSettings,
   onChangeMode,
 }) => {
-  const [menuOpen, setMenuOpen] = useState(false);
-  const buttonRef = useRef<HTMLButtonElement>(null);
-  const menuRef = useRef<HTMLDivElement>(null);
+  const menu = useFloatingMenu({ placement: 'right-end', offsetPx: 8, constrainHeight: true });
 
   // Get the atom for this workspace (or a placeholder if no workspace)
   const permissionsAtom = useMemo(
@@ -74,51 +76,13 @@ export const TrustIndicator: React.FC<TrustIndicatorProps> = ({
     fetchStatus();
   }, [fetchStatus, permissionsVersion]);
 
-  // Close menu when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (
-        menuOpen &&
-        menuRef.current &&
-        buttonRef.current &&
-        !menuRef.current.contains(event.target as Node) &&
-        !buttonRef.current.contains(event.target as Node)
-      ) {
-        setMenuOpen(false);
-      }
-    };
-
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [menuOpen]);
-
   // Don't render if no workspace
   if (!workspacePath) {
     return null;
   }
 
-  const handleTrustWorkspace = async () => {
-    try {
-      await window.electronAPI.invoke('permissions:trustWorkspace', workspacePath);
-      await fetchStatus();
-      setMenuOpen(false);
-    } catch (error) {
-      console.error('[TrustIndicator] Failed to trust workspace:', error);
-    }
-  };
-
-  const handleRevokeWorkspaceTrust = async () => {
-    try {
-      await window.electronAPI.invoke('permissions:revokeWorkspaceTrust', workspacePath);
-      await fetchStatus();
-      setMenuOpen(false);
-    } catch (error) {
-      console.error('[TrustIndicator] Failed to revoke workspace trust:', error);
-    }
-  };
-
   const handleOpenSettings = () => {
-    setMenuOpen(false);
+    menu.setIsOpen(false);
     onOpenSettings();
   };
 
@@ -127,7 +91,7 @@ export const TrustIndicator: React.FC<TrustIndicatorProps> = ({
 
     // Just close the menu and trigger the callback to show the toast
     // Don't revoke trust - that happens only if user picks a new mode
-    setMenuOpen(false);
+    menu.setIsOpen(false);
     onChangeMode?.();
   };
 
@@ -161,11 +125,11 @@ export const TrustIndicator: React.FC<TrustIndicatorProps> = ({
     const statusClass = getStatusClass();
     switch (statusClass) {
       case 'bypass-all':
-        return 'text-[var(--nim-warning)]';
+        return 'text-[var(--an-warning-color)]';
       case 'loading':
-        return 'text-[var(--nim-text-faint)]';
+        return 'text-[var(--an-foreground-subtle)]';
       default:
-        return 'text-[var(--nim-text-muted)]';
+        return 'text-[var(--an-foreground-muted)]';
     }
   };
 
@@ -173,51 +137,34 @@ export const TrustIndicator: React.FC<TrustIndicatorProps> = ({
     const statusClass = getStatusClass();
     switch (statusClass) {
       case 'untrusted':
-        return 'bg-[var(--nim-warning)]';
+        return 'bg-[var(--an-warning-color)]';
       case 'trusted':
-        return 'bg-[var(--nim-success)]';
+        return 'bg-[var(--an-success-color)]';
       case 'allow-all':
-        return 'bg-[var(--nim-primary)]';
+        return 'bg-[var(--an-primary-color)]';
       case 'bypass-all':
-        return 'bg-[var(--nim-error)]';
+        return 'bg-[var(--an-diff-removed-text)]';
       case 'loading':
-        return 'bg-[var(--nim-text-faint)]';
+        return 'bg-[var(--an-foreground-subtle)]';
       default:
-        return 'bg-[var(--nim-text-faint)]';
-    }
-  };
-
-  const getBadgeClasses = (): string => {
-    const statusClass = getStatusClass();
-    const base = 'px-2 py-0.5 rounded text-[11px] font-medium';
-    switch (statusClass) {
-      case 'untrusted':
-        return `${base} bg-[color-mix(in_srgb,var(--nim-warning)_15%,transparent)] text-[var(--nim-warning)]`;
-      case 'trusted':
-        return `${base} bg-[color-mix(in_srgb,var(--nim-success)_15%,transparent)] text-[var(--nim-success)]`;
-      case 'allow-all':
-        return `${base} bg-[color-mix(in_srgb,var(--nim-primary)_15%,transparent)] text-[var(--nim-primary)]`;
-      case 'bypass-all':
-        return `${base} bg-[color-mix(in_srgb,var(--nim-error)_15%,transparent)] text-[var(--nim-error)]`;
-      default:
-        return base;
+        return 'bg-[var(--an-foreground-subtle)]';
     }
   };
 
   const getCurrentModeClasses = (): string => {
     const statusClass = getStatusClass();
-    const base = 'mx-2 mb-2 p-3 rounded-md bg-[var(--nim-bg)] border border-[var(--nim-border)]';
+    const base = 'mx-2 mb-2 rounded-[var(--an-tool-border-radius)] border bg-[var(--an-tool-background)] p-3';
     switch (statusClass) {
       case 'trusted':
-        return `${base} border-[var(--nim-success)] bg-[color-mix(in_srgb,var(--nim-success)_10%,transparent)]`;
+        return `${base} border-[color-mix(in_srgb,var(--an-success-color)_26%,var(--an-border-color))] bg-[color-mix(in_srgb,var(--an-success-color)_8%,var(--an-tool-background))]`;
       case 'allow-all':
-        return `${base} border-[var(--nim-primary)] bg-[color-mix(in_srgb,var(--nim-primary)_10%,transparent)]`;
+        return `${base} border-[color-mix(in_srgb,var(--an-primary-color)_26%,var(--an-border-color))] bg-[color-mix(in_srgb,var(--an-primary-color)_8%,var(--an-tool-background))]`;
       case 'bypass-all':
-        return `${base} border-[var(--nim-error)] bg-[color-mix(in_srgb,var(--nim-error)_10%,transparent)]`;
+        return `${base} border-[color-mix(in_srgb,var(--an-diff-removed-text)_26%,var(--an-border-color))] bg-[color-mix(in_srgb,var(--an-diff-removed-text)_8%,var(--an-tool-background))]`;
       case 'untrusted':
-        return `${base} border-[var(--nim-warning)] bg-[color-mix(in_srgb,var(--nim-warning)_10%,transparent)]`;
+        return `${base} border-[color-mix(in_srgb,var(--an-warning-color)_26%,var(--an-border-color))] bg-[color-mix(in_srgb,var(--an-warning-color)_8%,var(--an-tool-background))]`;
       default:
-        return base;
+        return `${base} border-[var(--an-border-color)]`;
     }
   };
 
@@ -225,15 +172,15 @@ export const TrustIndicator: React.FC<TrustIndicatorProps> = ({
     const statusClass = getStatusClass();
     switch (statusClass) {
       case 'trusted':
-        return 'text-[var(--nim-success)]';
+        return 'text-[var(--an-success-color)]';
       case 'allow-all':
-        return 'text-[var(--nim-primary)]';
+        return 'text-[var(--an-primary-color)]';
       case 'bypass-all':
-        return 'text-[var(--nim-error)]';
+        return 'text-[var(--an-diff-removed-text)]';
       case 'untrusted':
-        return 'text-[var(--nim-warning)]';
+        return 'text-[var(--an-warning-color)]';
       default:
-        return 'text-[var(--nim-text)]';
+        return 'text-[var(--an-foreground)]';
     }
   };
 
@@ -269,101 +216,128 @@ export const TrustIndicator: React.FC<TrustIndicatorProps> = ({
     return 'Trust this workspace to allow the AI agent to run commands.';
   };
 
+  const statusClass = getStatusClass();
+  const permissionMode = status?.permissionMode ?? 'none';
+
   return (
-    <div className="trust-indicator-container relative">
+    <div
+      className="trust-indicator-container agent-elements-trust-indicator relative"
+      data-testid="agent-elements-trust-indicator"
+      data-component="TrustIndicator"
+      data-agent-elements-shell="trust-indicator"
+      data-trust-status={statusClass}
+      data-permission-mode={permissionMode}
+    >
       <HelpTooltip testId="gutter-permissions-button" placement="right">
         <button
-          ref={buttonRef}
-          className={`trust-indicator nav-button relative w-9 h-9 flex items-center justify-center bg-transparent border-none rounded-md cursor-pointer transition-all duration-150 p-0 hover:bg-nim-tertiary active:scale-95 focus-visible:outline-2 focus-visible:outline-[var(--nim-primary)] focus-visible:outline-offset-2 ${getStatusClass()} ${getIndicatorColorClass()}`}
-          onClick={() => setMenuOpen(!menuOpen)}
+          ref={menu.refs.setReference as React.RefCallback<HTMLButtonElement>}
+          {...menu.getReferenceProps()}
+          className={`trust-indicator nav-button agent-elements-trust-indicator-button relative flex h-9 w-9 cursor-pointer items-center justify-center rounded-[var(--an-tool-border-radius)] border border-transparent bg-transparent p-0 transition-[background-color,border-color,color,box-shadow] duration-150 ease-out hover:border-[var(--an-border-color)] hover:bg-[var(--an-background-tertiary)] hover:text-[var(--an-foreground)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--an-input-focus-outline)] ${statusClass} ${getIndicatorColorClass()}`}
+          onClick={() => menu.setIsOpen(!menu.isOpen)}
           aria-label={getStatusLabel()}
-          aria-expanded={menuOpen}
+          aria-expanded={menu.isOpen}
           aria-haspopup="menu"
           data-testid="gutter-permissions-button"
+          data-component="TrustIndicatorButton"
+          data-agent-elements-shell="trust-indicator-button"
+          data-trust-status={statusClass}
+          data-permission-mode={permissionMode}
         >
           <MaterialSymbol icon={getStatusIcon()} size={20} />
           <span
-            className={`trust-indicator-dot absolute bottom-1 right-1 w-2 h-2 rounded-full border-2 border-[var(--nim-bg-secondary)] ${getStatusClass()} ${getDotColorClass()}`}
+            className={`trust-indicator-dot agent-elements-trust-indicator-status-dot absolute bottom-1 right-1 h-2 w-2 rounded-[999px] border-2 border-[var(--an-background)] ${statusClass} ${getDotColorClass()}`}
+            data-testid="agent-elements-trust-indicator-status-dot"
+            data-agent-elements-shell="trust-indicator-status-dot"
+            data-trust-status={statusClass}
           />
         </button>
       </HelpTooltip>
 
-      {menuOpen && (
-        <div
-          ref={menuRef}
-          className="trust-menu absolute bottom-0 left-[calc(100%+8px)] w-[280px] bg-[var(--nim-bg-secondary)] border border-[var(--nim-border)] rounded-lg shadow-[0_4px_12px_rgba(0,0,0,0.15)] z-[100] animate-[trust-menu-appear_0.15s_ease-out]"
-          role="menu"
-          style={{
-            // Inline keyframe animation fallback
-            animation: 'trust-menu-appear 0.15s ease-out',
-          }}
-        >
-          <style>{`
-            @keyframes trust-menu-appear {
-              from {
-                opacity: 0;
-                transform: translateX(-4px);
-              }
-              to {
-                opacity: 1;
-                transform: translateX(0);
-              }
-            }
-          `}</style>
-          <div className="trust-menu-header flex items-center justify-between px-3 pt-3 pb-2">
-            <span className="trust-menu-title text-[13px] font-semibold text-[var(--nim-text)]">
-              Agent Permissions
-            </span>
-          </div>
-
-          {/* Current mode - prominent display */}
-          <div className={`trust-menu-current-mode ${getStatusClass()} ${getCurrentModeClasses()}`}>
-            <div className="trust-menu-current-mode-label text-[11px] font-medium text-[var(--nim-text-faint)] uppercase tracking-[0.5px] mb-1.5">
-              Current mode:
-            </div>
-            <div className={`trust-menu-current-mode-value flex items-center gap-2 text-sm font-semibold mb-1 ${getModeValueColorClass()}`}>
-              <MaterialSymbol
-                icon={getStatusIcon()}
-                size={20}
-              />
-              <span>
-                {isTrusted
-                  ? (status?.permissionMode === 'bypass-all' ? 'Allow All' : status?.permissionMode === 'allow-all' ? 'Allow Edits' : 'Ask')
-                  : 'Not Trusted'}
+      {menu.isOpen && (
+        <FloatingPortal>
+          <div
+            ref={menu.refs.setFloating as React.RefCallback<HTMLDivElement>}
+            style={menu.floatingStyles}
+            {...menu.getFloatingProps()}
+            className={`trust-menu agent-elements-trust-indicator-menu agent-elements-tool-card z-[1000] min-w-[280px] max-w-[min(320px,calc(100vw-24px))] overflow-hidden rounded-[var(--an-border-radius)] border border-[var(--an-border-color)] bg-[var(--an-tool-background)] text-[var(--an-foreground)] shadow-[0_16px_48px_color-mix(in_srgb,var(--an-foreground)_12%,transparent)] ${floatingPopoverCardGutters}`}
+            role="menu"
+            aria-label="Agent permissions"
+            data-testid="agent-elements-trust-indicator-menu"
+            data-component="TrustIndicatorMenu"
+            data-agent-elements-shell="trust-indicator-menu"
+            data-agent-elements-card-padding="symmetric-inline"
+            data-agent-elements-card-width="floating-popover"
+            data-trust-status={statusClass}
+            data-permission-mode={permissionMode}
+          >
+            <div
+              className="trust-menu-header agent-elements-trust-indicator-menu-header flex items-center justify-between px-3 pb-2 pt-3"
+              data-agent-elements-shell="trust-indicator-menu-header"
+            >
+              <span className="trust-menu-title text-[13px] font-semibold text-[var(--an-foreground)]">
+                Agent Permissions
               </span>
             </div>
-            <div className="trust-menu-current-mode-description text-xs text-[var(--nim-text-muted)] leading-[1.4]">
-              {getStatusDescription()}
+
+            <div
+              className={`trust-menu-current-mode agent-elements-trust-indicator-current-mode ${statusClass} ${getCurrentModeClasses()}`}
+              data-testid="agent-elements-trust-indicator-current-mode"
+              data-agent-elements-shell="trust-indicator-current-mode"
+              data-trust-status={statusClass}
+              data-permission-mode={permissionMode}
+            >
+              <div className="trust-menu-current-mode-label mb-1.5 text-[11px] font-medium text-[var(--an-foreground-subtle)]">
+                Current mode
+              </div>
+              <div className={`trust-menu-current-mode-value mb-1 flex items-center gap-2 text-sm font-semibold ${getModeValueColorClass()}`}>
+                <MaterialSymbol
+                  icon={getStatusIcon()}
+                  size={20}
+                />
+                <span>
+                  {isTrusted
+                    ? (status?.permissionMode === 'bypass-all' ? 'Allow All' : status?.permissionMode === 'allow-all' ? 'Allow Edits' : 'Ask')
+                    : 'Not Trusted'}
+                </span>
+              </div>
+              <div className="trust-menu-current-mode-description select-text text-xs leading-[1.4] text-[var(--an-foreground-muted)]">
+                {getStatusDescription()}
+              </div>
             </div>
-          </div>
 
-          {status?.trustedAt && (
-            <div className="trust-menu-date px-3 pb-2 text-[11px] text-[var(--nim-text-faint)]">
-              Trusted {new Date(status.trustedAt).toLocaleDateString()}
-            </div>
-          )}
+            {status?.trustedAt && (
+              <div
+                className="trust-menu-date px-3 pb-2 text-[11px] text-[var(--an-foreground-subtle)]"
+                data-agent-elements-shell="trust-indicator-trusted-date"
+              >
+                Trusted {new Date(status.trustedAt).toLocaleDateString()}
+              </div>
+            )}
 
-          <div className="trust-menu-divider h-px bg-[var(--nim-border)] my-1" />
+            <div className="trust-menu-divider mx-2 my-1 h-px bg-[var(--an-border-color)]" />
 
-          <div className="trust-menu-actions p-1">
+            <div className="trust-menu-actions p-1" data-agent-elements-shell="trust-indicator-actions">
               <button
-                className="trust-menu-action flex items-center gap-2 w-full p-2 border-none bg-transparent text-[var(--nim-text)] text-[13px] font-inherit text-left rounded cursor-pointer transition-colors duration-100 hover:bg-[var(--nim-bg-hover)]"
+                className="trust-menu-action agent-elements-trust-indicator-action flex w-full cursor-pointer items-center gap-2 rounded-[var(--an-tool-border-radius)] border border-transparent bg-transparent p-2 text-left text-[13px] text-[var(--an-foreground)] transition-[background-color,border-color,color] duration-150 ease-out hover:border-[var(--an-border-color)] hover:bg-[var(--an-background-tertiary)] focus:outline-none focus:ring-2 focus:ring-[var(--an-input-focus-outline)]"
                 onClick={handleChangeMode}
                 role="menuitem"
+                data-agent-elements-shell="trust-indicator-action"
               >
-                <MaterialSymbol icon="swap_horiz" size={18} className="text-[var(--nim-text-muted)]" />
+                <MaterialSymbol icon="swap_horiz" size={18} className="text-[var(--an-foreground-muted)]" />
                 <span>Change permission mode</span>
               </button>
-            <button
-              className="trust-menu-action flex items-center gap-2 w-full p-2 border-none bg-transparent text-[var(--nim-text)] text-[13px] font-inherit text-left rounded cursor-pointer transition-colors duration-100 hover:bg-[var(--nim-bg-hover)]"
-              onClick={handleOpenSettings}
-              role="menuitem"
-            >
-              <MaterialSymbol icon="settings" size={18} className="text-[var(--nim-text-muted)]" />
-              <span>Permission settings</span>
-            </button>
+              <button
+                className="trust-menu-action agent-elements-trust-indicator-action flex w-full cursor-pointer items-center gap-2 rounded-[var(--an-tool-border-radius)] border border-transparent bg-transparent p-2 text-left text-[13px] text-[var(--an-foreground)] transition-[background-color,border-color,color] duration-150 ease-out hover:border-[var(--an-border-color)] hover:bg-[var(--an-background-tertiary)] focus:outline-none focus:ring-2 focus:ring-[var(--an-input-focus-outline)]"
+                onClick={handleOpenSettings}
+                role="menuitem"
+                data-agent-elements-shell="trust-indicator-action"
+              >
+                <MaterialSymbol icon="settings" size={18} className="text-[var(--an-foreground-muted)]" />
+                <span>Permission settings</span>
+              </button>
+            </div>
           </div>
-        </div>
+        </FloatingPortal>
       )}
     </div>
   );

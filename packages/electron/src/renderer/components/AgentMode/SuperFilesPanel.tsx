@@ -6,7 +6,7 @@
  * and provides clickable links to open the .superloop/ files directly.
  */
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useId } from 'react';
 import { useAtomValue, useSetAtom } from 'jotai';
 import { MaterialSymbol } from '@nimbalyst/runtime';
 import {
@@ -28,6 +28,59 @@ const SUPER_LOOP_FILES = [
   { name: 'config.json', icon: 'settings' as const, label: 'Config' },
 ];
 
+const panelClass = [
+  'super-files-panel',
+  'agent-elements-super-files-panel',
+  'flex shrink-0 flex-col border-t border-[var(--an-border-color)]',
+  'bg-[var(--an-background-secondary)] text-[var(--an-foreground)] [container-type:inline-size]',
+].join(' ');
+
+const headerClass = [
+  'super-files-panel-header',
+  'agent-elements-super-files-header',
+  'flex min-h-[34px] w-full cursor-pointer items-center gap-[var(--an-spacing-sm)]',
+  'border border-transparent bg-transparent px-[var(--an-spacing-lg)] py-[var(--an-spacing-sm)]',
+  'text-left text-[var(--an-foreground-muted)] outline-none',
+  'transition-[background-color,border-color,color] duration-150 ease-out',
+  'hover:bg-[var(--an-background-tertiary)] hover:text-[var(--an-foreground)]',
+  'focus-visible:ring-2 focus-visible:ring-[var(--an-focus-ring)]',
+].join(' ');
+
+const contentClass = [
+  'super-files-panel-content',
+  'agent-elements-super-files-content',
+  'flex flex-col gap-[var(--an-spacing-md)] px-[var(--an-spacing-lg)]',
+  'pb-[var(--an-spacing-md)] pt-[var(--an-spacing-xs)]',
+].join(' ');
+
+const infoRowClass = [
+  'flex items-start gap-[var(--an-spacing-sm)] rounded-[calc(var(--an-tool-border-radius)_-_4px)]',
+  'border border-[var(--an-border-color)] bg-[var(--an-background)]',
+  'px-[var(--an-spacing-sm)] py-[var(--an-spacing-xs)] text-xs leading-snug',
+].join(' ');
+
+const fileButtonClass = [
+  'agent-elements-super-file-link',
+  'flex cursor-pointer items-center gap-[var(--an-spacing-xxs)] rounded-[calc(var(--an-tool-border-radius)_-_4px)]',
+  'border border-[var(--an-border-color)] bg-[var(--an-background)]',
+  'px-[var(--an-spacing-sm)] py-[var(--an-spacing-xxs)] text-[11px] font-medium text-[var(--an-primary-color)]',
+  'outline-none transition-[background-color,border-color,color] duration-150 ease-out',
+  'hover:border-[var(--an-primary-color)] hover:bg-[var(--an-background-tertiary)]',
+  'focus-visible:ring-2 focus-visible:ring-[var(--an-input-focus-outline)]',
+].join(' ');
+
+function getPhaseTone(phase: string): string {
+  if (phase === 'completed') return 'success';
+  if (phase === 'blocked' || phase === 'paused') return 'warning';
+  if (phase === 'failed') return 'error';
+  if (phase === 'planning' || phase === 'building' || phase === 'running') return 'running';
+  return 'neutral';
+}
+
+function getFileTestId(fileName: string): string {
+  return `agent-elements-super-file-link-${fileName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')}`;
+}
+
 export const SuperFilesPanel: React.FC<SuperFilesPanelProps> = React.memo(({
   worktreeId,
   worktreePath,
@@ -36,6 +89,7 @@ export const SuperFilesPanel: React.FC<SuperFilesPanelProps> = React.memo(({
   const [loop, setLoop] = useState<SuperLoop | null>(null);
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const contentId = useId();
 
   const progress = useAtomValue(superProgressAtom(loop?.id ?? ''));
   const setProgress = useSetAtom(setSuperProgressAtom);
@@ -107,116 +161,138 @@ export const SuperFilesPanel: React.FC<SuperFilesPanelProps> = React.memo(({
   const currentIteration = progress?.currentIteration ?? loop.currentIteration;
 
   return (
-    <div className="flex flex-col gap-2 pt-3 border-t border-[var(--nim-border)]">
-      {/* Section header */}
+    <section
+      className={panelClass}
+      data-agent-elements-shell="super-files-panel"
+      data-blocker-count={blockers.length}
+      data-component="SuperFilesPanel"
+      data-loop-id={loop.id}
+      data-phase={phase}
+      data-testid="agent-elements-super-files-panel"
+      data-worktree-id={worktreeId}
+    >
       <button
-        className="flex items-center gap-2 w-full bg-transparent border-none cursor-pointer text-left p-0 hover:opacity-80"
+        aria-controls={contentId}
+        aria-expanded={!isCollapsed}
+        className={headerClass}
+        data-agent-elements-shell="super-files-header"
+        data-testid="agent-elements-super-files-header"
         onClick={handleToggle}
+        type="button"
       >
         <MaterialSymbol
           icon={isCollapsed ? 'chevron_right' : 'expand_more'}
-          size={14}
-          className="text-[var(--nim-text-muted)] shrink-0"
+          size={16}
+          className="shrink-0"
         />
         <MaterialSymbol
-          icon="sync"
-          size={14}
-          className="text-[var(--nim-text-muted)] shrink-0"
+          icon="orbit"
+          size={16}
+          className="shrink-0"
         />
-        <span className="text-[11px] font-semibold text-[var(--nim-text)]">
+        <span className="min-w-0 flex-1 text-xs font-medium leading-none text-[var(--an-foreground)]">
           Loop Progress
         </span>
-        <PhaseBadge phase={phase} />
-        <span className="ml-auto text-[10px] text-[var(--nim-text-muted)] font-mono">
+        <PhaseBadge phase={phase} tone={getPhaseTone(phase)} />
+        <span
+          className="agent-elements-status-pill ml-auto font-mono"
+          data-testid="agent-elements-super-files-iteration"
+          data-tone="neutral"
+        >
           {currentIteration}/{loop.maxIterations}
         </span>
       </button>
 
-      {/* Expanded content */}
       {!isCollapsed && (
-        <div className="flex flex-col gap-2 pl-5">
-          {/* Blockers */}
+        <div
+          className={contentClass}
+          data-agent-elements-shell="super-files-content"
+          data-testid="agent-elements-super-files-content"
+          id={contentId}
+        >
           {blockers.length > 0 && (
-            <div className="flex flex-col gap-1">
+            <div className="agent-elements-super-files-blockers flex flex-col gap-[var(--an-spacing-xxs)]">
               {blockers.map((blocker, i) => (
                 <div
                   key={i}
-                  className="flex items-start gap-1.5 text-[10px] text-[var(--nim-warning)] leading-[1.4]"
+                  className={`${infoRowClass} text-[var(--an-warning)]`}
+                  data-agent-elements-shell="super-files-blocker"
                 >
-                  <MaterialSymbol icon="warning" size={12} className="shrink-0 mt-0.5" />
-                  <span>{blocker}</span>
+                  <MaterialSymbol icon="warning" size={14} className="mt-px shrink-0" />
+                  <span className="min-w-0 break-words">{blocker}</span>
                 </div>
               ))}
             </div>
           )}
 
-          {/* Recent learnings */}
           {recentLearnings.length > 0 && (
-            <div className="flex flex-col gap-1">
-              <span className="text-[10px] font-medium text-[var(--nim-text-muted)]">Recent</span>
+            <div
+              className="agent-elements-super-files-recent flex flex-col gap-[var(--an-spacing-xxs)]"
+              data-testid="agent-elements-super-files-recent-list"
+            >
+              <span className="px-[var(--an-spacing-sm)] text-[11px] font-medium leading-none text-[var(--an-foreground-muted)]">
+                Recent
+              </span>
               {recentLearnings.map((learning, i) => (
                 <div
                   key={i}
-                  className="flex items-start gap-1.5 text-[10px] text-[var(--nim-text)] leading-[1.4]"
+                  className={`${infoRowClass} text-[var(--an-foreground)]`}
+                  data-agent-elements-shell="super-files-learning"
                 >
-                  <span className="text-[var(--nim-text-faint)] font-mono shrink-0">
+                  <span className="shrink-0 font-mono text-[var(--an-foreground-muted)]">
                     #{learning.iteration}
                   </span>
-                  <span className="break-words">{learning.summary}</span>
+                  <span className="min-w-0 break-words">{learning.summary}</span>
                 </div>
               ))}
             </div>
           )}
 
-          {/* File links */}
-          <div className="flex flex-wrap gap-1 pt-1">
+          <div className="agent-elements-super-files-links flex flex-wrap gap-[var(--an-spacing-xs)]">
             {SUPER_LOOP_FILES.map((file) => (
               <button
                 key={file.name}
-                className="flex items-center gap-1 px-1.5 py-0.5 text-[10px] text-[var(--nim-primary)] bg-transparent border border-[var(--nim-border)] rounded cursor-pointer hover:bg-[var(--nim-bg-hover)] transition-colors"
+                className={fileButtonClass}
+                data-testid={getFileTestId(file.name)}
                 onClick={() => handleFileClick(file.name)}
                 title={`.superloop/${file.name}`}
+                type="button"
               >
-                <MaterialSymbol icon={file.icon} size={12} />
+                <MaterialSymbol icon={file.icon} size={14} />
                 <span>{file.label}</span>
               </button>
             ))}
           </div>
 
-          {/* Raw JSON view */}
           {progress && (
-            <details className="text-[10px] pt-1">
-              <summary className="text-[var(--nim-text-muted)] cursor-pointer py-1 hover:text-[var(--nim-text)] list-none flex items-center gap-1">
+            <details
+              className="agent-elements-super-files-debug text-[11px]"
+              data-agent-elements-shell="super-files-debug-payload"
+            >
+              <summary className="flex cursor-pointer list-none items-center gap-[var(--an-spacing-xxs)] rounded-[calc(var(--an-tool-border-radius)_-_4px)] px-[var(--an-spacing-sm)] py-[var(--an-spacing-xs)] text-[var(--an-foreground-muted)] outline-none transition-colors duration-150 ease-out hover:bg-[var(--an-background-tertiary)] hover:text-[var(--an-foreground)] focus-visible:ring-2 focus-visible:ring-[var(--an-input-focus-outline)]">
                 <MaterialSymbol icon="data_object" size={12} className="shrink-0" />
-                <span>Raw JSON</span>
+                <span>Debug payload</span>
               </summary>
-              <pre className="mt-1 p-2 bg-[var(--nim-bg-tertiary)] border border-[var(--nim-border)] rounded text-[10px] leading-relaxed text-[var(--nim-text-muted)] overflow-auto max-h-[200px] whitespace-pre-wrap break-words m-0">
+              <pre className="m-0 mt-[var(--an-spacing-xs)] max-h-[200px] overflow-auto whitespace-pre-wrap break-words rounded-[calc(var(--an-tool-border-radius)_-_4px)] border border-[var(--an-border-color)] bg-[var(--an-background)] p-[var(--an-spacing-sm)] font-mono text-[11px] leading-relaxed text-[var(--an-foreground-muted)]">
                 {JSON.stringify(progress, null, 2)}
               </pre>
             </details>
           )}
         </div>
       )}
-    </div>
+    </section>
   );
 });
 
 SuperFilesPanel.displayName = 'SuperFilesPanel';
 
-const PhaseBadge: React.FC<{ phase: string }> = React.memo(({ phase }) => {
-  const colorMap: Record<string, string> = {
-    planning: 'bg-[rgba(168,85,247,0.15)] text-purple-400',
-    building: 'bg-[rgba(59,130,246,0.15)] text-[var(--nim-primary)]',
-    running: 'bg-[rgba(59,130,246,0.15)] text-[var(--nim-primary)]',
-    completed: 'bg-[rgba(74,222,128,0.15)] text-[#4ade80]',
-    blocked: 'bg-[rgba(249,115,22,0.15)] text-orange-500',
-    failed: 'bg-[rgba(239,68,68,0.15)] text-[var(--nim-error)]',
-    paused: 'bg-[rgba(234,179,8,0.15)] text-[var(--nim-warning)]',
-  };
-  const classes = colorMap[phase] ?? 'bg-[rgba(156,163,175,0.15)] text-[var(--nim-text-faint)]';
-
+const PhaseBadge: React.FC<{ phase: string; tone: string }> = React.memo(({ phase, tone }) => {
   return (
-    <span className={`text-[9px] px-1.5 py-[0.0625rem] rounded-[0.625rem] font-medium ${classes}`}>
+    <span
+      className="agent-elements-status-pill shrink-0"
+      data-testid="agent-elements-super-files-phase"
+      data-tone={tone}
+    >
       {phase}
     </span>
   );

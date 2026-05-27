@@ -3,6 +3,8 @@
 import '@testing-library/jest-dom/vitest';
 import React from 'react';
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mockState = vi.hoisted(() => ({
@@ -18,6 +20,8 @@ vi.mock('../../../hooks/useTheme', () => ({
 }));
 
 import { ClaudeCodePluginsPanel } from '../ClaudeCodePluginsPanel';
+
+const sourcePath = resolve(__dirname, '../ClaudeCodePluginsPanel.tsx');
 
 const marketplaceData = {
   plugins: [
@@ -117,5 +121,14 @@ describe('ClaudeCodePluginsPanel Agent Elements shell', () => {
       expect((window as any).electronAPI.invoke).toHaveBeenCalledWith('claude-plugin:uninstall', 'Linear');
     });
     expect(globalThis.confirm).toHaveBeenCalledWith('Uninstall Linear?');
+  });
+
+  it('keeps plugin cards on shared Agent Elements gutters and full settings width', () => {
+    const source = readFileSync(sourcePath, 'utf8');
+
+    expect(source).toContain('claude-code-plugins-panel agent-elements-settings-panel flex w-full flex-col');
+    expect(source).toContain('--agent-elements-card-inline-padding');
+    expect(source).toContain('--agent-elements-card-block-padding');
+    expect(source).not.toMatch(/agent-elements-tool-card[^`'"]*\b(?:p-|p-\[|px-|px-\[|py-|py-\[|pl-|pl-\[|pr-|pr-\[|rounded-lg|rounded-md|rounded-xl)/);
   });
 });

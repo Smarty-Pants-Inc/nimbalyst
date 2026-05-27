@@ -3,6 +3,8 @@
 import '@testing-library/jest-dom/vitest';
 import React from 'react';
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mockState = vi.hoisted(() => ({
@@ -89,6 +91,8 @@ vi.mock('../../common/AlphaBadge', () => ({
 }));
 
 import { SyncPanel } from '../SyncPanel';
+
+const sourcePath = resolve(__dirname, '../SyncPanel.tsx');
 
 describe('SyncPanel Agent Elements shell', () => {
   beforeEach(() => {
@@ -195,5 +199,14 @@ describe('SyncPanel Agent Elements shell', () => {
         true,
       );
     });
+  });
+
+  it('keeps sync settings cards on shared Agent Elements gutters and full settings width', () => {
+    const source = readFileSync(sourcePath, 'utf8');
+
+    expect(source).toContain('sync-panel agent-elements-settings-panel agent-elements-sync-panel flex w-full flex-col');
+    expect(source).toContain('--agent-elements-card-inline-padding');
+    expect(source).toContain('--agent-elements-card-block-padding');
+    expect(source).not.toMatch(/agent-elements-tool-card[^`'"]*\b(?:p-|p-\[|px-|px-\[|py-|py-\[|pl-|pl-\[|pr-|pr-\[|rounded-lg|rounded-md)/);
   });
 });

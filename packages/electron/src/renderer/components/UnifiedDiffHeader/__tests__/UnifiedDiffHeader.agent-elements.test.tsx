@@ -2,6 +2,9 @@
 
 import '@testing-library/jest-dom/vitest';
 import React from 'react';
+import { readFileSync } from 'node:fs';
+import { dirname, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { fireEvent, render, screen, within } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { CustomEditorAIEditedBar } from '../CustomEditorAIEditedBar';
@@ -38,6 +41,10 @@ vi.mock('@nimbalyst/runtime', async () => {
     }) => ReactModule.createElement('span', { 'data-provider-icon': provider, 'data-size': size, className }),
   };
 });
+
+const sourceDir = dirname(fileURLToPath(import.meta.url));
+const unifiedDiffHeaderSourcePath = resolve(sourceDir, '../UnifiedDiffHeader.tsx');
+const customEditorBarSourcePath = resolve(sourceDir, '../CustomEditorAIEditedBar.tsx');
 
 describe('UnifiedDiffHeader Agent Elements shell', () => {
   beforeEach(() => {
@@ -170,5 +177,22 @@ describe('UnifiedDiffHeader Agent Elements shell', () => {
     expect(historyButton.className).not.toMatch(/text-white|rounded-md|scale-/);
     fireEvent.click(historyButton);
     expect(onViewHistory).toHaveBeenCalledTimes(1);
+  });
+
+  it('keeps diff review source styling on Agent Elements aliases instead of legacy Nimbalyst tokens', () => {
+    const unifiedSource = readFileSync(unifiedDiffHeaderSourcePath, 'utf8');
+    const customSource = readFileSync(customEditorBarSourcePath, 'utf8');
+    const combinedSource = `${unifiedSource}\n${customSource}`;
+
+    expect(combinedSource).toContain('agent-elements-unified-diff-header');
+    expect(combinedSource).toContain('agent-elements-custom-editor-ai-edited-bar');
+    expect(combinedSource).toContain('--an-background');
+    expect(combinedSource).toContain('--an-tool-border-color');
+    expect(combinedSource).toContain('--an-primary-color');
+    expect(combinedSource).toContain('--an-focus-ring');
+    expect(combinedSource).not.toMatch(/bg-nim|text-nim|border-nim/);
+    expect(combinedSource).not.toMatch(/bg-\[var\(--nim|text-\[var\(--nim|border-\[var\(--nim|--nim-/);
+    expect(combinedSource).not.toMatch(/text-white|bg-white|bg-black|rounded-md|rounded-lg|rounded-xl|tracking-|active:scale|transition-all/);
+    expect(combinedSource).not.toMatch(/rgba\(|#[0-9a-fA-F]{3,8}\b/);
   });
 });

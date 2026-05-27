@@ -13,6 +13,12 @@ interface ImageViewerProps {
   fileName: string;
 }
 
+const fallbackCardClassName =
+  'agent-elements-tool-card flex max-w-[360px] flex-col items-center gap-[var(--an-spacing-md)] rounded-[var(--an-tool-border-radius)] border border-[var(--an-border-color)] bg-[var(--an-background-secondary)] text-center [--agent-elements-card-block-padding:var(--an-spacing-xl)] [--agent-elements-card-inline-padding:var(--an-spacing-xl)]';
+
+const loadingCardClassName =
+  'agent-elements-tool-card flex items-center gap-[var(--an-spacing-md)] rounded-[var(--an-tool-border-radius)] border border-[var(--an-border-color)] bg-[var(--an-background-secondary)] [--agent-elements-card-block-padding:var(--an-spacing-lg)] [--agent-elements-card-inline-padding:var(--an-spacing-xl)]';
+
 export const ImageViewer: React.FC<ImageViewerProps> = ({ filePath, fileName }) => {
   const [imageSrc, setImageSrc] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -60,7 +66,12 @@ export const ImageViewer: React.FC<ImageViewerProps> = ({ filePath, fileName }) 
         data-agent-elements-shell="image-viewer-error"
         role="alert"
       >
-        <div className="agent-elements-tool-card flex max-w-[360px] flex-col items-center gap-[var(--an-spacing-md)] rounded-[var(--an-tool-border-radius)] border border-[var(--an-border-color)] bg-[var(--an-background-secondary)] p-[var(--an-spacing-xl)] text-center">
+        <div
+          className={fallbackCardClassName}
+          data-agent-elements-card-padding="symmetric-inline"
+          data-agent-elements-card-width="bounded-fallback"
+          data-testid="agent-elements-image-viewer-error-card"
+        >
           <span
             className="material-symbols-outlined inline-flex h-9 w-9 items-center justify-center rounded-[var(--an-input-border-radius)] border border-[var(--an-border-color)] bg-[var(--an-background)] text-[19px] text-[var(--an-foreground-muted)]"
             aria-hidden="true"
@@ -85,7 +96,12 @@ export const ImageViewer: React.FC<ImageViewerProps> = ({ filePath, fileName }) 
         data-agent-elements-shell="image-viewer-loading"
         aria-live="polite"
       >
-        <div className="agent-elements-tool-card flex items-center gap-[var(--an-spacing-md)] rounded-[var(--an-tool-border-radius)] border border-[var(--an-border-color)] bg-[var(--an-background-secondary)] px-[var(--an-spacing-xl)] py-[var(--an-spacing-lg)]">
+        <div
+          className={loadingCardClassName}
+          data-agent-elements-card-padding="symmetric-inline"
+          data-agent-elements-card-width="bounded-fallback"
+          data-testid="agent-elements-image-viewer-loading-card"
+        >
           <span
             className="material-symbols-outlined text-[18px] text-[var(--an-foreground-muted)]"
             aria-hidden="true"

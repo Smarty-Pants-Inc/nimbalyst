@@ -187,6 +187,8 @@ describe('usage indicators Agent Elements shell', () => {
     const popover = await screen.findByTestId('claude-usage-popover');
     expect(popover).toHaveClass('agent-elements-usage-popover', 'agent-elements-tool-card');
     expect(popover).toHaveAttribute('data-agent-elements-shell', 'claude-usage-popover');
+    expect(popover).toHaveAttribute('data-agent-elements-card-padding', 'sectioned-symmetric');
+    expect(popover).toHaveAttribute('data-agent-elements-card-width', 'floating-popover');
     expect(screen.getAllByTestId('agent-elements-claude-usage-section')).toHaveLength(3);
 
     fireEvent.click(screen.getByRole('button', { name: /refresh usage/i }));
@@ -215,6 +217,8 @@ describe('usage indicators Agent Elements shell', () => {
     const popover = await screen.findByTestId('codex-usage-popover');
     expect(popover).toHaveClass('agent-elements-usage-popover', 'agent-elements-tool-card');
     expect(popover).toHaveAttribute('data-agent-elements-shell', 'codex-usage-popover');
+    expect(popover).toHaveAttribute('data-agent-elements-card-padding', 'sectioned-symmetric');
+    expect(popover).toHaveAttribute('data-agent-elements-card-width', 'floating-popover');
     expect(screen.getAllByTestId('agent-elements-codex-usage-section')).toHaveLength(2);
 
     fireEvent.click(screen.getByRole('button', { name: /refresh usage/i }));
@@ -239,11 +243,18 @@ describe('usage indicators Agent Elements shell', () => {
 
     expect(sources).toContain('agent-elements-usage-indicator-button');
     expect(sources).toContain('agent-elements-usage-popover');
+    expect(sources).toContain('data-agent-elements-card-width="floating-popover"');
+    expect(sources).toContain('data-agent-elements-card-padding="sectioned-symmetric"');
     expect(sources).toContain('data-agent-elements-shell="usage-section"');
     expect(sources).toContain('color-mix(in_srgb');
+    expect(sources).toContain('--an-success-color');
+    expect(sources).toContain('--an-warning-color');
+    expect(sources).toContain('--an-error-color');
+    expect(sources).toContain('--an-info-color');
 
     expect(sources).not.toMatch(/active:scale|rounded-md|rounded-lg|shadow-lg|rgba\(/);
     expect(sources).not.toMatch(/stroke-(green|yellow|red)-500|bg-(green|yellow|red)-500|text-(green|yellow|red)-500/);
     expect(sources).not.toMatch(/<svg|<\/svg>/);
+    expect(sources).not.toMatch(/var\(--nim-|--nim-text|--nim-success|--nim-warning|--nim-error|--nim-info/);
   });
 });

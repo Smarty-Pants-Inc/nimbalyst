@@ -16,7 +16,9 @@
 .agent-elements-subagent-shell {
   display: flex;
   flex-direction: column;
+  width: 100%;
   max-width: 100%;
+  box-sizing: border-box;
   overflow: hidden;
   background: var(--an-background);
   border: 1px solid var(--an-tool-border-color);
@@ -30,7 +32,8 @@
   gap: var(--an-spacing-xs);
   min-width: 0;
   min-height: 28px;
-  padding: 0 var(--an-spacing-md);
+  padding-block: 0;
+  padding-inline: var(--agent-elements-card-inline-padding, var(--an-spacing-md));
   color: var(--an-tool-color-muted);
   background: var(--an-tool-background);
   border: 0;
@@ -50,7 +53,7 @@
 .agent-elements-question-actions button:focus-visible,
 .agent-elements-question-option:focus-visible,
 .agent-elements-question-textarea:focus-visible {
-  outline: 2px solid var(--an-input-focus-outline, var(--nim-border-focus));
+  outline: 2px solid var(--an-input-focus-outline);
   outline-offset: -2px;
 }
 
@@ -66,7 +69,8 @@
 
 .agent-elements-thinking-content {
   max-height: 175px;
-  padding: var(--an-spacing-sm) var(--an-spacing-md);
+  padding-block: var(--an-spacing-sm);
+  padding-inline: var(--agent-elements-card-inline-padding, var(--an-spacing-md));
   overflow-y: auto;
   color: var(--an-tool-color-muted);
   border-top: 1px solid var(--an-tool-border-color);
@@ -100,7 +104,8 @@
   display: flex;
   flex-direction: column;
   gap: var(--an-spacing-sm);
-  padding: var(--an-spacing-sm);
+  padding-block: var(--an-spacing-sm);
+  padding-inline: var(--agent-elements-card-inline-padding, var(--an-spacing-md));
   border-top: 1px solid var(--an-tool-border-color);
 }
 
@@ -155,7 +160,8 @@
   display: flex;
   flex-direction: column;
   gap: var(--an-spacing-xxs);
-  padding: var(--an-spacing-sm) var(--an-spacing-md);
+  padding-block: var(--an-spacing-sm);
+  padding-inline: var(--agent-elements-card-inline-padding, var(--an-spacing-md));
   border-bottom: 1px solid var(--an-tool-border-color);
   user-select: none;
 }
@@ -185,7 +191,8 @@
 
 .agent-elements-question-inputs,
 .agent-elements-question-history {
-  padding: var(--an-spacing-sm);
+  padding-block: var(--an-spacing-sm);
+  padding-inline: var(--agent-elements-card-inline-padding, var(--an-spacing-md));
 }
 
 .agent-elements-question-option {
@@ -208,11 +215,12 @@
 
 .agent-elements-question-option[aria-pressed="true"] {
   background: var(--an-background-secondary);
-  border-color: var(--an-input-focus-outline, var(--nim-border-focus));
+  border-color: var(--an-input-focus-outline);
 }
 
 .agent-elements-question-options-display {
-  padding: var(--an-spacing-sm);
+  padding-block: var(--an-spacing-sm);
+  padding-inline: var(--agent-elements-card-inline-padding, var(--an-spacing-md));
 }
 
 .agent-elements-question-option-static {
@@ -337,7 +345,8 @@
   flex-direction: column;
   gap: var(--an-spacing-xs);
   max-height: calc(var(--agent-elements-visible-items, 5) * 28px);
-  padding: var(--an-spacing-xs);
+  padding-block: var(--an-spacing-xs);
+  padding-inline: var(--agent-elements-card-inline-padding, var(--an-spacing-md));
   overflow: auto;
   border-top: 1px solid var(--an-tool-border-color);
 }

@@ -26,13 +26,13 @@ const errorDialogButtonBase =
   'inline-flex items-center justify-center gap-2 rounded-[var(--an-input-border-radius)] border px-3 py-2 text-sm font-medium transition-[background-color,border-color,color] duration-150 ease-out focus:outline-none focus:ring-2 focus:ring-[var(--an-input-focus-outline)]';
 
 const errorDialogCodeBlockClass =
-  'm-0 rounded-[var(--an-tool-border-radius)] border border-[var(--an-border-color)] bg-[var(--nim-code-bg)] p-3 font-mono text-xs leading-relaxed text-[var(--nim-code-text)] overflow-x-auto whitespace-pre-wrap break-words select-text';
+  'm-0 rounded-[var(--an-tool-border-radius)] border border-[color-mix(in_srgb,var(--an-code-color)_18%,var(--an-border-color))] bg-[var(--an-code-background)] p-[var(--an-spacing-sm)] font-mono text-xs leading-relaxed text-[var(--an-code-color)] overflow-x-auto whitespace-pre-wrap break-words select-text';
 
 const errorDialogSectionHeaderClass =
-  'section-header agent-elements-error-dialog-section-header w-full border-none px-[var(--an-spacing-xl)] py-[var(--an-spacing-md)] text-left text-sm font-medium text-[var(--an-foreground)] flex items-center gap-2 cursor-pointer transition-[background-color,color] duration-150 ease-out bg-[var(--an-background)] hover:bg-[var(--an-background-tertiary)] focus:outline-none focus:ring-2 focus:ring-inset focus:ring-[var(--an-input-focus-outline)]';
+  'section-header agent-elements-error-dialog-section-header w-full border-none px-[var(--agent-elements-card-inline-padding)] py-[var(--an-spacing-md)] text-left text-sm font-medium text-[var(--an-foreground)] flex items-center gap-2 cursor-pointer transition-[background-color,color] duration-150 ease-out bg-[var(--an-background)] hover:bg-[var(--an-background-tertiary)] focus:outline-none focus:ring-2 focus:ring-inset focus:ring-[var(--an-input-focus-outline)]';
 
 const errorDialogSectionContentClass =
-  'section-content agent-elements-error-dialog-section-content bg-[var(--an-background-secondary)] p-[var(--an-spacing-xl)]';
+  'section-content agent-elements-error-dialog-section-content bg-[var(--an-background-secondary)] px-[var(--agent-elements-card-inline-padding)] py-[var(--agent-elements-card-block-padding)]';
 
 export function ErrorDialog({ isOpen, onClose, title, message, details }: ErrorDialogProps) {
   const [copyFeedback, setCopyFeedback] = useState(false);
@@ -124,26 +124,26 @@ ${r.newText}
 
   return (
     <div
-      className="error-dialog-overlay nim-overlay agent-elements-error-dialog-backdrop bg-[color-mix(in_srgb,var(--nim-text)_36%,transparent)]"
+      className="error-dialog-overlay nim-overlay agent-elements-error-dialog-backdrop bg-[color-mix(in_srgb,var(--an-foreground)_36%,transparent)]"
       data-testid="agent-elements-error-dialog-backdrop"
       data-agent-elements-shell="error-dialog-backdrop"
       onClick={onClose}
     >
       <div
-        className="error-dialog nim-modal agent-elements-error-dialog agent-elements-tool-card flex max-h-[80vh] w-[90%] max-w-[800px] flex-col overflow-hidden rounded-[var(--an-border-radius)] border border-[var(--an-border-color)] bg-[var(--an-background)] text-[var(--an-foreground)] shadow-[0_20px_60px_color-mix(in_srgb,var(--nim-text)_18%,transparent)]"
+        className="error-dialog nim-modal agent-elements-error-dialog agent-elements-tool-card flex max-h-[80vh] w-[90%] max-w-[800px] flex-col !gap-0 !p-0 [--agent-elements-card-block-padding:var(--an-spacing-xl)] [--agent-elements-card-inline-padding:var(--an-spacing-xl)] overflow-hidden rounded-[var(--an-border-radius)] border border-[var(--an-border-color)] bg-[var(--an-background)] text-[var(--an-foreground)] shadow-[0_20px_60px_color-mix(in_srgb,var(--an-foreground)_18%,transparent)]"
         data-testid="agent-elements-error-dialog"
         data-component="ErrorDialog"
         data-agent-elements-shell="error-dialog"
         onClick={(e) => e.stopPropagation()}
       >
         <div
-          className="error-dialog-header nim-modal-header agent-elements-error-dialog-header flex items-center justify-between gap-3 border-b border-[var(--an-border-color)] p-[var(--an-spacing-xl)]"
+          className="error-dialog-header nim-modal-header agent-elements-error-dialog-header flex items-center justify-between gap-3 border-b border-[var(--an-border-color)] px-[var(--agent-elements-card-inline-padding)] py-[var(--agent-elements-card-block-padding)]"
           data-testid="agent-elements-error-dialog-header"
           data-agent-elements-shell="error-dialog-header"
         >
           <div className="flex min-w-0 items-center gap-3">
             <span
-              className="error-icon agent-elements-error-dialog-icon inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-[var(--an-tool-border-radius)] border border-[color-mix(in_srgb,var(--nim-error)_30%,var(--an-border-color))] bg-[color-mix(in_srgb,var(--nim-error)_10%,var(--an-background))] text-[var(--nim-error)]"
+              className="error-icon agent-elements-error-dialog-icon inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-[var(--an-tool-border-radius)] border border-[color-mix(in_srgb,var(--an-error-color)_30%,var(--an-border-color))] bg-[color-mix(in_srgb,var(--an-error-color)_10%,var(--an-background))] text-[var(--an-error-color)]"
               data-agent-elements-shell="error-dialog-icon"
               aria-hidden="true"
             >
@@ -166,21 +166,21 @@ ${r.newText}
         </div>
 
         <div
-          className="error-dialog-content nim-modal-body agent-elements-error-dialog-content flex-1 overflow-y-auto p-[var(--an-spacing-xl)]"
+          className="error-dialog-content nim-modal-body agent-elements-error-dialog-content flex-1 overflow-y-auto px-[var(--agent-elements-card-inline-padding)] py-[var(--agent-elements-card-block-padding)]"
           data-agent-elements-shell="error-dialog-content"
         >
           <div
-            className="error-dialog-message agent-elements-error-dialog-message mb-5 flex items-start gap-3 rounded-[var(--an-tool-border-radius)] border border-[color-mix(in_srgb,var(--nim-error)_28%,var(--an-border-color))] bg-[color-mix(in_srgb,var(--nim-error)_8%,var(--an-background))] p-[var(--an-spacing-xl)]"
+            className="error-dialog-message agent-elements-error-dialog-message mb-5 flex items-start gap-3 rounded-[var(--an-tool-border-radius)] border border-[color-mix(in_srgb,var(--an-error-color)_28%,var(--an-border-color))] bg-[color-mix(in_srgb,var(--an-error-color)_8%,var(--an-background))] p-[var(--agent-elements-card-inline-padding)]"
             data-testid="agent-elements-error-dialog-message"
             data-agent-elements-shell="error-dialog-message"
           >
             <span
-              className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-[var(--an-input-border-radius)] bg-[color-mix(in_srgb,var(--nim-error)_12%,transparent)] text-[var(--nim-error)]"
+              className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-[var(--an-input-border-radius)] bg-[color-mix(in_srgb,var(--an-error-color)_12%,transparent)] text-[var(--an-error-color)]"
               aria-hidden="true"
             >
               <MaterialSymbol icon="error" size={16} />
             </span>
-            <p className="m-0 text-sm leading-relaxed text-[var(--nim-error)]">{message}</p>
+            <p className="m-0 text-sm leading-relaxed text-[var(--an-error-color)]">{message}</p>
           </div>
 
           {typeof details === 'string' && details && (
@@ -210,7 +210,7 @@ ${r.newText}
               >
                 <button
                   type="button"
-                  className={`error-dialog-copy-btn nim-btn-primary ${errorDialogButtonBase} !border-[var(--an-primary-color)] !bg-[var(--an-primary-color)] !text-[var(--an-background)] hover:!border-[var(--nim-primary-hover)] hover:!bg-[var(--nim-primary-hover)]`}
+                  className={`error-dialog-copy-btn nim-btn-primary ${errorDialogButtonBase} !border-[var(--an-primary-color)] !bg-[var(--an-primary-color)] !text-[var(--an-background)] hover:!border-[color-mix(in_srgb,var(--an-primary-color)_86%,var(--an-foreground))] hover:!bg-[color-mix(in_srgb,var(--an-primary-color)_86%,var(--an-foreground))]`}
                   onClick={handleCopyDetails}
                 >
                   <MaterialSymbol icon={copyFeedback ? 'check' : 'content_copy'} size={16} />
@@ -306,11 +306,11 @@ ${r.newText}
                           <div className="replacement-diff grid grid-cols-2 gap-3 max-[640px]:grid-cols-1">
                             <div className="diff-old text-xs">
                               <strong className="mb-1 block font-semibold text-[var(--an-foreground-muted)]">Old Text:</strong>
-                              <pre className="m-0 overflow-x-auto whitespace-pre-wrap break-all rounded-[var(--an-input-border-radius)] border border-[var(--nim-diff-removed-border)] bg-[var(--nim-diff-removed-bg)] p-2 font-mono text-[11px] leading-snug text-[var(--nim-diff-removed)] select-text">{r.oldText}</pre>
+                              <pre className="m-0 overflow-x-auto whitespace-pre-wrap break-all rounded-[var(--an-input-border-radius)] border border-[var(--an-diff-removed-border)] bg-[var(--an-diff-removed-bg)] p-2 font-mono text-[11px] leading-snug text-[var(--an-diff-removed-text)] select-text">{r.oldText}</pre>
                             </div>
                             <div className="diff-new text-xs">
                               <strong className="mb-1 block font-semibold text-[var(--an-foreground-muted)]">New Text:</strong>
-                              <pre className="m-0 overflow-x-auto whitespace-pre-wrap break-all rounded-[var(--an-input-border-radius)] border border-[var(--nim-diff-added-border)] bg-[var(--nim-diff-added-bg)] p-2 font-mono text-[11px] leading-snug text-[var(--nim-diff-added)] select-text">{r.newText}</pre>
+                              <pre className="m-0 overflow-x-auto whitespace-pre-wrap break-all rounded-[var(--an-input-border-radius)] border border-[var(--an-diff-added-border)] bg-[var(--an-diff-added-bg)] p-2 font-mono text-[11px] leading-snug text-[var(--an-diff-added-text)] select-text">{r.newText}</pre>
                             </div>
                           </div>
                         </div>
@@ -340,7 +340,7 @@ ${r.newText}
                 </div>
               </div>
 
-              <div className="error-dialog-help agent-elements-error-dialog-help mt-5 rounded-[var(--an-tool-border-radius)] border border-[var(--nim-info-border)] bg-[color-mix(in_srgb,var(--nim-info)_7%,var(--an-background))] p-[var(--an-spacing-xl)]">
+              <div className="error-dialog-help agent-elements-error-dialog-help mt-5 rounded-[var(--an-tool-border-radius)] border border-[color-mix(in_srgb,var(--an-info-color)_32%,var(--an-border-color))] bg-[color-mix(in_srgb,var(--an-info-color)_7%,var(--an-background))] p-[var(--agent-elements-card-inline-padding)]">
                 <p className="m-0 mb-2 text-[13px] font-semibold text-[var(--an-foreground)]"><strong>What to do next:</strong></p>
                 <ul className="m-0 pl-5">
                   <li className="text-[13px] leading-relaxed text-[var(--an-foreground-muted)]">Check if the document was modified after the AI started processing</li>
@@ -354,7 +354,7 @@ ${r.newText}
         </div>
 
         <div
-          className="error-dialog-footer nim-modal-footer agent-elements-error-dialog-footer flex justify-end border-t border-[var(--an-border-color)] p-[var(--an-spacing-xl)]"
+          className="error-dialog-footer nim-modal-footer agent-elements-error-dialog-footer flex justify-end border-t border-[var(--an-border-color)] px-[var(--agent-elements-card-inline-padding)] py-[var(--agent-elements-card-block-padding)]"
           data-agent-elements-shell="error-dialog-footer"
         >
           <button

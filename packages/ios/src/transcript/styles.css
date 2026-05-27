@@ -6,9 +6,8 @@
   src: url('./fonts/MaterialSymbolsOutlined.ttf') format('truetype');
 }
 
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
+@config "../../tailwind.config.js";
 
 /* Material Symbols configuration */
 .material-symbols-outlined {

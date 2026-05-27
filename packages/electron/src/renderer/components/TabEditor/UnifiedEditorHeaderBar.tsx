@@ -68,15 +68,15 @@ const headerButtonClasses =
 const activeHeaderButtonClasses =
   'active border-[var(--nim-border)] bg-nim-secondary text-nim';
 const menuShellClasses =
-  'agent-elements-tool-card rounded-[10px] border border-nim bg-nim-secondary p-1 text-[13px] shadow-[0_12px_32px_color-mix(in_srgb,var(--nim-text)_10%,transparent)] z-[10000]';
+  'agent-elements-tool-card rounded-[var(--an-tool-border-radius)] border border-[var(--an-border-color)] bg-[var(--an-tool-background)] px-[var(--agent-elements-card-inline-padding)] py-[var(--agent-elements-card-block-padding)] text-[13px] text-[var(--an-tool-color)] shadow-[0_12px_32px_color-mix(in_srgb,var(--an-foreground)_10%,transparent)] z-[10000] [--agent-elements-card-block-padding:var(--an-spacing-xs)] [--agent-elements-card-inline-padding:var(--an-spacing-xs)]';
 const menuItemClasses =
-  'dropdown-item agent-elements-editor-header-menu-item flex w-full items-center gap-2.5 rounded-[8px] border-0 bg-transparent px-3 py-2 text-left text-[13px] leading-5 text-nim transition-[background-color,color] duration-150 cursor-pointer select-none hover:bg-nim-hover focus-visible:outline-2 focus-visible:outline-[var(--nim-primary)] focus-visible:outline-offset-2';
+  'dropdown-item agent-elements-editor-header-menu-item flex w-full items-center gap-2.5 rounded-[var(--an-radius-sm)] border-0 bg-transparent px-[var(--an-spacing-md)] py-[var(--an-spacing-sm)] text-left text-[13px] leading-5 text-[var(--an-tool-color)] transition-[background-color,color] duration-150 cursor-pointer select-none hover:bg-[var(--an-background-tertiary)] focus-visible:outline-2 focus-visible:outline-[var(--an-focus-ring)] focus-visible:outline-offset-2';
 const menuIconClasses =
-  'agent-elements-editor-header-menu-icon flex h-5 w-5 shrink-0 items-center justify-center text-nim-muted';
+  'agent-elements-editor-header-menu-icon flex h-5 w-5 shrink-0 items-center justify-center text-[var(--an-tool-color-muted)]';
 const menuSeparatorClasses =
-  'dropdown-divider agent-elements-editor-header-menu-separator mx-2 my-1 h-px bg-[var(--nim-border)]';
+  'dropdown-divider agent-elements-editor-header-menu-separator mx-[var(--an-spacing-sm)] my-[var(--an-spacing-xs)] h-px bg-[var(--an-border-color)]';
 const menuSectionLabelClasses =
-  'dropdown-section-label px-3 pb-1 pt-1.5 text-[11px] font-semibold uppercase tracking-wide text-nim-faint';
+  'dropdown-section-label px-[var(--an-spacing-md)] pb-[var(--an-spacing-xs)] pt-[var(--an-spacing-sm)] text-[11px] font-semibold uppercase tracking-wide text-[var(--an-foreground-subtle)]';
 
 const SessionItem: React.FC<{
   session: AISession;
@@ -86,24 +86,24 @@ const SessionItem: React.FC<{
   formatTime: (ts: number) => string;
 }> = ({ session, isLast, onClick, onOpenChat, formatTime }) => (
   <div
-    className={`ai-session-item agent-elements-editor-header-session-item flex items-center rounded-[8px] transition-[background-color,color] duration-150 ${isLast ? 'last:border-b-0' : ''} hover:bg-nim-hover`}
+    className={`ai-session-item agent-elements-editor-header-session-item flex items-center rounded-[var(--an-radius-sm)] transition-[background-color,color] duration-150 ${isLast ? 'last:border-b-0' : ''} hover:bg-[var(--an-background-tertiary)]`}
     role="none"
   >
     <button
       type="button"
       role="menuitem"
-      className="agent-elements-editor-header-session-main flex min-w-0 flex-1 items-center gap-2.5 rounded-[8px] border-0 bg-transparent px-3 py-2 text-left cursor-pointer focus-visible:outline-2 focus-visible:outline-[var(--nim-primary)] focus-visible:outline-offset-2"
+      className="agent-elements-editor-header-session-main flex min-w-0 flex-1 items-center gap-2.5 rounded-[var(--an-radius-sm)] border-0 bg-transparent px-[var(--an-spacing-md)] py-[var(--an-spacing-sm)] text-left cursor-pointer focus-visible:outline-2 focus-visible:outline-[var(--an-focus-ring)] focus-visible:outline-offset-2"
       onClick={() => onClick?.(session.id)}
     >
-      <span className="agent-elements-editor-header-menu-icon flex h-5 w-5 shrink-0 items-center justify-center text-nim-muted"><ProviderIcon provider={session.provider} size={14} /></span>
-      <span className="ai-session-title min-w-0 flex-1 overflow-hidden text-ellipsis whitespace-nowrap text-[13px] font-medium leading-5 text-nim">{session.title}</span>
-      <span className="ai-session-time shrink-0 text-xs text-nim-faint">{formatTime(session.updatedAt)}</span>
+      <span className="agent-elements-editor-header-menu-icon flex h-5 w-5 shrink-0 items-center justify-center text-[var(--an-tool-color-muted)]"><ProviderIcon provider={session.provider} size={14} /></span>
+      <span className="ai-session-title min-w-0 flex-1 overflow-hidden text-ellipsis whitespace-nowrap text-[13px] font-medium leading-5 text-[var(--an-tool-color)]">{session.title}</span>
+      <span className="ai-session-time shrink-0 text-xs text-[var(--an-foreground-subtle)]">{formatTime(session.updatedAt)}</span>
     </button>
     {onOpenChat && (
       <button
         type="button"
         role="menuitem"
-        className="agent-elements-editor-header-session-chat flex h-6 w-6 shrink-0 items-center justify-center rounded-[6px] border-0 bg-transparent p-0 text-nim-faint cursor-pointer transition-[background-color,color] duration-150 hover:bg-nim-hover hover:text-nim focus-visible:outline-2 focus-visible:outline-[var(--nim-primary)] focus-visible:outline-offset-1"
+        className="agent-elements-editor-header-session-chat flex h-6 w-6 shrink-0 items-center justify-center rounded-[var(--an-radius-sm)] border-0 bg-transparent p-0 text-[var(--an-foreground-subtle)] cursor-pointer transition-[background-color,color] duration-150 hover:bg-[var(--an-background-tertiary)] hover:text-[var(--an-tool-color)] focus-visible:outline-2 focus-visible:outline-[var(--an-focus-ring)] focus-visible:outline-offset-1"
         title="Open in Chat panel"
         onClick={() => onOpenChat(session.id)}
       >
@@ -592,30 +592,32 @@ export const UnifiedEditorHeaderBar: React.FC<UnifiedEditorHeaderBarProps> = ({
                 data-component="UnifiedEditorHeaderBarAISessionsMenu"
                 data-testid="agent-elements-editor-header-ai-menu"
                 data-agent-elements-shell="editor-header-ai-menu"
+                data-agent-elements-card-padding="symmetric-inline"
+                data-agent-elements-card-width="floating-menu"
                 {...aiSessionsMenu.getFloatingProps()}
               >
                 {/* Dropdown header */}
-                <div className="ai-sessions-header border-b border-[var(--nim-border)] px-3 py-2">
-                  <div className="ai-sessions-title text-[11px] font-semibold uppercase tracking-wide text-nim-muted">
+                <div className="ai-sessions-header border-b border-[var(--an-border-color)] px-[var(--an-spacing-md)] py-[var(--an-spacing-sm)]">
+                  <div className="ai-sessions-title text-[11px] font-semibold uppercase tracking-wide text-[var(--an-tool-color-muted)]">
                     AI Sessions that edited this file
                   </div>
                 </div>
 
                 {loadingSessions ? (
-                  <div className="ai-sessions-loading p-4 text-center text-[13px] text-nim-muted">Loading sessions...</div>
+                  <div className="ai-sessions-loading px-[var(--an-spacing-md)] py-[var(--an-spacing-lg)] text-center text-[13px] text-[var(--an-tool-color-muted)]">Loading sessions...</div>
                 ) : aiSessions.length > 0 ? (
-                  <div className="ai-sessions-list max-h-[300px] overflow-y-auto p-1">
+                  <div className="ai-sessions-list max-h-[300px] overflow-y-auto py-[var(--agent-elements-card-block-padding)]">
                     {hasGroupedSessions ? (
                       <>
                         {/* Current workspace sessions */}
-                        <div className="ai-sessions-group-header px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wider text-nim-faint">
+                        <div className="ai-sessions-group-header px-[var(--an-spacing-md)] py-[var(--an-spacing-xs)] text-[10px] font-semibold uppercase tracking-wider text-[var(--an-foreground-subtle)]">
                           {isInWorktree ? 'This worktree' : 'This project'}
                         </div>
                         {currentWorkspaceSessions.map((session) => (
                           <SessionItem key={session.id} session={session} onClick={onSwitchToAgentMode ? handleLoadSessionInAgentMode : undefined} onOpenChat={onOpenSessionInChat ? handleLoadSessionInChat : undefined} formatTime={formatRelativeTime} />
                         ))}
                         {/* Other sessions */}
-                        <div className="ai-sessions-group-header px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wider text-nim-faint">
+                        <div className="ai-sessions-group-header px-[var(--an-spacing-md)] py-[var(--an-spacing-xs)] text-[10px] font-semibold uppercase tracking-wider text-[var(--an-foreground-subtle)]">
                           Other sessions
                         </div>
                         {otherSessions.map((session) => (
@@ -629,16 +631,16 @@ export const UnifiedEditorHeaderBar: React.FC<UnifiedEditorHeaderBarProps> = ({
                     )}
                   </div>
                 ) : (
-                  <div className="ai-sessions-empty p-4 text-center text-[13px] text-nim-muted">No AI sessions have edited this file yet</div>
+                  <div className="ai-sessions-empty px-[var(--an-spacing-md)] py-[var(--an-spacing-lg)] text-center text-[13px] text-[var(--an-tool-color-muted)]">No AI sessions have edited this file yet</div>
                 )}
 
                 {/* Start new session button - only shown when agent mode switch is available */}
                 {onSwitchToAgentMode && (
-                  <div className="ai-session-start-container border-t border-[var(--nim-border)] px-2 py-2">
+                  <div className="ai-session-start-container border-t border-[var(--an-border-color)] px-[var(--an-spacing-sm)] py-[var(--an-spacing-sm)]">
                     <button
                       type="button"
                       role="menuitem"
-                      className={`${menuItemClasses} ai-session-start-button font-medium text-nim-muted`}
+                      className={`${menuItemClasses} ai-session-start-button font-medium text-[var(--an-tool-color-muted)]`}
                       onClick={handleStartAgentSession}
                     >
                       <span className={menuIconClasses}><MaterialSymbol icon="add" size={18} /></span>
@@ -679,6 +681,8 @@ export const UnifiedEditorHeaderBar: React.FC<UnifiedEditorHeaderBarProps> = ({
                 data-component="UnifiedEditorHeaderBarTOCMenu"
                 data-testid="agent-elements-editor-header-toc-menu"
                 data-agent-elements-shell="editor-header-toc-menu"
+                data-agent-elements-card-padding="symmetric-inline"
+                data-agent-elements-card-width="floating-menu"
                 {...tocMenu.getFloatingProps()}
               >
                 {tocItems.length > 0 ? (
@@ -692,16 +696,16 @@ export const UnifiedEditorHeaderBar: React.FC<UnifiedEditorHeaderBarProps> = ({
                           type="button"
                           role="menuitem"
                           data-testid={`agent-elements-editor-header-toc-${item.key}`}
-                          className={`toc-item agent-elements-editor-header-toc-item flex w-full items-center rounded-[8px] border-0 bg-transparent py-2 pr-3 text-left leading-snug text-nim cursor-pointer transition-[background-color,color] duration-150 hover:bg-nim-hover focus-visible:outline-2 focus-visible:outline-[var(--nim-primary)] focus-visible:outline-offset-2 ${
+                          className={`toc-item agent-elements-editor-header-toc-item flex w-full items-center rounded-[var(--an-radius-sm)] border-0 bg-transparent py-[var(--an-spacing-sm)] pr-[var(--an-spacing-md)] text-left leading-snug text-[var(--an-tool-color)] cursor-pointer transition-[background-color,color] duration-150 hover:bg-[var(--an-background-tertiary)] focus-visible:outline-2 focus-visible:outline-[var(--an-focus-ring)] focus-visible:outline-offset-2 ${
                             item.level === 1
-                              ? 'toc-level-1 pl-3 text-sm font-semibold'
+                              ? 'toc-level-1 pl-[var(--an-spacing-md)] text-sm font-semibold'
                               : item.level === 2
-                              ? 'toc-level-2 pl-6 text-sm'
+                              ? 'toc-level-2 pl-[var(--an-spacing-xl)] text-sm'
                               : item.level === 3
-                              ? 'toc-level-3 pl-9 text-[13px]'
+                              ? 'toc-level-3 pl-[calc(var(--an-spacing-xl)+var(--an-spacing-md))] text-[13px]'
                               : item.level === 4
-                              ? 'toc-level-4 pl-12 text-[13px]'
-                              : 'toc-level-5 pl-[60px] text-xs text-nim-muted'
+                              ? 'toc-level-4 pl-[calc(var(--an-spacing-xl)*2)] text-[13px]'
+                              : 'toc-level-5 pl-[calc(var(--an-spacing-xl)*2+var(--an-spacing-md))] text-xs text-[var(--an-tool-color-muted)]'
                           }`}
                           onClick={() => handleTOCItemClick(item.key)}
                         >
@@ -711,7 +715,7 @@ export const UnifiedEditorHeaderBar: React.FC<UnifiedEditorHeaderBarProps> = ({
                     ))}
                   </ul>
                 ) : (
-                  <div className="toc-empty px-3 py-4 text-center text-[13px] text-nim-muted">No headings in document</div>
+                  <div className="toc-empty px-[var(--an-spacing-md)] py-[var(--an-spacing-lg)] text-center text-[13px] text-[var(--an-tool-color-muted)]">No headings in document</div>
                 )}
               </div>
               </FloatingPortal>
@@ -737,18 +741,15 @@ export const UnifiedEditorHeaderBar: React.FC<UnifiedEditorHeaderBarProps> = ({
           <div className="unified-header-dropdown-container relative">
             <button
               ref={sharedDocMenu.refs.setReference}
-              className={`unified-header-button nim-btn-icon w-7 h-7 rounded border-none bg-transparent cursor-pointer flex items-center justify-center transition-all duration-150 text-[var(--nim-text-muted)] hover:bg-[var(--nim-bg-hover)] hover:text-[var(--nim-text)] ${
-                sharedDocMenu.isOpen ? 'active bg-[var(--nim-bg-tertiary)] text-[var(--nim-text)]' : ''
+              className={`${headerButtonClasses} agent-elements-editor-header-shared-doc-button ${
+                sharedDocMenu.isOpen ? activeHeaderButtonClasses : ''
               }`}
+              data-agent-elements-shell="editor-header-shared-doc-button"
               onClick={() => sharedDocMenu.setIsOpen(!sharedDocMenu.isOpen)}
               title="Shared to Team"
               {...sharedDocMenu.getReferenceProps()}
             >
-              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M20 16.58A5 5 0 0 0 18 7h-1.26A8 8 0 1 0 4 15.25" />
-                <path d="m8 17 4 4 4-4" />
-                <path d="M12 12v9" />
-              </svg>
+              <MaterialSymbol icon="cloud_upload" size={18} />
             </button>
 
             {sharedDocMenu.isOpen && (
@@ -756,19 +757,23 @@ export const UnifiedEditorHeaderBar: React.FC<UnifiedEditorHeaderBarProps> = ({
                 <div
                   ref={sharedDocMenu.refs.setFloating}
                   style={sharedDocMenu.floatingStyles}
-                  className="min-w-[260px] overflow-hidden rounded-md z-[1000] py-1 bg-[var(--nim-bg)] border border-[var(--nim-border)] shadow-[0_4px_12px_rgba(0,0,0,0.3)]"
+                  className={`unified-header-shared-doc-dropdown agent-elements-editor-header-shared-doc-menu ${menuShellClasses} min-w-[260px] overflow-hidden`}
+                  data-component="UnifiedEditorHeaderBarSharedDocMenu"
+                  data-agent-elements-shell="editor-header-shared-doc-menu"
+                  data-agent-elements-card-padding="symmetric-inline"
+                  data-agent-elements-card-width="floating-menu"
                   {...sharedDocMenu.getFloatingProps()}
                 >
-                  <div className="px-3 py-2 border-b border-[var(--nim-border)]">
-                    <div className="text-[11px] font-semibold uppercase tracking-wider text-[var(--nim-text-faint)]">
+                  <div className="px-[var(--an-spacing-md)] py-[var(--an-spacing-sm)] border-b border-[var(--an-border-color)]">
+                    <div className="text-[11px] font-semibold uppercase tracking-wider text-[var(--an-foreground-subtle)]">
                       Shared Document
                     </div>
-                    <div className="mt-1 text-[13px] text-[var(--nim-text)]">
+                    <div className="mt-1 text-[13px] text-[var(--an-tool-color)]">
                       Shared to team on {formatSharedTimestamp(sharedDocLink.binding.createdAt)}
                     </div>
                   </div>
                   <button
-                    className="dropdown-item w-full py-2 px-3 border-none bg-transparent text-[13px] text-left cursor-pointer flex items-center gap-2.5 transition-colors duration-150 text-[var(--nim-text)] hover:bg-[var(--nim-bg-hover)] disabled:opacity-50 disabled:cursor-not-allowed"
+                    className={`${menuItemClasses} disabled:opacity-50 disabled:cursor-not-allowed`}
                     disabled={sharedDocLink.busyAction !== null}
                     onClick={async () => {
                       const success = await sharedDocLink.reuploadToSharedDoc();
@@ -778,11 +783,7 @@ export const UnifiedEditorHeaderBar: React.FC<UnifiedEditorHeaderBarProps> = ({
                       }
                     }}
                   >
-                    <svg className="w-4 h-4 opacity-70" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                      <polyline points="7 10 12 5 17 10" />
-                      <line x1="12" y1="5" x2="12" y2="16" />
-                    </svg>
+                    <span className={menuIconClasses}><MaterialSymbol icon="upload" size={18} /></span>
                     Re-upload to Shared Doc
                   </button>
                 </div>
@@ -817,6 +818,8 @@ export const UnifiedEditorHeaderBar: React.FC<UnifiedEditorHeaderBarProps> = ({
               data-component="UnifiedEditorHeaderBarActionsMenu"
               data-testid="agent-elements-editor-header-actions-menu"
               data-agent-elements-shell="editor-header-actions-menu"
+              data-agent-elements-card-padding="symmetric-inline"
+              data-agent-elements-card-width="floating-menu"
               {...actionsMenu.getFloatingProps()}
             >
               {/* Toggle Source Mode */}
@@ -909,12 +912,17 @@ export const UnifiedEditorHeaderBar: React.FC<UnifiedEditorHeaderBarProps> = ({
                     >
                       <span className={menuIconClasses}><MaterialSymbol icon="article" size={18} /></span>
                       <span className="dropdown-item-label flex-1">Set Document Type</span>
-                      <span className="dropdown-item-chevron ml-auto flex h-5 w-5 items-center justify-center text-sm text-nim-faint">
+                      <span className="dropdown-item-chevron ml-auto flex h-5 w-5 items-center justify-center text-sm text-[var(--an-foreground-subtle)]">
                         <MaterialSymbol icon="chevron_right" size={16} />
                       </span>
 
                       {showDocTypeSubmenu && (
-                        <div className={`dropdown-submenu absolute right-full left-auto top-0 min-w-[180px] ${menuShellClasses}`}>
+                        <div
+                          className={`dropdown-submenu absolute right-full left-auto top-0 min-w-[180px] ${menuShellClasses}`}
+                          data-agent-elements-shell="editor-header-document-type-menu"
+                          data-agent-elements-card-padding="symmetric-inline"
+                          data-agent-elements-card-width="floating-menu"
+                        >
                           {TRACKER_TYPES.map((type) => (
                             <button
                               key={type.type}
@@ -934,7 +942,7 @@ export const UnifiedEditorHeaderBar: React.FC<UnifiedEditorHeaderBarProps> = ({
                               </span>
                               <span>{type.displayName}</span>
                               {currentDocumentType === type.type && (
-                                <span className="dropdown-checkmark ml-auto text-sm text-[var(--nim-primary)]">&#10003;</span>
+                                <span className="dropdown-checkmark ml-auto text-sm text-[var(--an-primary-color)]">&#10003;</span>
                               )}
                             </button>
                           ))}
@@ -1056,7 +1064,7 @@ export const UnifiedEditorHeaderBar: React.FC<UnifiedEditorHeaderBarProps> = ({
                   <button
                     type="button"
                     role="menuitem"
-                    className={`${menuItemClasses} settings-link text-[var(--nim-primary)]`}
+                    className={`${menuItemClasses} settings-link text-[var(--an-primary-color)]`}
                     onClick={() => {
                       onOpenExtensionSettings();
                       setShowActionsMenu(false);

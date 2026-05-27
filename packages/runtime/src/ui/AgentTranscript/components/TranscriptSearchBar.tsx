@@ -2,6 +2,17 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { MaterialSymbol } from '../../icons/MaterialSymbol';
 import type { TranscriptViewMessage } from '../../../ai/server/transcript/TranscriptProjector';
 
+const SEARCH_ROOT_CLASS =
+  'transcript-search-bar agent-elements-transcript-search-bar sticky top-0 z-10 border-b border-[var(--an-tool-border-color)] bg-[var(--an-background-secondary)] px-3 py-2';
+const SEARCH_CONTENT_CLASS =
+  'transcript-search-bar-content agent-elements-transcript-search-bar-content mx-auto flex max-w-4xl items-center gap-2';
+const SEARCH_INPUT_CLASS =
+  'transcript-search-input agent-elements-transcript-search-input min-w-0 flex-1 rounded-[var(--an-radius-sm)] border border-[var(--an-input-border-color)] bg-[var(--an-input-background)] px-2.5 py-1.5 text-sm text-[var(--an-input-color)] outline-none motion-safe:transition-colors motion-safe:duration-150 placeholder:text-[var(--an-input-placeholder-color)] focus:border-[var(--an-input-focus-border)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--an-input-focus-outline)]';
+const SEARCH_BUTTON_CLASS =
+  'transcript-search-button agent-elements-transcript-search-button inline-flex h-8 w-8 items-center justify-center rounded-[var(--an-radius-sm)] border border-[var(--an-tool-border-color)] bg-[var(--an-background)] text-[var(--an-foreground-muted)] cursor-pointer motion-safe:transition-colors motion-safe:duration-150 hover:bg-[var(--an-background-secondary)] hover:border-[var(--an-primary-color)] hover:text-[var(--an-foreground)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--an-input-focus-outline)] disabled:cursor-not-allowed disabled:opacity-40';
+const SEARCH_CASE_BUTTON_CLASS = `${SEARCH_BUTTON_CLASS} transcript-search-case-button min-w-8 px-2 text-xs font-semibold font-mono data-[active=true]:bg-[var(--an-primary-color)] data-[active=true]:border-[var(--an-primary-color)] data-[active=true]:text-[var(--an-button-primary-text)]`;
+const SEARCH_CLOSE_BUTTON_CLASS = `${SEARCH_BUTTON_CLASS} transcript-search-close-button ml-1`;
+
 // Augment the HighlightRegistry interface to add Map-like methods
 // (TypeScript's lib.dom.d.ts has the interface but not the full Map extension without DOM.Iterable)
 declare global {
@@ -14,6 +25,10 @@ declare global {
   }
 }
 
+const getHighlightRegistry = (): HighlightRegistry | null => {
+  return typeof CSS !== 'undefined' && CSS.highlights ? CSS.highlights : null;
+};
+
 // Inject search highlight styles once
 const injectHighlightStyles = () => {
   const styleId = 'transcript-search-highlight-styles';
@@ -24,10 +39,10 @@ const injectHighlightStyles = () => {
   style.textContent = `
     /* CSS Custom Highlight API styles */
     ::highlight(transcript-search) {
-      background-color: color-mix(in srgb, var(--nim-warning) 35%, transparent);
+      background-color: color-mix(in srgb, var(--an-warning) 35%, transparent);
     }
     ::highlight(transcript-search-current) {
-      background-color: var(--nim-warning);
+      background-color: var(--an-warning);
     }
   `;
   document.head.appendChild(style);
@@ -59,7 +74,7 @@ interface SearchMatch {
 interface TranscriptSearchBarProps {
   isVisible: boolean;
   messages: TranscriptViewMessage[];
-  containerRef: React.RefObject<HTMLDivElement>;
+  containerRef: React.RefObject<HTMLDivElement | null>;
   onClose: () => void;
   onScrollToMessage: (index: number) => void;
 }
@@ -125,8 +140,9 @@ export const TranscriptSearchBar: React.FC<TranscriptSearchBarProps> = ({
 
   // Clear highlights using CSS Custom Highlight API
   const clearHighlights = useCallback(() => {
-    CSS.highlights.delete('transcript-search');
-    CSS.highlights.delete('transcript-search-current');
+    const highlights = getHighlightRegistry();
+    highlights?.delete('transcript-search');
+    highlights?.delete('transcript-search-current');
   }, []);
 
   // Clear state when component becomes hidden
@@ -192,10 +208,12 @@ export const TranscriptSearchBar: React.FC<TranscriptSearchBarProps> = ({
   // Update highlights using CSS Custom Highlight API
   const updateHighlights = useCallback(() => {
     if (!containerRef.current || !searchQuery || matches.length === 0) return;
+    const highlights = getHighlightRegistry();
+    if (!highlights || typeof Highlight === 'undefined') return;
 
     // Clear existing highlights
-    CSS.highlights.delete('transcript-search');
-    CSS.highlights.delete('transcript-search-current');
+    highlights.delete('transcript-search');
+    highlights.delete('transcript-search-current');
     const allRanges: Range[] = [];
     const currentRanges: Range[] = [];
 
@@ -262,12 +280,12 @@ export const TranscriptSearchBar: React.FC<TranscriptSearchBarProps> = ({
     // Register the highlights with the CSS Custom Highlight API
     if (allRanges.length > 0) {
       const highlight = new Highlight(...allRanges);
-      CSS.highlights.set('transcript-search', highlight);
+      highlights.set('transcript-search', highlight);
     }
 
     if (currentRanges.length > 0) {
       const currentHighlight = new Highlight(...currentRanges);
-      CSS.highlights.set('transcript-search-current', currentHighlight);
+      highlights.set('transcript-search-current', currentHighlight);
     }
   }, [containerRef, searchQuery, matches, currentIndex, highlightedMessageIndices, caseSensitive]);
 
@@ -346,8 +364,9 @@ export const TranscriptSearchBar: React.FC<TranscriptSearchBarProps> = ({
   // Cleanup highlights on unmount
   useEffect(() => {
     return () => {
-      CSS.highlights.delete('transcript-search');
-      CSS.highlights.delete('transcript-search-current');
+      const highlights = getHighlightRegistry();
+      highlights?.delete('transcript-search');
+      highlights?.delete('transcript-search-current');
     };
   }, []);
 
@@ -374,52 +393,65 @@ export const TranscriptSearchBar: React.FC<TranscriptSearchBarProps> = ({
   const displayIndex = matchCount > 0 ? currentIndex + 1 : 0;
 
   return (
-    <div className="transcript-search-bar sticky top-0 z-10 bg-[var(--nim-bg-secondary)] border-b border-[var(--nim-border)] px-3 py-2">
-      <div className="transcript-search-bar-content flex items-center gap-2 max-w-4xl mx-auto">
+    <div
+      className={SEARCH_ROOT_CLASS}
+      data-testid="agent-elements-transcript-search-bar"
+      data-component="TranscriptSearchBar"
+      data-agent-elements-shell="transcript-search-bar"
+    >
+      <div className={SEARCH_CONTENT_CLASS}>
         <input
           ref={inputRef}
           type="text"
-          className="transcript-search-input flex-1 min-w-0 px-2.5 py-1.5 text-sm bg-[var(--nim-bg)] border border-[var(--nim-border)] rounded-md text-[var(--nim-text)] outline-none transition-colors focus:border-[var(--nim-primary)] placeholder:text-[var(--nim-text-faint)]"
+          className={SEARCH_INPUT_CLASS}
           placeholder="Find in transcript..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           onKeyDown={handleKeyDown}
         />
 
-        <div className="transcript-search-match-counter text-xs text-[var(--nim-text-muted)] whitespace-nowrap min-w-20 text-center">
+        <div
+          className="transcript-search-match-counter agent-elements-transcript-search-counter min-w-20 whitespace-nowrap text-center text-xs text-[var(--an-foreground-muted)]"
+          data-testid="agent-elements-transcript-search-counter"
+        >
           {matchCount > 0 ? `${displayIndex} of ${matchCount}` : 'No matches'}
         </div>
 
         <button
-          className="transcript-search-button p-1.5 bg-[var(--nim-bg)] border border-[var(--nim-border)] rounded-md text-[var(--nim-text-muted)] cursor-pointer transition-all flex items-center justify-center hover:bg-[var(--nim-bg-hover)] hover:border-[var(--nim-primary)] hover:text-[var(--nim-text)] disabled:opacity-40 disabled:cursor-not-allowed"
+          className={SEARCH_BUTTON_CLASS}
           onClick={goToPrevMatch}
           disabled={matchCount === 0}
+          aria-label="Previous transcript search match"
           title="Previous match (Shift+Enter or Cmd+Shift+G)"
         >
           <MaterialSymbol icon="keyboard_arrow_up" size={18} />
         </button>
 
         <button
-          className="transcript-search-button p-1.5 bg-[var(--nim-bg)] border border-[var(--nim-border)] rounded-md text-[var(--nim-text-muted)] cursor-pointer transition-all flex items-center justify-center hover:bg-[var(--nim-bg-hover)] hover:border-[var(--nim-primary)] hover:text-[var(--nim-text)] disabled:opacity-40 disabled:cursor-not-allowed"
+          className={SEARCH_BUTTON_CLASS}
           onClick={goToNextMatch}
           disabled={matchCount === 0}
+          aria-label="Next transcript search match"
           title="Next match (Enter or Cmd+G)"
         >
           <MaterialSymbol icon="keyboard_arrow_down" size={18} />
         </button>
 
         <button
-          className={`transcript-search-button transcript-search-case-button p-1.5 text-xs font-semibold font-mono bg-[var(--nim-bg)] border border-[var(--nim-border)] rounded-md text-[var(--nim-text-muted)] cursor-pointer transition-all flex items-center justify-center hover:bg-[var(--nim-bg-hover)] hover:border-[var(--nim-primary)] hover:text-[var(--nim-text)] ${caseSensitive ? 'bg-[var(--nim-primary)] border-[var(--nim-primary)] text-white' : ''}`}
+          className={SEARCH_CASE_BUTTON_CLASS}
           onClick={() => setCaseSensitive(!caseSensitive)}
+          aria-label={caseSensitive ? 'Case sensitive transcript search' : 'Case insensitive transcript search'}
+          aria-pressed={caseSensitive}
           title={caseSensitive ? 'Case sensitive' : 'Case insensitive'}
-          data-active={caseSensitive}
+          data-active={caseSensitive ? 'true' : 'false'}
         >
           Aa
         </button>
 
         <button
-          className="transcript-search-button transcript-search-close-button ml-1 p-1.5 bg-[var(--nim-bg)] border border-[var(--nim-border)] rounded-md text-[var(--nim-text-muted)] cursor-pointer transition-all flex items-center justify-center hover:bg-[var(--nim-bg-hover)] hover:border-[var(--nim-primary)] hover:text-[var(--nim-text)]"
+          className={SEARCH_CLOSE_BUTTON_CLASS}
           onClick={onClose}
+          aria-label="Close transcript search"
           title="Close (Escape)"
         >
           <MaterialSymbol icon="close" size={18} />

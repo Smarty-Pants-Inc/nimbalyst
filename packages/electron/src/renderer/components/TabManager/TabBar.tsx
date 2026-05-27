@@ -58,7 +58,7 @@ interface TabItemProps {
   dragOverIndex: number | null;
   editingTabId: string | null;
   editingValue: string;
-  editInputRef: React.RefObject<HTMLInputElement>;
+  editInputRef: React.RefObject<HTMLInputElement | null>;
   onTabClick: (e: React.MouseEvent, tabId: string) => void;
   onCloseClick: (e: React.MouseEvent, tabId: string) => void;
   onContextMenu: (e: React.MouseEvent, tabId: string) => void;
@@ -395,21 +395,21 @@ export const TabBar: React.FC<TabBarProps> = ({
   const contextMenuTabData = contextMenuTab ? tabs.find(t => t.id === contextMenuTab) : null;
 
   const tabMenuShellClasses =
-    'tab-menu-dropdown agent-elements-tab-menu agent-elements-tool-card min-w-[220px] max-w-[320px] overflow-y-auto rounded-[10px] border border-nim bg-nim-secondary p-1 text-[13px] shadow-[0_12px_32px_color-mix(in_srgb,var(--nim-text)_10%,transparent)] z-[10000]';
+    'tab-menu-dropdown agent-elements-tab-menu agent-elements-tool-card min-w-[220px] max-w-[320px] overflow-y-auto rounded-[var(--an-tool-border-radius)] border border-[var(--an-border-color)] bg-[var(--an-tool-background)] p-[var(--agent-elements-card-block-padding)] text-[13px] text-[var(--an-tool-color)] shadow-[0_12px_32px_color-mix(in_srgb,var(--an-foreground)_10%,transparent)] z-[10000] [--agent-elements-card-block-padding:var(--an-spacing-xs)] [--agent-elements-card-inline-padding:var(--an-spacing-xs)]';
   const tabMenuItemClasses =
-    'tab-menu-item agent-elements-tab-menu-item flex w-full items-center gap-2.5 rounded-[8px] border-0 bg-transparent px-3 py-2 text-left text-[13px] leading-5 text-nim transition-[background-color,color] duration-150 cursor-pointer select-none hover:bg-nim-hover focus-visible:outline-2 focus-visible:outline-[var(--nim-primary)] focus-visible:outline-offset-2';
+    'tab-menu-item agent-elements-tab-menu-item flex w-full items-center gap-2.5 rounded-[var(--an-radius-sm)] border-0 bg-transparent px-[var(--an-spacing-md)] py-[var(--an-spacing-sm)] text-left text-[13px] leading-5 text-[var(--an-tool-color)] transition-[background-color,color] duration-150 cursor-pointer select-none hover:bg-[var(--an-background-tertiary)] focus-visible:outline-2 focus-visible:outline-[var(--an-focus-ring)] focus-visible:outline-offset-2';
   const tabMenuSelectedClasses =
-    'bg-nim-hover shadow-[inset_0_0_0_1px_var(--nim-primary)]';
-  const tabMenuActiveClasses = 'active bg-nim-selected text-nim';
+    'bg-[var(--an-background-tertiary)] shadow-[inset_0_0_0_1px_var(--an-primary-color)]';
+  const tabMenuActiveClasses = 'active bg-[color-mix(in_srgb,var(--an-primary-color)_10%,var(--an-tool-background))] text-[var(--an-tool-color)]';
   const tabMenuSeparatorClasses =
-    'tab-menu-separator agent-elements-tab-menu-separator mx-2 my-1 h-px bg-[var(--nim-border)]';
+    'tab-menu-separator agent-elements-tab-menu-separator mx-[var(--an-spacing-sm)] my-[var(--an-spacing-xs)] h-px bg-[var(--an-border-color)]';
 
   const contextMenuShellClasses =
-    'tab-context-menu agent-elements-tab-context-menu agent-elements-tool-card min-w-[190px] max-h-[calc(100vh-20px)] overflow-y-auto rounded-[10px] border border-nim bg-nim-secondary p-1 text-[13px] shadow-[0_12px_32px_color-mix(in_srgb,var(--nim-text)_10%,transparent)] z-[10000]';
+    'tab-context-menu agent-elements-tab-context-menu agent-elements-tool-card min-w-[190px] max-h-[calc(100vh-20px)] overflow-y-auto rounded-[var(--an-tool-border-radius)] border border-[var(--an-border-color)] bg-[var(--an-tool-background)] p-[var(--agent-elements-card-block-padding)] text-[13px] text-[var(--an-tool-color)] shadow-[0_12px_32px_color-mix(in_srgb,var(--an-foreground)_10%,transparent)] z-[10000] [--agent-elements-card-block-padding:var(--an-spacing-xs)] [--agent-elements-card-inline-padding:var(--an-spacing-xs)]';
   const contextMenuItemClasses =
-    'context-menu-item agent-elements-tab-context-menu-item flex w-full items-center gap-2.5 rounded-[8px] border-0 bg-transparent px-3 py-2 text-left text-[13px] leading-5 text-nim transition-[background-color,color] duration-150 cursor-pointer select-none hover:bg-nim-hover focus-visible:outline-2 focus-visible:outline-[var(--nim-primary)] focus-visible:outline-offset-2';
+    'context-menu-item agent-elements-tab-context-menu-item flex w-full items-center gap-2.5 rounded-[var(--an-radius-sm)] border-0 bg-transparent px-[var(--an-spacing-md)] py-[var(--an-spacing-sm)] text-left text-[13px] leading-5 text-[var(--an-tool-color)] transition-[background-color,color] duration-150 cursor-pointer select-none hover:bg-[var(--an-background-tertiary)] focus-visible:outline-2 focus-visible:outline-[var(--an-focus-ring)] focus-visible:outline-offset-2';
   const contextMenuSeparatorClasses =
-    'context-menu-separator agent-elements-tab-context-menu-separator mx-2 my-1 h-px bg-[var(--nim-border)]';
+    'context-menu-separator agent-elements-tab-context-menu-separator mx-[var(--an-spacing-sm)] my-[var(--an-spacing-xs)] h-px bg-[var(--an-border-color)]';
 
   const renderContextMenuSeparator = (id: string) => (
     <div
@@ -439,7 +439,7 @@ export const TabBar: React.FC<TabBarProps> = ({
       data-agent-elements-shell="tab-context-menu-item"
       data-tab-context-action={id}
     >
-      <span className="agent-elements-tab-context-menu-icon flex h-5 w-5 shrink-0 items-center justify-center text-nim-muted">
+      <span className="agent-elements-tab-context-menu-icon flex h-5 w-5 shrink-0 items-center justify-center text-[var(--an-tool-color-muted)]">
         <MaterialSymbol icon={icon} size={18} />
       </span>
       <span className="agent-elements-tab-context-menu-label min-w-0 truncate">{label}</span>
@@ -712,6 +712,8 @@ export const TabBar: React.FC<TabBarProps> = ({
                   data-component="TabBarOverflowMenu"
                   data-testid="agent-elements-tab-menu"
                   data-agent-elements-shell="tab-menu"
+                  data-agent-elements-card-padding="symmetric-inline"
+                  data-agent-elements-card-width="floating-menu"
                   {...tabMenu.getFloatingProps()}
                 >
                   <div className="tab-menu-section agent-elements-tab-menu-section py-0.5">
@@ -724,7 +726,7 @@ export const TabBar: React.FC<TabBarProps> = ({
                       data-agent-elements-shell="tab-menu-item"
                       data-tab-menu-action="close-all"
                     >
-                      <span className="agent-elements-tab-menu-icon flex h-5 w-5 shrink-0 items-center justify-center text-nim-muted">
+                      <span className="agent-elements-tab-menu-icon flex h-5 w-5 shrink-0 items-center justify-center text-[var(--an-tool-color-muted)]">
                         <MaterialSymbol icon="cancel" size={18} />
                       </span>
                       <span className="agent-elements-tab-menu-title min-w-0 flex-1 truncate">Close All Tabs</span>
@@ -749,10 +751,10 @@ export const TabBar: React.FC<TabBarProps> = ({
                             data-agent-elements-shell="tab-menu-item"
                             data-tab-id={tab.id}
                           >
-                            <span className="tab-menu-index agent-elements-tab-menu-index flex h-5 min-w-5 items-center justify-center rounded-[6px] text-[11px] text-nim-faint">{index + 1}</span>
+                            <span className="tab-menu-index agent-elements-tab-menu-index flex h-5 min-w-5 items-center justify-center rounded-[var(--an-radius-sm)] text-[11px] text-[var(--an-foreground-subtle)]">{index + 1}</span>
                             <span className="tab-menu-title agent-elements-tab-menu-title min-w-0 flex-1 truncate">
                               {tab.isPinned && (
-                                <span className="agent-elements-tab-menu-pin mr-1 inline-flex align-[-2px] text-nim-muted">
+                                <span className="agent-elements-tab-menu-pin mr-1 inline-flex align-[-2px] text-[var(--an-tool-color-muted)]">
                                   <MaterialSymbol icon="push_pin" size={13} />
                                 </span>
                               )}
@@ -798,6 +800,8 @@ export const TabBar: React.FC<TabBarProps> = ({
             data-component="TabBarContextMenu"
             data-testid="agent-elements-tab-context-menu"
             data-agent-elements-shell="tab-context-menu"
+            data-agent-elements-card-padding="symmetric-inline"
+            data-agent-elements-card-width="floating-menu"
             {...contextMenu.getFloatingProps()}
           >
             {renderContextMenuItem({

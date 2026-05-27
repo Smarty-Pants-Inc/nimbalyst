@@ -17,8 +17,8 @@ import { TEST_TIMEOUTS } from '../helpers';
  */
 export const PLAYWRIGHT_TEST_SELECTORS = {
   // Mode switching
-  editorModeButton: '[data-mode="files"]', // Note: "editor" mode is actually "files" mode in the UI
-  agentModeButton: '[data-mode="agent"]',
+  editorModeButton: '[data-testid="files-mode-button"]', // Note: "editor" mode is actually "files" mode in the UI
+  agentModeButton: '[data-testid="agent-mode-button"]',
   filesModeButton: '[data-mode="files"]',
 
   // Workspace and file tree

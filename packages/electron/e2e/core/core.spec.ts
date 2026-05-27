@@ -26,6 +26,7 @@ import {
 import {
   openFileFromTree,
   switchToAgentMode,
+  switchToFilesMode,
   dismissAPIKeyDialog,
   closeTabByFileName,
   PLAYWRIGHT_TEST_SELECTORS,
@@ -145,9 +146,7 @@ test('should save file with Cmd+S', async () => {
 
 test('Agent Mode button should switch to agent mode', async () => {
   // Start in files mode
-  const filesButton = page.locator(PLAYWRIGHT_TEST_SELECTORS.filesModeButton);
-  await filesButton.click();
-  await page.waitForTimeout(300);
+  await switchToFilesMode(page);
 
   const fileTree = page.locator('.workspace-sidebar');
   await expect(fileTree).toBeVisible({ timeout: TEST_TIMEOUTS.FILE_TREE_LOAD });
@@ -180,9 +179,8 @@ test('Switching back to Files mode should restore file tree', async () => {
   const agentModeWrapper = page.locator('[data-layout="agent-mode-wrapper"]');
   await expect(agentModeWrapper).toBeVisible();
 
+  await switchToFilesMode(page);
   const filesButton = page.locator(PLAYWRIGHT_TEST_SELECTORS.filesModeButton);
-  await filesButton.click();
-  await page.waitForTimeout(500);
 
   const fileTree = page.locator('.workspace-sidebar');
   await expect(fileTree).toBeVisible();
@@ -200,19 +198,21 @@ test('Cmd+N should create new session in agent mode', async () => {
 
   await expect(page.locator('text="Agent Sessions"')).toBeVisible({ timeout: TEST_TIMEOUTS.DEFAULT_WAIT });
 
-  const initialSessionButtons = await page.getByRole('button', { name: /^Session:/ }).count();
+  const agentMode = page.locator(PLAYWRIGHT_TEST_SELECTORS.agentMode);
+  const sessionItems = agentMode.locator(PLAYWRIGHT_TEST_SELECTORS.anySessionItem);
+  const initialSessionCount = await sessionItems.count();
 
   await electronApp.evaluate(({ BrowserWindow }) => {
-    const focusedWindow = BrowserWindow.getFocusedWindow();
-    if (focusedWindow) {
-      focusedWindow.webContents.send('agent-new-session');
+    const targetWindow = BrowserWindow.getFocusedWindow() ?? BrowserWindow.getAllWindows()[0];
+    if (targetWindow) {
+      targetWindow.webContents.send('agent-new-session');
     }
   });
 
-  await page.waitForTimeout(1000);
-
-  const newSessionButtons = await page.getByRole('button', { name: /^Session:/ }).count();
-  expect(newSessionButtons).toBeGreaterThan(initialSessionButtons);
+  await expect.poll(
+    async () => sessionItems.count(),
+    { timeout: TEST_TIMEOUTS.DEFAULT_WAIT },
+  ).toBeGreaterThan(initialSessionCount);
 
   const newFileDialog = page.locator('text="New File"').first();
   await expect(newFileDialog).not.toBeVisible({ timeout: 500 }).catch(() => {});
@@ -224,19 +224,17 @@ test('Cmd+N should open new file dialog in files mode', async () => {
   await expect(page.locator('text="agent-mode-test.md"')).toBeVisible({ timeout: TEST_TIMEOUTS.DEFAULT_WAIT });
 
   await electronApp.evaluate(({ BrowserWindow }) => {
-    const focusedWindow = BrowserWindow.getFocusedWindow();
-    if (focusedWindow) {
-      focusedWindow.webContents.send('file-new-in-workspace');
+    const targetWindow = BrowserWindow.getFocusedWindow() ?? BrowserWindow.getAllWindows()[0];
+    if (targetWindow) {
+      targetWindow.webContents.send('file-new-in-workspace');
     }
   });
-
-  await page.waitForTimeout(500);
 
   const newFileDialog = page.locator('text="New File"').first();
   await expect(newFileDialog).toBeVisible({ timeout: TEST_TIMEOUTS.DEFAULT_WAIT });
 
-  await page.keyboard.press('Escape');
-  await page.waitForTimeout(300);
+  await page.locator('[data-agent-elements-shell="new-file-dialog-cancel"]').click();
+  await expect(newFileDialog).not.toBeVisible({ timeout: TEST_TIMEOUTS.DEFAULT_WAIT });
 });
 
 // ========================================================================
@@ -245,9 +243,7 @@ test('Cmd+N should open new file dialog in files mode', async () => {
 
 test('should preserve each file content independently when switching tabs', async () => {
   // Make sure we're in files mode
-  const filesButton = page.locator(PLAYWRIGHT_TEST_SELECTORS.filesModeButton);
-  await filesButton.click();
-  await page.waitForTimeout(300);
+  await switchToFilesMode(page);
 
   const editor = page.locator(ACTIVE_EDITOR_SELECTOR);
 
@@ -318,16 +314,16 @@ test('should open search/replace bar with Cmd+F and close with Escape', async ()
   await expect(
     page.locator(PLAYWRIGHT_TEST_SELECTORS.tab).filter({ hasText: 'find-test-1.md' })
   ).toBeVisible({ timeout: TEST_TIMEOUTS.TAB_SWITCH });
-  await page.waitForSelector(PLAYWRIGHT_TEST_SELECTORS.contentEditable, {
+  await expect(page.locator(ACTIVE_EDITOR_SELECTOR)).toBeVisible({
     timeout: TEST_TIMEOUTS.EDITOR_LOAD,
   });
 
   await expect(page.locator(PLAYWRIGHT_TEST_SELECTORS.searchReplaceBar)).not.toBeVisible();
 
   await electronApp.evaluate(({ BrowserWindow }) => {
-    const focused = BrowserWindow.getFocusedWindow();
-    if (focused) {
-      focused.webContents.send('menu:find');
+    const targetWindow = BrowserWindow.getFocusedWindow() ?? BrowserWindow.getAllWindows()[0];
+    if (targetWindow) {
+      targetWindow.webContents.send('menu:find');
     }
   });
 
@@ -352,14 +348,14 @@ test('should allow typing multiple characters in search box without losing focus
   await expect(
     page.locator(PLAYWRIGHT_TEST_SELECTORS.tab).filter({ hasText: 'find-test-2.md' })
   ).toBeVisible({ timeout: TEST_TIMEOUTS.TAB_SWITCH });
-  await page.waitForSelector(PLAYWRIGHT_TEST_SELECTORS.contentEditable, {
+  await expect(page.locator(ACTIVE_EDITOR_SELECTOR)).toBeVisible({
     timeout: TEST_TIMEOUTS.EDITOR_LOAD,
   });
 
   await electronApp.evaluate(({ BrowserWindow }) => {
-    const focused = BrowserWindow.getFocusedWindow();
-    if (focused) {
-      focused.webContents.send('menu:find');
+    const targetWindow = BrowserWindow.getFocusedWindow() ?? BrowserWindow.getAllWindows()[0];
+    if (targetWindow) {
+      targetWindow.webContents.send('menu:find');
     }
   });
 

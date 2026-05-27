@@ -33,6 +33,20 @@ interface ClaudeCodePanelProps {
 type AuthMethod = 'login' | 'api-key';
 
 const getClaudeCodeDomId = (value: string) => value.replace(/[^a-zA-Z0-9_-]+/g, '-');
+const cardPaddingClass =
+  '[--agent-elements-card-block-padding:var(--an-spacing-lg)] [--agent-elements-card-inline-padding:var(--an-spacing-lg)]';
+const compactCardPaddingClass =
+  '[--agent-elements-card-block-padding:var(--an-spacing-sm)] [--agent-elements-card-inline-padding:var(--an-spacing-md)]';
+const neutralCardClass =
+  `agent-elements-tool-card ${cardPaddingClass} bg-[var(--an-background-secondary)]`;
+const compactRowCardClass =
+  `agent-elements-tool-card ${compactCardPaddingClass} !flex-row items-center gap-[var(--an-spacing-sm)] bg-[var(--an-background-secondary)]`;
+const warningCardClass =
+  `agent-elements-tool-card ${cardPaddingClass} border-[color-mix(in_srgb,var(--an-warning-color)_30%,var(--an-border-color))] bg-[color-mix(in_srgb,var(--an-warning-color)_8%,var(--an-background))]`;
+const successCardClass =
+  `agent-elements-tool-card ${cardPaddingClass} border-[color-mix(in_srgb,var(--an-success-color)_28%,var(--an-border-color))] bg-[color-mix(in_srgb,var(--an-success-color)_8%,var(--an-background))]`;
+const errorCardClass =
+  `agent-elements-tool-card ${cardPaddingClass} border-[color-mix(in_srgb,var(--an-error-color)_32%,var(--an-border-color))] bg-[color-mix(in_srgb,var(--an-error-color)_8%,var(--an-background))]`;
 
 export function ClaudeCodePanel({
   config,
@@ -318,7 +332,7 @@ export function ClaudeCodePanel({
 
   return (
     <div
-      className="provider-panel claude-code-panel agent-elements-settings-panel agent-elements-claude-code-panel flex flex-col"
+      className="provider-panel claude-code-panel agent-elements-settings-panel agent-elements-claude-code-panel flex w-full flex-col"
       data-agent-elements-shell="claude-code-panel"
       data-component="ClaudeCodePanel"
       data-testid="agent-elements-claude-code-panel"
@@ -430,7 +444,7 @@ export function ClaudeCodePanel({
 
       { isWindowsPlatform && isCheckingClaudeWindowsStatus && (
         <div
-          className="installation-status agent-elements-tool-card p-4 rounded-lg bg-[rgba(245,158,11,0.05)] border border-[rgba(245,158,11,0.2)]"
+          className={`installation-status ${warningCardClass}`}
           data-agent-elements-shell="claude-code-windows-checking"
           data-testid="agent-elements-claude-code-windows-checking"
         >
@@ -454,7 +468,7 @@ export function ClaudeCodePanel({
               </p>
               { Boolean(claudeCodeWindowsStatus?.claudeCodeVersion) ? (
                 <div
-                  className="installation-status agent-elements-tool-card mt-3 p-4 rounded-lg bg-[rgba(16,185,129,0.05)] border border-[rgba(16,185,129,0.2)]"
+                  className={`installation-status mt-3 ${successCardClass}`}
                   data-agent-elements-shell="claude-code-windows-ready"
                   data-testid="agent-elements-claude-code-windows-ready"
                 >
@@ -465,7 +479,7 @@ export function ClaudeCodePanel({
                 </div>
               ): (
                 <div
-                  className="installation-status agent-elements-tool-card mt-3 p-4 rounded-lg bg-[rgba(239,68,68,0.05)] border border-[rgba(239,68,68,0.2)]"
+                  className={`installation-status mt-3 ${errorCardClass}`}
                   data-agent-elements-shell="claude-code-windows-missing"
                   data-testid="agent-elements-claude-code-windows-missing"
                 >
@@ -485,7 +499,7 @@ export function ClaudeCodePanel({
             <>
               <h4 className="provider-panel-section-title text-base font-semibold mb-3 text-[var(--nim-text)]">Claude Agent SDK</h4>
               <div
-                className="installation-status agent-elements-tool-card p-4 rounded-lg bg-[rgba(16,185,129,0.05)] border border-[rgba(16,185,129,0.2)]"
+                className={`installation-status ${successCardClass}`}
                 data-agent-elements-shell="claude-code-sdk-card"
                 data-testid="agent-elements-claude-code-sdk-card"
               >
@@ -566,7 +580,7 @@ export function ClaudeCodePanel({
                     <>
                       {/* Logged In State */}
                       <div
-                        className="status-box-success claude-code-signed-in-card agent-elements-tool-card mb-4 py-3.5 px-4 rounded-lg text-[13px] flex items-center gap-3 justify-between bg-[rgba(16,185,129,0.08)] border border-[rgba(16,185,129,0.2)]"
+                        className={`status-box-success claude-code-signed-in-card mb-4 flex !flex-row items-center justify-between gap-[var(--an-spacing-md)] text-[13px] ${successCardClass}`}
                         data-agent-elements-shell="claude-code-signed-in-card"
                         data-testid="agent-elements-claude-code-signed-in-card"
                       >
@@ -601,7 +615,7 @@ export function ClaudeCodePanel({
                     <>
                       {/* Not Logged In State */}
                       <div
-                        className="claude-code-plan-card agent-elements-tool-card mb-4 p-4 bg-[var(--nim-bg-secondary)] border border-[var(--nim-border)] rounded-lg"
+                        className={`claude-code-plan-card mb-4 ${neutralCardClass}`}
                         data-agent-elements-shell="claude-code-plan-card"
                         data-testid="agent-elements-claude-code-plan-card"
                       >
@@ -636,7 +650,7 @@ export function ClaudeCodePanel({
                     Use an Anthropic API key. Pay-per-use with API credits from your Anthropic account.
                   </p>
                   <div
-                    className="api-key-row claude-code-api-key-card agent-elements-tool-card flex gap-2 items-center rounded-lg border border-[var(--nim-border)] bg-[var(--nim-bg-secondary)] p-3"
+                    className={`api-key-row claude-code-api-key-card ${compactRowCardClass}`}
                     data-agent-elements-shell="claude-code-api-key-card"
                     data-testid="agent-elements-claude-code-api-key-card"
                   >
@@ -731,7 +745,7 @@ export function ClaudeCodePanel({
                     {Object.entries(envVars).map(([key, value]) => (
                       <div
                         key={key}
-                        className="env-var-row claude-code-env-row agent-elements-tool-card flex items-center gap-2 rounded-lg border border-[var(--nim-border)] bg-[var(--nim-bg-secondary)] p-2"
+                        className={`env-var-row claude-code-env-row ${compactRowCardClass}`}
                         data-agent-elements-shell="claude-code-env-row"
                         data-env-key={key}
                         data-testid={`agent-elements-claude-code-env-row-${getClaudeCodeDomId(key)}`}
@@ -810,7 +824,7 @@ export function ClaudeCodePanel({
 
                 {/* Add new env var form */}
                 <div
-                  className="add-env-var claude-code-add-env-row agent-elements-tool-card flex items-center gap-2 rounded-lg border border-[var(--nim-border)] bg-[var(--nim-bg-secondary)] p-2"
+                  className={`add-env-var claude-code-add-env-row ${compactRowCardClass}`}
                   data-agent-elements-shell="claude-code-add-env-row"
                   data-testid="agent-elements-claude-code-add-env-row"
                 >

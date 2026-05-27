@@ -20,6 +20,8 @@ import React from 'react';
 import { MaterialSymbol } from '@nimbalyst/runtime';
 import { FloatingPortal, useFloatingMenu } from '../../hooks/useFloatingMenu';
 
+const floatingEditorMenuCardGutters = '[--agent-elements-card-block-padding:var(--an-spacing-xs)] [--agent-elements-card-inline-padding:var(--an-spacing-xs)] px-[var(--agent-elements-card-inline-padding)] py-[var(--agent-elements-card-block-padding)]';
+
 interface FloatingEditorActionsProps {
   children: React.ReactNode;
 }
@@ -68,7 +70,7 @@ export const FloatingEditorButton: React.FC<FloatingEditorButtonProps> = ({
 }) => {
   return (
     <button
-      className={`floating-editor-button agent-elements-floating-editor-button pointer-events-auto flex h-9 w-9 cursor-pointer items-center justify-center rounded-[8px] border border-[var(--an-border-color)] bg-[var(--an-background)] p-0 text-[var(--an-foreground-muted)] shadow-[0_10px_24px_color-mix(in_srgb,var(--an-foreground)_8%,transparent)] transition-colors duration-150 hover:border-[var(--an-primary-color)] hover:bg-[var(--an-background-secondary)] hover:text-[var(--an-foreground)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--an-primary-color)] disabled:cursor-not-allowed disabled:opacity-50 ${isActive ? 'active border-[var(--an-primary-color)] bg-[color-mix(in_srgb,var(--an-primary-color)_12%,var(--an-background))] text-[var(--an-primary-color)]' : ''}`}
+      className={`floating-editor-button agent-elements-floating-editor-button pointer-events-auto flex h-9 w-9 cursor-pointer items-center justify-center rounded-[var(--an-small-border-radius)] border border-[var(--an-border-color)] bg-[var(--an-background)] p-0 text-[var(--an-foreground-muted)] shadow-[0_10px_24px_color-mix(in_srgb,var(--an-foreground)_8%,transparent)] transition-colors duration-150 hover:border-[var(--an-primary-color)] hover:bg-[var(--an-background-secondary)] hover:text-[var(--an-foreground)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--an-primary-color)] disabled:cursor-not-allowed disabled:opacity-50 ${isActive ? 'active border-[var(--an-primary-color)] bg-[color-mix(in_srgb,var(--an-primary-color)_12%,var(--an-background))] text-[var(--an-primary-color)]' : ''}`}
       onClick={onClick}
       disabled={disabled}
       title={label}
@@ -126,10 +128,12 @@ export const FloatingEditorMenu: React.FC<FloatingEditorMenuProps> = ({
       />
       <div
         ref={menu.refs.setFloating}
-        className="floating-editor-menu agent-elements-floating-editor-menu agent-elements-tool-card pointer-events-auto z-[1000] min-w-[180px] rounded-[10px] border border-[var(--an-border-color)] bg-[var(--an-background)] p-1 text-[13px] text-[var(--an-foreground)] shadow-[0_12px_32px_color-mix(in_srgb,var(--an-foreground)_10%,transparent)]"
+        className={`floating-editor-menu agent-elements-floating-editor-menu agent-elements-tool-card pointer-events-auto z-[1000] min-w-[180px] rounded-[var(--an-tool-border-radius)] border border-[var(--an-border-color)] bg-[var(--an-background)] text-[13px] text-[var(--an-foreground)] shadow-[0_12px_32px_color-mix(in_srgb,var(--an-foreground)_10%,transparent)] ${floatingEditorMenuCardGutters}`}
         style={menu.floatingStyles}
         {...menu.getFloatingProps()}
         data-agent-elements-shell="floating-editor-menu"
+        data-agent-elements-card-padding="symmetric-inline"
+        data-agent-elements-card-width="floating-menu"
         data-component="FloatingEditorMenu"
         role="menu"
       >
@@ -154,7 +158,7 @@ export const FloatingEditorMenuItem: React.FC<FloatingEditorMenuItemProps> = ({
 }) => {
   return (
     <button
-      className={`floating-editor-menu-item agent-elements-floating-editor-menu-item flex w-full cursor-pointer items-center gap-2.5 rounded-[8px] border-none bg-transparent px-3 py-2 text-left text-[13px] text-[var(--an-foreground)] transition-colors duration-150 hover:bg-[var(--an-background-secondary)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--an-primary-color)] ${isActive ? 'active text-[var(--an-primary-color)]' : ''}`}
+      className={`floating-editor-menu-item agent-elements-floating-editor-menu-item flex w-full cursor-pointer items-center gap-2.5 rounded-[var(--an-small-border-radius)] border-none bg-transparent px-3 py-2 text-left text-[13px] text-[var(--an-foreground)] transition-colors duration-150 hover:bg-[var(--an-background-secondary)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--an-primary-color)] ${isActive ? 'active text-[var(--an-primary-color)]' : ''}`}
       onClick={onClick}
       aria-current={isActive ? 'true' : undefined}
       data-active={isActive ? 'true' : 'false'}

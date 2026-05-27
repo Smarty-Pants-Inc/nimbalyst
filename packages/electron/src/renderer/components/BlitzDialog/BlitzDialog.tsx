@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { getProviderIcon } from '@nimbalyst/runtime';
+import { getProviderIcon, MaterialSymbol } from '@nimbalyst/runtime';
 import { getClaudeCodeModelLabel } from '../../utils/modelUtils';
 
 interface Model {
@@ -22,6 +22,47 @@ export interface BlitzDialogProps {
   onCreated: (result: any) => void;
   workspacePath: string;
 }
+
+const overlayClass =
+  'nim-overlay agent-elements-blitz-overlay fixed inset-0 z-50 flex items-center justify-center bg-[color-mix(in_srgb,var(--an-foreground)_16%,transparent)] p-[var(--an-spacing-xxl)]';
+const dialogClass =
+  'nim-modal agent-elements-blitz-dialog agent-elements-tool-card flex max-h-[85vh] w-[min(90vw,560px)] flex-col !gap-0 !p-0 [--agent-elements-card-block-padding:var(--an-spacing-xl)] [--agent-elements-card-inline-padding:var(--an-spacing-xxl)] overflow-hidden rounded-[var(--an-border-radius)] border border-[var(--an-border-color)] bg-[var(--an-background)] text-[var(--an-foreground)] shadow-[0_20px_60px_color-mix(in_srgb,var(--an-foreground)_10%,transparent)]';
+const headerClass =
+  'nim-modal-header agent-elements-blitz-header flex items-start justify-between gap-[var(--an-spacing-md)] border-b border-[var(--an-border-color)] bg-[var(--an-background)] px-[var(--agent-elements-card-inline-padding)] py-[var(--agent-elements-card-block-padding)]';
+const iconShellClass =
+  'inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-[var(--an-tool-border-radius)] border border-[var(--an-border-color)] bg-[var(--an-background-secondary)] text-[var(--an-primary-color)]';
+const badgeClass =
+  'inline-flex shrink-0 items-center rounded-[var(--an-small-border-radius)] border border-[var(--an-border-color)] bg-[var(--an-background-secondary)] px-2 py-0.5 text-[10px] font-medium text-[var(--an-foreground-muted)]';
+const bodyClass =
+  'nim-modal-body agent-elements-blitz-body nim-scrollbar flex-1 space-y-[var(--an-spacing-xl)] overflow-y-auto px-[var(--agent-elements-card-inline-padding)] py-[var(--agent-elements-card-block-padding)]';
+const fieldClass = 'space-y-[var(--an-spacing-sm)]';
+const fieldHeaderClass = 'flex items-center justify-between gap-[var(--an-spacing-sm)]';
+const fieldLabelClass = 'block text-sm font-medium text-[var(--an-foreground)]';
+const fieldHintClass = 'm-0 text-xs leading-relaxed text-[var(--an-foreground-subtle)]';
+const textareaClass =
+  'agent-elements-blitz-prompt-input min-h-28 w-full resize-none rounded-[var(--an-tool-border-radius)] border border-[var(--an-input-border-color)] bg-[var(--an-input-background)] px-[var(--an-spacing-lg)] py-[var(--an-spacing-md)] text-sm leading-relaxed text-[var(--an-input-color)] outline-none transition-[border-color,box-shadow] duration-150 ease-out placeholder:text-[var(--an-input-placeholder-color)] focus:border-[var(--an-input-focus-outline)] focus:ring-2 focus:ring-[var(--an-input-focus-outline)] disabled:cursor-not-allowed disabled:opacity-60';
+const modelListClass =
+  'nim-scrollbar max-h-[260px] overflow-y-auto pr-1';
+const modelRowBaseClass =
+  'agent-elements-blitz-model-row grid cursor-pointer grid-cols-[auto_auto_minmax(0,1fr)_4rem] items-center gap-[var(--an-spacing-md)] rounded-[var(--an-input-border-radius)] border px-[var(--an-spacing-md)] py-[var(--an-spacing-sm)] text-sm transition-[background-color,border-color,color] duration-150 ease-out';
+const modelRowActiveClass =
+  'border-[color-mix(in_srgb,var(--an-primary-color)_34%,var(--an-border-color))] bg-[color-mix(in_srgb,var(--an-primary-color)_9%,var(--an-background))] text-[var(--an-foreground)]';
+const modelRowInactiveClass =
+  'border-[var(--an-border-color)] bg-[var(--an-background)] text-[var(--an-foreground-muted)] hover:border-[var(--an-border-color-strong)] hover:bg-[var(--an-background-tertiary)] hover:text-[var(--an-foreground)]';
+const checkboxClass =
+  'h-4 w-4 shrink-0 cursor-pointer accent-[var(--an-primary-color)] disabled:cursor-not-allowed';
+const numberInputClass =
+  'w-16 rounded-[var(--an-input-border-radius)] border border-[var(--an-input-border-color)] bg-[var(--an-input-background)] px-2 py-1 text-center text-sm text-[var(--an-input-color)] outline-none transition-[border-color,box-shadow] duration-150 ease-out focus:border-[var(--an-input-focus-outline)] focus:ring-2 focus:ring-[var(--an-input-focus-outline)] disabled:cursor-not-allowed disabled:opacity-40';
+const selectClass =
+  'agent-elements-blitz-analysis-select w-full cursor-pointer appearance-none rounded-[var(--an-input-border-radius)] border border-[var(--an-input-border-color)] bg-[var(--an-input-background)] px-[var(--an-spacing-lg)] py-[var(--an-spacing-sm)] pr-8 text-sm text-[var(--an-input-color)] outline-none transition-[border-color,box-shadow] duration-150 ease-out focus:border-[var(--an-input-focus-outline)] focus:ring-2 focus:ring-[var(--an-input-focus-outline)] disabled:cursor-not-allowed disabled:opacity-60';
+const errorClass =
+  'agent-elements-blitz-error select-text rounded-[var(--an-tool-border-radius)] border border-[color-mix(in_srgb,var(--an-error-color)_34%,var(--an-border-color))] bg-[color-mix(in_srgb,var(--an-error-color)_10%,var(--an-background))] px-[var(--an-spacing-lg)] py-[var(--an-spacing-md)] text-sm text-[var(--an-error-color)]';
+const footerClass =
+  'nim-modal-footer agent-elements-blitz-actions flex items-center justify-end gap-[var(--an-spacing-sm)] border-t border-[var(--an-border-color)] bg-[var(--an-background-secondary)] px-[var(--agent-elements-card-inline-padding)] py-[var(--an-spacing-lg)]';
+const secondaryButtonClass =
+  'inline-flex min-h-8 cursor-pointer items-center justify-center rounded-[var(--an-input-border-radius)] border border-[var(--an-border-color)] bg-[var(--an-background)] px-4 py-1.5 text-sm font-medium text-[var(--an-foreground-muted)] transition-[background-color,border-color,color] duration-150 ease-out hover:bg-[var(--an-background-tertiary)] hover:text-[var(--an-foreground)] focus:outline-none focus:ring-2 focus:ring-[var(--an-input-focus-outline)] disabled:cursor-not-allowed disabled:opacity-50';
+const primaryButtonClass =
+  'inline-flex min-h-8 cursor-pointer items-center justify-center gap-[var(--an-spacing-xs)] rounded-[var(--an-input-border-radius)] border border-[var(--an-send-button-bg)] bg-[var(--an-send-button-bg)] px-4 py-1.5 text-sm font-medium text-[var(--an-send-button-color)] transition-[background-color,border-color,color] duration-150 ease-out hover:border-[color-mix(in_srgb,var(--an-send-button-bg)_82%,var(--an-foreground))] hover:bg-[color-mix(in_srgb,var(--an-send-button-bg)_88%,var(--an-foreground))] focus:outline-none focus:ring-2 focus:ring-[var(--an-input-focus-outline)] disabled:cursor-not-allowed disabled:opacity-50';
 
 export const BlitzDialog: React.FC<BlitzDialogProps> = ({
   isOpen,
@@ -182,101 +223,114 @@ export const BlitzDialog: React.FC<BlitzDialogProps> = ({
 
   return (
     <div
-      className="nim-overlay backdrop-blur-sm bg-black/60"
+      className={overlayClass}
       onClick={onClose}
       onKeyDown={handleKeyDown}
+      data-component="BlitzDialogBackdrop"
+      data-testid="agent-elements-blitz-overlay"
+      data-agent-elements-shell="blitz-overlay"
     >
       <div
-        className="nim-modal w-[90vw] max-w-[560px] max-h-[85vh] animate-[worktree-modal-appear_0.2s_ease]"
+        className={dialogClass}
         onClick={(e) => e.stopPropagation()}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="blitz-dialog-title"
+        data-component="BlitzDialog"
+        data-testid="agent-elements-blitz-dialog"
+        data-agent-elements-shell="blitz-dialog"
       >
-        {/* Header */}
-        <div className="nim-modal-header relative overflow-hidden bg-[linear-gradient(180deg,var(--nim-bg-secondary),var(--nim-bg))]">
-          <div
-            className="absolute -top-12 -right-12 h-28 w-28 rounded-full bg-[color-mix(in_srgb,var(--nim-primary)_20%,transparent)] blur-2xl"
-            aria-hidden="true"
-          />
-          <div className="flex items-start gap-3">
-            <div className="h-10 w-10 rounded-xl bg-nim-primary/15 text-nim-primary flex items-center justify-center border border-nim">
-              <svg width="18" height="18" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M9 2L4 9h4l-1 5 5-7H8l1-5z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" fill="currentColor" fillOpacity="0.15"/>
-              </svg>
-            </div>
-            <div className="flex flex-col gap-1">
-              <div className="flex items-center gap-2">
-                <h2 className="m-0 text-[18px] font-semibold text-nim">New Blitz</h2>
-                <span className="text-[10px] uppercase tracking-wide text-nim-faint border border-nim rounded-full px-2 py-0.5">
+        <div
+          className={headerClass}
+          data-testid="agent-elements-blitz-header"
+          data-agent-elements-shell="blitz-header"
+        >
+          <div className="flex min-w-0 items-start gap-[var(--an-spacing-md)]">
+            <span className={iconShellClass} data-agent-elements-shell="blitz-icon" aria-hidden="true">
+              <MaterialSymbol icon="bolt" size={20} />
+            </span>
+            <div className="min-w-0">
+              <div className="flex items-center gap-[var(--an-spacing-sm)]">
+                <h2 id="blitz-dialog-title" className="m-0 text-base font-medium leading-snug text-[var(--an-foreground)]">New Blitz</h2>
+                <span className={badgeClass} data-agent-elements-shell="blitz-beta-badge">
                   Beta
                 </span>
               </div>
-              <p className="m-0 text-[12px] text-nim-muted max-w-[24rem]">
+              <p className="m-0 mt-1 max-w-[24rem] text-xs leading-relaxed text-[var(--an-foreground-muted)]">
                 Run a single prompt across multiple worktrees and compare the outcomes side-by-side.
               </p>
             </div>
           </div>
-          <span className="text-[11px] text-nim-faint px-2.5 py-1 rounded-full border border-nim bg-nim-tertiary">
+          <span className={badgeClass} data-agent-elements-shell="blitz-worktree-limit">
             Max 10 worktrees
           </span>
         </div>
 
-        {/* Body */}
-        <div className="nim-modal-body flex flex-col gap-5">
-          {/* Prompt */}
-          <div className="flex flex-col gap-2 rounded-xl border border-nim bg-nim-secondary p-4">
-            <div className="flex items-center justify-between gap-2">
-              <label className="text-[13px] font-medium text-nim">Prompt</label>
-              <span className="text-[11px] text-nim-faint">Cmd+Enter to start</span>
+        <div className={bodyClass} data-agent-elements-shell="blitz-body">
+          <div
+            className={fieldClass}
+            data-testid="agent-elements-blitz-prompt-field"
+            data-agent-elements-shell="blitz-prompt-field"
+          >
+            <div className={fieldHeaderClass}>
+              <label className={fieldLabelClass} htmlFor="blitz-prompt-input">Prompt</label>
+              <span className="text-xs text-[var(--an-foreground-subtle)]">Cmd+Enter to start</span>
             </div>
             <textarea
+              id="blitz-prompt-input"
               ref={textareaRef}
-              className="w-full p-3 text-[14px] bg-nim border border-nim rounded-lg text-nim resize-none outline-none focus:border-nim-focus transition-colors placeholder:text-nim-faint"
+              className={textareaClass}
               rows={4}
               placeholder="Enter the prompt to run across all sessions..."
               value={prompt}
               onChange={(e) => setPrompt(e.target.value)}
               disabled={creating}
+              data-testid="agent-elements-blitz-prompt-input"
+              data-agent-elements-shell="blitz-prompt-input"
             />
-            <div className="text-[11px] text-nim-faint">
+            <p className={fieldHintClass}>
               Tip: Be explicit about scope and acceptance criteria.
-            </div>
+            </p>
           </div>
 
-          {/* Models */}
-          <div className="flex flex-col gap-3 rounded-xl border border-nim bg-nim-secondary p-4">
-            <div className="flex items-center justify-between gap-2">
-              <label className="text-[13px] font-medium text-nim">Models</label>
+          <div
+            className={fieldClass}
+            data-testid="agent-elements-blitz-models-field"
+            data-agent-elements-shell="blitz-models-field"
+          >
+            <div className={fieldHeaderClass}>
+              <label className={fieldLabelClass}>Models</label>
               {selectedModels.length > 0 && (
-                <div className={`text-[11px] ${totalWorktrees > 10 ? 'text-nim-error' : 'text-nim-faint'}`}>
+                <div className={`text-xs ${totalWorktrees > 10 ? 'text-[var(--an-error-color)]' : 'text-[var(--an-foreground-subtle)]'}`}>
                   Total: {totalWorktrees} worktree{totalWorktrees !== 1 ? 's' : ''}
                   {totalWorktrees > 10 && ' (maximum 10)'}
                 </div>
               )}
             </div>
             {loading ? (
-              <div className="text-[13px] text-nim-faint py-3">Loading models...</div>
+              <div className="py-3 text-sm text-[var(--an-foreground-subtle)]">Loading models...</div>
             ) : modelSelections.length === 0 ? (
-              <div className="text-[13px] text-nim-faint py-3">No agent models available. Configure API keys in Settings.</div>
+              <div className="py-3 text-sm text-[var(--an-foreground-subtle)]">No agent models available. Configure API keys in Settings.</div>
             ) : (
-              <div className="max-h-[260px] overflow-y-auto pr-1">
-                <div className="flex flex-col gap-1.5">
+              <div className={modelListClass}>
+                <div className="flex flex-col gap-[var(--an-spacing-sm)]">
                   {modelSelections.map(model => (
                     <label
                       key={model.id}
-                      className={`grid grid-cols-[auto_auto_1fr_auto] items-center gap-3 px-2.5 py-2 cursor-pointer transition-colors rounded-lg border border-nim bg-nim ${
-                        model.checked
-                          ? 'bg-nim-selected border-l-2 border-l-[var(--nim-primary)]'
-                          : 'hover:bg-nim-hover border-l-2 border-l-transparent'
-                      } ${creating ? 'opacity-50 pointer-events-none' : ''}`}
+                      className={`${modelRowBaseClass} ${model.checked ? modelRowActiveClass : modelRowInactiveClass} ${creating ? 'pointer-events-none opacity-50' : ''}`}
+                      data-agent-elements-shell="blitz-model-row"
+                      data-checked={model.checked ? 'true' : 'false'}
                     >
                       <input
                         type="checkbox"
                         checked={model.checked}
                         onChange={() => toggleModel(model.id)}
-                        className="shrink-0 accent-[var(--nim-primary)]"
+                        className={checkboxClass}
                         disabled={creating}
+                        aria-label={`Use ${getModelDisplayName(model)}`}
                       />
                       <span className="shrink-0">{getProviderIcon(model.provider, { size: 14 })}</span>
-                      <span className="text-[13px] text-nim truncate">{getModelDisplayName(model)}</span>
+                      <span className="truncate text-sm text-[var(--an-foreground)]">{getModelDisplayName(model)}</span>
                       <input
                         type="number"
                         min={1}
@@ -284,65 +338,87 @@ export const BlitzDialog: React.FC<BlitzDialogProps> = ({
                         value={model.count}
                         onChange={(e) => updateCount(model.id, parseInt(e.target.value) || 1)}
                         disabled={!model.checked || creating}
-                        className={`w-14 px-2 py-1 text-center text-[13px] bg-nim-secondary border border-nim rounded text-nim outline-none focus:border-nim-focus ${
-                          !model.checked ? 'opacity-30' : ''
-                        }`}
+                        className={numberInputClass}
+                        aria-label={`Worktree count for ${getModelDisplayName(model)}`}
                       />
                     </label>
                   ))}
                 </div>
               </div>
             )}
-            <div className="text-[11px] text-nim-faint">
+            <p className={fieldHintClass}>
               Choose up to 5 sessions per model.
+            </p>
+          </div>
+
+          <div
+            className={fieldClass}
+            data-testid="agent-elements-blitz-analysis-field"
+            data-agent-elements-shell="blitz-analysis-field"
+          >
+            <label className={fieldLabelClass} htmlFor="blitz-analysis-model">Analysis Model</label>
+            <p className={fieldHintClass}>
+              When all sessions complete, an analysis session compares the results.
+            </p>
+            <div className="relative">
+              <select
+                id="blitz-analysis-model"
+                className={selectClass}
+                value={analysisModel}
+                onChange={(e) => setAnalysisModel(e.target.value)}
+                disabled={creating || loading}
+                data-testid="agent-elements-blitz-analysis-select"
+                data-agent-elements-shell="blitz-analysis-select"
+              >
+                {modelSelections.map(model => (
+                  <option key={model.id} value={model.id}>
+                    {getModelDisplayName(model)}
+                  </option>
+                ))}
+              </select>
+              <span
+                className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-[var(--an-foreground-muted)]"
+                aria-hidden="true"
+              >
+                <MaterialSymbol icon="expand_more" size={16} />
+              </span>
             </div>
           </div>
 
-          {/* Analysis Model */}
-          <div className="flex flex-col gap-2 rounded-xl border border-nim bg-nim-secondary p-4">
-            <label className="text-[13px] font-medium text-nim">Analysis Model</label>
-            <p className="m-0 text-[11px] text-nim-muted">
-              When all sessions complete, an analysis session compares the results.
-            </p>
-            <select
-              className="w-full px-3 py-2 text-[13px] bg-nim border border-nim rounded-lg text-nim outline-none focus:border-nim-focus transition-colors cursor-pointer"
-              value={analysisModel}
-              onChange={(e) => setAnalysisModel(e.target.value)}
-              disabled={creating || loading}
-            >
-              {modelSelections.map(model => (
-                <option key={model.id} value={model.id}>
-                  {getModelDisplayName(model)}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* Error */}
           {error && (
-            <div className="text-[13px] text-nim-error p-3 bg-nim-error/10 border border-nim-error/30 rounded-lg select-text">
+            <div
+              className={errorClass}
+              role="alert"
+              data-testid="agent-elements-blitz-error"
+              data-agent-elements-shell="blitz-error"
+            >
               {error}
             </div>
           )}
         </div>
 
-        {/* Footer */}
-        <div className="nim-modal-footer">
+        <div
+          className={footerClass}
+          data-testid="agent-elements-blitz-actions"
+          data-agent-elements-shell="blitz-actions"
+        >
           <button
-            className="nim-btn-secondary px-5 py-2 text-sm font-medium rounded-lg"
+            type="button"
+            className={secondaryButtonClass}
             onClick={onClose}
             disabled={creating}
           >
             Cancel
           </button>
           <button
-            className="nim-btn-primary px-5 py-2 text-sm font-semibold rounded-lg flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+            type="button"
+            className={primaryButtonClass}
             onClick={handleSubmit}
             disabled={!isValid || creating}
           >
             {creating ? (
               <>
-                <span className="material-symbols-outlined text-sm animate-spin">progress_activity</span>
+                <MaterialSymbol icon="progress_activity" size={16} className="animate-spin" aria-hidden="true" />
                 Creating...
               </>
             ) : (

@@ -1,4 +1,9 @@
 import React, { useCallback } from 'react';
+import { AgentToolCard } from '../../AgentElements';
+import {
+  SPECIAL_STATUS_ACTIONS_CLASS,
+  SPECIAL_STATUS_INLINE_PRIMARY_BUTTON_CLASS,
+} from './SpecialStatusWidgetChrome';
 
 /**
  * Custom event name used to ask the renderer to open the OpenAI Codex settings
@@ -12,57 +17,40 @@ export interface OpenCodexAuthSettingsEventDetail {
   anchor: string;
 }
 
-const injectCodexAuthRequiredWidgetStyles = () => {
-  const styleId = 'codex-auth-required-widget-styles';
-  if (document.getElementById(styleId)) return;
-
-  const style = document.createElement('style');
-  style.id = styleId;
-  style.textContent = `
-    .codex-auth-required-widget {
-      background-color: color-mix(in srgb, var(--nim-primary) 6%, transparent);
-      border: 1px solid color-mix(in srgb, var(--nim-primary) 25%, transparent);
-    }
-  `;
-  document.head.appendChild(style);
-};
-
 export const CodexAuthRequiredWidget: React.FC<{ fallbackMessage?: string }> = ({ fallbackMessage }) => {
-  React.useEffect(() => {
-    injectCodexAuthRequiredWidgetStyles();
-  }, []);
-
   const handleClick = useCallback(() => {
     const detail: OpenCodexAuthSettingsEventDetail = { anchor: 'codex-auth-section' };
     window.dispatchEvent(new CustomEvent(OPEN_CODEX_AUTH_SETTINGS_EVENT, { detail }));
   }, []);
 
   return (
-    <div
-      className="codex-auth-required-widget my-4 p-4 rounded-lg flex flex-col gap-3"
+    <AgentToolCard
+      className="codex-auth-required-widget"
+      data-agent-elements-shell="codex-auth-required"
+      data-component="CodexAuthRequiredWidget"
       data-testid="codex-auth-required-widget"
+      icon={<span className="h-2 w-2 rounded-full bg-[var(--an-primary-color)]" />}
+      status="idle"
+      subtitle="ChatGPT or API key login is required before this session can run."
+      title="Sign in to OpenAI Codex to continue"
+      footer={(
+        <div className={SPECIAL_STATUS_ACTIONS_CLASS} data-interactive="true">
+          <button
+            type="button"
+            onClick={handleClick}
+            className={SPECIAL_STATUS_INLINE_PRIMARY_BUTTON_CLASS}
+            data-testid="codex-auth-required-sign-in"
+          >
+            Sign In
+          </button>
+        </div>
+      )}
     >
-      <div className="text-sm font-medium text-[var(--nim-text)]">
-        Sign in to OpenAI Codex to continue
-      </div>
-      <p className="text-[13px] text-[var(--nim-text-muted)] leading-relaxed">
-        This session needs an OpenAI Codex login. Sign in with ChatGPT or an API key to start the agent.
-      </p>
       {fallbackMessage && (
-        <div className="rounded-md border border-[var(--nim-border)] text-[var(--nim-text-muted)] p-3 text-[12px] leading-relaxed">
+        <div className="select-text rounded-[calc(var(--an-tool-border-radius)-4px)] border border-[var(--an-tool-border-color)] bg-[var(--an-background)] p-[var(--an-spacing-sm)] text-[12px] leading-relaxed text-[var(--an-tool-color-muted)]">
           {fallbackMessage}
         </div>
       )}
-      <div className="flex flex-wrap gap-2">
-        <button
-          type="button"
-          onClick={handleClick}
-          className="inline-flex items-center justify-center py-2 px-4 rounded-md text-sm font-medium cursor-pointer transition-all bg-[var(--nim-primary)] text-white hover:bg-[var(--nim-primary-hover)]"
-          data-testid="codex-auth-required-sign-in"
-        >
-          Sign In
-        </button>
-      </div>
-    </div>
+    </AgentToolCard>
   );
 };

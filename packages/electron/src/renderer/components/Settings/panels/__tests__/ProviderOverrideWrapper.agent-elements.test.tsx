@@ -2,8 +2,17 @@
 
 import '@testing-library/jest-dom/vitest';
 import React from 'react';
+import { readFileSync } from 'node:fs';
+import path from 'node:path';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+const sourcePath = path.join(
+  process.cwd(),
+  'packages/electron/src/renderer/components/Settings/panels/ProviderOverrideWrapper.tsx',
+);
+const legacyVisualChromePattern =
+  /bg-nim|text-nim|border-nim|bg-\[var\(--nim|text-\[var\(--nim|border-\[var\(--nim|--nim-|rgba\(|#[0-9a-fA-F]{3,8}\b|bg-white|text-white|tracking-\[|rounded-lg|transition-all/;
 
 interface MockWorkspaceSettings {
   overrides: {
@@ -93,6 +102,7 @@ describe('ProviderOverrideWrapper Agent Elements shell', () => {
     expect(wrapper).toHaveAttribute('data-provider-id', 'smarty-server');
     expect(wrapper).toHaveAttribute('data-override-active', 'true');
     expect(wrapper).toHaveClass('agent-elements-settings-panel');
+    expect(wrapper).toHaveClass('w-full');
 
     const banner = screen.getByTestId('agent-elements-provider-override-banner');
     expect(banner).toHaveAttribute('data-agent-elements-shell', 'provider-override-banner');
@@ -145,5 +155,19 @@ describe('ProviderOverrideWrapper Agent Elements shell', () => {
       },
     });
     expect(mockState.onOverrideChange).toHaveBeenCalledTimes(1);
+  });
+
+  it('keeps provider override chrome on Agent Elements aliases and the shared toggle switch', () => {
+    const source = readFileSync(sourcePath, 'utf8');
+
+    expect(source).toContain("import { ToggleSwitch } from '../../GlobalSettings/SettingsToggle';");
+    expect(source).toContain('<ToggleSwitch');
+    expect(source).toContain('--an-border-color');
+    expect(source).toContain('--an-foreground');
+    expect(source).toContain('--an-foreground-muted');
+    expect(source).toContain('--an-primary-color');
+    expect(source).toContain('--agent-elements-card-inline-padding');
+    expect(source).toContain('h-full w-full flex-col');
+    expect(source).not.toMatch(legacyVisualChromePattern);
   });
 });

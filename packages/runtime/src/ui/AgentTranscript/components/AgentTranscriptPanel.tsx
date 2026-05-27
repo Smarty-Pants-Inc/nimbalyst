@@ -361,7 +361,11 @@ const AgentTranscriptPanelComponent = React.forwardRef<
   }, [isDragging]);
 
   return (
-    <div className="agent-transcript-panel flex h-full relative">
+    <div
+      className="agent-transcript-panel flex h-full relative"
+      data-floating-transcript-actions={shouldShowFloatingActions ? 'true' : 'false'}
+      data-transcript-search-visible={searchBarVisible ? 'true' : 'false'}
+    >
       {/* Main Content */}
       <div className="flex-1 overflow-hidden relative">
         <RichTranscriptView

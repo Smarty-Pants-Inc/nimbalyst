@@ -4,16 +4,15 @@ import { usePostHog } from 'posthog-js/react';
 import { MaterialSymbol } from '@nimbalyst/runtime';
 import { SettingsToggle } from '../SettingsToggle';
 import { HelpTooltip } from '../../../help';
+import { createProviderPanelChrome } from './providerPanelChrome';
 import {
   advancedSettingsAtom,
   setAdvancedSettingsAtom,
   resetWalkthroughsAtom,
   developerFeatureSettingsAtom,
   setDeveloperFeatureSettingsAtom,
-  customPathDirsAtom,
   externalEditorSettingsAtom,
   setExternalEditorSettingsAtom,
-  EXTERNAL_EDITOR_NAMES,
   DEVELOPER_FEATURES,
   areAllDeveloperFeaturesEnabled,
   enableAllDeveloperFeatures,
@@ -35,6 +34,39 @@ import {
   restorePreviousProjectsAtom,
 } from '../../../store/atoms/openProjects';
 
+const chrome = createProviderPanelChrome({
+  headerClassName: 'provider-panel-header advanced-panel-header',
+  sectionClassName: 'provider-panel-section advanced-panel-section',
+  configCardClassName: 'advanced-config-card',
+  inputClassName: 'advanced-input',
+  loadingClassName: 'advanced-loading',
+  modelRowClassName: 'advanced-row',
+  testButtonClassName: 'advanced-action-button',
+  testErrorClassName: 'advanced-error',
+  emptyClassName: 'advanced-empty',
+});
+
+const settingRowClass = 'setting-item py-[var(--an-spacing-sm)]';
+const settingTextClass = 'setting-text flex min-w-0 flex-col gap-[var(--an-spacing-xxs)]';
+const settingNameClass = 'setting-name text-sm font-medium text-[var(--an-foreground)]';
+const settingDescriptionClass = 'setting-description text-xs leading-relaxed text-[var(--an-foreground-muted)]';
+const settingLabelClass = 'setting-label flex cursor-pointer items-start gap-[var(--an-spacing-md)]';
+const sectionBodyTextClass = 'text-sm leading-relaxed text-[var(--an-foreground-muted)]';
+const selectClass =
+  'rounded-[var(--an-input-border-radius)] border border-[var(--an-input-border-color)] bg-[var(--an-input-background)] px-[var(--an-spacing-md)] py-[var(--an-spacing-sm)] text-sm text-[var(--an-input-color)] outline-none transition-[background-color,border-color,color] duration-150 ease-out focus:border-[var(--an-input-focus-border)] focus:ring-2 focus:ring-[var(--an-focus-ring)]';
+const compactCardPaddingClass =
+  '[--agent-elements-card-block-padding:var(--an-spacing-sm)] [--agent-elements-card-inline-padding:var(--an-spacing-md)]';
+const codeCardClass =
+  `agent-elements-tool-card ${compactCardPaddingClass} select-text overflow-x-auto font-mono text-xs text-[var(--an-foreground-muted)]`;
+const modeCardBaseClass =
+  'mode-option agent-elements-tool-card advanced-mode-card relative flex flex-1 cursor-pointer items-start border [--agent-elements-card-block-padding:0px] [--agent-elements-card-inline-padding:0px] transition-[background-color,border-color,color,opacity] duration-150 ease-out';
+const modeCardSelectedClass =
+  'selected border-[var(--an-primary-color)] bg-[color-mix(in_srgb,var(--an-primary-color)_10%,var(--an-background))]';
+const modeCardDefaultClass =
+  'border-[var(--an-border-color)] bg-[var(--an-background-secondary)] hover:border-[var(--an-primary-color)] hover:bg-[var(--an-background-tertiary)]';
+const statusPillClass =
+  'rounded-[var(--an-small-border-radius)] px-[var(--an-spacing-sm)] py-[var(--an-spacing-xxs)] text-xs font-medium';
+
 /** Reusable compact dropdown row */
 function DropdownRow({
   value,
@@ -52,11 +84,11 @@ function DropdownRow({
   testId?: string;
 }) {
   return (
-    <div className="setting-item py-2">
-      <div className="flex items-center justify-between gap-4">
-        <div className="setting-text flex flex-col gap-0 min-w-0">
-          <span className="setting-name text-sm font-medium text-[var(--nim-text)]">{name}</span>
-          <span className="setting-description text-xs leading-snug text-[var(--nim-text-muted)]">
+    <div className={settingRowClass}>
+      <div className="flex items-center justify-between gap-[var(--an-spacing-xl)]">
+        <div className={settingTextClass}>
+          <span className={settingNameClass}>{name}</span>
+          <span className={settingDescriptionClass}>
             {description}
           </span>
         </div>
@@ -64,7 +96,7 @@ function DropdownRow({
           data-testid={testId}
           value={value}
           onChange={(e) => onChange(e.target.value)}
-          className="setting-select shrink-0 py-1.5 px-2 pr-7 rounded-md text-sm bg-[var(--nim-bg-secondary)] border border-[var(--nim-border)] text-[var(--nim-text)] outline-none appearance-none bg-[url('data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2212%22%20height%3D%2212%22%20viewBox%3D%220%200%2012%2012%22%3E%3Cpath%20fill%3D%22%236b7280%22%20d%3D%22M3%204.5L6%207.5L9%204.5%22%2F%3E%3C%2Fsvg%3E')] bg-no-repeat bg-[right_8px_center] focus:border-[var(--nim-primary)]"
+          className={`setting-select min-w-[11rem] flex-none ${selectClass}`}
         >
           {options.map((opt) => (
             <option key={opt.value} value={opt.value}>{opt.label}</option>
@@ -206,34 +238,34 @@ export function AdvancedPanel() {
       data-testid="agent-elements-advanced-panel"
     >
       <div
-        className="provider-panel-header advanced-panel-header agent-elements-settings-panel-header mb-6 pb-4 border-b border-[var(--nim-border)]"
+        className={chrome.header}
         data-testid="agent-elements-advanced-header"
       >
-        <h3 className="provider-panel-title text-xl font-semibold leading-tight mb-2 text-[var(--nim-text)]">
+        <h3 className={chrome.title}>
           Advanced Settings
         </h3>
-        <p className="provider-panel-description text-sm leading-relaxed text-[var(--nim-text-muted)]">
+        <p className={chrome.description}>
           Advanced configuration options for AI features.
         </p>
       </div>
 
       {/* Application Mode - Always shown at the top */}
       <div
-        className="provider-panel-section advanced-mode-section agent-elements-settings-section"
+        className={chrome.section}
         data-section="application-mode"
         data-testid="agent-elements-advanced-mode-section"
       >
-          <h4 className="provider-panel-section-title" onClick={handleModeClick}>Application Mode</h4>
-          <p className="provider-panel-hint">
+          <h4 className={chrome.sectionTitle} onClick={handleModeClick}>Application Mode</h4>
+          <p className={`${sectionBodyTextClass} mb-[var(--an-spacing-lg)]`}>
             Choose between a simplified experience or full developer features for this project.
           </p>
 
-          <div className="mode-selection flex flex-row gap-4 mt-3">
+          <div className="mode-selection flex flex-row gap-[var(--an-spacing-lg)]">
             <label
-              className={`mode-option agent-elements-tool-card advanced-mode-card flex flex-1 items-start p-0 rounded-lg cursor-pointer transition-all relative border ${
+              className={`${modeCardBaseClass} ${
                 !developerMode
-                  ? 'selected bg-nim-hover border-nim-primary'
-                  : 'bg-nim-secondary border-nim'
+                  ? modeCardSelectedClass
+                  : modeCardDefaultClass
               }`}
               data-testid="agent-elements-advanced-standard-mode-card"
               onClick={() => handleDeveloperModeChange(false)}
@@ -243,26 +275,26 @@ export function AdvancedPanel() {
                 name="mode"
                 checked={!developerMode}
                 onChange={() => handleDeveloperModeChange(false)}
-                className="absolute top-3 right-3 m-0 cursor-pointer w-[18px] h-[18px] accent-[var(--nim-primary)]"
+                className="absolute right-[var(--an-spacing-lg)] top-[var(--an-spacing-lg)] m-0 h-[18px] w-[18px] cursor-pointer accent-[var(--an-primary-color)]"
               />
-              <div className="p-4 w-full flex flex-col items-center text-center">
-                <div className="flex flex-col items-center gap-2 mb-2">
-                  <span className="material-symbols-outlined text-nim-primary text-[32px]">
+              <div className="flex w-full flex-col items-center p-[var(--an-spacing-xxl)] text-center">
+                <div className="mb-[var(--an-spacing-sm)] flex flex-col items-center gap-[var(--an-spacing-sm)]">
+                  <span className="material-symbols-outlined text-[32px] text-[var(--an-primary-color)]">
                     edit_note
                   </span>
-                  <span className="text-base font-semibold text-nim">Standard Mode</span>
+                  <span className="text-base font-semibold text-[var(--an-foreground)]">Standard Mode</span>
                 </div>
-                <p className="m-0 text-[13px] leading-snug text-nim-muted">
+                <p className="m-0 text-[13px] leading-snug text-[var(--an-foreground-muted)]">
                   Simplified interface focused on writing, editing, and AI assistance
                 </p>
               </div>
             </label>
 
             <label
-              className={`mode-option agent-elements-tool-card advanced-mode-card flex flex-1 items-start p-0 rounded-lg cursor-pointer transition-all relative border ${
+              className={`${modeCardBaseClass} ${
                 developerMode
-                  ? 'selected bg-nim-hover border-nim-primary'
-                  : 'bg-nim-secondary border-nim'
+                  ? modeCardSelectedClass
+                  : modeCardDefaultClass
               }`}
               data-testid="agent-elements-advanced-developer-mode-card"
               onClick={() => handleDeveloperModeChange(true)}
@@ -272,16 +304,16 @@ export function AdvancedPanel() {
                 name="mode"
                 checked={developerMode}
                 onChange={() => handleDeveloperModeChange(true)}
-                className="absolute top-3 right-3 m-0 cursor-pointer w-[18px] h-[18px] accent-[var(--nim-primary)]"
+                className="absolute right-[var(--an-spacing-lg)] top-[var(--an-spacing-lg)] m-0 h-[18px] w-[18px] cursor-pointer accent-[var(--an-primary-color)]"
               />
-              <div className="p-4 w-full flex flex-col items-center text-center">
-                <div className="flex flex-col items-center gap-2 mb-2">
-                  <span className="material-symbols-outlined text-nim-primary text-[32px]">
+              <div className="flex w-full flex-col items-center p-[var(--an-spacing-xxl)] text-center">
+                <div className="mb-[var(--an-spacing-sm)] flex flex-col items-center gap-[var(--an-spacing-sm)]">
+                  <span className="material-symbols-outlined text-[32px] text-[var(--an-primary-color)]">
                     terminal
                   </span>
-                  <span className="text-base font-semibold text-nim">Developer Mode</span>
+                  <span className="text-base font-semibold text-[var(--an-foreground)]">Developer Mode</span>
                 </div>
-                <p className="m-0 text-[13px] leading-snug text-nim-muted">
+                <p className="m-0 text-[13px] leading-snug text-[var(--an-foreground-muted)]">
                   Full development environment with git worktrees, terminal access, development specific features
                 </p>
               </div>
@@ -292,25 +324,25 @@ export function AdvancedPanel() {
       {/* Secret Features Menu - Cmd+Click on "Application Mode" title to show */}
       {showFeaturesMenu && (
         <div
-          className="provider-panel-section advanced-feature-availability-section agent-elements-settings-section py-4 mb-4 border-b border-[var(--nim-border)] last:border-b-0 last:mb-0 last:pb-0"
+          className={chrome.section}
           data-section="feature-availability"
           data-testid="agent-elements-advanced-feature-availability-section"
         >
-          <h4 className="provider-panel-section-title text-base font-semibold mb-3 text-[var(--nim-text)]">
+          <h4 className={chrome.sectionTitle}>
             Feature Availability
           </h4>
-          <p className="text-sm leading-relaxed text-[var(--nim-text-muted)] mb-4">
+          <p className={`${sectionBodyTextClass} mb-[var(--an-spacing-lg)]`}>
             See which features are available based on your current mode settings.
           </p>
 
           {/* Developer Features */}
           <div
-            className="advanced-feature-availability-card agent-elements-tool-card mt-4 p-3 bg-nim-secondary rounded-md border border-nim"
+            className={chrome.configCard}
             data-testid="agent-elements-advanced-feature-availability-card"
           >
             {/* "All Developer Features" master toggle */}
-            <div className="setting-item mb-3 pb-3 border-b border-nim">
-              <label className="setting-label">
+            <div className="setting-item mb-[var(--an-spacing-lg)] border-b border-[var(--an-border-color)] pb-[var(--an-spacing-lg)]">
+              <label className={settingLabelClass}>
                 <input
                   type="checkbox"
                   checked={areAllDeveloperFeaturesEnabled(developerFeatures)}
@@ -319,11 +351,11 @@ export function AdvancedPanel() {
                     updateDeveloperSettings({ developerFeatures: newFeatures });
                   }}
                   disabled={!developerMode}
-                  className="setting-checkbox"
+                  className={chrome.checkbox}
                 />
-                <div className="setting-text">
-                  <span className="setting-name">All Developer Features</span>
-                  <span className="setting-description">
+                <div className={settingTextClass}>
+                  <span className={settingNameClass}>All Developer Features</span>
+                  <span className={settingDescriptionClass}>
                     Enable or disable all developer features at once
                   </span>
                 </div>
@@ -334,8 +366,8 @@ export function AdvancedPanel() {
             {DEVELOPER_FEATURES.map((feature) => {
               const isAvailable = developerMode && developerFeatures[feature.tag];
               return (
-                <div key={feature.tag} className="setting-item py-2">
-                  <label className="setting-label">
+                <div key={feature.tag} className={settingRowClass}>
+                  <label className={settingLabelClass}>
                     <input
                       type="checkbox"
                       checked={developerFeatures[feature.tag]}
@@ -348,25 +380,25 @@ export function AdvancedPanel() {
                         });
                       }}
                       disabled={!developerMode}
-                      className="setting-checkbox"
+                      className={chrome.checkbox}
                     />
-                    <div className="setting-text">
-                      <span className="setting-name flex items-center gap-2">
+                    <div className={settingTextClass}>
+                      <span className={`${settingNameClass} flex items-center gap-[var(--an-spacing-sm)]`}>
                         {feature.icon && (
                           <span className="material-symbols-outlined text-sm">{feature.icon}</span>
                         )}
                         {feature.name}
                         <span
-                          className={`text-xs px-2 py-0.5 rounded ${
+                          className={`${statusPillClass} ${
                             isAvailable
-                              ? 'bg-green-500/20 text-green-400'
-                              : 'bg-red-500/20 text-red-400'
+                              ? 'bg-[color-mix(in_srgb,var(--an-success-color)_12%,transparent)] text-[var(--an-success-color)]'
+                              : 'bg-[color-mix(in_srgb,var(--an-error-color)_12%,transparent)] text-[var(--an-error-color)]'
                           }`}
                         >
                           {isAvailable ? 'Available' : 'Hidden'}
                         </span>
                       </span>
-                      <span className="setting-description">{feature.description}</span>
+                      <span className={settingDescriptionClass}>{feature.description}</span>
                     </div>
                   </label>
                 </div>
@@ -374,36 +406,36 @@ export function AdvancedPanel() {
             })}
           </div>
 
-          <p className="text-xs text-[var(--nim-text-faint)] mt-3">
+          <p className="mt-[var(--an-spacing-lg)] text-xs text-[var(--an-foreground-subtle)]">
             Developer mode: {developerMode ? 'ON' : 'OFF'}
           </p>
         </div>
       )}
 
-      {/* ── Debug Logging ── */}
+      {/* Debug Logging */}
       <div
-        className="provider-panel-section advanced-debug-section agent-elements-settings-section py-4 mb-4 border-b border-[var(--nim-border)] last:border-b-0 last:mb-0 last:pb-0"
+        className={chrome.section}
         data-section="debug-logging"
         data-testid="agent-elements-advanced-debug-section"
       >
-        <h4 className="provider-panel-section-title text-base font-semibold mb-3 text-[var(--nim-text)]">Debug Logging</h4>
-        <p className="text-sm leading-relaxed text-[var(--nim-text-muted)] mb-4">
+        <h4 className={chrome.sectionTitle}>Debug Logging</h4>
+        <p className={`${sectionBodyTextClass} mb-[var(--an-spacing-lg)]`}>
           Verbose tracing for internal subsystems. Off by default. Toggle on when reproducing a bug, then check the renderer console (Cmd+Opt+I).
         </p>
 
-        <div className="setting-item py-2" data-testid="debug-flag-diff-trace">
-          <label className="setting-label">
+        <div className={settingRowClass} data-testid="debug-flag-diff-trace">
+          <label className={settingLabelClass}>
             <input
               type="checkbox"
               checked={debugFlags.diffTrace ?? false}
               onChange={(e) => {
                 void updateDebugFlags({ diffTrace: e.target.checked });
               }}
-              className="setting-checkbox"
+              className={chrome.checkbox}
             />
-            <div className="setting-text">
-              <span className="setting-name">Diff Trace</span>
-              <span className="setting-description">
+            <div className={settingTextClass}>
+              <span className={settingNameClass}>Diff Trace</span>
+              <span className={settingDescriptionClass}>
                 Logs every step of the AI-edit / diff pipeline (DocumentModel, DiskBackedStore, TabEditor, DiffPlugin, file-change listeners).
                 Filter the console for <code>[diff-trace]</code>.
               </span>
@@ -412,21 +444,21 @@ export function AdvancedPanel() {
         </div>
       </div>
 
-      {/* ── Release Channel ── */}
+      {/* Release Channel */}
       <div
-        className="provider-panel-section advanced-release-section agent-elements-settings-section py-4 mb-4 border-b border-[var(--nim-border)] last:border-b-0 last:mb-0 last:pb-0"
+        className={chrome.section}
         data-section="release-channel"
         data-testid="agent-elements-advanced-release-section"
       >
-        <h4 className="provider-panel-section-title text-base font-semibold mb-3 text-[var(--nim-text)]">Release Channel</h4>
-        <p className="text-sm leading-relaxed text-[var(--nim-text-muted)] mb-4">
+        <h4 className={chrome.sectionTitle}>Release Channel</h4>
+        <p className={`${sectionBodyTextClass} mb-[var(--an-spacing-lg)]`}>
           Choose which release stream Nimbalyst pulls auto-updates from. Alpha and beta features are configured separately on each feature&apos;s settings page.
         </p>
 
-        <div className="setting-item py-3">
-          <div className="setting-text flex flex-col gap-0.5">
-            <span className="setting-name text-sm font-medium text-[var(--nim-text)]">Update Channel</span>
-            <span className="setting-description text-xs leading-relaxed text-[var(--nim-text-muted)]">
+        <div className="setting-item py-[var(--an-spacing-lg)]">
+          <div className={settingTextClass}>
+            <span className={settingNameClass}>Update Channel</span>
+            <span className={settingDescriptionClass}>
               <strong>Stable:</strong> Production-ready releases (recommended for most users).<br/>
               <strong>Alpha:</strong> Frequent, rough developer releases. Expect bugs and breaking changes between updates.
             </span>
@@ -441,7 +473,7 @@ export function AdvancedPanel() {
                 channel: newChannel,
               });
             }}
-            className="setting-select mt-2 w-full py-2 px-3 pr-9 rounded-md text-sm bg-[var(--nim-bg-secondary)] border border-[var(--nim-border)] text-[var(--nim-text)] outline-none appearance-none bg-[url('data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2212%22%20height%3D%2212%22%20viewBox%3D%220%200%2012%2012%22%3E%3Cpath%20fill%3D%22%236b7280%22%20d%3D%22M3%204.5L6%207.5L9%204.5%22%2F%3E%3C%2Fsvg%3E')] bg-no-repeat bg-[right_12px_center] focus:border-[var(--nim-primary)]"
+            className={`setting-select mt-[var(--an-spacing-sm)] w-full ${selectClass}`}
           >
             <option value="stable">Stable</option>
             <option value="alpha">Alpha (Developer Releases)</option>
@@ -450,25 +482,25 @@ export function AdvancedPanel() {
 
         {releaseChannel === 'alpha' && (
           <div
-            className="advanced-release-warning agent-elements-tool-card mt-3 flex items-start gap-2 p-3 rounded border border-[var(--nim-warning)]/30 bg-[var(--nim-warning)]/10"
+            className={`advanced-release-warning agent-elements-tool-card mt-[var(--an-spacing-lg)] flex items-start gap-[var(--an-spacing-sm)] border-[color-mix(in_srgb,var(--an-warning-color)_32%,var(--an-border-color))] bg-[color-mix(in_srgb,var(--an-warning-color)_10%,var(--an-background))] ${compactCardPaddingClass}`}
             data-testid="agent-elements-advanced-release-warning"
             data-tone="warning"
           >
-            <MaterialSymbol icon="warning" size={16} className="text-[var(--nim-warning)] shrink-0 mt-0.5" />
-            <p className="m-0 text-[13px] text-[var(--nim-text)] leading-snug">
+            <MaterialSymbol icon="warning" size={16} className="mt-0.5 shrink-0 text-[var(--an-warning-color)]" />
+            <p className="m-0 text-[13px] leading-snug text-[var(--an-foreground)]">
               The alpha channel ships rough developer releases that may be unstable or contain unfinished work. Switch back to Stable if you encounter problems.
             </p>
           </div>
         )}
       </div>
 
-      {/* ── General ── */}
+      {/* General */}
       <div
-        className="provider-panel-section advanced-general-section agent-elements-settings-section py-4 mb-4 border-b border-[var(--nim-border)] last:border-b-0 last:mb-0 last:pb-0"
+        className={chrome.section}
         data-section="general"
         data-testid="agent-elements-advanced-general-section"
       >
-        <h4 className="provider-panel-section-title text-base font-semibold mb-2 text-[var(--nim-text)]">General</h4>
+        <h4 className={chrome.sectionTitle}>General</h4>
 
         <MultiProjectModeToggle />
 
@@ -496,23 +528,23 @@ export function AdvancedPanel() {
         />
 
         {walkthroughsViewedCount > 0 && (
-          <div className="py-1 pl-7">
-            <button onClick={() => resetWalkthroughs()} className="nim-btn-secondary text-xs">
+          <div className="py-[var(--an-spacing-xs)] pl-[calc(var(--an-spacing-xxl)+var(--an-spacing-sm))]">
+            <button onClick={() => resetWalkthroughs()} className={`${chrome.secondaryButton} text-xs`}>
               Reset All Guides
             </button>
           </div>
         )}
       </div>
 
-      {/* ── Tracker Automation ── */}
+      {/* Tracker Automation */}
       <div
-        className="provider-panel-section advanced-tracker-section agent-elements-settings-section py-4 mb-4 border-b border-[var(--nim-border)] last:border-b-0 last:mb-0 last:pb-0"
+        className={chrome.section}
         data-agent-elements-shell="advanced-tracker-section"
         data-section="tracker-automation"
         data-testid="tracker-automation-section"
       >
         <HelpTooltip testId="tracker-automation-section">
-          <h4 className="provider-panel-section-title text-base font-semibold mb-2 text-[var(--nim-text)] inline-block">Tracker Automation</h4>
+          <h4 className={`${chrome.sectionTitle} inline-block`}>Tracker Automation</h4>
         </HelpTooltip>
 
         <SettingsToggle
@@ -532,13 +564,13 @@ export function AdvancedPanel() {
         )}
       </div>
 
-      {/* ── Tools & Environment ── */}
+      {/* Tools & Environment */}
       <div
-        className="provider-panel-section advanced-tools-section agent-elements-settings-section py-4 mb-4 border-b border-[var(--nim-border)] last:border-b-0 last:mb-0 last:pb-0"
+        className={chrome.section}
         data-section="tools-environment"
         data-testid="agent-elements-advanced-tools-section"
       >
-        <h4 className="provider-panel-section-title text-base font-semibold mb-2 text-[var(--nim-text)]">Tools & Environment</h4>
+        <h4 className={chrome.sectionTitle}>Tools & Environment</h4>
 
         <DropdownRow
           value={externalEditorType}
@@ -559,13 +591,13 @@ export function AdvancedPanel() {
         />
 
         {externalEditorType === 'custom' && (
-          <div className="py-2 pl-7">
+          <div className="py-[var(--an-spacing-sm)] pl-[calc(var(--an-spacing-xxl)+var(--an-spacing-sm))]">
             <input
               type="text"
               value={externalEditorCustomPath || ''}
               onChange={(e) => updateExternalEditorSettings({ customPath: e.target.value })}
               placeholder={process.platform === 'win32' ? 'C:\\Program Files\\Editor\\editor.exe' : '/usr/local/bin/myeditor'}
-              className="w-full py-1.5 px-3 rounded-md text-sm bg-[var(--nim-bg-secondary)] border border-[var(--nim-border)] text-[var(--nim-text)] outline-none focus:border-[var(--nim-primary)] font-mono"
+              className={`${chrome.input} w-full`}
             />
           </div>
         )}
@@ -602,20 +634,20 @@ export function AdvancedPanel() {
               options={terminalShellOptions}
             />
 
-            <div className="setting-item py-2">
-              <div className="setting-text flex flex-col gap-0 mb-2">
-                <span className="setting-name text-sm font-medium text-[var(--nim-text)]">Detected Terminal Shells</span>
-                <span className="setting-description text-xs leading-snug text-[var(--nim-text-muted)]">
+            <div className={settingRowClass}>
+              <div className={`${settingTextClass} mb-[var(--an-spacing-sm)]`}>
+                <span className={settingNameClass}>Detected Terminal Shells</span>
+                <span className={settingDescriptionClass}>
                   Current Windows shell discovery results used for terminal selection and restore.
                 </span>
               </div>
 
-              <div className="select-text p-2 rounded-md text-xs bg-[var(--nim-bg-tertiary)] border border-[var(--nim-border)] text-[var(--nim-text-muted)] font-mono">
+              <div className={codeCardClass}>
                 {availableTerminalShells.length === 0 ? (
                   <div>No supported terminal shells detected.</div>
                 ) : (
                   availableTerminalShells.map((shell) => (
-                    <div key={`${shell.provider || shell.name}-${shell.path}`} className="py-0.5 break-all">
+                    <div key={`${shell.provider || shell.name}-${shell.path}`} className="break-all py-[var(--an-spacing-xxs)]">
                       {`${shell.provider || shell.name} | ${shell.path} | bootstrap=${shell.bootstrapMode || 'none'} | cwd=${shell.cwdMode || 'native'}`}
                     </div>
                   ))
@@ -656,10 +688,10 @@ export function AdvancedPanel() {
         />
 
         {/* Custom PATH */}
-        <div className="setting-item py-2">
-          <div className="setting-text flex flex-col gap-0 mb-2">
-            <span className="setting-name text-sm font-medium text-[var(--nim-text)]">Custom PATH Directories</span>
-            <span className="setting-description text-xs leading-snug text-[var(--nim-text-muted)]">
+        <div className={settingRowClass}>
+          <div className={`${settingTextClass} mb-[var(--an-spacing-sm)]`}>
+            <span className={settingNameClass}>Custom PATH Directories</span>
+            <span className={settingDescriptionClass}>
               Additional directories for MCP server installation, CLI tool detection, and agent SDK operations.
             </span>
           </div>
@@ -670,21 +702,21 @@ export function AdvancedPanel() {
               ? 'C:\\MyTools;C:\\Programs\\bin'
               : '/opt/mytools/bin:/usr/local/custom/bin'}
             rows={2}
-            className="w-full py-1.5 px-3 rounded-md text-sm bg-[var(--nim-bg-secondary)] border border-[var(--nim-border)] text-[var(--nim-text)] outline-none focus:border-[var(--nim-primary)] font-mono resize-none"
+            className={`${chrome.input} w-full resize-none`}
           />
-          <div className="mt-1">
+          <div className="mt-[var(--an-spacing-xs)]">
             <button
               data-testid="agent-elements-advanced-show-path"
               onClick={() => setShowEnhancedPath(!showEnhancedPath)}
-              className="text-xs text-[var(--nim-link)] hover:text-[var(--nim-link-hover)] cursor-pointer"
+              className="cursor-pointer border-0 bg-transparent p-0 text-xs text-[var(--an-primary-color)] underline-offset-2 transition-colors duration-150 ease-out hover:text-[color-mix(in_srgb,var(--an-primary-color)_82%,var(--an-foreground))] hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--an-focus-ring)]"
             >
               {showEnhancedPath ? 'Hide current PATH' : 'Show current PATH'}
             </button>
 
             {showEnhancedPath && enhancedPath && (
-              <div className="mt-2">
+              <div className="mt-[var(--an-spacing-sm)]">
                 <div
-                  className="advanced-path-output agent-elements-tool-card select-text p-2 rounded-md text-xs bg-[var(--nim-bg-tertiary)] border border-[var(--nim-border)] text-[var(--nim-text-muted)] font-mono overflow-x-auto"
+                  className={`advanced-path-output ${codeCardClass}`}
                   data-testid="agent-elements-advanced-path-output"
                   style={{
                     maxHeight: '200px',
@@ -694,7 +726,7 @@ export function AdvancedPanel() {
                   }}
                 >
                   {enhancedPath.split(process.platform === 'win32' ? ';' : ':').map((p, index) => (
-                    <div key={index} className="py-0.5">
+                    <div key={index} className="py-[var(--an-spacing-xxs)]">
                       {p}
                     </div>
                   ))}

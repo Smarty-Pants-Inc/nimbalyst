@@ -18,7 +18,7 @@ const discordInvitationButtonBase =
   'inline-flex items-center justify-center gap-2 rounded-[var(--an-input-border-radius)] border px-3 py-2 text-sm font-medium transition-[background-color,border-color,color,opacity] duration-150 ease-out focus:outline-none focus:ring-2 focus:ring-[var(--an-input-focus-outline)] disabled:cursor-not-allowed disabled:opacity-50';
 
 const discordInvitationPrimaryButton =
-  `${discordInvitationButtonBase} border-[var(--an-primary-color)] bg-[var(--an-primary-color)] text-[var(--an-background)] hover:border-[var(--nim-primary-hover)] hover:bg-[var(--nim-primary-hover)]`;
+  `${discordInvitationButtonBase} border-[var(--an-primary-color)] bg-[var(--an-primary-color)] text-[var(--an-button-primary-text)] hover:border-[color-mix(in_srgb,var(--an-primary-color)_82%,var(--an-foreground))] hover:bg-[color-mix(in_srgb,var(--an-primary-color)_88%,var(--an-foreground))]`;
 
 const discordInvitationSecondaryButton =
   `${discordInvitationButtonBase} border-[var(--an-border-color)] bg-[var(--an-background)] text-[var(--an-foreground-muted)] hover:bg-[var(--an-background-tertiary)] hover:text-[var(--an-foreground)]`;
@@ -116,13 +116,13 @@ export const DiscordInvitation: React.FC<DiscordInvitationProps> = ({
 
   return (
     <div
-      className="discord-invitation-overlay nim-overlay agent-elements-discord-invitation-backdrop nim-animate-fade-in fixed inset-0 z-[10000] flex items-center justify-center bg-[color-mix(in_srgb,var(--nim-text)_36%,transparent)] p-4"
+      className="discord-invitation-overlay nim-overlay agent-elements-discord-invitation-backdrop nim-animate-fade-in fixed inset-0 z-[10000] flex items-center justify-center bg-[color-mix(in_srgb,var(--an-foreground)_36%,transparent)] p-4"
       onClick={handleRemindLater}
       data-testid="agent-elements-discord-invitation-backdrop"
       data-agent-elements-shell="discord-invitation-backdrop"
     >
       <div
-        className="discord-invitation agent-elements-discord-invitation agent-elements-tool-card nim-animate-slide-up flex max-h-[86vh] w-[420px] max-w-[92vw] flex-col !gap-0 !p-0 overflow-hidden rounded-[var(--an-border-radius)] border border-[var(--an-border-color)] bg-[var(--an-background)] text-[var(--an-foreground)] shadow-[0_20px_60px_color-mix(in_srgb,var(--nim-text)_18%,transparent)]"
+        className="discord-invitation agent-elements-discord-invitation agent-elements-tool-card nim-animate-slide-up flex max-h-[86vh] w-[420px] max-w-[92vw] flex-col !gap-0 !p-0 overflow-hidden rounded-[var(--an-border-radius)] border border-[var(--an-border-color)] bg-[var(--an-background)] text-[var(--an-foreground)] shadow-[0_20px_60px_color-mix(in_srgb,var(--an-foreground)_18%,transparent)]"
         onClick={(e) => e.stopPropagation()}
         role="dialog"
         aria-modal="true"

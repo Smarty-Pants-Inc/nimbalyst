@@ -1177,9 +1177,16 @@ async function detectPaths(): Promise<DetectedPaths> {
     try {
       const shell = process.env.SHELL || '/bin/zsh';
       const shellName = path.basename(shell);
+      const skipShellStartup = process.env.NIMBALYST_SKIP_SHELL_STARTUP === '1';
 
       let command: string;
-      if (shellName === 'zsh') {
+      if (skipShellStartup && shellName === 'zsh') {
+        command = `${shell} -f -c 'env -0'`;
+      } else if (skipShellStartup && shellName === 'bash') {
+        command = `${shell} --noprofile --norc -c 'env -0'`;
+      } else if (skipShellStartup) {
+        command = `env -0`;
+      } else if (shellName === 'zsh') {
         const sourceCommand =
           `source /etc/zprofile 2>/dev/null || true; ` +
           `source ${homeDir}/.zprofile 2>/dev/null || true; ` +

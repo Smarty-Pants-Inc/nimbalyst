@@ -1,6 +1,103 @@
 import React, { useEffect, useRef } from 'react';
 import { MaterialSymbol } from '@nimbalyst/runtime';
 
+const overlayClass = [
+  'archive-worktree-dialog-overlay',
+  'agent-elements-agent-mode-dialog-overlay',
+  'fixed inset-0 z-50 flex items-center justify-center',
+  'bg-[color-mix(in_srgb,var(--an-foreground)_14%,transparent)] p-[var(--an-spacing-xxl)]',
+].join(' ');
+
+const dialogClass = [
+  'archive-worktree-dialog',
+  'agent-elements-archive-worktree-dialog',
+  'w-full max-w-[440px] overflow-hidden rounded-[var(--an-tool-border-radius)]',
+  'border border-[var(--an-border-color)] bg-[var(--an-background)] text-[var(--an-foreground)]',
+  'outline-none shadow-[0_20px_60px_color-mix(in_srgb,var(--an-foreground)_10%,transparent)]',
+].join(' ');
+
+const headerClass = [
+  'archive-worktree-dialog-header',
+  'agent-elements-archive-worktree-header',
+  'flex items-center gap-[var(--an-spacing-md)] border-b border-[var(--an-border-color)]',
+  'px-[var(--an-spacing-xxl)] pb-[var(--an-spacing-lg)] pt-[var(--an-spacing-xl)]',
+].join(' ');
+
+const iconClass = [
+  'archive-worktree-dialog-icon',
+  'agent-elements-archive-worktree-icon',
+  'inline-flex h-9 w-9 shrink-0 items-center justify-center',
+  'rounded-[var(--an-input-border-radius)] border border-[color-mix(in_srgb,var(--an-primary-color)_24%,var(--an-border-color))]',
+  'bg-[color-mix(in_srgb,var(--an-primary-color)_10%,var(--an-background))] text-[var(--an-primary-color)]',
+].join(' ');
+
+const bodyClass = [
+  'archive-worktree-dialog-body',
+  'agent-elements-archive-worktree-body',
+  'px-[var(--an-spacing-xxl)] py-[var(--an-spacing-xl)]',
+].join(' ');
+
+const bodyCopyClass = [
+  'm-0 mb-[var(--an-spacing-lg)] select-text text-sm leading-relaxed text-[var(--an-foreground-muted)]',
+].join(' ');
+
+const warningClass = [
+  'archive-worktree-warning',
+  'agent-elements-archive-worktree-warning',
+  'mb-[var(--an-spacing-lg)] flex items-start gap-[var(--an-spacing-sm)]',
+  'rounded-[calc(var(--an-tool-border-radius)_-_4px)] border border-[color-mix(in_srgb,var(--an-warning-color)_24%,var(--an-border-color))]',
+  'bg-[color-mix(in_srgb,var(--an-warning-color)_9%,var(--an-background))]',
+  'p-[var(--an-spacing-md)]',
+].join(' ');
+
+const warningIconClass = [
+  'archive-worktree-warning-icon',
+  'agent-elements-archive-worktree-warning-icon',
+  'mt-[1px] shrink-0 text-[var(--an-warning-color)]',
+].join(' ');
+
+const warningTitleClass = [
+  'm-0 text-sm font-medium leading-snug text-[var(--an-warning-color)]',
+].join(' ');
+
+const warningDescriptionClass = [
+  'm-0 mt-[var(--an-spacing-xs)] select-text text-xs leading-relaxed text-[var(--an-foreground-muted)]',
+].join(' ');
+
+const infoClass = [
+  'archive-worktree-dialog-info',
+  'agent-elements-archive-worktree-info',
+  'm-0 select-text text-xs leading-relaxed text-[var(--an-foreground-subtle)]',
+].join(' ');
+
+const footerClass = [
+  'archive-worktree-dialog-footer',
+  'agent-elements-archive-worktree-footer',
+  'flex justify-end gap-[var(--an-spacing-sm)] border-t border-[var(--an-border-color)]',
+  'bg-[var(--an-background-secondary)] px-[var(--an-spacing-xxl)] py-[var(--an-spacing-lg)]',
+].join(' ');
+
+const buttonBaseClass = [
+  'archive-worktree-dialog-button',
+  'inline-flex min-h-8 cursor-pointer items-center justify-center gap-[var(--an-spacing-xs)]',
+  'rounded-[calc(var(--an-tool-border-radius)_-_4px)] border px-[var(--an-spacing-lg)] py-[var(--an-spacing-xs)]',
+  'text-sm font-medium outline-none transition-[background-color,border-color,color,opacity] duration-150 ease-out',
+  'focus-visible:ring-2 focus-visible:ring-[var(--an-focus-ring)] disabled:cursor-not-allowed disabled:opacity-50',
+].join(' ');
+
+const secondaryButtonClass = [
+  buttonBaseClass,
+  'agent-elements-archive-worktree-secondary border-[var(--an-border-color)] bg-[var(--an-background)]',
+  'text-[var(--an-foreground-muted)] hover:bg-[var(--an-background-tertiary)] hover:text-[var(--an-foreground)]',
+].join(' ');
+
+const primaryButtonClass = [
+  buttonBaseClass,
+  'agent-elements-archive-worktree-primary border-[var(--an-primary-color)] bg-[var(--an-primary-color)]',
+  'text-[var(--an-background)] hover:border-[color-mix(in_srgb,var(--an-primary-color)_80%,var(--an-foreground))]',
+  'hover:bg-[color-mix(in_srgb,var(--an-primary-color)_88%,var(--an-foreground))]',
+].join(' ');
+
 interface ArchiveWorktreeDialogProps {
   /** Single worktree name (singular mode) */
   worktreeName?: string;
@@ -58,39 +155,63 @@ export function ArchiveWorktreeDialog({
 
   return (
     <div
-      className="archive-worktree-dialog-overlay nim-overlay"
+      className={overlayClass}
+      data-agent-elements-shell="agent-mode-dialog-overlay"
+      data-component="ArchiveWorktreeDialog"
+      data-testid="agent-elements-archive-worktree-overlay"
       onClick={onKeep}
     >
       <div
-        className="archive-worktree-dialog w-full max-w-[440px] rounded-xl outline-none bg-[var(--nim-bg)] shadow-[0_8px_32px_rgba(0,0,0,0.24)]"
+        aria-labelledby="archive-worktree-dialog-title"
+        aria-modal="true"
+        className={dialogClass}
+        data-agent-elements-shell="archive-worktree-dialog"
+        data-testid="agent-elements-archive-worktree-dialog"
         ref={dialogRef}
+        role="dialog"
         tabIndex={-1}
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="archive-worktree-dialog-header flex items-center gap-3 px-6 pt-5 pb-4 text-[var(--nim-text)]">
-          <MaterialSymbol icon="archive" size={24} />
-          <h2 className="m-0 text-lg font-semibold">
+        <div
+          className={headerClass}
+          data-agent-elements-shell="archive-worktree-header"
+          data-testid="agent-elements-archive-worktree-header"
+        >
+          <span className={iconClass} aria-hidden="true">
+            <MaterialSymbol icon="archive" size={20} />
+          </span>
+          <h2 id="archive-worktree-dialog-title" className="m-0 text-lg font-semibold leading-tight text-[var(--an-foreground)]">
             {isBulk ? `Archive ${worktreeCount} Worktrees` : 'Archive Worktree'}
           </h2>
         </div>
 
-        <div className="archive-worktree-dialog-body px-6 pb-5">
-          <p className="mb-4 text-sm leading-relaxed text-[var(--nim-text-muted)]">
+        <div
+          className={bodyClass}
+          data-agent-elements-shell="archive-worktree-body"
+          data-testid="agent-elements-archive-worktree-body"
+        >
+          <p className={bodyCopyClass}>
             {contextMessage ? `${contextMessage} ` : ''}
             {isBulk
-              ? <>Are you sure you want to archive <strong className="font-medium text-[var(--nim-text)]">{worktreeCount} worktrees</strong>?</>
-              : <>Are you sure you want to archive{' '}<strong className="font-medium text-[var(--nim-text)]">{worktreeName}</strong>?</>
+              ? <>Are you sure you want to archive <strong className="font-medium text-[var(--an-foreground)]">{worktreeCount} worktrees</strong>?</>
+              : <>Are you sure you want to archive{' '}<strong className="font-medium text-[var(--an-foreground)]">{worktreeName}</strong>?</>
             }
           </p>
 
           {hasUncommittedChanges && (
-            <div className="archive-worktree-warning flex items-start gap-3 mb-4 p-3 rounded-lg bg-[var(--nim-warning)]/10 border border-[var(--nim-warning)]/30">
-              <MaterialSymbol icon="warning" size={20} className="text-[var(--nim-warning)] shrink-0 mt-0.5" />
+            <div
+              className={warningClass}
+              data-agent-elements-shell="archive-worktree-warning"
+              data-testid="agent-elements-archive-worktree-warning"
+            >
+              <span className={warningIconClass} aria-hidden="true">
+                <MaterialSymbol icon="warning" size={18} />
+              </span>
               <div>
-                <p className="m-0 text-sm font-medium text-[var(--nim-warning)]">
+                <p className={warningTitleClass}>
                   Uncommitted changes will be lost
                 </p>
-                <p className="m-0 mt-1 text-[0.8125rem] text-[var(--nim-text-muted)]">
+                <p className={warningDescriptionClass}>
                   {isBulk
                     ? <>{uncommittedWorktreeCount} {uncommittedWorktreeCount === 1 ? 'worktree has' : 'worktrees have'} uncommitted changes ({uncommittedFileCount} {uncommittedFileCount === 1 ? 'file' : 'files'} total). These changes will be permanently deleted.</>
                     : <>This worktree has {uncommittedFileCount === 1 ? '1 file' : `${uncommittedFileCount} files`} with uncommitted changes. These changes will be permanently deleted.</>
@@ -101,13 +222,19 @@ export function ArchiveWorktreeDialog({
           )}
 
           {hasUnmergedChanges && (
-            <div className="archive-worktree-warning flex items-start gap-3 mb-4 p-3 rounded-lg bg-[var(--nim-warning)]/10 border border-[var(--nim-warning)]/30">
-              <MaterialSymbol icon="warning" size={20} className="text-[var(--nim-warning)] shrink-0 mt-0.5" />
+            <div
+              className={warningClass}
+              data-agent-elements-shell="archive-worktree-warning"
+              data-testid="agent-elements-archive-worktree-warning"
+            >
+              <span className={warningIconClass} aria-hidden="true">
+                <MaterialSymbol icon="warning" size={18} />
+              </span>
               <div>
-                <p className="m-0 text-sm font-medium text-[var(--nim-warning)]">
+                <p className={warningTitleClass}>
                   Unmerged commits will be lost
                 </p>
-                <p className="m-0 mt-1 text-[0.8125rem] text-[var(--nim-text-muted)]">
+                <p className={warningDescriptionClass}>
                   {isBulk
                     ? <>{unmergedWorktreeCount} {unmergedWorktreeCount === 1 ? 'worktree has' : 'worktrees have'} unmerged commits{(unmergedCommitCount ?? 0) > 0 ? ` (${unmergedCommitCount} ${unmergedCommitCount === 1 ? 'commit' : 'commits'} total)` : ''}.</>
                     : (unmergedCommitCount ?? 0) > 0
@@ -120,7 +247,11 @@ export function ArchiveWorktreeDialog({
             </div>
           )}
 
-          <p className="archive-worktree-dialog-info m-0 text-[0.8125rem] text-[var(--nim-text-faint)]">
+          <p
+            className={infoClass}
+            data-agent-elements-shell="archive-worktree-info"
+            data-testid="agent-elements-archive-worktree-info"
+          >
             {isBulk
               ? 'Archiving will remove all worktrees from disk and mark their associated sessions as archived.'
               : 'Archiving will remove the worktree from disk and mark all associated sessions as archived.'
@@ -128,20 +259,26 @@ export function ArchiveWorktreeDialog({
           </p>
         </div>
 
-        <div className="archive-worktree-dialog-footer flex justify-end gap-2 px-6 pt-4 pb-5 border-t border-[var(--nim-border)]">
+        <div
+          className={footerClass}
+          data-agent-elements-shell="archive-worktree-footer"
+          data-testid="agent-elements-archive-worktree-footer"
+        >
           <button
             type="button"
-            className="nim-btn-secondary"
+            className={secondaryButtonClass}
             onClick={onKeep}
           >
             {isBulk ? 'Cancel' : 'Keep Worktree'}
           </button>
           <button
             type="button"
-            className="nim-btn-primary"
+            className={primaryButtonClass}
             onClick={onArchive}
           >
-            <MaterialSymbol icon="archive" size={16} />
+            <span aria-hidden="true">
+              <MaterialSymbol icon="archive" size={16} />
+            </span>
             <span>{isBulk ? 'Archive All' : 'Archive'}</span>
           </button>
         </div>

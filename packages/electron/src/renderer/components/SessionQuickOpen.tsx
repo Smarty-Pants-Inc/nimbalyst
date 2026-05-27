@@ -35,7 +35,7 @@ const SessionStatusIndicator = memo<{ sessionId: string }>(({ sessionId }) => {
   if (hasPendingPrompt) {
     return (
       <div
-        className="session-quick-open-status pending-prompt agent-elements-session-quick-open-status flex items-center justify-center w-5 h-5 text-[var(--nim-warning)] animate-pulse"
+        className="session-quick-open-status pending-prompt agent-elements-session-quick-open-status flex items-center justify-center w-5 h-5 text-[var(--an-warning-color)] animate-pulse"
         title="Waiting for your response"
         data-agent-elements-shell="session-quick-open-status"
         data-status="pending-prompt"
@@ -91,7 +91,7 @@ export const SessionQuickOpen: React.FC<SessionQuickOpenProps> = ({
   const [selectedFilePath, setSelectedFilePath] = useState<string | null>(null);
   const [fileFilteredSessionIds, setFileFilteredSessionIds] = useState<string[] | null>(null);
   const [typeaheadIndex, setTypeaheadIndex] = useState(0);
-  const searchDebounceRef = useRef<NodeJS.Timeout>();
+  const searchDebounceRef = useRef<NodeJS.Timeout | null>(null);
 
   // Detect @ file search mode
   const isFileSearchMode = searchQuery.startsWith('@');
@@ -326,13 +326,13 @@ export const SessionQuickOpen: React.FC<SessionQuickOpenProps> = ({
   return (
     <>
       <div
-        className="session-quick-open-backdrop agent-elements-session-quick-open-backdrop fixed inset-0 z-[99998] nim-animate-fade-in bg-[color-mix(in_srgb,var(--nim-text)_36%,transparent)]"
+        className="session-quick-open-backdrop agent-elements-session-quick-open-backdrop fixed inset-0 z-[99998] nim-animate-fade-in bg-[color-mix(in_srgb,var(--an-foreground)_36%,transparent)]"
         onClick={onClose}
         data-testid="agent-elements-session-quick-open-backdrop"
         data-agent-elements-shell="session-quick-open-backdrop"
       />
       <div
-        className="session-quick-open-modal agent-elements-session-quick-open agent-elements-tool-card fixed top-[18%] left-1/2 -translate-x-1/2 w-[90vw] max-w-[700px] max-h-[62vh] !gap-0 !p-0 flex flex-col overflow-hidden rounded-[var(--an-border-radius)] z-[99999] bg-[var(--an-background)] border border-[var(--an-border-color)] shadow-[0_20px_60px_color-mix(in_srgb,var(--nim-text)_18%,transparent)]"
+        className="session-quick-open-modal agent-elements-session-quick-open agent-elements-tool-card fixed top-[18%] left-1/2 -translate-x-1/2 w-[90vw] max-w-[700px] max-h-[62vh] !gap-0 !p-0 flex flex-col overflow-hidden rounded-[var(--an-border-radius)] z-[99999] bg-[var(--an-background)] border border-[var(--an-border-color)] shadow-[0_20px_60px_color-mix(in_srgb,var(--an-foreground)_18%,transparent)]"
         data-testid="agent-elements-session-quick-open"
         data-component="SessionQuickOpen"
         data-agent-elements-shell="session-quick-open"
@@ -587,7 +587,7 @@ export const SessionQuickOpen: React.FC<SessionQuickOpenProps> = ({
                   >
                     {session.uncommittedCount !== undefined && session.uncommittedCount > 0 && (
                       <span
-                        className="session-quick-open-badge uncommitted agent-elements-status-pill shrink-0 text-[10px] text-[var(--nim-warning)]"
+                        className="session-quick-open-badge uncommitted agent-elements-status-pill shrink-0 text-[10px] text-[var(--an-warning-color)]"
                         title={`${session.uncommittedCount} uncommitted change${session.uncommittedCount !== 1 ? 's' : ''}`}
                         data-agent-elements-shell="session-quick-open-uncommitted-badge"
                         data-tone="warning"

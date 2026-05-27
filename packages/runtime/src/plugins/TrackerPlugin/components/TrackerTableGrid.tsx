@@ -570,7 +570,7 @@ interface GridRowProps {
   setEditingCell: (cell: { itemId: string; field: 'status' | 'priority' | 'title' } | null) => void;
   editingTitle: string;
   setEditingTitle: (t: string) => void;
-  titleInputRef: React.RefObject<HTMLInputElement>;
+  titleInputRef: React.RefObject<HTMLInputElement | null>;
   handleFieldUpdate: (item: TrackerRecord, field: string, value: string) => Promise<void>;
   isItemEditable: (item: TrackerRecord) => boolean;
   handleRowClick: (item: TrackerRecord, index: number, e: React.MouseEvent) => void;

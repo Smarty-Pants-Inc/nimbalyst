@@ -11,6 +11,7 @@ import {
 } from '../AgentElementsPrimitives';
 import {
   AgentPlanCard,
+  AgentTodoCard,
   AgentTodoList,
 } from '../AgentElementsTodoPlan';
 import {
@@ -41,6 +42,7 @@ import {
 import {
   AgentElementsEventRenderer,
   type AgentElementsRendererModel,
+  getAgentElementsBridgeWidth,
   getAgentElementsRendererDescriptor,
   knownAgentElementsRendererKinds,
 } from '../AgentElementsRendererRegistry';
@@ -48,6 +50,10 @@ import {
 const cssPath = path.join(
   process.cwd(),
   'packages/runtime/src/ui/AgentElements/AgentElementsPrimitives.css'
+);
+const rendererIndexCssPath = path.join(
+  process.cwd(),
+  'packages/electron/src/renderer/index.css'
 );
 const todoPlanCssPath = path.join(
   process.cwd(),
@@ -115,6 +121,13 @@ function fixtureToModel(fixture: RendererFixture): AgentElementsRendererModel {
   };
 }
 
+function expectSharedInlinePadding(css: string, selectorPattern: string) {
+  expect(css).toMatch(new RegExp(
+    `${selectorPattern}\\s*\\{[^}]*padding-inline:\\s*var\\(--agent-elements-card-inline-padding,\\s*var\\(--an-spacing-md\\)\\);`,
+    's'
+  ));
+}
+
 describe('Agent Elements primitives', () => {
   it('renders every transcript role as a left-aligned identity row', () => {
     render(
@@ -155,6 +168,8 @@ describe('Agent Elements primitives', () => {
     expect(card).toHaveClass('agent-elements-tool-card');
     expect(card).toHaveAttribute('data-tool-status', 'completed');
     expect(card).toHaveAttribute('data-component', 'AgentToolCard');
+    expect(card).toHaveAttribute('data-agent-elements-card-padding', 'symmetric-inline');
+    expect(card).toHaveAttribute('data-agent-elements-card-width', 'bridge-fill');
     expect(screen.getByTestId('agent-elements-tool-primary')).toHaveTextContent('Updated 3 todo items.');
     expect(screen.getByTestId('agent-elements-tool-primary')).not.toHaveTextContent('raw-json-payload');
     expect(screen.getByTestId('agent-elements-debug-disclosure')).toHaveAttribute('data-debug-only', 'true');
@@ -163,6 +178,7 @@ describe('Agent Elements primitives', () => {
 
   it('anchors the visual layer in Agent Elements tokens and product UI constraints', () => {
     const css = fs.readFileSync(cssPath, 'utf8');
+    const rendererIndexCss = fs.readFileSync(rendererIndexCssPath, 'utf8');
 
     expect(css).toContain('text-align: left;');
     expect(css).toContain('align-items: flex-start;');
@@ -170,9 +186,37 @@ describe('Agent Elements primitives', () => {
     expect(css).toContain('border-radius: var(--an-tool-border-radius);');
     expect(css).toContain('background: var(--an-tool-background);');
     expect(css).toContain('padding: var(--an-spacing-md);');
+    expect(css).toContain('--agent-elements-card-inline-padding: var(--an-spacing-md);');
+    expect(css).toContain('padding-block: var(--agent-elements-card-block-padding, var(--an-spacing-md));');
+    expect(css).toContain('padding-inline: var(--agent-elements-card-inline-padding, var(--an-spacing-md));');
+    expect(css).toContain('padding-left: var(--agent-elements-card-inline-padding, var(--an-spacing-md));');
+    expect(css).toContain('padding-right: var(--agent-elements-card-inline-padding, var(--an-spacing-md));');
+    expect(css).toContain('.agent-elements-tool-card.agent-elements-tool-card');
+    expect(css).toContain('.agent-elements-renderer-boundary');
+    expect(css).toMatch(
+      /\.agent-elements-live-bridge \.agent-elements-renderer-boundary,\n\.agent-elements-live-bridge \.agent-elements-tool-card\.agent-elements-tool-card,\n\.agent-elements-live-bridge \.agent-elements-plan-card,\n\.agent-elements-live-bridge \.agent-elements-todo-list \{[^}]*width:\s*100%;[^}]*max-width:\s*100%;[^}]*box-sizing:\s*border-box;/s
+    );
+    expect(css).toContain('.agent-elements-live-bridge[data-agent-elements-width="wide"]');
+    expect(css).toContain('width: min(100%, var(--agent-elements-wide-max-width));');
+    expect(css).toContain('margin-inline: auto;');
+    expect(css).toContain('--agent-elements-wide-max-width: 44rem;');
+    expect(css).not.toContain('--agent-elements-wide-max-width: 50rem;');
+    expect(css).toContain('box-sizing: border-box;');
+    expect(css).toContain('animation: agent-elements-live-bridge-in 180ms cubic-bezier(0.16, 1, 0.3, 1) both;');
+    expect(css).toContain('@keyframes agent-elements-live-bridge-in');
+    expect(css).toContain('transform: translate3d(0, 6px, 0) scale(0.992);');
+    expect(css).toContain('.agent-elements-live-bridge[data-agent-elements-width="full"]');
+    expect(css).toContain('max-width: 100%;');
+    expect(css).toContain('width: min(100%, var(--an-max-width));');
+    expect(css).not.toContain('.agent-elements-live-bridge[data-agent-elements-width="content"] {\n  width: fit-content;');
     expect(css).toContain(':focus-visible');
     expect(css).toContain('@media (prefers-reduced-motion: reduce)');
     expect(css).not.toMatch(/margin-left:\s*auto|float:\s*right|justify-content:\s*flex-end|background-clip:\s*text/i);
+    const tailwindImportIndex = rendererIndexCss.indexOf('@import "tailwindcss";');
+    const primitivesImportIndex = rendererIndexCss.indexOf('AgentElementsPrimitives.css');
+    expect(tailwindImportIndex).toBeGreaterThanOrEqual(0);
+    expect(primitivesImportIndex).toBeGreaterThan(tailwindImportIndex);
+    expect(rendererIndexCss).not.toContain('@tailwind utilities');
   });
 });
 
@@ -191,11 +235,42 @@ describe('Agent Elements todo and plan renderers', () => {
 
     const list = screen.getByTestId('agent-elements-todo-list');
     expect(list).toHaveAttribute('data-component', 'AgentTodoList');
+    expect(list).toHaveAttribute('data-agent-elements-card-padding', 'content-owned');
+    expect(list).toHaveAttribute('data-agent-elements-card-width', 'bridge-fill');
     expect(list).toHaveAttribute('data-todo-streaming', 'true');
     expect(screen.getAllByTestId('agent-elements-todo-item')).toHaveLength(3);
     expect(screen.getByText('Map todo events')).toBeInTheDocument();
     expect(screen.getByText('Building inline renderer')).toBeInTheDocument();
     expect(list).not.toHaveTextContent('"status"');
+  });
+
+  it('renders standalone todo output inside a framed Agent Elements card', () => {
+    render(
+      <AgentTodoCard
+        isStreaming
+        items={[
+          { content: 'Normalize card gutters', status: 'completed' },
+          { content: 'Keep plan steps nested', status: 'in_progress' },
+        ]}
+        title="Todo update"
+      />
+    );
+
+    const card = screen.getByTestId('agent-elements-todo-card');
+    expect(card).toHaveClass('agent-elements-tool-card', 'agent-elements-todo-card');
+    expect(card).toHaveAttribute('data-component', 'AgentToolCard');
+    expect(card).toHaveAttribute('data-agent-elements-card-padding', 'symmetric-inline');
+    expect(card).toHaveAttribute('data-agent-elements-card-width', 'bridge-fill');
+    expect(card).toHaveAttribute('data-tool-status', 'running');
+    expect(card).toHaveTextContent('Todo update');
+    expect(card).toHaveTextContent('Updating');
+
+    const list = screen.getByTestId('agent-elements-todo-list');
+    expect(list).toHaveClass('agent-elements-todo-card-list');
+    expect(list).toHaveAttribute('data-agent-elements-card-padding', 'content-owned');
+    expect(list).toHaveAttribute('data-agent-elements-card-width', 'card-content');
+    expect(list).toHaveTextContent('Normalize card gutters');
+    expect(card).not.toHaveTextContent('"items"');
   });
 
   it('renders plan approval and disclosure controls with product affordances', () => {
@@ -216,6 +291,8 @@ describe('Agent Elements todo and plan renderers', () => {
 
     const card = screen.getByTestId('agent-elements-plan-card');
     expect(card).toHaveAttribute('data-component', 'AgentPlanCard');
+    expect(card).toHaveAttribute('data-agent-elements-card-padding', 'symmetric-inline');
+    expect(card).toHaveAttribute('data-agent-elements-card-width', 'bridge-fill');
     expect(card).toHaveAttribute('data-plan-status', 'awaiting_approval');
     expect(screen.getByText('plan-agent-elements.md')).toBeInTheDocument();
     expect(screen.getByText('Agent Elements todo and plan renderers')).toBeInTheDocument();
@@ -233,6 +310,17 @@ describe('Agent Elements todo and plan renderers', () => {
     const css = fs.readFileSync(todoPlanCssPath, 'utf8');
 
     expect(css).toContain('Derived from Agent Elements by 21st.dev todo-tool and plan-tool (MIT)');
+    expect(css).toMatch(/\.agent-elements-todo-list \{[^}]*width:\s*100%;[^}]*box-sizing:\s*border-box;/s);
+    expect(css).toMatch(/\.agent-elements-plan-card \{[^}]*width:\s*100%;[^}]*box-sizing:\s*border-box;/s);
+    expect(css).toMatch(
+      /\.agent-elements-plan-header \{[^}]*padding:\s*0;[^}]*padding-inline:\s*var\(--agent-elements-card-inline-padding,\s*var\(--an-spacing-md\)\);/s
+    );
+    expect(css).toMatch(
+      /\.agent-elements-plan-body \{[^}]*padding-block:\s*var\(--an-spacing-sm\);[^}]*padding-inline:\s*var\(--agent-elements-card-inline-padding,\s*var\(--an-spacing-md\)\);/s
+    );
+    expect(css).toMatch(
+      /\.agent-elements-plan-footer \{[^}]*padding-block:\s*var\(--an-spacing-xs\);[^}]*padding-inline:\s*var\(--agent-elements-card-inline-padding,\s*var\(--an-spacing-md\)\);/s
+    );
     expect(css).toContain('width: 14px;');
     expect(css).toContain('height: 14px;');
     expect(css).toContain('gap: var(--an-spacing-sm);');
@@ -242,6 +330,26 @@ describe('Agent Elements todo and plan renderers', () => {
     expect(css).toContain('transition: background-color 150ms');
     expect(css).toContain('@media (prefers-reduced-motion: reduce)');
     expect(css).not.toMatch(/margin-left:\s*auto|float:\s*right|justify-content:\s*flex-end|background-clip:\s*text/i);
+  });
+
+  it('keeps Agent Elements-owned CSS on the Agent Elements alias layer', () => {
+    const cssFiles = [
+      cssPath,
+      todoPlanCssPath,
+      toolRenderersCssPath,
+      frameworkEventsCssPath,
+      streamEventsCssPath,
+      messagesCssPath,
+    ];
+
+    const cssByFile = cssFiles.map((filePath) => ({
+      filePath: path.relative(process.cwd(), filePath),
+      css: fs.readFileSync(filePath, 'utf8'),
+    }));
+
+    for (const { filePath, css } of cssByFile) {
+      expect(css, filePath).not.toMatch(/var\(--nim-[^)]+\)/);
+    }
   });
 });
 
@@ -339,6 +447,10 @@ describe('Agent Elements command, edit, and search renderers', () => {
     expect(css).toContain('max-height: 200px;');
     expect(css).toContain('transition: background-color 150ms');
     expect(css).toContain('@media (prefers-reduced-motion: reduce)');
+    expectSharedInlinePadding(css, '\\.agent-elements-edit-header-button,\\n\\.agent-elements-search-header');
+    expectSharedInlinePadding(css, '\\.agent-elements-edit-summary,\\n\\.agent-elements-search-empty');
+    expectSharedInlinePadding(css, '\\.agent-elements-edit-approval');
+    expectSharedInlinePadding(css, '\\.agent-elements-search-results');
     expect(css).not.toMatch(/margin-left:\s*auto|float:\s*right|justify-content:\s*flex-end|background-clip:\s*text/i);
   });
 });
@@ -446,6 +558,13 @@ describe('Agent Elements framework event renderers', () => {
     expect(css).toContain('animation-delay: calc(var(--agent-elements-item-index, 0) * 80ms);');
     expect(css).toContain('transition: background-color 150ms');
     expect(css).toContain('@media (prefers-reduced-motion: reduce)');
+    expectSharedInlinePadding(css, '\\.agent-elements-framework-row');
+    expectSharedInlinePadding(css, '\\.agent-elements-thinking-content');
+    expectSharedInlinePadding(css, '\\.agent-elements-mcp-body');
+    expectSharedInlinePadding(css, '\\.agent-elements-question-copy');
+    expectSharedInlinePadding(css, '\\.agent-elements-question-inputs,\\n\\.agent-elements-question-history');
+    expectSharedInlinePadding(css, '\\.agent-elements-question-options-display');
+    expectSharedInlinePadding(css, '\\.agent-elements-subagent-list');
     expect(css).not.toMatch(/margin-left:\s*auto|float:\s*right|justify-content:\s*flex-end|background-clip:\s*text/i);
   });
 });
@@ -563,6 +682,12 @@ describe('Agent Elements stream, state, and status event renderers', () => {
     expect(css).toContain('transition: background-color 150ms');
     expect(css).toContain('@media (prefers-reduced-motion: reduce)');
     expect(css).toContain('user-select: text');
+    expectSharedInlinePadding(css, '\\.agent-elements-stream-heading,\\n\\.agent-elements-state-toggle');
+    expectSharedInlinePadding(css, '\\.agent-elements-progress-updates,\\n\\.agent-elements-lifecycle-events,\\n\\.agent-elements-turn-summary-warnings,\\n\\.agent-elements-error-actions');
+    expectSharedInlinePadding(css, '\\.agent-elements-state-key-list,\\n\\.agent-elements-turn-summary-metrics');
+    expectSharedInlinePadding(css, '\\.agent-elements-progress-empty');
+    expectSharedInlinePadding(css, '\\.agent-elements-error-message');
+    expectSharedInlinePadding(css, '\\.agent-elements-error-detail');
     expect(css).not.toMatch(/margin-left:\s*auto|float:\s*right|justify-content:\s*flex-end|background-clip:\s*text/i);
   });
 });
@@ -684,6 +809,20 @@ describe('Agent Elements message and generic event renderers', () => {
     expect(css).toContain('user-select: text');
     expect(css).not.toMatch(/margin-left:\s*auto|float:\s*right|justify-content:\s*flex-end|background-clip:\s*text/i);
   });
+
+  it('keeps prose content narrow while card-like message renderers fill their explicit bridge lane', () => {
+    const css = fs.readFileSync(messagesCssPath, 'utf8');
+
+    expect(css).toMatch(
+      /\.agent-elements-user-message-body,\n\.agent-elements-markdown \{[^}]*max-width:\s*min\(100%,\s*var\(--an-max-width\)\);/s
+    );
+    expect(css).toMatch(
+      /\.agent-elements-error-message-card,\n\.agent-elements-generic-tool-card,\n\.agent-elements-extension-event-card \{[^}]*width:\s*100%;[^}]*max-width:\s*100%;[^}]*box-sizing:\s*border-box;/s
+    );
+    expect(css).not.toMatch(
+      /\.agent-elements-error-message-card,\n\.agent-elements-generic-tool-card,\n\.agent-elements-extension-event-card \{[^}]*max-width:\s*min\(100%,\s*var\(--an-max-width\)\);/s
+    );
+  });
 });
 
 describe('Agent Elements renderer registry', () => {
@@ -731,6 +870,7 @@ describe('Agent Elements renderer registry', () => {
     expect(screen.getByTestId('agent-elements-renderer-boundary')).toHaveAttribute('data-component', 'AgentElementsEventRenderer');
     expect(screen.getByTestId('agent-elements-renderer-boundary')).toHaveAttribute('data-renderer-kind', 'todo');
     expect(screen.getByTestId('agent-elements-renderer-boundary')).toHaveAttribute('data-fallback-class', 'known');
+    expect(screen.getByTestId('agent-elements-todo-card')).toHaveAttribute('data-agent-elements-card-width', 'bridge-fill');
     expect(screen.getByTestId('agent-elements-todo-list')).toHaveTextContent('Create renderer registry');
     expect(screen.getByTestId('agent-elements-todo-list')).not.toHaveTextContent('"todos"');
 
@@ -751,6 +891,60 @@ describe('Agent Elements renderer registry', () => {
     expect(screen.getByTestId('agent-elements-tool-primary')).toHaveTextContent('A readable unsupported-event warning');
     expect(screen.getByTestId('agent-elements-tool-primary')).not.toHaveTextContent('raw-unknown-json');
     expect(screen.getByTestId('agent-elements-debug-disclosure')).toHaveAttribute('data-debug-only', 'true');
+  });
+
+  it('keeps bridge width policy in the renderer registry instead of transcript containers', () => {
+    expect(getAgentElementsBridgeWidth([{ kind: 'assistantMessage', body: 'Done.' }])).toBe('content');
+    expect(getAgentElementsBridgeWidth([{ kind: 'thinking', body: 'Reasoning...' }])).toBe('content');
+    expect(getAgentElementsBridgeWidth([{ kind: 'bash', command: 'npm test' }])).toBe('wide');
+    expect(getAgentElementsBridgeWidth([{ kind: 'fileEdit', filePath: 'src/app.ts' }])).toBe('wide');
+    expect(getAgentElementsBridgeWidth([{ kind: 'search', query: 'renderer' }])).toBe('wide');
+    expect(getAgentElementsBridgeWidth([{ kind: 'mcp', toolName: 'mcp__github__list_issues' }])).toBe('wide');
+    expect(getAgentElementsBridgeWidth([{ kind: 'genericTool', title: 'workspace_summary' }])).toBe('wide');
+    expect(getAgentElementsBridgeWidth([{ kind: 'toolProgress', title: 'Running checks' }])).toBe('wide');
+    expect(getAgentElementsBridgeWidth([{ kind: 'systemStatus', body: 'Runtime connected.' }])).toBe('wide');
+    expect(getAgentElementsBridgeWidth([{ kind: 'todo', todos: [] }])).toBe('wide');
+    expect(getAgentElementsBridgeWidth([{ kind: 'plan', planSteps: [] }])).toBe('wide');
+    expect(getAgentElementsBridgeWidth([{ kind: 'subagent', title: 'Review' }], 'full')).toBe('full');
+  });
+
+  it('routes generic card body gutters through the shared card padding token', () => {
+    const messagesCss = fs.readFileSync(messagesCssPath, 'utf8');
+    const genericShellBlock = /\.agent-elements-error-message-shell,\n\.agent-elements-generic-shell,\n\.agent-elements-extension-shell \{[^}]*padding-inline:\s*var\(--agent-elements-card-inline-padding,\s*var\(--an-spacing-md\)\);/s;
+
+    expect(messagesCss).toMatch(genericShellBlock);
+    expect(messagesCss).toMatch(
+      /\.agent-elements-error-message-shell,\n\.agent-elements-generic-shell,\n\.agent-elements-extension-shell \{[^}]*width:\s*100%;[^}]*box-sizing:\s*border-box;/s,
+    );
+
+    expect(messagesCss).not.toMatch(
+      /\.(?:agent-elements-error-message-shell|agent-elements-generic-shell|agent-elements-extension-shell) \{[^}]*padding:\s*var\(--an-spacing-sm\);/s,
+    );
+  });
+
+  it('keeps nested framed card panels border-box so inline gutters stay symmetric', () => {
+    const frameworkCss = fs.readFileSync(frameworkEventsCssPath, 'utf8');
+    const toolCss = fs.readFileSync(toolRenderersCssPath, 'utf8');
+    const todoPlanCss = fs.readFileSync(todoPlanCssPath, 'utf8');
+
+    expect(frameworkCss).toMatch(
+      /\.agent-elements-thinking-shell,\n\.agent-elements-mcp-shell,\n\.agent-elements-question-shell,\n\.agent-elements-subagent-shell \{[^}]*width:\s*100%;[^}]*box-sizing:\s*border-box;/s,
+    );
+    expect(toolCss).toMatch(
+      /\.agent-elements-command-terminal \{[^}]*width:\s*100%;[^}]*box-sizing:\s*border-box;/s,
+    );
+    expect(toolCss).toMatch(
+      /\.agent-elements-edit-panel,\n\.agent-elements-search-panel \{[^}]*width:\s*100%;[^}]*box-sizing:\s*border-box;/s,
+    );
+    expect(todoPlanCss).toMatch(
+      /\.agent-elements-plan-header \{[^}]*width:\s*100%;[^}]*box-sizing:\s*border-box;/s,
+    );
+    expect(todoPlanCss).toMatch(
+      /\.agent-elements-plan-body \{[^}]*width:\s*100%;[^}]*box-sizing:\s*border-box;/s,
+    );
+    expect(todoPlanCss).toMatch(
+      /\.agent-elements-plan-footer \{[^}]*width:\s*100%;[^}]*box-sizing:\s*border-box;/s,
+    );
   });
 
   it('renders one generated fixture per registry kind through the registry boundary', () => {

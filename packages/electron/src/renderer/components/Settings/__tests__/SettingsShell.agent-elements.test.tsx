@@ -3,6 +3,8 @@
 import '@testing-library/jest-dom/vitest';
 import React from 'react';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mockState = vi.hoisted(() => {
@@ -147,6 +149,9 @@ vi.mock('../panels/ExtensionMarketplacePanel', () => ({ ExtensionMarketplacePane
 import { SettingsSidebar } from '../SettingsSidebar';
 import { SettingsView } from '../SettingsView';
 
+const settingsViewSourcePath = resolve(__dirname, '../SettingsView.tsx');
+const settingsSidebarSourcePath = resolve(__dirname, '../SettingsSidebar.tsx');
+
 describe('Settings Agent Elements shell', () => {
   beforeEach(() => {
     mockState.pushNavigationEntry.mockClear();
@@ -220,5 +225,56 @@ describe('Settings Agent Elements shell', () => {
       mode: 'settings',
       settings: expect.objectContaining({ category: 'smarty-server', scope: 'user' }),
     }));
+  });
+
+  it('renders the workspace MCP indicator with Agent Elements chrome while preserving project-server count copy', async () => {
+    render(
+      <SettingsView
+        workspacePath="/workspace"
+        workspaceName="Demo Workspace"
+        onClose={() => {}}
+        initialScope="user"
+        initialCategory="mcp-servers"
+      />,
+    );
+
+    const indicator = await screen.findByTestId('agent-elements-settings-project-indicator');
+    expect(indicator).toHaveAttribute('data-agent-elements-shell', 'settings-project-indicator');
+    expect(indicator).toHaveClass('agent-elements-settings-project-indicator', 'agent-elements-status-pill');
+    expect(indicator).toHaveTextContent('There is 1 additional MCP server configured just for this project.');
+    expect(screen.getByText('Switch to the Project tab above to view or edit project-specific MCP servers.')).toBeInTheDocument();
+  });
+
+  it('keeps the SettingsView shell on Agent Elements theme aliases instead of legacy visual tokens', () => {
+    const source = readFileSync(settingsViewSourcePath, 'utf8');
+
+    expect(source).toContain('agent-elements-settings-view');
+    expect(source).toContain('agent-elements-settings-project-indicator');
+    expect(source).toContain('--an-background');
+    expect(source).toContain('--an-border-color');
+    expect(source).toContain('--an-primary-color');
+    expect(source).not.toMatch(/--nim-/);
+    expect(source).not.toMatch(/rgba\(/);
+    expect(source).not.toContain('text-white');
+    expect(source).not.toContain('rounded-lg');
+    expect(source).not.toContain('shadow-sm');
+  });
+
+  it('keeps the SettingsSidebar shell on Agent Elements aliases instead of legacy visual tokens', () => {
+    const source = readFileSync(settingsSidebarSourcePath, 'utf8');
+
+    expect(source).toContain('agent-elements-settings-sidebar');
+    expect(source).toContain('--an-background');
+    expect(source).toContain('--an-border-color');
+    expect(source).toContain('--an-foreground-muted');
+    expect(source).toContain('--an-success-color');
+    expect(source).toContain('--an-error-color');
+    expect(source).toContain('--an-warning-color');
+    expect(source).not.toMatch(/--nim-/);
+    expect(source).not.toMatch(/rgba\(|#[0-9a-fA-F]{3,8}\b/);
+    expect(source).not.toContain('text-white');
+    expect(source).not.toContain('rounded-lg');
+    expect(source).not.toContain('shadow-lg');
+    expect(source).not.toContain('tracking-wider');
   });
 });

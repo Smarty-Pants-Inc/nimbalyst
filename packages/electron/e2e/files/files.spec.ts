@@ -293,7 +293,7 @@ test('deleting an open file should close the tab and not recreate the file', asy
   await page.locator('.file-tree-name', { hasText: 'op-delete.md' }).click({ button: 'right' });
   await page.waitForSelector('.file-context-menu', { timeout: TEST_TIMEOUTS.DEFAULT_WAIT });
 
-  const deleteButton = page.locator('[data-testid="context-menu-delete"]');
+  const deleteButton = page.locator('[data-file-context-action="delete"]');
   await deleteButton.click();
 
   await expect(page.locator('.file-tabs-container .tab .tab-title', { hasText: 'op-delete.md' })).toHaveCount(0, { timeout: 5000 });
@@ -583,14 +583,13 @@ test('expanding a directory after opening a file does not scroll back', async ()
   await page.waitForTimeout(500);
 
   // 1. Wait for tree to load
-  await expect(
-    page.locator(PLAYWRIGHT_TEST_SELECTORS.fileTreeItem, { hasText: 'dir-00' })
-  ).toBeVisible({ timeout: TEST_TIMEOUTS.FILE_TREE_LOAD });
+  const deepDirectory = page.locator(PLAYWRIGHT_TEST_SELECTORS.fileTreeItem, { hasText: 'zzz-deep' });
+  await expect(deepDirectory).toBeVisible({ timeout: TEST_TIMEOUTS.FILE_TREE_LOAD });
 
   // 2. Expand zzz-deep and open target.md via the tree (scrolls tree down).
   // The file lives under zzz-deep/ so pass the relative path -- bare
   // 'target.md' would resolve to <workspace>/target.md which doesn't exist.
-  await page.locator(PLAYWRIGHT_TEST_SELECTORS.fileTreeItem, { hasText: 'zzz-deep' }).click();
+  await deepDirectory.click();
   await page.waitForTimeout(500);
   await openFileFromTree(page, 'zzz-deep/target.md');
 

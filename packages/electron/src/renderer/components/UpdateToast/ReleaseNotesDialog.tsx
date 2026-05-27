@@ -66,12 +66,12 @@ export function ReleaseNotesDialog({
 
   return (
     <div
-      className="update-dialog-backdrop nim-overlay agent-elements-release-notes-dialog-backdrop fixed inset-0 z-[10001] flex items-center justify-center bg-[color-mix(in_srgb,var(--nim-text)_36%,transparent)] p-4 nim-animate-fade-in"
+      className="update-dialog-backdrop nim-overlay agent-elements-release-notes-dialog-backdrop fixed inset-0 z-[10001] flex items-center justify-center bg-[color-mix(in_srgb,var(--an-foreground)_36%,transparent)] p-4 nim-animate-fade-in"
       data-testid="agent-elements-release-notes-dialog-backdrop"
       data-agent-elements-shell="release-notes-dialog-backdrop"
     >
       <div
-        className="update-dialog agent-elements-release-notes-dialog agent-elements-tool-card relative flex max-h-[82vh] w-[620px] max-w-[92vw] flex-col overflow-hidden rounded-[var(--an-border-radius)] border border-[var(--an-border-color)] bg-[var(--an-background)] text-[var(--an-foreground)] shadow-[0_20px_60px_color-mix(in_srgb,var(--nim-text)_18%,transparent)] nim-animate-slide-up"
+        className="update-dialog agent-elements-release-notes-dialog agent-elements-tool-card relative flex max-h-[82vh] w-[620px] max-w-[92vw] flex-col overflow-hidden rounded-[var(--an-border-radius)] border border-[var(--an-border-color)] bg-[var(--an-background)] text-[var(--an-foreground)] shadow-[0_20px_60px_color-mix(in_srgb,var(--an-foreground)_18%,transparent)] nim-animate-slide-up"
         ref={dialogRef}
         role="dialog"
         aria-modal="true"
@@ -129,7 +129,7 @@ export function ReleaseNotesDialog({
             <MaterialSymbol icon="arrow_forward" size={16} />
           </span>
           <span className="update-dialog-version-label text-xs text-[var(--an-foreground-muted)]">Latest</span>
-          <span className="update-dialog-version-badge update-dialog-version-badge-new rounded-[var(--an-input-border-radius)] border border-[var(--an-primary-color)] bg-[var(--an-primary-color)] px-2 py-1 font-mono text-xs font-medium text-[var(--an-background)]" data-testid="new-version-badge">{newVersion}</span>
+          <span className="update-dialog-version-badge update-dialog-version-badge-new rounded-[var(--an-input-border-radius)] border border-[var(--an-primary-color)] bg-[var(--an-primary-color)] px-2 py-1 font-mono text-xs font-medium text-[var(--an-button-primary-text)]" data-testid="new-version-badge">{newVersion}</span>
         </div>
 
         <div className="update-dialog-content flex-1 overflow-y-auto p-[var(--an-spacing-xl)]">
@@ -154,7 +154,7 @@ export function ReleaseNotesDialog({
             Later
           </button>
           <button
-            className={`${buttonBase} update-dialog-btn-primary border-[var(--an-primary-color)] bg-[var(--an-primary-color)] text-[var(--an-background)] hover:border-[var(--nim-primary-hover)] hover:bg-[var(--nim-primary-hover)]`}
+            className={`${buttonBase} update-dialog-btn-primary border-[var(--an-primary-color)] bg-[var(--an-primary-color)] text-[var(--an-button-primary-text)] hover:border-[color-mix(in_srgb,var(--an-primary-color)_82%,var(--an-foreground))] hover:bg-[color-mix(in_srgb,var(--an-primary-color)_88%,var(--an-foreground))]`}
             onClick={onUpdate}
             data-testid="release-notes-update-btn"
           >

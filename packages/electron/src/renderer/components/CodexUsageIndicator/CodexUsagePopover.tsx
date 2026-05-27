@@ -19,7 +19,7 @@ import { FloatingPortal, useFloatingMenu } from '../../hooks/useFloatingMenu';
 type UsageVisualState = 'healthy' | 'warning' | 'danger' | 'muted';
 
 interface CodexUsagePopoverProps {
-  anchorRef: RefObject<HTMLElement>;
+  anchorRef: RefObject<HTMLElement | null>;
   onClose: () => void;
   onRefresh: () => Promise<void>;
 }
@@ -32,6 +32,9 @@ interface UsageSectionProps {
   color: 'green' | 'yellow' | 'red' | 'muted';
   windowDurationMs: number;
 }
+
+const sectionedPopoverCardGutters =
+  '[--agent-elements-card-block-padding:var(--an-spacing-lg)] [--agent-elements-card-inline-padding:var(--an-spacing-xxl)] !gap-0 !p-0';
 
 function calculateTimeElapsedPercent(resetsAt: string | null, windowDurationMs: number): number {
   if (!resetsAt) return 0;
@@ -55,21 +58,21 @@ function getUsageColorClasses(state: UsageVisualState): { text: string; fill: st
   switch (state) {
     case 'healthy':
       return {
-        text: 'text-[var(--nim-success)]',
-        fill: 'bg-[var(--nim-success)]',
-        marker: 'bg-[var(--nim-success)]',
+        text: 'text-[var(--an-success-color)]',
+        fill: 'bg-[var(--an-success-color)]',
+        marker: 'bg-[var(--an-success-color)]',
       };
     case 'warning':
       return {
-        text: 'text-[var(--nim-warning)]',
-        fill: 'bg-[var(--nim-warning)]',
-        marker: 'bg-[var(--nim-warning)]',
+        text: 'text-[var(--an-warning-color)]',
+        fill: 'bg-[var(--an-warning-color)]',
+        marker: 'bg-[var(--an-warning-color)]',
       };
     case 'danger':
       return {
-        text: 'text-[var(--nim-error)]',
-        fill: 'bg-[var(--nim-error)]',
-        marker: 'bg-[var(--nim-error)]',
+        text: 'text-[var(--an-error-color)]',
+        fill: 'bg-[var(--an-error-color)]',
+        marker: 'bg-[var(--an-error-color)]',
       };
     default:
       return {
@@ -115,7 +118,7 @@ const UsageSection: React.FC<UsageSectionProps> = ({
           style={{ width: `${Math.min(utilization, 100)}%` }}
         />
         <div
-          className={`absolute top-0 h-full w-0.5 transition-[left,background-color] duration-300 ease-out ${isOverPacing ? 'bg-[var(--nim-error)]' : colors.marker}`}
+          className={`absolute top-0 h-full w-0.5 transition-[left,background-color] duration-300 ease-out ${isOverPacing ? 'bg-[var(--an-error-color)]' : colors.marker}`}
           style={{ left: `${timeElapsedPercent}%` }}
           title={`${Math.round(timeElapsedPercent)}% of window elapsed`}
         />
@@ -172,14 +175,16 @@ export const CodexUsagePopover: React.FC<CodexUsagePopoverProps> = ({
         ref={menu.refs.setFloating}
         style={menu.floatingStyles}
         {...menu.getFloatingProps()}
-        className="agent-elements-usage-popover agent-elements-tool-card z-50 max-h-[min(420px,calc(100vh-24px))] w-60 overflow-y-auto rounded-[var(--an-border-radius)] border border-[var(--an-border-color)] bg-[var(--an-background)] text-[var(--an-foreground)] shadow-[0_20px_60px_color-mix(in_srgb,var(--nim-text)_18%,transparent)]"
+        className={`agent-elements-usage-popover agent-elements-tool-card z-50 max-h-[min(420px,calc(100vh-24px))] w-60 overflow-y-auto rounded-[var(--an-border-radius)] border border-[var(--an-border-color)] bg-[var(--an-background)] text-[var(--an-foreground)] shadow-[0_20px_60px_color-mix(in_srgb,var(--an-foreground)_18%,transparent)] ${sectionedPopoverCardGutters}`}
         data-agent-elements-shell="codex-usage-popover"
+        data-agent-elements-card-padding="sectioned-symmetric"
+        data-agent-elements-card-width="floating-popover"
         data-usage-provider="codex"
         data-testid="codex-usage-popover"
       >
-        <div className="agent-elements-usage-popover-header flex items-center justify-between border-b border-[var(--an-border-color)] px-4 py-3">
+        <div className="agent-elements-usage-popover-header flex items-center justify-between border-b border-[var(--an-border-color)] px-[var(--agent-elements-card-inline-padding)] py-[var(--agent-elements-card-block-padding)]">
           <div className="flex items-center gap-2">
-            <span className="flex h-7 w-7 items-center justify-center rounded-[var(--an-tool-border-radius)] border border-[color-mix(in_srgb,var(--nim-info)_28%,var(--an-border-color))] bg-[color-mix(in_srgb,var(--nim-info)_10%,var(--an-background))] text-[var(--nim-info)]">
+            <span className="flex h-7 w-7 items-center justify-center rounded-[var(--an-tool-border-radius)] border border-[color-mix(in_srgb,var(--an-info-color)_28%,var(--an-border-color))] bg-[color-mix(in_srgb,var(--an-info-color)_10%,var(--an-background))] text-[var(--an-info-color)]">
               <MaterialSymbol icon="data_usage" size={16} />
             </span>
             <span className="text-[14px] font-semibold leading-5 text-[var(--an-foreground)]">Codex Usage</span>
@@ -203,9 +208,9 @@ export const CodexUsagePopover: React.FC<CodexUsagePopoverProps> = ({
           </div>
         </div>
 
-        <div className="px-4 py-3">
+        <div className="px-[var(--agent-elements-card-inline-padding)] py-[var(--agent-elements-card-block-padding)]">
           {usage.error ? (
-            <div className="agent-elements-status-pill rounded-[var(--an-tool-border-radius)] border border-[color-mix(in_srgb,var(--nim-error)_28%,var(--an-border-color))] bg-[color-mix(in_srgb,var(--nim-error)_8%,var(--an-background))] px-3 py-2 text-[13px] leading-5 text-[var(--nim-error)]">
+            <div className="agent-elements-status-pill rounded-[var(--an-tool-border-radius)] border border-[color-mix(in_srgb,var(--an-error-color)_28%,var(--an-border-color))] bg-[color-mix(in_srgb,var(--an-error-color)_8%,var(--an-background))] px-3 py-2 text-[13px] leading-5 text-[var(--an-error-color)]">
               {usage.error}
             </div>
           ) : (
@@ -235,7 +240,7 @@ export const CodexUsagePopover: React.FC<CodexUsagePopoverProps> = ({
           )}
         </div>
 
-        <div className="flex flex-col gap-1.5 border-t border-[var(--an-border-color)] px-4 py-2">
+        <div className="flex flex-col gap-1.5 border-t border-[var(--an-border-color)] px-[var(--agent-elements-card-inline-padding)] py-[var(--an-spacing-sm)]">
           <div className="flex items-center justify-between gap-3">
             {usage.lastUpdated && (
               <span className="text-[10px] leading-4 text-[var(--an-foreground-subtle)]">

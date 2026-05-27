@@ -8,6 +8,8 @@
  */
 
 import React from 'react';
+import { AgentStatusPill, AgentToolCard, type AgentStatusTone, type AgentToolStatus } from '../../../AgentElements/AgentElementsPrimitives';
+import { MaterialSymbol } from '../../../icons/MaterialSymbol';
 import type { CustomToolWidgetProps } from './index';
 
 // ---------- Types ----------
@@ -104,93 +106,108 @@ function extractResult(tool: { result?: unknown }): StructuredResult | null {
   return null;
 }
 
-// ---------- Phase colors ----------
+// ---------- Agent Elements shell helpers ----------
 
-const PHASE_STYLES: Record<string, { bg: string; text: string }> = {
-  backlog: { bg: 'rgba(156,163,175,0.15)', text: 'var(--nim-text-faint)' },
-  planning: { bg: 'rgba(168,85,247,0.15)', text: '#c084fc' },
-  implementing: { bg: 'rgba(59,130,246,0.15)', text: 'var(--nim-primary)' },
-  validating: { bg: 'rgba(251,191,36,0.15)', text: '#fbbf24' },
-  complete: { bg: 'rgba(74,222,128,0.15)', text: '#4ade80' },
-};
+function classNames(...values: Array<string | false | null | undefined>) {
+  return values.filter(Boolean).join(' ');
+}
 
-const getPhaseStyle = (phase: string | null) =>
-  phase ? (PHASE_STYLES[phase] ?? { bg: 'rgba(156,163,175,0.15)', text: 'var(--nim-text-faint)' }) : null;
+function tagTestIdPart(tag: string): string {
+  return tag.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || 'tag';
+}
+
+function phaseTone(phase: string | null): AgentStatusTone {
+  if (phase === 'complete') return 'success';
+  if (phase === 'validating') return 'warning';
+  if (phase === 'implementing') return 'running';
+  return 'neutral';
+}
+
+function tagTone(variant: 'kept' | 'added' | 'removed'): AgentStatusTone {
+  if (variant === 'added') return 'success';
+  if (variant === 'removed') return 'error';
+  return 'neutral';
+}
 
 // ---------- Small components ----------
 
 const PhaseBadge: React.FC<{ phase: string }> = ({ phase }) => {
-  const style = getPhaseStyle(phase)!;
   return (
-    <span
-      style={{
-        fontSize: '10px',
-        padding: '1px 7px',
-        borderRadius: '10px',
-        fontWeight: 500,
-        background: style.bg,
-        color: style.text,
-      }}
+    <AgentStatusPill
+      className="agent-elements-session-meta-phase-badge"
+      tone={phaseTone(phase)}
     >
       {phase}
-    </span>
+    </AgentStatusPill>
   );
 };
 
 const TagPill: React.FC<{ tag: string; variant: 'kept' | 'added' | 'removed' }> = ({ tag, variant }) => {
-  const styles: Record<string, React.CSSProperties> = {
-    kept: {
-      background: 'var(--nim-bg-tertiary)',
-      color: 'var(--nim-text-muted)',
-      border: '1px solid var(--nim-border)',
-    },
-    added: {
-      background: 'rgba(74,222,128,0.12)',
-      color: '#4ade80',
-      border: '1px solid rgba(74,222,128,0.3)',
-    },
-    removed: {
-      background: 'rgba(248,113,113,0.12)',
-      color: '#f87171',
-      border: '1px solid rgba(248,113,113,0.3)',
-      textDecoration: 'line-through',
-    },
-  };
-
   const prefix = variant === 'added' ? '+' : variant === 'removed' ? '-' : '';
 
   return (
     <span
-      style={{
-        display: 'inline-flex',
-        alignItems: 'center',
-        gap: '2px',
-        fontSize: '10px',
-        padding: '0px 6px',
-        borderRadius: '10px',
-        fontWeight: 500,
-        lineHeight: '18px',
-        ...styles[variant],
-      }}
+      className={classNames(
+        'agent-elements-status-pill agent-elements-session-meta-tag',
+        variant === 'removed' && 'line-through'
+      )}
+      data-session-meta-tag-state={variant}
+      data-testid={`agent-elements-session-meta-tag-${variant}-${tagTestIdPart(tag)}`}
+      data-tone={tagTone(variant)}
     >
       {prefix && (
-        <span style={{ fontWeight: 700, fontSize: '11px' }}>{prefix}</span>
+        <span className="font-semibold" aria-hidden="true">{prefix}</span>
       )}
-      #{tag}
+      <span>#{tag}</span>
     </span>
   );
 };
 
 const Arrow: React.FC = () => (
-  <span
-    style={{
-      color: 'var(--nim-text-faint)',
-      fontSize: '10px',
-      padding: '0 2px',
-    }}
-  >
+  <span className="agent-elements-session-meta-arrow text-[var(--an-tool-color-muted)]" aria-hidden="true">
     {'\u2192'}
   </span>
+);
+
+const SessionMetaRow: React.FC<{
+  label: string;
+  testId: string;
+  children: React.ReactNode;
+}> = ({ label, testId, children }) => (
+  <div
+    className="agent-elements-session-meta-row grid grid-cols-[3.25rem_minmax(0,1fr)] items-start gap-[var(--an-spacing-sm)]"
+    data-agent-elements-shell="session-meta-row"
+    data-testid={testId}
+  >
+    <span className="agent-elements-session-meta-label pt-px text-xs font-medium text-[var(--an-tool-color-muted)]">
+      {label}
+    </span>
+    <div className="agent-elements-session-meta-value flex min-w-0 flex-wrap items-center gap-[var(--an-spacing-xs)] text-sm text-[var(--an-tool-color)]">
+      {children}
+    </div>
+  </div>
+);
+
+const SessionMetaCard: React.FC<{
+  status: AgentToolStatus;
+  statusLabel: string;
+  statusTone: AgentStatusTone;
+  subtitle?: React.ReactNode;
+  children?: React.ReactNode;
+}> = ({ status, statusLabel, statusTone, subtitle, children }) => (
+  <AgentToolCard
+    className="agent-elements-session-meta-card"
+    data-agent-elements-shell="session-meta-card"
+    data-component="RichTranscriptAgentElementsSessionMeta"
+    data-testid="agent-elements-session-meta-card"
+    icon={<MaterialSymbol icon={status === 'running' ? 'progress_activity' : 'label'} size={14} />}
+    status={status}
+    subtitle={subtitle}
+    title="Session Meta"
+    trailing={<AgentStatusPill tone={statusTone}>{statusLabel}</AgentStatusPill>}
+  >
+    {children}
+  </AgentToolCard>
 );
 
 // ---------- Main widget ----------
@@ -209,53 +226,29 @@ export const UpdateSessionMetaWidget: React.FC<CustomToolWidgetProps> = ({ messa
       const name = args?.name;
       if (!name && !args?.add?.length && !args?.remove?.length && !args?.phase) return null;
       return (
-        <div
-          style={{
-            border: '1px solid var(--nim-border)',
-            borderRadius: '6px',
-            overflow: 'hidden',
-            fontSize: '11px',
-          }}
-        >
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-              padding: '5px 10px',
-              background: 'var(--nim-bg-tertiary)',
-            }}
-          >
-            <span style={{ fontWeight: 600, color: 'var(--nim-text)' }}>Session Meta</span>
-            {name && <span style={{ color: 'var(--nim-text-muted)', fontSize: '10px' }}>{name}</span>}
-          </div>
-        </div>
+        <SessionMetaCard
+          status="running"
+          statusLabel="Updating"
+          statusTone="running"
+          subtitle={name}
+        />
       );
     }
     return (
-      <div
-        style={{
-          border: '1px solid var(--nim-border)',
-          borderRadius: '6px',
-          overflow: 'hidden',
-          fontSize: '11px',
-        }}
+      <SessionMetaCard
+        status="completed"
+        statusLabel="Updated"
+        statusTone="success"
+        subtitle="Legacy result"
       >
         <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            padding: '5px 10px',
-            background: 'var(--nim-bg-tertiary)',
-            borderBottom: '1px solid var(--nim-border)',
-          }}
+          className="agent-elements-session-meta-body whitespace-pre-wrap text-sm text-[var(--an-tool-color-muted)] select-text"
+          data-agent-elements-shell="session-meta-body"
+          data-testid="agent-elements-session-meta-body"
         >
-          <span style={{ fontWeight: 600, color: 'var(--nim-text)' }}>Session Meta</span>
-        </div>
-        <div style={{ padding: '6px 10px', color: 'var(--nim-text-muted)', whiteSpace: 'pre-wrap', fontSize: '10px' }}>
           {fallbackText}
         </div>
-      </div>
+      </SessionMetaCard>
     );
   }
 
@@ -273,84 +266,53 @@ export const UpdateSessionMetaWidget: React.FC<CustomToolWidgetProps> = ({ messa
   const nameSkipped = !nameChanged && (tool.arguments as any)?.name && before.name;
   const phaseChanged = before.phase !== after.phase;
   const tagsChanged = added.length > 0 || removed.length > 0;
+  const statusLabel = nameChanged || phaseChanged || tagsChanged ? 'Updated' : 'Current';
+  const subtitle = data.summary || (nameChanged ? 'Session name changed' : phaseChanged ? 'Phase changed' : tagsChanged ? 'Tags changed' : 'No changes');
 
   return (
-    <div
-      style={{
-        border: '1px solid var(--nim-border)',
-        borderRadius: '6px',
-        overflow: 'hidden',
-        fontSize: '11px',
-      }}
+    <SessionMetaCard
+      status="completed"
+      statusLabel={statusLabel}
+      statusTone={statusLabel === 'Current' ? 'neutral' : 'success'}
+      subtitle={subtitle}
     >
-      {/* Header */}
       <div
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '8px',
-          padding: '5px 10px',
-          background: 'var(--nim-bg-tertiary)',
-          borderBottom: '1px solid var(--nim-border)',
-        }}
+        className="agent-elements-session-meta-body flex flex-col gap-[var(--an-spacing-xs)] select-text"
+        data-agent-elements-shell="session-meta-body"
+        data-testid="agent-elements-session-meta-body"
       >
-        <span style={{ fontWeight: 600, color: 'var(--nim-text)', fontSize: '11px' }}>
-          Session Meta
-        </span>
-      </div>
-
-      {/* Body */}
-      <div style={{ padding: '8px 10px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
         {/* Name row */}
         {(after.name || nameSkipped) && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
-            <span style={{ fontSize: '10px', color: 'var(--nim-text-faint)', fontWeight: 500, minWidth: '36px' }}>
-              Name
-            </span>
-            <span style={{ fontSize: '11px', color: 'var(--nim-text)', fontWeight: 500 }}>
-              {after.name}
-            </span>
+          <SessionMetaRow label="Name" testId="agent-elements-session-meta-name">
+            {nameChanged && before.name ? (
+              <>
+                <span className="text-[var(--an-tool-color-muted)]">{before.name}</span>
+                <Arrow />
+                <span className="font-medium">{after.name}</span>
+              </>
+            ) : (
+              <span className="font-medium">{after.name}</span>
+            )}
             {nameChanged && (
-              <span
-                style={{
-                  fontSize: '9px',
-                  padding: '0px 5px',
-                  borderRadius: '10px',
-                  fontWeight: 500,
-                  background: 'rgba(74,222,128,0.12)',
-                  color: '#4ade80',
-                  lineHeight: '16px',
-                }}
-              >
-                set
-              </span>
+              <AgentStatusPill tone="success">{before.name ? 'renamed' : 'set'}</AgentStatusPill>
             )}
             {nameSkipped && (
-              <span
-                style={{
-                  fontSize: '9px',
-                  color: 'var(--nim-text-faint)',
-                  fontStyle: 'italic',
-                }}
-              >
+              <span className="text-xs italic text-[var(--an-tool-color-muted)]">
                 (already set)
               </span>
             )}
-          </div>
+          </SessionMetaRow>
         )}
 
         {/* Phase row */}
         {(after.phase || phaseChanged) && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <span style={{ fontSize: '10px', color: 'var(--nim-text-faint)', fontWeight: 500, minWidth: '36px' }}>
-              Phase
-            </span>
+          <SessionMetaRow label="Phase" testId="agent-elements-session-meta-phase">
             {phaseChanged ? (
-              <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+              <>
                 {before.phase ? (
                   <PhaseBadge phase={before.phase} />
                 ) : (
-                  <span style={{ fontSize: '10px', color: 'var(--nim-text-faint)', fontStyle: 'italic' }}>
+                  <span className="text-xs italic text-[var(--an-tool-color-muted)]">
                     none
                   </span>
                 )}
@@ -358,24 +320,21 @@ export const UpdateSessionMetaWidget: React.FC<CustomToolWidgetProps> = ({ messa
                 {after.phase ? (
                   <PhaseBadge phase={after.phase} />
                 ) : (
-                  <span style={{ fontSize: '10px', color: 'var(--nim-text-faint)', fontStyle: 'italic' }}>
+                  <span className="text-xs italic text-[var(--an-tool-color-muted)]">
                     none
                   </span>
                 )}
-              </div>
+              </>
             ) : (
               after.phase && <PhaseBadge phase={after.phase} />
             )}
-          </div>
+          </SessionMetaRow>
         )}
 
         {/* Tags row */}
         {(after.tags.length > 0 || removed.length > 0) && (
-          <div style={{ display: 'flex', alignItems: 'flex-start', gap: '6px' }}>
-            <span style={{ fontSize: '10px', color: 'var(--nim-text-faint)', fontWeight: 500, minWidth: '36px', paddingTop: '1px' }}>
-              Tags
-            </span>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '3px' }}>
+          <SessionMetaRow label="Tags" testId="agent-elements-session-meta-tags">
+            <div className="flex min-w-0 flex-wrap gap-[var(--an-spacing-xxs)]">
               {kept.map((t) => (
                 <TagPill key={`kept-${t}`} tag={t} variant="kept" />
               ))}
@@ -386,17 +345,17 @@ export const UpdateSessionMetaWidget: React.FC<CustomToolWidgetProps> = ({ messa
                 <TagPill key={`removed-${t}`} tag={t} variant="removed" />
               ))}
             </div>
-          </div>
+          </SessionMetaRow>
         )}
 
         {/* Empty state: nothing at all */}
         {!after.name && !after.phase && after.tags.length === 0 && removed.length === 0 && (
-          <span style={{ fontSize: '10px', color: 'var(--nim-text-faint)', fontStyle: 'italic' }}>
+          <span className="text-xs italic text-[var(--an-tool-color-muted)]">
             No metadata set
           </span>
         )}
       </div>
-    </div>
+    </SessionMetaCard>
   );
 };
 

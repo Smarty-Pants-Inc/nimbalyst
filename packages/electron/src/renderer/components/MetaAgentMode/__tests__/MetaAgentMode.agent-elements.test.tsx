@@ -211,6 +211,22 @@ describe('MetaAgentMode Agent Elements shell', () => {
     expect(screen.queryByTestId('agent-elements-meta-agent-timeline')).not.toBeInTheDocument();
   });
 
+  it('uses shared Agent Elements card gutters for the delegated-session empty state', async () => {
+    mockState.electronInvoke.mockImplementation(async (channel: string) => {
+      if (channel === 'meta-agent:list-spawned-sessions') {
+        return { success: true, sessions: [] };
+      }
+      return { success: true };
+    });
+
+    render(<MetaAgentMode workspacePath="/workspace/demo" isActive sessionId="meta-session" />);
+
+    const emptyState = await screen.findByTestId('meta-agent-empty-state');
+    expect(emptyState).toHaveClass('agent-elements-meta-agent-empty-state', 'agent-elements-tool-card');
+    expect(emptyState.className).toContain('--agent-elements-card-inline-padding');
+    expect(emptyState.className).toContain('--agent-elements-card-block-padding');
+  });
+
   it('keeps MetaAgentMode source on Agent Elements-compatible visual rules', () => {
     const source = readFileSync(metaAgentModeSourcePath, 'utf8');
 
@@ -219,6 +235,13 @@ describe('MetaAgentMode Agent Elements shell', () => {
     expect(source).not.toMatch(/rounded-md|rounded-lg|rounded-xl|rounded-2xl/);
     expect(source).not.toMatch(/#(?:[0-9a-fA-F]{3}){1,2}\b|rgba\(/);
     expect(source).not.toMatch(/bg-white|text-white|bg-black|hover:scale|tracking-/);
+    expect(source).toContain('--an-button-primary-text');
+    expect(source).toContain('--an-warning-color');
+    expect(source).toContain('--an-error-color');
+    expect(source).toContain('--agent-elements-card-inline-padding');
+    expect(source).toContain('--agent-elements-card-block-padding');
+    expect(source).not.toMatch(/agent-elements-meta-agent-empty-state[^`'"]*\bp-/);
+    expect(source).not.toMatch(/var\(--nim-(?:warning|error)\)|text-\[var\(--an-background\)\]/);
     expect(source).not.toMatch(/--nim-accent|--nim-surface|text-nim-fg|<svg/);
   });
 });

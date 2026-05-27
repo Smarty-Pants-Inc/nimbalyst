@@ -2,6 +2,8 @@
 
 import '@testing-library/jest-dom/vitest';
 import React from 'react';
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ErrorBoundary } from '../ErrorBoundary';
@@ -16,6 +18,10 @@ vi.mock('../../utils/logger', () => ({
 }));
 
 let activeError: Error | null = null;
+const errorBoundarySourcePath = resolve(__dirname, '../ErrorBoundary.tsx');
+const tabEditorErrorBoundarySourcePath = resolve(__dirname, '../TabEditorErrorBoundary/TabEditorErrorBoundary.tsx');
+const legacyVisualTokenPattern =
+  /\b(?:bg|text|border|hover:bg|hover:text|hover:border)-nim(?:-[\w-]+)?\b|var\(--nim-|rgba\(|#(?:[0-9a-fA-F]{3}){1,2}\b|rounded-md|rounded-lg|rounded-xl|tracking-\[/;
 
 function ThrowingChild() {
   if (activeError) {
@@ -51,6 +57,8 @@ describe('Error boundary Agent Elements shells', () => {
     expect(shell).toHaveClass('error-boundary-fallback', 'agent-elements-error-boundary', 'agent-elements-tool-card');
     expect(shell).toHaveAttribute('data-component', 'ErrorBoundary');
     expect(shell).toHaveAttribute('data-agent-elements-shell', 'error-boundary');
+    expect(shell).toHaveAttribute('data-agent-elements-card-padding', 'symmetric-inline');
+    expect(shell).toHaveAttribute('data-agent-elements-card-width', 'bounded-fallback');
     expect(shell).toHaveTextContent('Something went wrong');
     expect(screen.getByTestId('agent-elements-error-boundary-message')).toHaveTextContent('Renderer exploded');
     expect(onError).toHaveBeenCalledTimes(1);
@@ -93,6 +101,8 @@ describe('Error boundary Agent Elements shells', () => {
     );
     expect(shell).toHaveAttribute('data-component', 'TabEditorErrorBoundary');
     expect(shell).toHaveAttribute('data-agent-elements-shell', 'tab-editor-error-boundary');
+    expect(shell).toHaveAttribute('data-agent-elements-card-padding', 'symmetric-inline');
+    expect(shell).toHaveAttribute('data-agent-elements-card-width', 'bounded-fallback');
     expect(screen.getByTestId('agent-elements-tab-editor-error-boundary-message')).toHaveTextContent(
       'An error occurred while loading "broken.md".'
     );
@@ -111,5 +121,24 @@ describe('Error boundary Agent Elements shells', () => {
     );
     fireEvent.click(screen.getByTestId('agent-elements-tab-editor-error-boundary-close'));
     expect(onClose).toHaveBeenCalledTimes(1);
+  });
+
+  it('keeps error-boundary sources on Agent Elements-compatible visual rules', () => {
+    const source = [
+      readFileSync(errorBoundarySourcePath, 'utf8'),
+      readFileSync(tabEditorErrorBoundarySourcePath, 'utf8'),
+    ].join('\n');
+
+    expect(source).toContain('agent-elements-error-boundary');
+    expect(source).toContain('agent-elements-tab-editor-error-boundary');
+    expect(source).toContain('--an-tool-background');
+    expect(source).toContain('--an-foreground-muted');
+    expect(source).toContain('--agent-elements-card-inline-padding');
+    expect(source).toContain('--agent-elements-card-block-padding');
+    expect(source).toContain('data-agent-elements-card-width="bounded-fallback"');
+
+    expect(source).not.toMatch(/bg-white|text-white|bg-black|hover:scale|tracking-\[/);
+    expect(source).not.toMatch(/agent-elements-tool-card[^'"]*\bp-\[var\(--an-spacing|rounded-md|rounded-lg|rounded-xl|shadow-lg|backdrop-blur/);
+    expect(source).not.toMatch(legacyVisualTokenPattern);
   });
 });

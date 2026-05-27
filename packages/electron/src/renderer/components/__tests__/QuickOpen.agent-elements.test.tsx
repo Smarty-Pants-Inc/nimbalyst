@@ -4,6 +4,8 @@ import '@testing-library/jest-dom/vitest';
 import React from 'react';
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import fs from 'node:fs';
+import path from 'node:path';
 import { QuickOpen } from '../QuickOpen';
 
 const mockState = vi.hoisted(() => ({
@@ -39,6 +41,11 @@ vi.mock('@nimbalyst/runtime', async () => {
 vi.mock('../../store', () => ({
   revealFolderAtom: 'revealFolderAtom',
 }));
+
+const quickOpenSourcePath = path.join(
+  process.cwd(),
+  'packages/electron/src/renderer/components/QuickOpen.tsx',
+);
 
 describe('QuickOpen Agent Elements shell', () => {
   beforeEach(() => {
@@ -184,5 +191,14 @@ describe('QuickOpen Agent Elements shell', () => {
     expect(mockState.revealFolder).toHaveBeenCalledWith('/workspace/app/src/utils');
     expect(onClose).toHaveBeenCalled();
     expect(onFileSelect).not.toHaveBeenCalled();
+  });
+
+  it('keeps file quick-open chrome on Agent Elements visual aliases', () => {
+    const source = fs.readFileSync(quickOpenSourcePath, 'utf8');
+
+    expect(source).toContain('agent-elements-quick-open-backdrop');
+    expect(source).toContain('var(--an-foreground)');
+    expect(source).toContain('var(--an-button-primary-text)');
+    expect(source).not.toMatch(/var\(--nim-[^)]+\)/);
   });
 });

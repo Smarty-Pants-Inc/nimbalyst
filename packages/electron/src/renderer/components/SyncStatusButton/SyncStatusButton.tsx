@@ -1,7 +1,8 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useAtomValue } from 'jotai';
 import { MaterialSymbol } from '@nimbalyst/runtime';
 import { HelpTooltip } from '../../help';
+import { FloatingPortal, useFloatingMenu } from '../../hooks/useFloatingMenu';
 import { syncStatusUpdateAtom } from '../../store/atoms/syncStatus';
 
 export interface SyncConfig {
@@ -39,7 +40,11 @@ interface SyncStatusButtonProps {
   onOpenSettings?: () => void;
 }
 
+const floatingPopoverCardGutters =
+  '[--agent-elements-card-block-padding:var(--an-spacing-xs)] [--agent-elements-card-inline-padding:var(--an-spacing-xs)] px-[var(--agent-elements-card-inline-padding)] py-[var(--agent-elements-card-block-padding)]';
+
 export const SyncStatusButton: React.FC<SyncStatusButtonProps> = ({ workspacePath, onOpenSettings }) => {
+  const menu = useFloatingMenu({ placement: 'right-end', offsetPx: 8, constrainHeight: true });
   const [status, setStatus] = useState<SyncStatus>({
     appConfigured: false,
     projectEnabled: false,
@@ -51,9 +56,6 @@ export const SyncStatusButton: React.FC<SyncStatusButtonProps> = ({ workspacePat
       lastSyncedAt: null,
     },
   });
-  const [menuOpen, setMenuOpen] = useState(false);
-  const buttonRef = useRef<HTMLButtonElement>(null);
-  const menuRef = useRef<HTMLDivElement>(null);
 
   // Fetch sync status (called once on mount and when workspace changes)
   const fetchStatus = useCallback(async () => {
@@ -87,24 +89,6 @@ export const SyncStatusButton: React.FC<SyncStatusButtonProps> = ({ workspacePat
     }));
   }, [syncStatusUpdate]);
 
-  // Close menu when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (
-        menuOpen &&
-        menuRef.current &&
-        buttonRef.current &&
-        !menuRef.current.contains(event.target as Node) &&
-        !buttonRef.current.contains(event.target as Node)
-      ) {
-        setMenuOpen(false);
-      }
-    };
-
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [menuOpen]);
-
   // Don't render if sync is not configured at all
   if (!status.appConfigured) {
     return null;
@@ -120,7 +104,7 @@ export const SyncStatusButton: React.FC<SyncStatusButtonProps> = ({ workspacePat
   };
 
   const handleOpenSettings = () => {
-    setMenuOpen(false);
+    menu.setIsOpen(false);
     if (onOpenSettings) {
       onOpenSettings();
     }
@@ -160,29 +144,34 @@ export const SyncStatusButton: React.FC<SyncStatusButtonProps> = ({ workspacePat
 
   const getButtonColorClass = (): string => {
     const statusClass = getStatusClass();
-    if (statusClass === 'connected' || statusClass === 'syncing') {
-      return 'text-[var(--nim-text-muted)]';
+    if (statusClass === 'error') {
+      return 'text-[var(--an-diff-removed-text)]';
+    }
+    if (statusClass === 'syncing') {
+      return 'text-[var(--an-primary-color)]';
+    }
+    if (statusClass === 'disconnected') {
+      return 'text-[var(--an-warning-color)]';
     }
     if (statusClass === 'disabled') {
-      return 'text-[var(--nim-text-faint)] opacity-60';
+      return 'text-[var(--an-foreground-subtle)] opacity-70';
     }
-    // disconnected or error
-    return 'text-[var(--nim-text-faint)]';
+    return 'text-[var(--an-foreground-muted)]';
   };
 
   const getIndicatorColorClass = (): string => {
     const statusClass = getStatusClass();
     switch (statusClass) {
       case 'connected':
-        return 'bg-[#22c55e]';
+        return 'bg-[var(--an-success-color)]';
       case 'syncing':
-        return 'bg-[#3b82f6] animate-pulse';
+        return 'bg-[var(--an-primary-color)] animate-pulse';
       case 'disconnected':
-        return 'bg-[#f59e0b]';
+        return 'bg-[var(--an-warning-color)]';
       case 'error':
-        return 'bg-[#ef4444]';
+        return 'bg-[var(--an-diff-removed-text)]';
       case 'disabled':
-        return 'bg-[var(--nim-text-faint)]';
+        return 'bg-[var(--an-foreground-subtle)]';
       default:
         return '';
     }
@@ -192,18 +181,25 @@ export const SyncStatusButton: React.FC<SyncStatusButtonProps> = ({ workspacePat
     const statusClass = getStatusClass();
     switch (statusClass) {
       case 'connected':
-        return 'bg-[rgba(34,197,94,0.15)] text-[#22c55e]';
+        return 'border-[color-mix(in_srgb,var(--an-success-color)_28%,var(--an-border-color))] bg-[color-mix(in_srgb,var(--an-success-color)_10%,var(--an-background))] text-[var(--an-success-color)]';
       case 'syncing':
-        return 'bg-[rgba(59,130,246,0.15)] text-[#3b82f6]';
+        return 'border-[color-mix(in_srgb,var(--an-primary-color)_28%,var(--an-border-color))] bg-[color-mix(in_srgb,var(--an-primary-color)_10%,var(--an-background))] text-[var(--an-primary-color)]';
       case 'disconnected':
-        return 'bg-[rgba(245,158,11,0.15)] text-[#f59e0b]';
+        return 'border-[color-mix(in_srgb,var(--an-warning-color)_28%,var(--an-border-color))] bg-[color-mix(in_srgb,var(--an-warning-color)_10%,var(--an-background))] text-[var(--an-warning-color)]';
       case 'error':
-        return 'bg-[rgba(239,68,68,0.15)] text-[#ef4444]';
+        return 'border-[color-mix(in_srgb,var(--an-diff-removed-text)_28%,var(--an-border-color))] bg-[color-mix(in_srgb,var(--an-diff-removed-text)_10%,var(--an-background))] text-[var(--an-diff-removed-text)]';
       case 'disabled':
-        return 'bg-[var(--nim-bg-tertiary)] text-[var(--nim-text-faint)]';
+        return 'border-[var(--an-border-color)] bg-[var(--an-background-secondary)] text-[var(--an-foreground-subtle)]';
       default:
         return '';
     }
+  };
+
+  const getDocSyncStatusClass = (): string => {
+    if (status.docSyncStats?.connected) {
+      return 'text-[var(--an-success-color)]';
+    }
+    return 'text-[var(--an-foreground-subtle)]';
   };
 
   const getStatusLabel = (): string => {
@@ -245,120 +241,188 @@ export const SyncStatusButton: React.FC<SyncStatusButtonProps> = ({ workspacePat
     return `${diffDays}d ago`;
   };
 
+  const statusClass = getStatusClass();
+  const projectEnabled = status.projectEnabled ? 'true' : 'false';
+
   return (
-    <div className="sync-status-button-container relative">
+    <div
+      className="sync-status-button-container agent-elements-sync-status-button relative"
+      data-testid="agent-elements-sync-status-button"
+      data-component="SyncStatusButton"
+      data-agent-elements-shell="sync-status-button"
+      data-sync-status={statusClass}
+      data-project-enabled={projectEnabled}
+    >
       <HelpTooltip testId="gutter-sync-button" placement="right">
         <button
-          ref={buttonRef}
-          className={`sync-status-button nav-button relative w-9 h-9 flex items-center justify-center bg-transparent border-none rounded-md cursor-pointer transition-all duration-150 p-0 hover:bg-nim-tertiary active:scale-95 focus-visible:outline-2 focus-visible:outline-[var(--nim-primary)] focus-visible:outline-offset-2 ${getButtonColorClass()}`}
-          onClick={() => setMenuOpen(!menuOpen)}
+          ref={menu.refs.setReference as React.RefCallback<HTMLButtonElement>}
+          {...menu.getReferenceProps()}
+          type="button"
+          className={`sync-status-button nav-button agent-elements-sync-status-trigger relative flex h-9 w-9 cursor-pointer items-center justify-center rounded-[var(--an-tool-border-radius)] border border-transparent bg-transparent p-0 transition-[background-color,border-color,color,box-shadow] duration-150 ease-out hover:border-[var(--an-border-color)] hover:bg-[var(--an-background-tertiary)] hover:text-[var(--an-foreground)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--an-input-focus-outline)] ${statusClass} ${getButtonColorClass()}`}
+          onClick={() => menu.setIsOpen(!menu.isOpen)}
           aria-label={getStatusLabel()}
-          aria-expanded={menuOpen}
+          aria-expanded={menu.isOpen}
           aria-haspopup="menu"
           data-testid="gutter-sync-button"
+          data-component="SyncStatusButtonTrigger"
+          data-agent-elements-shell="sync-status-trigger"
+          data-sync-status={statusClass}
+          data-project-enabled={projectEnabled}
         >
           <MaterialSymbol icon={getStatusIcon()} size={20} />
           <span
-            className={`sync-indicator absolute bottom-1 right-1 w-1.5 h-1.5 rounded-full border border-[var(--nim-bg-secondary)] ${getIndicatorColorClass()}`}
+            className={`sync-indicator agent-elements-sync-status-indicator absolute bottom-1 right-1 h-2 w-2 rounded-[999px] border-2 border-[var(--an-background)] ${statusClass} ${getIndicatorColorClass()}`}
+            data-testid="agent-elements-sync-status-indicator"
+            data-agent-elements-shell="sync-status-indicator"
+            data-sync-status={statusClass}
           />
         </button>
       </HelpTooltip>
 
-      {menuOpen && (
-        <div
-          ref={menuRef}
-          className="sync-menu absolute left-[calc(100%+8px)] bottom-0 min-w-[240px] bg-[var(--nim-bg-secondary)] border border-[var(--nim-border)] rounded-lg shadow-[0_4px_12px_rgba(0,0,0,0.15)] z-[1000] overflow-hidden"
-          role="menu"
-        >
-          <div className="sync-menu-header flex justify-between items-center px-3.5 py-3 bg-[var(--nim-bg-tertiary)] border-b border-[var(--nim-border)]">
-            <span className="sync-menu-title text-[13px] font-semibold text-[var(--nim-text)]">
-              Session Sync
-            </span>
-            <span
-              className={`sync-status-badge text-[11px] font-medium px-2 py-0.5 rounded-[10px] ${getBadgeColorClass()}`}
+      {menu.isOpen && (
+        <FloatingPortal>
+          <div
+            ref={menu.refs.setFloating as React.RefCallback<HTMLDivElement>}
+            style={menu.floatingStyles}
+            {...menu.getFloatingProps()}
+            className={`sync-menu agent-elements-sync-status-menu agent-elements-tool-card z-[1000] min-w-[280px] max-w-[min(340px,calc(100vw-24px))] overflow-hidden rounded-[var(--an-border-radius)] border border-[var(--an-border-color)] bg-[var(--an-tool-background)] text-[var(--an-foreground)] shadow-[0_16px_48px_color-mix(in_srgb,var(--an-foreground)_12%,transparent)] ${floatingPopoverCardGutters}`}
+            role="menu"
+            aria-label="Session sync"
+            data-testid="agent-elements-sync-status-menu"
+            data-component="SyncStatusButtonMenu"
+            data-agent-elements-shell="sync-status-menu"
+            data-agent-elements-card-padding="symmetric-inline"
+            data-agent-elements-card-width="floating-popover"
+            data-sync-status={statusClass}
+            data-project-enabled={projectEnabled}
+          >
+            <div
+              className="sync-menu-header agent-elements-sync-status-menu-header flex items-center justify-between gap-3 px-3 pb-2 pt-3"
+              data-agent-elements-shell="sync-status-menu-header"
             >
-              {status.projectEnabled ? (status.connected ? 'Connected' : 'Disconnected') : 'Disabled'}
-            </span>
-          </div>
-
-          {status.userEmail && (
-            <div className="sync-menu-user flex items-center gap-2 px-3.5 py-2.5 border-b border-[var(--nim-border)] text-[var(--nim-text-muted)] text-xs">
-              <MaterialSymbol icon="account_circle" size={16} />
-              <span>{status.userEmail}</span>
-            </div>
-          )}
-
-          {status.error && (
-            <div className="sync-menu-error flex items-center gap-2 px-3.5 py-2.5 bg-[rgba(239,68,68,0.1)] text-[#ef4444] text-xs">
-              <MaterialSymbol icon="error" size={16} />
-              <span>{status.error}</span>
-            </div>
-          )}
-
-          <div className="sync-menu-stats px-3.5 py-3">
-            <div className="sync-stat flex justify-between items-center py-1">
-              <span className="sync-stat-label text-xs text-[var(--nim-text-muted)]">Sessions synced</span>
-              <span className="sync-stat-value text-xs font-medium text-[var(--nim-text)]">
-                {status.stats.sessionCount}
+              <span className="sync-menu-title text-[13px] font-semibold leading-5 text-[var(--an-foreground)]">
+                Session Sync
+              </span>
+              <span
+                className={`sync-status-badge agent-elements-sync-status-badge agent-elements-status-pill rounded-[999px] border px-2 py-0.5 text-[11px] font-medium leading-4 ${getBadgeColorClass()}`}
+                data-testid="agent-elements-sync-status-badge"
+                data-agent-elements-shell="sync-status-badge"
+                data-sync-status={statusClass}
+              >
+                {status.projectEnabled ? (status.connected ? 'Connected' : 'Disconnected') : 'Disabled'}
               </span>
             </div>
-            <div className="sync-stat flex justify-between items-center py-1">
-              <span className="sync-stat-label text-xs text-[var(--nim-text-muted)]">Last sync</span>
-              <span className="sync-stat-value text-xs font-medium text-[var(--nim-text)]">
-                {formatLastSync()}
-              </span>
-            </div>
-          </div>
 
-          {status.docSyncStats && status.docSyncStats.fileCount > 0 && (
-            <>
-              <div className="sync-menu-divider h-px bg-[var(--nim-border)] m-0" />
-              <div className="px-3.5 py-3">
-                <div className="flex items-center gap-1.5 mb-2">
-                  <MaterialSymbol icon="description" size={14} className="text-[var(--nim-text-muted)]" />
-                  <span className="text-[11px] font-semibold text-[var(--nim-text-muted)] uppercase tracking-wider">Document Sync</span>
-                </div>
-                <div className="sync-stat flex justify-between items-center py-1">
-                  <span className="sync-stat-label text-xs text-[var(--nim-text-muted)]">Files tracked</span>
-                  <span className="sync-stat-value text-xs font-medium text-[var(--nim-text)]">
-                    {status.docSyncStats.fileCount}
-                  </span>
-                </div>
-                <div className="sync-stat flex justify-between items-center py-1">
-                  <span className="sync-stat-label text-xs text-[var(--nim-text-muted)]">Status</span>
-                  <span className={`sync-stat-value text-xs font-medium ${status.docSyncStats.connected ? 'text-[#22c55e]' : 'text-[var(--nim-text-faint)]'}`}>
-                    {status.docSyncStats.connected ? 'Connected' : 'Disconnected'}
-                  </span>
-                </div>
+            {status.userEmail && (
+              <div
+                className="sync-menu-user agent-elements-sync-status-user mx-2 flex items-center gap-2 rounded-[var(--an-tool-border-radius)] border border-[var(--an-border-color)] bg-[var(--an-background-secondary)] px-3 py-2 text-xs text-[var(--an-foreground-muted)]"
+                data-agent-elements-shell="sync-status-user"
+              >
+                <MaterialSymbol icon="account_circle" size={16} />
+                <span className="min-w-0 truncate select-text">{status.userEmail}</span>
               </div>
-            </>
-          )}
+            )}
 
-          <div className="sync-menu-divider h-px bg-[var(--nim-border)] m-0" />
+            {status.error && (
+              <div
+                className="sync-menu-error agent-elements-sync-status-error mx-2 mt-2 flex items-center gap-2 rounded-[var(--an-tool-border-radius)] border border-[color-mix(in_srgb,var(--an-diff-removed-text)_26%,var(--an-border-color))] bg-[color-mix(in_srgb,var(--an-diff-removed-text)_8%,var(--an-background))] px-3 py-2 text-xs text-[var(--an-diff-removed-text)]"
+                data-agent-elements-shell="sync-status-error"
+              >
+                <MaterialSymbol icon="error" size={16} />
+                <span className="select-text">{status.error}</span>
+              </div>
+            )}
 
-          <div className="sync-menu-actions p-1.5">
-            <button
-              className="sync-menu-action flex items-center gap-2.5 w-full px-2.5 py-2 bg-transparent border-none rounded-md text-[var(--nim-text)] text-[13px] text-left cursor-pointer transition-colors duration-150 hover:bg-[var(--nim-bg-hover)]"
-              onClick={handleToggleProjectSync}
-              role="menuitem"
+            <div
+              className="sync-menu-stats agent-elements-sync-status-stats px-3 py-3"
+              data-agent-elements-shell="sync-status-stats"
             >
-              <span className="text-[var(--nim-text-muted)]">
-                <MaterialSymbol icon={status.projectEnabled ? 'toggle_on' : 'toggle_off'} size={18} />
-              </span>
-              <span>{status.projectEnabled ? 'Disable sync for this project' : 'Enable sync for this project'}</span>
-            </button>
-            <button
-              className="sync-menu-action flex items-center gap-2.5 w-full px-2.5 py-2 bg-transparent border-none rounded-md text-[var(--nim-text)] text-[13px] text-left cursor-pointer transition-colors duration-150 hover:bg-[var(--nim-bg-hover)]"
-              onClick={handleOpenSettings}
-              role="menuitem"
+              <div
+                className="sync-stat agent-elements-sync-status-stat flex items-center justify-between gap-6 py-1"
+                data-testid="agent-elements-sync-status-stat-sessions"
+                data-agent-elements-shell="sync-status-stat"
+              >
+                <span className="sync-stat-label text-xs text-[var(--an-foreground-muted)]">Sessions synced</span>
+                <span className="sync-stat-value text-xs font-medium text-[var(--an-foreground)]">
+                  {status.stats.sessionCount}
+                </span>
+              </div>
+              <div
+                className="sync-stat agent-elements-sync-status-stat flex items-center justify-between gap-6 py-1"
+                data-testid="agent-elements-sync-status-stat-last-sync"
+                data-agent-elements-shell="sync-status-stat"
+              >
+                <span className="sync-stat-label text-xs text-[var(--an-foreground-muted)]">Last sync</span>
+                <span className="sync-stat-value text-xs font-medium text-[var(--an-foreground)]">
+                  {formatLastSync()}
+                </span>
+              </div>
+            </div>
+
+            {status.docSyncStats && status.docSyncStats.fileCount > 0 && (
+              <>
+                <div className="sync-menu-divider mx-2 h-px bg-[var(--an-border-color)]" />
+                <div
+                  className="agent-elements-sync-status-docs px-3 py-3"
+                  data-agent-elements-shell="sync-status-docs"
+                >
+                  <div className="mb-2 flex items-center gap-1.5">
+                    <MaterialSymbol icon="description" size={14} className="text-[var(--an-foreground-muted)]" />
+                    <span className="text-[11px] font-medium text-[var(--an-foreground-muted)]">Document Sync</span>
+                  </div>
+                  <div
+                    className="sync-stat agent-elements-sync-status-stat flex items-center justify-between gap-6 py-1"
+                    data-agent-elements-shell="sync-status-stat"
+                  >
+                    <span className="sync-stat-label text-xs text-[var(--an-foreground-muted)]">Files tracked</span>
+                    <span className="sync-stat-value text-xs font-medium text-[var(--an-foreground)]">
+                      {status.docSyncStats.fileCount}
+                    </span>
+                  </div>
+                  <div
+                    className="sync-stat agent-elements-sync-status-stat flex items-center justify-between gap-6 py-1"
+                    data-agent-elements-shell="sync-status-stat"
+                  >
+                    <span className="sync-stat-label text-xs text-[var(--an-foreground-muted)]">Status</span>
+                    <span className={`sync-stat-value text-xs font-medium ${getDocSyncStatusClass()}`}>
+                      {status.docSyncStats.connected ? 'Connected' : 'Disconnected'}
+                    </span>
+                  </div>
+                </div>
+              </>
+            )}
+
+            <div className="sync-menu-divider mx-2 h-px bg-[var(--an-border-color)]" />
+
+            <div
+              className="sync-menu-actions agent-elements-sync-status-actions p-1.5"
+              data-agent-elements-shell="sync-status-actions"
             >
-              <span className="text-[var(--nim-text-muted)]">
-                <MaterialSymbol icon="settings" size={18} />
-              </span>
-              <span>Sync settings</span>
-            </button>
+              <button
+                type="button"
+                className="sync-menu-action agent-elements-sync-status-action flex w-full cursor-pointer items-center gap-2.5 rounded-[var(--an-tool-border-radius)] border border-transparent bg-transparent px-2.5 py-2 text-left text-[13px] text-[var(--an-foreground)] transition-[background-color,border-color,color] duration-150 ease-out hover:bg-[var(--an-background-tertiary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--an-input-focus-outline)]"
+                onClick={handleToggleProjectSync}
+                role="menuitem"
+              >
+                <span className="text-[var(--an-foreground-muted)]">
+                  <MaterialSymbol icon={status.projectEnabled ? 'toggle_on' : 'toggle_off'} size={18} />
+                </span>
+                <span>{status.projectEnabled ? 'Disable sync for this project' : 'Enable sync for this project'}</span>
+              </button>
+              <button
+                type="button"
+                className="sync-menu-action agent-elements-sync-status-action flex w-full cursor-pointer items-center gap-2.5 rounded-[var(--an-tool-border-radius)] border border-transparent bg-transparent px-2.5 py-2 text-left text-[13px] text-[var(--an-foreground)] transition-[background-color,border-color,color] duration-150 ease-out hover:bg-[var(--an-background-tertiary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--an-input-focus-outline)]"
+                onClick={handleOpenSettings}
+                role="menuitem"
+              >
+                <span className="text-[var(--an-foreground-muted)]">
+                  <MaterialSymbol icon="settings" size={18} />
+                </span>
+                <span>Sync settings</span>
+              </button>
+            </div>
           </div>
-        </div>
+        </FloatingPortal>
       )}
     </div>
   );

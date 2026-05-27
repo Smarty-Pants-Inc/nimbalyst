@@ -1,6 +1,8 @@
 // @vitest-environment jsdom
 
 import '@testing-library/jest-dom/vitest';
+import fs from 'node:fs';
+import path from 'node:path';
 import React from 'react';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { createStore, Provider as JotaiProvider } from 'jotai';
@@ -45,6 +47,26 @@ const defaultUpdateState: UpdateStateData = {
   downloadProgress: null,
   errorMessage: '',
 };
+
+const updateToastSourceFiles = [
+  'DownloadProgressToast.tsx',
+  'ReleaseNotesDialog.tsx',
+  'UpdateAvailableToast.tsx',
+  'UpdateReadyToast.tsx',
+  'UpdateToast.tsx',
+].map((fileName) =>
+  path.join(
+    process.cwd(),
+    'packages/electron/src/renderer/components/UpdateToast',
+    fileName
+  )
+);
+
+function readUpdateToastSources(): string {
+  return updateToastSourceFiles
+    .map((filePath) => fs.readFileSync(filePath, 'utf8'))
+    .join('\n');
+}
 
 function installElectronApi({ hasActiveSessions = false }: { hasActiveSessions?: boolean } = {}) {
   const api = {
@@ -91,6 +113,22 @@ describe('UpdateToast Agent Elements shell', () => {
     installElectronApi();
   });
 
+  it('uses Agent Elements token aliases for visual chrome', () => {
+    const source = readUpdateToastSources();
+
+    expect(source).toContain('--an-button-primary-text');
+    expect(source).toContain('--an-foreground');
+    expect(source).toContain('--an-success-color');
+    expect(source).toContain('--an-error-color');
+    expect(source).toContain('--agent-elements-card-inline-padding');
+    expect(source).toContain('--agent-elements-card-block-padding');
+    expect(source).toContain('data-agent-elements-card-width="floating-toast"');
+    expect(source).not.toMatch(/var\(--nim-(?:text|primary-hover|success|error)\)/);
+    expect(source).not.toMatch(/shadow-\[[^\]]*var\(--nim/);
+    expect(source).not.toContain('text-[var(--an-background)]');
+    expect(source).not.toMatch(/agent-elements-update-toast agent-elements-tool-card[^`'"]*\bp-\[var\(--an-spacing/);
+  });
+
   it('renders Agent Elements shells for available, download, and ready update toasts while preserving callbacks', () => {
     const onUpdateNow = vi.fn();
     const onViewReleaseNotes = vi.fn();
@@ -111,6 +149,8 @@ describe('UpdateToast Agent Elements shell', () => {
     expect(availableToast).toHaveClass('update-toast', 'agent-elements-update-toast', 'agent-elements-tool-card');
     expect(availableToast).toHaveAttribute('data-component', 'UpdateAvailableToast');
     expect(availableToast).toHaveAttribute('data-agent-elements-shell', 'update-available-toast');
+    expect(availableToast).toHaveAttribute('data-agent-elements-card-padding', 'symmetric-inline');
+    expect(availableToast).toHaveAttribute('data-agent-elements-card-width', 'floating-toast');
     expect(screen.getByTestId('agent-elements-update-toast-icon')).toHaveAttribute(
       'data-agent-elements-shell',
       'update-toast-icon'
@@ -146,6 +186,8 @@ describe('UpdateToast Agent Elements shell', () => {
     expect(downloadToast).toHaveClass('update-toast', 'agent-elements-update-toast', 'agent-elements-tool-card');
     expect(downloadToast).toHaveAttribute('data-component', 'DownloadProgressToast');
     expect(downloadToast).toHaveAttribute('data-agent-elements-shell', 'download-progress-toast');
+    expect(downloadToast).toHaveAttribute('data-agent-elements-card-padding', 'symmetric-inline');
+    expect(downloadToast).toHaveAttribute('data-agent-elements-card-width', 'floating-toast');
     expect(screen.getByTestId('agent-elements-update-toast-progress')).toHaveAttribute(
       'data-agent-elements-shell',
       'update-toast-progress'
@@ -167,6 +209,8 @@ describe('UpdateToast Agent Elements shell', () => {
     expect(readyToast).toHaveClass('update-toast', 'agent-elements-update-toast', 'agent-elements-tool-card');
     expect(readyToast).toHaveAttribute('data-component', 'UpdateReadyToast');
     expect(readyToast).toHaveAttribute('data-agent-elements-shell', 'update-ready-toast');
+    expect(readyToast).toHaveAttribute('data-agent-elements-card-padding', 'symmetric-inline');
+    expect(readyToast).toHaveAttribute('data-agent-elements-card-width', 'floating-toast');
     expect(readyToast).toHaveAttribute('data-update-waiting-for-sessions', 'true');
   });
 
@@ -181,12 +225,20 @@ describe('UpdateToast Agent Elements shell', () => {
       'data-agent-elements-shell',
       'update-checking-toast'
     );
+    expect(screen.getByTestId('update-checking-toast')).toHaveAttribute(
+      'data-agent-elements-card-width',
+      'floating-toast'
+    );
 
     unmount();
     renderUpdateToast({ state: 'up-to-date', currentVersion: '1.0.0' });
     expect(screen.getByTestId('update-up-to-date-toast')).toHaveAttribute(
       'data-agent-elements-shell',
       'update-up-to-date-toast'
+    );
+    expect(screen.getByTestId('update-up-to-date-toast')).toHaveAttribute(
+      'data-agent-elements-card-width',
+      'floating-toast'
     );
     expect(screen.getByTestId('agent-elements-update-toast-icon')).toHaveClass('agent-elements-status-pill');
 

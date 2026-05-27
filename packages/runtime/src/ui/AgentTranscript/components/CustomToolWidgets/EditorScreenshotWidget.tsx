@@ -14,6 +14,8 @@
 import React, { useState, useEffect } from 'react';
 import type { CustomToolWidgetProps } from './index';
 import { parseToolResult } from '../../../../ai/server/transcript/toolResultParser';
+import { AgentStatusPill, AgentToolCard, type AgentStatusTone, type AgentToolStatus } from '../../../AgentElements/AgentElementsPrimitives';
+import { MaterialSymbol } from '../../../icons/MaterialSymbol';
 
 /**
  * Extract a display name from a file path
@@ -205,6 +207,14 @@ function isToolError(result: any, message: any): boolean {
   return false;
 }
 
+function formatUnknownError(value: unknown): string {
+  if (typeof value === 'string') return value;
+  if (value && typeof value === 'object' && 'message' in value && typeof (value as { message?: unknown }).message === 'string') {
+    return (value as { message: string }).message;
+  }
+  return 'Screenshot capture failed';
+}
+
 /**
  * Extract error message from tool result
  */
@@ -238,15 +248,35 @@ function extractErrorMessage(result: any, message: any): string | null {
 
   // Handle direct error field
   if (result.error) {
-    return typeof result.error === 'string' ? result.error : JSON.stringify(result.error);
+    return formatUnknownError(result.error);
   }
 
   return null;
 }
 
+function getCardStatus(isLoading: boolean, hasError: boolean, hasImage: boolean): AgentToolStatus {
+  if (isLoading) return 'running';
+  if (hasError) return 'error';
+  if (hasImage) return 'completed';
+  return 'running';
+}
+
+function getStatusTone(status: AgentToolStatus): AgentStatusTone {
+  if (status === 'completed') return 'success';
+  if (status === 'error') return 'error';
+  if (status === 'running') return 'running';
+  return 'neutral';
+}
+
+function getStatusLabel(status: AgentToolStatus): string {
+  if (status === 'completed') return 'Captured';
+  if (status === 'error') return 'Failed';
+  if (status === 'running') return 'Loading';
+  return 'Pending';
+}
+
 export const EditorScreenshotWidget: React.FC<CustomToolWidgetProps> = ({
   message,
-  workspacePath,
   readFile
 }) => {
   const [showLightbox, setShowLightbox] = useState(false);
@@ -310,21 +340,16 @@ export const EditorScreenshotWidget: React.FC<CustomToolWidgetProps> = ({
   const inlineImageData = extractImageData(parsedResult);
   const imageData = inlineImageData || persistedImageData;
 
-  // Log image source and size for debugging
-  if (imageData) {
-    const source = inlineImageData ? 'inline' : 'file-system';
-    const sizeBytes = Math.floor((imageData.imageBase64.length * 3) / 4);
-    const sizeMB = (sizeBytes / 1024 / 1024).toFixed(2);
-    // console.log(`[EditorScreenshotWidget] Image loaded: ${sizeMB} MB, source: ${source}, mimeType: ${imageData.mimeType}`);
-  }
-
   const hasError = isToolError(parsedResult, message);
   const errorMessage = extractErrorMessage(parsedResult, message) || persistedLoadError;
+  const isErrorState = hasError || !!persistedLoadError;
 
   // Build image source URL
   const imageSrc = imageData
     ? `data:${imageData.mimeType};base64,${imageData.imageBase64}`
     : null;
+  const cardStatus = getCardStatus(loadingPersistedFile, isErrorState, !!imageSrc);
+  const statusLabel = getStatusLabel(cardStatus);
 
   // Close lightbox on Escape key
   useEffect(() => {
@@ -341,85 +366,119 @@ export const EditorScreenshotWidget: React.FC<CustomToolWidgetProps> = ({
   }, [showLightbox]);
 
   return (
-    <div className="editor-screenshot-widget rounded bg-nim-secondary border border-nim overflow-hidden">
-      <div className="flex items-center gap-2 p-2">
-        <div className="flex-1 min-w-0 flex flex-col gap-0.5">
-          <span className="text-xs text-nim-faint font-medium">Editor Screenshot</span>
-          <span className="font-mono text-sm text-nim font-semibold overflow-hidden text-ellipsis whitespace-nowrap" title={filePath}>
+    <>
+      <AgentToolCard
+        className="editor-screenshot-widget agent-elements-editor-screenshot-card"
+        data-agent-elements-shell="editor-screenshot-card"
+        data-component="RichTranscriptAgentElementsEditorScreenshot"
+        data-testid="agent-elements-editor-screenshot-card"
+        icon={<MaterialSymbol icon="screenshot_monitor" size={16} />}
+        status={cardStatus}
+        subtitle={(
+          <span className="agent-elements-editor-screenshot-file font-mono" title={filePath || fileName}>
             {fileName}
           </span>
-        </div>
-        {/* Loading spinner when loading from persisted file */}
-        {loadingPersistedFile && (
-          <div className="w-5 h-5 shrink-0 flex items-center justify-center" title="Loading image...">
-            <div className="w-4 h-4 border-2 border-nim border-t-nim-primary rounded-full animate-spin" />
-          </div>
         )}
-        {/* Show error badge if there was an error */}
-        {hasError && !loadingPersistedFile && (
-          <span className="text-[0.7rem] font-semibold py-0.5 px-2 rounded-full uppercase tracking-wide shrink-0 text-nim-error bg-[color-mix(in_srgb,var(--nim-error)_15%,transparent)]">
-            Failed
-          </span>
+        title="Editor Screenshot"
+        trailing={(
+          <AgentStatusPill tone={getStatusTone(cardStatus)}>
+            <span data-testid="agent-elements-editor-screenshot-status">{statusLabel}</span>
+          </AgentStatusPill>
         )}
-      </div>
-
-      {/* Large inline image preview */}
-      {imageSrc && !loadingPersistedFile && (
-        <button
-          className="w-full p-0 m-0 border-0 border-t border-nim bg-nim-tertiary cursor-pointer overflow-hidden block transition-opacity duration-200 hover:opacity-90"
-          onClick={() => setShowLightbox(true)}
-          title="Click to enlarge"
+      >
+        <div
+          className="agent-elements-editor-screenshot-body flex flex-col gap-[var(--an-spacing-sm)]"
+          data-agent-elements-shell="editor-screenshot-body"
+          data-testid="agent-elements-editor-screenshot-body"
         >
-          <img
-            src={imageSrc}
-            alt={fileName}
-            className="w-full max-h-[400px] object-contain object-top-left"
-          />
-        </button>
-      )}
+          {imageSrc && !loadingPersistedFile ? (
+            <button
+              className="agent-elements-editor-screenshot-preview block w-full cursor-pointer overflow-hidden rounded-[var(--an-tool-border-radius)] border border-[var(--an-tool-border-color)] bg-[var(--an-background)] p-0 transition-opacity duration-200 hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--an-input-focus-outline,var(--an-tool-border-color))]"
+              data-testid="agent-elements-editor-screenshot-preview"
+              onClick={() => setShowLightbox(true)}
+              type="button"
+            >
+              <img
+                src={imageSrc}
+                alt={fileName}
+                className="agent-elements-editor-screenshot-image h-auto max-h-[25rem] w-full object-contain object-left-top"
+              />
+            </button>
+          ) : null}
 
-      {errorMessage && (
-        <div className="mx-2 mb-2 p-2 bg-[color-mix(in_srgb,var(--nim-error)_10%,transparent)] border border-[color-mix(in_srgb,var(--nim-error)_30%,transparent)] rounded text-nim-error text-xs leading-relaxed">
-          {errorMessage}
+          {loadingPersistedFile ? (
+            <div
+              className="agent-elements-editor-screenshot-loading flex items-center gap-[var(--an-spacing-xs)] rounded-[var(--an-spacing-xs)] border border-[var(--an-tool-border-color)] bg-[var(--an-background-tertiary)] px-[var(--an-spacing-sm)] py-[var(--an-spacing-xs)] text-sm text-[var(--an-tool-color-muted)]"
+              data-testid="agent-elements-editor-screenshot-loading"
+            >
+              <span aria-hidden="true">
+                <MaterialSymbol icon="hourglass_empty" size={16} />
+              </span>
+              Loading persisted screenshot output
+            </div>
+          ) : null}
+
+          {errorMessage ? (
+            <div
+              className="agent-elements-editor-screenshot-error rounded-[var(--an-spacing-xs)] border border-[color-mix(in_srgb,var(--an-diff-removed-text)_30%,transparent)] bg-[var(--an-diff-removed-bg)] px-[var(--an-spacing-sm)] py-[var(--an-spacing-xs)] text-sm leading-[1.45] text-[var(--an-diff-removed-text)] select-text"
+              data-testid="agent-elements-editor-screenshot-error"
+            >
+              {errorMessage}
+            </div>
+          ) : null}
+
+          {!imageSrc && !loadingPersistedFile && !errorMessage ? (
+            <div
+              className="agent-elements-editor-screenshot-empty rounded-[var(--an-spacing-xs)] border border-[var(--an-tool-border-color)] bg-[var(--an-background-tertiary)] px-[var(--an-spacing-sm)] py-[var(--an-spacing-xs)] text-sm text-[var(--an-tool-color-muted)]"
+              data-testid="agent-elements-editor-screenshot-empty"
+            >
+              Waiting for screenshot output
+            </div>
+          ) : null}
         </div>
-      )}
+      </AgentToolCard>
 
-      {/* Lightbox modal */}
       {showLightbox && imageSrc && (
         <div
-          className="fixed inset-0 z-[9999] flex items-center justify-center bg-[color-mix(in_srgb,var(--nim-bg)_90%,transparent)] backdrop-blur"
+          className="agent-elements-editor-screenshot-lightbox fixed inset-0 z-[9999] flex items-center justify-center bg-[color-mix(in_srgb,var(--an-background)_92%,transparent)] p-[var(--an-spacing-xxl)]"
+          data-agent-elements-shell="editor-screenshot-lightbox"
+          data-testid="agent-elements-editor-screenshot-lightbox"
           onClick={() => setShowLightbox(false)}
           role="dialog"
           aria-modal="true"
-          aria-label="Image preview"
+          aria-label="Editor screenshot preview"
         >
           <div
-            className="relative max-w-[90vw] max-h-[90vh] flex flex-col items-center"
+            className="agent-elements-editor-screenshot-lightbox-panel relative flex max-h-[90vh] max-w-[90vw] flex-col items-center gap-[var(--an-spacing-sm)] rounded-[var(--an-tool-border-radius)] border border-[var(--an-tool-border-color)] bg-[var(--an-tool-background)] p-[var(--an-spacing-sm)]"
             onClick={(e) => e.stopPropagation()}
           >
             <button
-              className="absolute top-2 right-2 w-10 h-10 p-2 bg-nim-secondary border border-nim rounded-full text-nim-muted cursor-pointer transition-all duration-200 flex items-center justify-center z-10 shadow-lg hover:bg-nim-hover hover:text-nim hover:scale-110"
+              className="agent-elements-editor-screenshot-lightbox-close absolute right-[var(--an-spacing-sm)] top-[var(--an-spacing-sm)] z-10 inline-flex h-8 w-8 cursor-pointer items-center justify-center rounded-[var(--an-radius-sm)] border border-[var(--an-tool-border-color)] bg-[var(--an-tool-background)] p-0 text-[var(--an-tool-color-muted)] transition-colors duration-200 hover:bg-[var(--an-background-tertiary)] hover:text-[var(--an-tool-color)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--an-input-focus-outline,var(--an-tool-border-color))]"
+              data-testid="agent-elements-editor-screenshot-lightbox-close"
               onClick={() => setShowLightbox(false)}
               aria-label="Close (Escape)"
               title="Close (Escape)"
+              type="button"
             >
-              <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                <path d="M15 5L5 15M5 5L15 15" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
+              <span aria-hidden="true">
+                <MaterialSymbol icon="close" size={18} />
+              </span>
             </button>
             <img
               src={imageSrc}
               alt={fileName}
-              className="max-w-full max-h-[calc(90vh-3rem)] object-contain rounded-lg shadow-2xl"
+              className="agent-elements-editor-screenshot-lightbox-image max-h-[calc(90vh-5rem)] max-w-full rounded-[var(--an-tool-border-radius)] object-contain"
             />
-            <div className="mt-3 text-sm text-nim-muted font-mono bg-nim-secondary py-2 px-3 rounded text-center flex flex-col gap-1">
+            <div
+              className="agent-elements-editor-screenshot-caption max-w-full overflow-hidden text-ellipsis whitespace-nowrap rounded-[var(--an-spacing-xs)] bg-[var(--an-background-tertiary)] px-[var(--an-spacing-sm)] py-[var(--an-spacing-xs)] font-mono text-xs text-[var(--an-tool-color-muted)]"
+              title={filePath || fileName}
+            >
               {fileName}
-              <span className="text-xs text-nim-faint font-sans">Click outside or press Escape to close</span>
             </div>
           </div>
         </div>
       )}
-    </div>
+    </>
   );
 };
 

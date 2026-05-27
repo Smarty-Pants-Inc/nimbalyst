@@ -49,6 +49,10 @@ describe('ImageViewer Agent Elements shell', () => {
     const loading = screen.getByTestId('agent-elements-image-viewer-loading');
     expect(loading).toHaveAttribute('data-agent-elements-shell', 'image-viewer-loading');
     expect(loading).toHaveTextContent('Loading image');
+    const loadingCard = screen.getByTestId('agent-elements-image-viewer-loading-card');
+    expect(loadingCard).toHaveClass('agent-elements-tool-card');
+    expect(loadingCard).toHaveAttribute('data-agent-elements-card-padding', 'symmetric-inline');
+    expect(loadingCard).toHaveAttribute('data-agent-elements-card-width', 'bounded-fallback');
 
     rerender(<ImageViewer filePath="/workspace/assets/broken.png" fileName="broken.png" />);
     const image = await screen.findByRole('img', { name: 'broken.png' });
@@ -59,6 +63,12 @@ describe('ImageViewer Agent Elements shell', () => {
     expect(error).toHaveAttribute('data-agent-elements-shell', 'image-viewer-error');
     expect(error).toHaveTextContent('Failed to load image');
     expect(error).toHaveTextContent('broken.png');
+    const errorCard = screen.getByTestId('agent-elements-image-viewer-error-card');
+    expect(errorCard).toHaveClass('agent-elements-tool-card');
+    expect(errorCard).toHaveAttribute('data-agent-elements-card-padding', 'symmetric-inline');
+    expect(errorCard).toHaveAttribute('data-agent-elements-card-width', 'bounded-fallback');
+    expect(errorCard.className).toContain('--agent-elements-card-inline-padding');
+    expect(errorCard.className).toContain('--agent-elements-card-block-padding');
   });
 
   it('keeps the source constrained to Agent Elements-compatible image viewer styling', () => {
@@ -66,7 +76,12 @@ describe('ImageViewer Agent Elements shell', () => {
 
     expect(source).toContain('agent-elements-image-viewer');
     expect(source).toContain('data-agent-elements-shell="image-viewer"');
+    expect(source).toContain('data-agent-elements-card-padding="symmetric-inline"');
+    expect(source).toContain('data-agent-elements-card-width="bounded-fallback"');
+    expect(source).toContain('--agent-elements-card-inline-padding');
+    expect(source).toContain('--agent-elements-card-block-padding');
     expect(source).toContain('nimAssetUrl');
+    expect(source).not.toMatch(/agent-elements-tool-card[^`'"]*\b(?:p-\[var\(--an-spacing|px-\[var\(--an-spacing|py-\[var\(--an-spacing)/);
     expect(source).not.toMatch(/bg-nim|text-nim|border-nim|var\(--nim/);
     expect(source).not.toMatch(/rounded-md|rounded-lg|rounded-xl|rounded-2xl/);
     expect(source).not.toMatch(/text-white|bg-white|bg-black|tracking-|active:scale|transition-all/);

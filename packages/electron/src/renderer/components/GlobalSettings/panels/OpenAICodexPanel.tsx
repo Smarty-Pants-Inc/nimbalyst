@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { useAtomValue, useSetAtom } from 'jotai';
 import { ProviderConfig, Model } from '../../Settings/SettingsView';
 import { SettingsToggle } from '../SettingsToggle';
+import { createProviderPanelChrome } from './providerPanelChrome';
 import {
   codexUsageIndicatorEnabledAtom,
   setCodexUsageIndicatorEnabledAtom,
@@ -31,6 +32,35 @@ interface CodexAuthStatus {
   planType: string | null;
   message: string;
   error?: string;
+}
+
+const chrome = createProviderPanelChrome({
+  headerClassName: 'provider-panel-header openai-codex-panel-header',
+  sectionClassName: 'provider-panel-section openai-codex-section',
+  configCardClassName: 'openai-codex-auth-card',
+  inputClassName: 'api-key-input openai-codex-api-key-input',
+  loadingClassName: 'openai-codex-loading',
+  modelRowClassName: 'openai-codex-model-row',
+  testButtonClassName: 'openai-codex-test-button',
+  testErrorClassName: 'openai-codex-test-error',
+  emptyClassName: 'openai-codex-empty',
+});
+
+const codexCardPaddingClass =
+  '[--agent-elements-card-block-padding:var(--an-spacing-lg)] [--agent-elements-card-inline-padding:var(--an-spacing-lg)]';
+const codexAuthCardClass =
+  `agent-elements-tool-card mb-[var(--an-spacing-xl)] ${codexCardPaddingClass}`;
+const codexHelpTextClass =
+  'text-xs leading-relaxed text-[var(--an-foreground-muted)]';
+const codexFinePrintClass =
+  'mt-[var(--an-spacing-sm)] text-[11px] leading-relaxed text-[var(--an-foreground-subtle)]';
+const codexAuthMethodButtonBaseClass =
+  'auth-method-button flex-1 cursor-pointer rounded-[var(--an-input-border-radius)] border px-[var(--an-spacing-lg)] py-[var(--an-spacing-sm)] text-[13px] font-medium transition-[background-color,border-color,color,box-shadow] duration-150 ease-out focus:outline-none focus:ring-2 focus:ring-[var(--an-focus-ring)]';
+
+function getCodexAuthMethodButtonClass(isSelected: boolean): string {
+  return isSelected
+    ? `${codexAuthMethodButtonBaseClass} border-[var(--an-primary-color)] bg-[color-mix(in_srgb,var(--an-primary-color)_10%,var(--an-background))] text-[var(--an-primary-color)] shadow-[inset_0_0_0_1px_var(--an-primary-color)]`
+    : `${codexAuthMethodButtonBaseClass} border-[var(--an-border-color)] bg-[var(--an-background-tertiary)] text-[var(--an-foreground)] hover:border-[var(--an-primary-color)] hover:bg-[var(--an-background-secondary)]`;
 }
 
 export function OpenAICodexPanel({
@@ -147,11 +177,12 @@ export function OpenAICodexPanel({
       data-testid="agent-elements-openai-codex-panel"
     >
       <div
-        className="provider-panel-header openai-codex-panel-header agent-elements-settings-panel-header mb-6 pb-4 border-b border-[var(--nim-border)]"
+        className={chrome.header}
+        data-agent-elements-shell="openai-codex-header"
         data-testid="agent-elements-openai-codex-header"
       >
-        <h3 className="provider-panel-title text-xl font-semibold leading-tight mb-2 text-[var(--nim-text)]">OpenAI Codex</h3>
-        <p className="provider-panel-description text-sm leading-relaxed text-[var(--nim-text-muted)]">
+        <h3 className={chrome.title}>OpenAI Codex</h3>
+        <p className={chrome.description}>
           Advanced code generation and completion powered by OpenAI Codex models.
           Provides intelligent code suggestions and automated programming assistance.
         </p>
@@ -176,14 +207,15 @@ export function OpenAICodexPanel({
 
       {acpEnabled && (
         <div
-          className="provider-panel-section openai-codex-acp-section agent-elements-settings-section py-4 mb-4 border-b border-[var(--nim-border)]"
+          className={`${chrome.section} openai-codex-acp-section`}
+          data-agent-elements-shell="openai-codex-acp-section"
           data-section="legacy-acp-transport"
           data-testid="agent-elements-openai-codex-acp-section"
         >
-          <h4 className="provider-panel-section-title text-base font-semibold mb-3 text-[var(--nim-text)]">
-            ACP Transport <span className="text-xs font-normal text-[var(--nim-text-muted)]">(legacy)</span>
+          <h4 className={chrome.sectionTitle}>
+            ACP Transport <span className="text-xs font-normal text-[var(--an-foreground-muted)]">(legacy)</span>
           </h4>
-          <p className="text-[13px] text-[var(--nim-text-muted)] mb-3 leading-relaxed">
+          <p className="mb-[var(--an-spacing-lg)] text-[13px] leading-relaxed text-[var(--an-foreground-muted)]">
             <strong>OpenAI Codex (ACP)</strong> is already enabled for this installation, but new Codex
             sessions now use the app-server transport through the main <strong>OpenAI Codex</strong> provider.
           </p>
@@ -203,38 +235,39 @@ export function OpenAICodexPanel({
           data-agent-elements-shell="openai-codex-auth-section"
           data-section="sign-in"
           data-testid="codex-auth-section"
-          className="codex-auth-section openai-codex-auth-section agent-elements-settings-section provider-panel-section py-4 mb-4 border-b border-[var(--nim-border)] last:border-b-0 last:mb-0 last:pb-0"
+          className={`${chrome.section} codex-auth-section openai-codex-auth-section`}
         >
-          <h4 className="provider-panel-section-title text-base font-semibold mb-3 text-[var(--nim-text)]">Sign In</h4>
+          <h4 className={chrome.sectionTitle}>Sign In</h4>
 
           {isLoggedIn ? (
             <div
-              className="status-box-success openai-codex-signed-in-card agent-elements-tool-card mb-4 py-3.5 px-4 rounded-lg text-[13px] flex items-center gap-3 justify-between bg-[rgba(16,185,129,0.08)] border border-[rgba(16,185,129,0.2)]"
+              className={`status-box-success openai-codex-signed-in-card ${codexAuthCardClass} flex items-center justify-between gap-[var(--an-spacing-lg)] text-[13px] border-[color-mix(in_srgb,var(--an-success-color)_28%,var(--an-border-color))] bg-[color-mix(in_srgb,var(--an-success-color)_8%,var(--an-background))]`}
+              data-agent-elements-shell="openai-codex-signed-in-card"
               data-testid="agent-elements-openai-codex-signed-in-card"
             >
-              <div className="flex items-center gap-3 flex-1">
-                <span className="status-box-icon text-xl leading-none shrink-0 text-[var(--nim-success)]">✓</span>
+              <div className="flex flex-1 items-center gap-[var(--an-spacing-lg)]">
+                <span className="status-box-icon shrink-0 text-xl leading-none text-[var(--an-success-color)]">✓</span>
                 <div className="status-box-content flex flex-col gap-1 flex-1">
-                  <span className="status-box-title font-semibold text-sm text-[var(--nim-text)]">
+                  <span className="status-box-title text-sm font-semibold text-[var(--an-foreground)]">
                     {authStatus?.authMode === 'chatgpt' ? 'Signed in with ChatGPT' : authStatus?.authMode === 'apikey' ? 'Signed in with API key' : 'Signed in'}
                   </span>
                   {(authStatus?.email || authStatus?.planType) && (
-                    <span className="status-box-subtitle text-xs text-[var(--nim-text-muted)]">
+                    <span className="status-box-subtitle text-xs text-[var(--an-foreground-muted)]">
                       {authStatus?.email ?? ''}{planLabel}
                     </span>
                   )}
                 </div>
               </div>
-              <div className="status-box-actions flex gap-2 shrink-0">
+              <div className="status-box-actions flex shrink-0 gap-[var(--an-spacing-sm)]">
                 <button
-                  className="btn-small py-1.5 px-3 rounded text-xs font-medium cursor-pointer transition-all bg-[var(--nim-bg-secondary)] border border-[var(--nim-border)] text-[var(--nim-text)] hover:bg-[var(--nim-bg-hover)]"
+                  className={`${chrome.secondaryButton} px-[var(--an-spacing-md)] py-[var(--an-spacing-xs)] text-xs`}
                   onClick={checkStatus}
                   disabled={authBusy !== null}
                 >
                   Refresh
                 </button>
                 <button
-                  className="btn-small py-1.5 px-3 rounded text-xs font-medium cursor-pointer transition-all bg-[var(--nim-bg-secondary)] border border-[var(--nim-border)] text-[var(--nim-text)] hover:bg-[var(--nim-bg-hover)]"
+                  className={`${chrome.secondaryButton} px-[var(--an-spacing-md)] py-[var(--an-spacing-xs)] text-xs`}
                   onClick={handleLogout}
                   disabled={authBusy !== null}
                   data-testid="codex-logout"
@@ -245,24 +278,16 @@ export function OpenAICodexPanel({
             </div>
           ) : (
             <>
-              <div className="auth-method-row flex gap-2 mb-4">
+              <div className="auth-method-row mb-[var(--an-spacing-xl)] flex gap-[var(--an-spacing-sm)]">
                 <button
-                  className={`auth-method-button flex-1 py-2.5 px-4 rounded-md text-[13px] font-medium cursor-pointer transition-all border ${
-                    selectedAuthMethod === 'chatgpt'
-                      ? 'border-2 border-[var(--nim-primary)] bg-[rgba(59,130,246,0.1)] text-[var(--nim-primary)]'
-                      : 'border-[var(--nim-border)] bg-[var(--nim-bg-secondary)] text-[var(--nim-text)] hover:bg-[var(--nim-bg-hover)] hover:border-[var(--nim-border-focus)]'
-                  }`}
+                  className={getCodexAuthMethodButtonClass(selectedAuthMethod === 'chatgpt')}
                   onClick={() => setSelectedAuthMethod('chatgpt')}
                   data-testid="codex-auth-method-chatgpt"
                 >
                   ChatGPT (Recommended)
                 </button>
                 <button
-                  className={`auth-method-button flex-1 py-2.5 px-4 rounded-md text-[13px] font-medium cursor-pointer transition-all border ${
-                    selectedAuthMethod === 'api-key'
-                      ? 'border-2 border-[var(--nim-primary)] bg-[rgba(59,130,246,0.1)] text-[var(--nim-primary)]'
-                      : 'border-[var(--nim-border)] bg-[var(--nim-bg-secondary)] text-[var(--nim-text)] hover:bg-[var(--nim-bg-hover)] hover:border-[var(--nim-border-focus)]'
-                  }`}
+                  className={getCodexAuthMethodButtonClass(selectedAuthMethod === 'api-key')}
                   onClick={() => setSelectedAuthMethod('api-key')}
                   data-testid="codex-auth-method-apikey"
                 >
@@ -272,15 +297,16 @@ export function OpenAICodexPanel({
 
               {selectedAuthMethod === 'chatgpt' && (
                 <div
-                  className="openai-codex-chatgpt-card agent-elements-tool-card mb-4 p-4 bg-[var(--nim-bg-secondary)] border border-[var(--nim-border)] rounded-lg"
+                  className={`openai-codex-chatgpt-card ${codexAuthCardClass}`}
+                  data-agent-elements-shell="openai-codex-chatgpt-card"
                   data-testid="agent-elements-openai-codex-chatgpt-card"
                 >
-                  <p className="text-xs leading-relaxed text-[var(--nim-text-muted)] mb-3">
+                  <p className={`${codexHelpTextClass} mb-[var(--an-spacing-lg)]`}>
                     Authenticate with your ChatGPT Pro, Plus, or Team subscription. No API credits needed.
                   </p>
-                  <div className="flex gap-2">
+                  <div className="flex gap-[var(--an-spacing-sm)]">
                     <button
-                      className="nim-btn-primary flex-1"
+                      className={`${chrome.primaryButton} flex-1`}
                       onClick={handleChatGptLogin}
                       disabled={authBusy !== null}
                       data-testid="codex-login-chatgpt"
@@ -288,14 +314,14 @@ export function OpenAICodexPanel({
                       {authBusy === 'chatgpt' ? 'Opening browser…' : 'Sign in with ChatGPT'}
                     </button>
                     <button
-                      className="nim-btn-secondary"
+                      className={chrome.secondaryButton}
                       onClick={checkStatus}
                       disabled={authBusy !== null}
                     >
                       Refresh
                     </button>
                   </div>
-                  <p className="text-[11px] leading-relaxed text-[var(--nim-text-faint)] mt-2">
+                  <p className={codexFinePrintClass}>
                     Opens your default browser. Complete the OpenAI sign-in flow; Nimbalyst updates automatically when you return.
                   </p>
                 </div>
@@ -303,24 +329,26 @@ export function OpenAICodexPanel({
 
               {selectedAuthMethod === 'api-key' && (
                 <div
-                  className="openai-codex-apikey-card agent-elements-tool-card mb-4 p-4 bg-[var(--nim-bg-secondary)] border border-[var(--nim-border)] rounded-lg"
+                  className={`openai-codex-apikey-card ${codexAuthCardClass}`}
+                  data-agent-elements-shell="openai-codex-apikey-card"
                   data-testid="agent-elements-openai-codex-apikey-card"
                 >
-                  <p className="text-xs leading-relaxed text-[var(--nim-text-muted)] mb-3">
+                  <p className={`${codexHelpTextClass} mb-[var(--an-spacing-lg)]`}>
                     Use an OpenAI API key. Pay-per-use with API credits — more expensive than the ChatGPT subscription path.
                   </p>
-                  <div className="api-key-row flex gap-2 items-center">
+                  <div className="api-key-row flex items-center gap-[var(--an-spacing-sm)]">
                     <input
+                      aria-label="OpenAI Codex API key"
                       type="password"
                       value={pendingApiKey}
                       onChange={(e) => setPendingApiKey(e.target.value)}
                       onFocus={(e) => e.target.select()}
                       placeholder="sk-..."
-                      className="api-key-input flex-1 py-2 px-3 rounded-md bg-[var(--nim-bg)] border border-[var(--nim-border)] text-[var(--nim-text)] outline-none font-mono focus:border-[var(--nim-primary)]"
+                      className={chrome.input}
                       data-testid="codex-apikey-input"
                     />
                     <button
-                      className="nim-btn-primary"
+                      className={chrome.primaryButton}
                       onClick={handleApiKeyLogin}
                       disabled={authBusy !== null || !pendingApiKey.trim()}
                       data-testid="codex-login-apikey"
@@ -328,8 +356,8 @@ export function OpenAICodexPanel({
                       {authBusy === 'apikey' ? 'Saving…' : 'Save'}
                     </button>
                   </div>
-                  <p className="text-[11px] leading-relaxed text-[var(--nim-text-faint)] mt-2">
-                    Stored by Codex in <code>~/.codex/auth.json</code>, not in Nimbalyst settings.
+                  <p className={codexFinePrintClass}>
+                    Stored by Codex in <code className="rounded-[calc(var(--an-tool-border-radius)-6px)] bg-[var(--an-background-tertiary)] px-[var(--an-spacing-xxs)] text-[var(--an-foreground-muted)]">~/.codex/auth.json</code>, not in Nimbalyst settings.
                   </p>
                 </div>
               )}
@@ -337,7 +365,13 @@ export function OpenAICodexPanel({
           )}
 
           {authError && (
-            <p className="openai-codex-auth-error agent-elements-tool-card text-xs text-[var(--nim-error)] mt-2" data-testid="codex-auth-error">{authError}</p>
+            <p
+              className={`openai-codex-auth-error agent-elements-tool-card mt-[var(--an-spacing-sm)] text-xs text-[var(--an-error-color)] ${codexCardPaddingClass}`}
+              data-agent-elements-shell="openai-codex-auth-error"
+              data-testid="codex-auth-error"
+            >
+              {authError}
+            </p>
           )}
         </div>
       )}

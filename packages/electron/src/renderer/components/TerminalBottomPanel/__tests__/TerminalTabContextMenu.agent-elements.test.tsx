@@ -2,6 +2,8 @@
 
 import '@testing-library/jest-dom/vitest';
 import React from 'react';
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { fireEvent, render, screen, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { TerminalTabContextMenu } from '../TerminalTabContextMenu';
@@ -22,6 +24,18 @@ vi.mock('@nimbalyst/runtime', async () => {
 });
 
 describe('TerminalTabContextMenu Agent Elements shell', () => {
+  it('keeps terminal tab menu card intent and gutters explicit in source', () => {
+    const source = readFileSync(resolve(__dirname, '../TerminalTabContextMenu.tsx'), 'utf8');
+
+    expect(source).toContain('data-agent-elements-card-padding="symmetric-inline"');
+    expect(source).toContain('data-agent-elements-card-width="floating-menu"');
+    expect(source).toContain('px-[var(--agent-elements-card-inline-padding)]');
+    expect(source).toContain('py-[var(--agent-elements-card-block-padding)]');
+    expect(source).not.toMatch(/agent-elements-terminal-tab-menu[^\n"]*\bp-1\b/);
+    expect(source).not.toMatch(/rounded-\[(?:8|10)px\]/);
+    expect(source).not.toMatch(/var\(--nim-[^)]+\)/);
+  });
+
   it('renders an Agent Elements tab menu shell while preserving enabled and disabled tab actions', () => {
     const onClose = vi.fn();
     const onCloseTab = vi.fn();
@@ -49,6 +63,8 @@ describe('TerminalTabContextMenu Agent Elements shell', () => {
     expect(menu).toHaveAttribute('data-component', 'TerminalTabContextMenu');
     expect(menu).toHaveAttribute('data-agent-elements-shell', 'terminal-tab-context-menu');
     expect(menu).toHaveAttribute('data-agent-elements-testid', 'agent-elements-terminal-tab-menu');
+    expect(menu).toHaveAttribute('data-agent-elements-card-padding', 'symmetric-inline');
+    expect(menu).toHaveAttribute('data-agent-elements-card-width', 'floating-menu');
     expect(menu).toHaveAttribute('data-terminal-id', 'term-2');
     expect(menu.className).not.toMatch(/rounded-md|rgba|shadow-\[0_4px_12px|--nim-bg|--nim-border|--nim-text/);
 

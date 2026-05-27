@@ -23,7 +23,17 @@ import {
 import type { PromptMarker } from '../types';
 import { formatShortTime } from '../../../utils/dateUtils';
 import { MaterialSymbol } from '../../icons/MaterialSymbol';
-const tableOfContentsIconUrl = new URL('../../../images/icons/table-of-contents.svg', import.meta.url).href;
+
+const FLOATING_ACTION_BUTTON_CLASS =
+  'floating-transcript-button agent-elements-floating-transcript-button pointer-events-auto inline-flex h-9 items-center justify-center gap-1.5 rounded-[var(--an-radius-sm)] border border-[var(--an-tool-border-color)] bg-[var(--an-background)] text-[12px] font-medium text-[var(--an-foreground-muted)] cursor-pointer motion-safe:transition-colors motion-safe:duration-150 hover:bg-[var(--an-background-secondary)] hover:text-[var(--an-tool-color)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--an-input-focus-outline)]';
+const FLOATING_ICON_BUTTON_CLASS = `${FLOATING_ACTION_BUTTON_CLASS} w-9`;
+const FLOATING_PHASE_BUTTON_CLASS = `${FLOATING_ACTION_BUTTON_CLASS} px-2.5`;
+const FLOATING_MENU_CLASS =
+  'agent-elements-floating-transcript-menu max-h-[min(500px,calc(100vh-24px))] overflow-y-auto rounded-[var(--an-tool-border-radius)] border border-[var(--an-tool-border-color)] bg-[var(--an-background)] p-1 text-[13px] text-[var(--an-tool-color)] z-[1000] pointer-events-auto outline-none';
+const FLOATING_MENU_ITEM_CLASS =
+  'agent-elements-floating-transcript-menu-item flex w-full items-start gap-2 rounded-[calc(var(--an-tool-border-radius)-4px)] border-0 bg-transparent px-2.5 py-2 text-left text-[var(--an-tool-color)] cursor-pointer motion-safe:transition-colors motion-safe:duration-150 hover:bg-[var(--an-background-secondary)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-[var(--an-input-focus-outline)]';
+const FLOATING_PHASE_ITEM_CLASS =
+  'agent-elements-floating-transcript-menu-item flex w-full items-center gap-2 rounded-[calc(var(--an-tool-border-radius)-4px)] border-0 bg-transparent px-2.5 py-2 text-left text-[0.8125rem] cursor-pointer motion-safe:transition-colors motion-safe:duration-150 hover:bg-[var(--an-background-secondary)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-[var(--an-input-focus-outline)]';
 
 // =============================================================================
 // PromptsMenuButton - Standalone prompts menu dropdown
@@ -85,40 +95,52 @@ export const PromptsMenuButton: React.FC<PromptsMenuButtonProps> = ({
       <div
         ref={refs.setFloating}
         style={floatingStyles}
-        className="floating-transcript-prompts-dropdown min-w-80 max-w-[480px] max-h-[min(500px,calc(100vh-24px))] overflow-y-auto bg-[var(--nim-bg)] border border-[var(--nim-border)] rounded-md shadow-lg z-[1000] pointer-events-auto"
+        className={`floating-transcript-prompts-dropdown ${FLOATING_MENU_CLASS} min-w-80 max-w-[480px]`}
+        data-testid="agent-elements-prompts-menu"
+        data-component="PromptsMenuButton"
+        data-agent-elements-shell="prompts-menu"
         {...getFloatingProps()}
       >
         {prompts.length > 0 ? (
-          <ul className="prompts-list list-none m-0 py-1 px-0">
+          <ul className="prompts-list list-none m-0 p-0">
             {prompts.map((prompt) => (
               <li
                 key={prompt.id}
-                className="prompts-item flex items-start gap-2 px-3 py-2.5 cursor-pointer transition-colors border-b border-[var(--nim-border)] last:border-b-0 hover:bg-[var(--nim-bg-hover)]"
-                onClick={() => handlePromptClick(prompt)}
+                className="prompts-item"
                 title={prompt.promptText}
               >
-                <div className="prompts-item-number text-[var(--nim-text-faint)] text-[11px] font-semibold min-w-8 text-right pt-0.5">#{prompt.id}</div>
-                <div className="prompts-item-text flex-1 text-[var(--nim-text)] text-[13px] leading-snug overflow-hidden text-ellipsis line-clamp-2">
-                  {truncatePrompt(prompt.promptText)}
-                </div>
-                <div className="prompts-item-timestamp text-[var(--nim-text-faint)] text-[11px] whitespace-nowrap pt-0.5">
-                  {formatShortTime(prompt.timestamp)}
-                </div>
+                <button
+                  type="button"
+                  role="menuitem"
+                  className={FLOATING_MENU_ITEM_CLASS}
+                  onClick={() => handlePromptClick(prompt)}
+                >
+                  <span className="prompts-item-number min-w-8 pt-0.5 text-right text-[11px] font-semibold text-[var(--an-foreground-subtle)]">#{prompt.id}</span>
+                  <span className="prompts-item-text flex-1 overflow-hidden text-ellipsis line-clamp-2 text-[13px] leading-snug text-[var(--an-tool-color)]">
+                    {truncatePrompt(prompt.promptText)}
+                  </span>
+                  <span className="prompts-item-timestamp whitespace-nowrap pt-0.5 text-[11px] text-[var(--an-foreground-subtle)]">
+                    {formatShortTime(prompt.timestamp)}
+                  </span>
+                </button>
               </li>
             ))}
           </ul>
         ) : (
-          <div className="prompts-empty py-6 px-4 text-center text-[var(--nim-text-faint)] text-[13px]">No prompts in this session</div>
+          <div className="prompts-empty px-4 py-6 text-center text-[13px] text-[var(--an-foreground-subtle)]">No prompts in this session</div>
         )}
       </div>
     </FloatingPortal>
   ) : null;
 
   return (
-    <div className={className || 'prompts-menu-container inline-flex'}>
+    <div
+      className={className || 'prompts-menu-container agent-elements-prompts-menu-container inline-flex'}
+      data-agent-elements-shell="prompts-menu-button"
+    >
       <button
         ref={refs.setReference}
-        className={buttonClassName || 'floating-transcript-button pointer-events-auto w-9 h-9 rounded-md border border-[var(--nim-border)] bg-[var(--nim-bg)] text-[var(--nim-text)] cursor-pointer flex items-center justify-center transition-all relative shadow-sm hover:bg-[var(--nim-bg-tertiary)] active:scale-95'}
+        className={buttonClassName || `${FLOATING_ICON_BUTTON_CLASS} relative`}
         aria-label="Prompts Menu"
         aria-expanded={showMenu}
         title="Show prompts in this session"
@@ -126,13 +148,9 @@ export const PromptsMenuButton: React.FC<PromptsMenuButtonProps> = ({
           onClick: () => setShowMenu(open => !open),
         })}
       >
-        {/* Table of contents icon */}
-        <i
-          className="icon table-of-contents w-5 h-5 bg-contain bg-no-repeat dark:invert"
-          style={{ backgroundImage: `url(${tableOfContentsIconUrl})` }}
-        />
+        <MaterialSymbol icon="format_list_bulleted" size={18} />
         {prompts.length > 0 && (
-          <span className="prompts-badge absolute -top-1 -right-1 bg-[var(--nim-primary)] text-white text-[10px] font-semibold px-1.5 py-0.5 rounded-full min-w-[18px] text-center leading-none shadow-sm">{prompts.length}</span>
+          <span className="prompts-badge absolute -right-1 -top-1 min-w-[18px] rounded-full bg-[var(--an-primary-color)] px-1.5 py-0.5 text-center text-[10px] font-semibold leading-none text-[var(--an-send-button-color)]">{prompts.length}</span>
         )}
       </button>
       {dropdownContent}
@@ -213,28 +231,38 @@ export const FloatingTranscriptActions: React.FC<FloatingTranscriptActionsProps>
         <div
           ref={refs.setFloating}
           style={floatingStyles}
-          className="min-w-[160px] max-h-[min(320px,calc(100vh-24px))] overflow-y-auto p-1 bg-[var(--nim-bg)] border border-[var(--nim-border)] rounded-md shadow-lg z-[1000] pointer-events-auto outline-none"
+          className={`floating-transcript-phase-menu ${FLOATING_MENU_CLASS} min-w-[160px] max-h-[min(320px,calc(100vh-24px))]`}
+          data-testid="agent-elements-phase-menu"
+          data-component="FloatingTranscriptActions"
+          data-agent-elements-shell="phase-menu"
           {...getFloatingProps()}
         >
           {phaseColumns.map((col) => (
             <button
               key={col.value}
-              className={`flex items-center gap-2 w-full px-2.5 py-2 bg-transparent border-none rounded text-[0.8125rem] cursor-pointer text-left transition-colors duration-150 hover:bg-[var(--nim-bg-hover)] ${currentPhase === col.value ? 'text-[var(--nim-primary)]' : 'text-[var(--nim-text)]'}`}
+              type="button"
+              role="menuitem"
+              className={`${FLOATING_PHASE_ITEM_CLASS} ${currentPhase === col.value ? 'text-[var(--an-primary-color)]' : 'text-[var(--an-tool-color)]'}`}
               onClick={() => {
                 onSetPhase?.(col.value);
                 setShowPhaseMenu(false);
               }}
             >
-              <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: col.color }} />
+              <span
+                className="h-2 w-2 shrink-0 rounded-full bg-[var(--floating-transcript-phase-color)]"
+                style={{ '--floating-transcript-phase-color': col.color } as React.CSSProperties}
+              />
               {col.label}
               {currentPhase === col.value && <MaterialSymbol icon="check" size={14} className="ml-auto" />}
             </button>
           ))}
           {currentPhase && (
             <>
-              <div className="h-px bg-[var(--nim-border)] my-1" />
+              <div className="my-1 h-px bg-[var(--an-tool-border-color)]" />
               <button
-                className="flex items-center gap-2 w-full px-2.5 py-2 bg-transparent border-none rounded text-[var(--nim-text-faint)] text-[0.8125rem] cursor-pointer text-left transition-colors duration-150 hover:bg-[var(--nim-bg-hover)]"
+                type="button"
+                role="menuitem"
+                className={`${FLOATING_PHASE_ITEM_CLASS} text-[var(--an-foreground-muted)]`}
                 onClick={() => {
                   onSetPhase?.(null);
                   setShowPhaseMenu(false);
@@ -252,16 +280,20 @@ export const FloatingTranscriptActions: React.FC<FloatingTranscriptActionsProps>
 
   return (
     <div
-      className={`floating-transcript-actions absolute right-3 flex gap-2 z-[100] pointer-events-none transition-all duration-150 ${
+      className={`floating-transcript-actions agent-elements-floating-transcript-actions absolute right-3 flex gap-2 z-[100] pointer-events-none motion-safe:transition-[top,opacity] motion-safe:duration-150 ${
         searchBarVisible ? 'top-14' : 'top-1.5'
       }`}
+      data-testid="agent-elements-floating-transcript-actions"
+      data-component="FloatingTranscriptActions"
+      data-agent-elements-shell="floating-transcript-actions"
+      data-search-bar-visible={searchBarVisible ? 'true' : 'false'}
     >
       {/* Phase Picker Button */}
       {onSetPhase && phaseColumns && (
         <div className="inline-flex">
           <button
             ref={refs.setReference}
-            className="floating-transcript-button pointer-events-auto h-9 rounded-md border border-[var(--nim-border)] bg-[var(--nim-bg)] text-[var(--nim-text)] cursor-pointer flex items-center gap-1.5 px-2.5 transition-all relative shadow-sm hover:bg-[var(--nim-bg-tertiary)] active:scale-95 text-[12px]"
+            className={FLOATING_PHASE_BUTTON_CLASS}
             aria-label="Set phase"
             aria-expanded={showPhaseMenu}
             title={currentPhase ? `Phase: ${currentPhaseCol?.label || currentPhase}` : 'Set kanban phase'}
@@ -271,13 +303,16 @@ export const FloatingTranscriptActions: React.FC<FloatingTranscriptActionsProps>
           >
             {currentPhaseCol ? (
               <>
-                <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: currentPhaseCol.color }} />
+                <span
+                  className="h-2 w-2 shrink-0 rounded-full bg-[var(--floating-transcript-phase-color)]"
+                  style={{ '--floating-transcript-phase-color': currentPhaseCol.color } as React.CSSProperties}
+                />
                 <span>{currentPhaseCol.label}</span>
               </>
             ) : (
               <>
                 <MaterialSymbol icon="view_kanban" size={16} />
-                <span className="text-[var(--nim-text-faint)]">Phase</span>
+                <span className="text-[var(--an-foreground-subtle)]">Phase</span>
               </>
             )}
           </button>
@@ -294,7 +329,7 @@ export const FloatingTranscriptActions: React.FC<FloatingTranscriptActionsProps>
       {/* Toggle History Button - only shown if onToggleSidebar is provided */}
       {onToggleSidebar && (
         <button
-          className="floating-transcript-button pointer-events-auto w-9 h-9 rounded-md border border-[var(--nim-border)] bg-[var(--nim-bg)] text-[var(--nim-text)] cursor-pointer flex items-center justify-center transition-all relative shadow-sm hover:bg-[var(--nim-bg-tertiary)] active:scale-95"
+          className={FLOATING_ICON_BUTTON_CLASS}
           onClick={onToggleSidebar}
           aria-label={isSidebarCollapsed ? 'Show file history' : 'Hide file history'}
           title={isSidebarCollapsed ? 'Show file history' : 'Hide file history'}

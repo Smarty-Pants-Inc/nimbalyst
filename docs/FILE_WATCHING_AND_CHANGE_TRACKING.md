@@ -9,8 +9,8 @@ This document covers the file watching infrastructure, AI change tracking pipeli
 │  React UI Layer (Renderer)                  │
 │  - TabEditor (conflict handling, diff mode) │
 │  - HistoryDialog (snapshot comparison)      │
-│  - DiffPreview / TextDiffViewer             │
-│  - MonacoDiffViewer / DiffPreviewEditor     │
+│  - TextDiffViewer / MonacoDiffViewer        │
+│  - ImageDiffViewer / DiffPreviewEditor      │
 │  - FilesEditedSidebar (file list)           │
 └──────────────┬──────────────────────────────┘
                │ Reads from Jotai atoms
@@ -483,26 +483,10 @@ Diffs are computed on-demand in the renderer. The algorithm varies by content ty
 
 **File type routing (HistoryDialog.tsx):**
 - **Markdown files:** Rich Lexical diff (`DiffPreviewEditor`) or line-based text diff (`TextDiffViewer`)
-- **Code files:** Monaco built-in diff editor (`MonacoDiffViewer`)
+- **Text/code files:** Monaco built-in diff editor (`MonacoDiffViewer`)
 - **Images:** Pixel-level comparison (`ImageDiffViewer`)
-- **Other files:** `DiffPreview` with inline red/green spans
-
-**Size-based fallback (DiffPreview.tsx):**
-- Content > 500 chars: `diffLines()` (line-based)
-- Content <= 500 chars: `diffWords()` (word-based)
-
-Both use the `diff` npm package.
 
 ### UI Components
-
-#### DiffPreview (Inline Red/Green)
-
-**File:** `packages/electron/src/renderer/components/DiffPreview/DiffPreview.tsx`
-
-Simple inline diff with colored spans:
-- **Added:** `bg-green-500/15 text-green-500`
-- **Removed:** `bg-red-500/15 text-red-500 line-through`
-- **Unchanged:** `text-[var(--nim-text)] opacity-70`
 
 #### TextDiffViewer (Side-by-Side Lines)
 
@@ -764,5 +748,4 @@ Defense in depth: a missed pathway anywhere is still caught somewhere else, with
 | `packages/electron/src/renderer/components/HistoryDialog/TextDiffViewer.tsx` | Line-based side-by-side diff |
 | `packages/electron/src/renderer/components/HistoryDialog/MonacoDiffViewer.tsx` | Monaco-powered code diff |
 | `packages/electron/src/renderer/components/HistoryDialog/DiffPreviewEditor.tsx` | Rich Lexical markdown diff |
-| `packages/electron/src/renderer/components/DiffPreview/DiffPreview.tsx` | Inline red/green diff spans |
 | `packages/electron/src/renderer/components/AgentMode/FilesEditedSidebar.tsx` | Session file list with staging UI |

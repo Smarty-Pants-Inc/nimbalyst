@@ -9,6 +9,7 @@
 import React, { useCallback } from 'react';
 import { useAtomValue, useSetAtom } from 'jotai';
 import { MaterialSymbol } from '@nimbalyst/runtime';
+import { AgentTodoList, type AgentTodoItem } from '@nimbalyst/runtime/ui';
 import { sessionStoreAtom } from '../../store';
 import { todoPanelCollapsedAtom, toggleTodoPanelCollapsedAtom } from '../../store/atoms/agentMode';
 
@@ -46,84 +47,69 @@ export const TodoPanel: React.FC<TodoPanelProps> = React.memo(({
 
   const completedCount = todos.filter(t => t.status === 'completed').length;
   const totalCount = todos.length;
+  const isStreaming = todos.some((todo) => todo.status === 'in_progress');
+  const contentId = `todo-panel-content-${sessionId}`;
+  const items: AgentTodoItem[] = todos.map((todo, index) => ({
+    id: `${sessionId}-${index}`,
+    status: todo.status,
+    content: todo.content,
+    activeForm: todo.activeForm,
+  }));
 
   return (
-    <div className="todo-panel border-t border-[var(--nim-border)] bg-[var(--nim-bg-secondary)]">
-      {/* Header */}
+    <section
+      className="todo-panel agent-elements-agent-mode-todo-panel flex shrink-0 flex-col border-t border-[var(--an-border-color)] bg-[var(--an-background-secondary)] text-[var(--an-foreground)] [container-type:inline-size]"
+      data-agent-elements-shell="agent-mode-todo-panel"
+      data-component="AgentModeTodoPanel"
+      data-session-id={sessionId}
+      data-testid="agent-elements-agent-mode-todo-panel"
+    >
       <button
-        className="todo-panel-header w-full flex items-center gap-2 px-3 py-2 bg-transparent border-none cursor-pointer text-left hover:bg-[var(--nim-bg-hover)]"
+        aria-controls={contentId}
+        aria-expanded={!isCollapsed}
+        className="todo-panel-header agent-elements-agent-mode-todo-header flex min-h-[34px] w-full cursor-pointer items-center gap-[var(--an-spacing-sm)] border-none bg-transparent px-[var(--an-spacing-lg)] py-[var(--an-spacing-sm)] text-left text-[var(--an-foreground-muted)] outline-none transition-[background-color,color] duration-150 ease-out hover:bg-[var(--an-background-tertiary)] hover:text-[var(--an-foreground)] focus-visible:ring-2 focus-visible:ring-[var(--an-focus-ring)]"
+        data-testid="agent-elements-agent-mode-todo-header"
         onClick={handleToggle}
+        type="button"
       >
         <MaterialSymbol
           icon={isCollapsed ? 'chevron_right' : 'expand_more'}
           size={16}
-          className="text-[var(--nim-text-muted)] shrink-0"
+          className="shrink-0"
         />
         <MaterialSymbol
           icon="checklist"
           size={16}
-          className="text-[var(--nim-text-muted)] shrink-0"
+          className="shrink-0"
         />
-        <span className="todo-panel-title text-xs font-medium text-[var(--nim-text)]">
+        <span className="todo-panel-title min-w-0 flex-1 text-xs font-medium leading-none text-[var(--an-foreground)]">
           Tasks
         </span>
-        <span className="todo-panel-count ml-auto text-[11px] text-[var(--nim-text-muted)] font-mono">
+        <span
+          className="todo-panel-count agent-elements-status-pill ml-auto font-mono"
+          data-testid="agent-elements-agent-mode-todo-count"
+          data-tone={isStreaming ? 'running' : 'neutral'}
+        >
           {completedCount}/{totalCount}
         </span>
       </button>
 
-      {/* Content */}
       {!isCollapsed && (
-        <div className="todo-panel-content px-3 pb-2 max-h-[200px] overflow-y-auto">
-          <div className="flex flex-col gap-1">
-            {todos.map((todo, index) => (
-              <TodoItem key={index} todo={todo} />
-            ))}
-          </div>
+        <div
+          className="todo-panel-content agent-elements-agent-mode-todo-content nim-scrollbar max-h-[200px] overflow-y-auto px-[var(--an-spacing-lg)] pb-[var(--an-spacing-md)] pt-[var(--an-spacing-xs)]"
+          data-testid="agent-elements-agent-mode-todo-content"
+          id={contentId}
+        >
+          <AgentTodoList
+            className="agent-elements-agent-mode-todo-items"
+            data-testid="agent-elements-agent-mode-todo-items"
+            isStreaming={isStreaming}
+            items={items}
+          />
         </div>
       )}
-    </div>
+    </section>
   );
 });
 
 TodoPanel.displayName = 'TodoPanel';
-
-interface TodoItemProps {
-  todo: Todo;
-}
-
-const TodoItem: React.FC<TodoItemProps> = React.memo(({ todo }) => {
-  const displayText = todo.status === 'in_progress' ? todo.activeForm : todo.content;
-
-  return (
-    <div
-      className={`todo-item flex items-start gap-2 py-1 px-1 rounded text-xs ${
-        todo.status === 'in_progress' ? 'bg-[var(--nim-bg-hover)]' : ''
-      } ${todo.status === 'completed' ? 'opacity-60' : ''}`}
-      data-status={todo.status}
-    >
-      <div className="todo-item-icon shrink-0 w-4 h-4 flex items-center justify-center mt-0.5">
-        {todo.status === 'pending' && (
-          <span className="text-[var(--nim-text-faint)] text-[10px]">○</span>
-        )}
-        {todo.status === 'in_progress' && (
-          <span className="inline-block w-3 h-3 border-2 border-[var(--nim-bg-tertiary)] border-t-[var(--nim-primary)] rounded-full animate-spin" />
-        )}
-        {todo.status === 'completed' && (
-          <span className="text-[#4ade80] text-[10px]">●</span>
-        )}
-      </div>
-      <div
-        className={`todo-item-text flex-1 leading-[1.4] break-words ${
-          todo.status === 'completed'
-            ? 'line-through text-[var(--nim-text-muted)]'
-            : 'text-[var(--nim-text)]'
-        }`}
-      >
-        {displayText}
-      </div>
-    </div>
-  );
-});
-
-TodoItem.displayName = 'TodoItem';

@@ -37,7 +37,7 @@ const shareDialogSecondaryButton =
   `${shareDialogButtonBase} border-[var(--an-border-color)] bg-[var(--an-background)] text-[var(--an-foreground-muted)] hover:bg-[var(--an-background-tertiary)] hover:text-[var(--an-foreground)]`;
 
 const shareDialogPrimaryButton =
-  `${shareDialogButtonBase} border-[var(--an-primary-color)] bg-[var(--an-primary-color)] text-[var(--an-background)] hover:bg-[var(--nim-primary-hover)] hover:border-[var(--nim-primary-hover)]`;
+  `${shareDialogButtonBase} border-[var(--an-primary-color)] bg-[var(--an-primary-color)] text-[var(--an-background)] hover:bg-[color-mix(in_srgb,var(--an-primary-color)_86%,var(--an-foreground))] hover:border-[color-mix(in_srgb,var(--an-primary-color)_82%,var(--an-foreground))]`;
 
 export const ShareDialog: React.FC<ShareDialogProps> = ({
   isOpen,
@@ -242,13 +242,13 @@ export const ShareDialog: React.FC<ShareDialogProps> = ({
 
   return (
     <div
-      className="share-dialog-overlay nim-overlay agent-elements-share-dialog-backdrop bg-[color-mix(in_srgb,var(--nim-text)_36%,transparent)]"
+      className="share-dialog-overlay nim-overlay agent-elements-share-dialog-backdrop bg-[color-mix(in_srgb,var(--an-foreground)_36%,transparent)]"
       data-testid="agent-elements-share-dialog-backdrop"
       data-agent-elements-shell="share-dialog-backdrop"
       onClick={onClose}
     >
       <div
-        className="share-dialog agent-elements-share-dialog agent-elements-tool-card relative w-[440px] max-w-[90vw] overflow-hidden rounded-[var(--an-border-radius)] border border-[var(--an-border-color)] bg-[var(--an-background)] text-[var(--an-foreground)] shadow-[0_20px_60px_color-mix(in_srgb,var(--nim-text)_18%,transparent)]"
+        className="share-dialog agent-elements-share-dialog agent-elements-tool-card relative w-[440px] max-w-[90vw] !gap-0 !p-0 [--agent-elements-card-block-padding:var(--an-spacing-xl)] [--agent-elements-card-inline-padding:var(--an-spacing-xl)] overflow-hidden rounded-[var(--an-border-radius)] border border-[var(--an-border-color)] bg-[var(--an-background)] text-[var(--an-foreground)] shadow-[0_20px_60px_color-mix(in_srgb,var(--an-foreground)_18%,transparent)]"
         data-testid="agent-elements-share-dialog"
         data-component="ShareDialog"
         data-agent-elements-shell="share-dialog"
@@ -265,7 +265,7 @@ export const ShareDialog: React.FC<ShareDialogProps> = ({
         </button>
 
         <div
-          className="share-dialog-header agent-elements-share-dialog-header flex items-center gap-3 border-b border-[var(--an-border-color)] p-[var(--an-spacing-xl)]"
+          className="share-dialog-header agent-elements-share-dialog-header flex items-center gap-3 border-b border-[var(--an-border-color)] px-[var(--agent-elements-card-inline-padding)] py-[var(--agent-elements-card-block-padding)]"
           data-testid="agent-elements-share-dialog-header"
           data-agent-elements-shell="share-dialog-header"
         >
@@ -287,7 +287,7 @@ export const ShareDialog: React.FC<ShareDialogProps> = ({
         </div>
 
         <div
-          className="share-dialog-body agent-elements-share-dialog-body p-[var(--an-spacing-xl)]"
+          className="share-dialog-body agent-elements-share-dialog-body px-[var(--agent-elements-card-inline-padding)] py-[var(--agent-elements-card-block-padding)]"
           data-agent-elements-shell="share-dialog-body"
         >
           {needsAuth ? (
@@ -368,7 +368,7 @@ export const ShareDialog: React.FC<ShareDialogProps> = ({
 
                   {authError && (
                     <p
-                      className="share-dialog-auth-error agent-elements-share-dialog-auth-error m-0 mt-2 rounded-[var(--an-tool-border-radius)] border border-[color-mix(in_srgb,var(--nim-error)_24%,var(--an-border-color))] bg-[color-mix(in_srgb,var(--nim-error)_8%,var(--an-background))] p-2 text-xs text-[var(--nim-error)]"
+                      className="share-dialog-auth-error agent-elements-share-dialog-auth-error m-0 mt-2 rounded-[var(--an-tool-border-radius)] border border-[color-mix(in_srgb,var(--an-error-color)_24%,var(--an-border-color))] bg-[color-mix(in_srgb,var(--an-error-color)_8%,var(--an-background))] p-2 text-xs text-[var(--an-error-color)]"
                       data-agent-elements-shell="share-dialog-auth-error"
                     >
                       {authError}
@@ -416,7 +416,7 @@ export const ShareDialog: React.FC<ShareDialogProps> = ({
                     Link expires after
                   </label>
                   <select
-                    className="share-dialog-expiration-select agent-elements-share-dialog-expiration-select w-full cursor-pointer rounded-[var(--an-input-border-radius)] border border-[var(--an-input-border-color)] bg-[var(--an-input-background)] px-3 py-2 text-sm text-[var(--an-input-color)] outline-none transition-[border-color,box-shadow] duration-150 ease-out focus:ring-2 focus:ring-[var(--an-input-focus-outline)] [&>option]:bg-[var(--nim-bg)] [&>option]:text-[var(--nim-text)]"
+                    className="share-dialog-expiration-select agent-elements-share-dialog-expiration-select w-full cursor-pointer rounded-[var(--an-input-border-radius)] border border-[var(--an-input-border-color)] bg-[var(--an-input-background)] px-3 py-2 text-sm text-[var(--an-input-color)] outline-none transition-[border-color,box-shadow] duration-150 ease-out focus:ring-2 focus:ring-[var(--an-input-focus-outline)] [&>option]:bg-[var(--an-background)] [&>option]:text-[var(--an-foreground)]"
                     data-testid="agent-elements-share-dialog-expiration-select"
                     data-agent-elements-shell="share-dialog-expiration-select"
                     value={String(expirationDays)}
@@ -468,10 +468,10 @@ export const ShareDialog: React.FC<ShareDialogProps> = ({
 
               {shareState === 'error' && (
                 <div
-                  className="share-dialog-error agent-elements-share-dialog-error mb-5 rounded-[var(--an-tool-border-radius)] border border-[color-mix(in_srgb,var(--nim-error)_24%,var(--an-border-color))] bg-[color-mix(in_srgb,var(--nim-error)_8%,var(--an-background))] p-[var(--an-spacing-lg)]"
+                  className="share-dialog-error agent-elements-share-dialog-error mb-5 rounded-[var(--an-tool-border-radius)] border border-[color-mix(in_srgb,var(--an-error-color)_24%,var(--an-border-color))] bg-[color-mix(in_srgb,var(--an-error-color)_8%,var(--an-background))] p-[var(--an-spacing-lg)]"
                   data-agent-elements-shell="share-dialog-error"
                 >
-                  <p className="m-0 text-sm text-[var(--nim-error)]">{errorMessage}</p>
+                  <p className="m-0 text-sm text-[var(--an-error-color)]">{errorMessage}</p>
                 </div>
               )}
 

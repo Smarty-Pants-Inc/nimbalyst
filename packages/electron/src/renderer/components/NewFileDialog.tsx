@@ -212,13 +212,13 @@ export const NewFileDialog: React.FC<NewFileDialogProps> = ({
 
   return (
     <div
-      className="new-file-dialog-overlay nim-overlay agent-elements-new-file-dialog-backdrop bg-[color-mix(in_srgb,var(--nim-text)_36%,transparent)]"
+      className="new-file-dialog-overlay nim-overlay agent-elements-new-file-dialog-backdrop bg-[color-mix(in_srgb,var(--an-foreground)_36%,transparent)]"
       data-testid="agent-elements-new-file-dialog-backdrop"
       data-agent-elements-shell="new-file-dialog-backdrop"
       onClick={onClose}
     >
       <div
-        className="new-file-dialog agent-elements-new-file-dialog agent-elements-tool-card w-[420px] max-w-[90vw] !gap-0 !p-0 overflow-hidden rounded-[var(--an-border-radius)] bg-[var(--an-background)] border border-[var(--an-border-color)] shadow-[0_20px_60px_color-mix(in_srgb,var(--nim-text)_18%,transparent)]"
+        className="new-file-dialog agent-elements-new-file-dialog agent-elements-tool-card w-[420px] max-w-[90vw] !gap-0 !p-0 overflow-hidden rounded-[var(--an-border-radius)] bg-[var(--an-background)] border border-[var(--an-border-color)] shadow-[0_20px_60px_color-mix(in_srgb,var(--an-foreground)_18%,transparent)]"
         data-testid="agent-elements-new-file-dialog"
         data-component="NewFileDialog"
         data-agent-elements-shell="new-file-dialog"
@@ -280,7 +280,7 @@ export const NewFileDialog: React.FC<NewFileDialogProps> = ({
               </button>
               {showFolderPicker && fileTree.length > 0 && (
                 <div
-                  className="new-file-folder-picker agent-elements-new-file-dialog-folder-picker absolute top-[calc(100%+4px)] left-0 right-0 max-h-[250px] overflow-y-auto p-1 rounded-[var(--an-tool-border-radius)] z-[10001] bg-[var(--an-background)] border border-[var(--an-border-color)] shadow-[0_12px_36px_color-mix(in_srgb,var(--nim-text)_16%,transparent)]"
+                  className="new-file-folder-picker agent-elements-new-file-dialog-folder-picker absolute top-[calc(100%+4px)] left-0 right-0 max-h-[250px] overflow-y-auto p-1 rounded-[var(--an-tool-border-radius)] z-[10001] bg-[var(--an-background)] border border-[var(--an-border-color)] shadow-[0_12px_36px_color-mix(in_srgb,var(--an-foreground)_16%,transparent)]"
                   data-testid="agent-elements-new-file-dialog-folder-picker"
                   data-agent-elements-shell="new-file-dialog-folder-picker"
                 >
@@ -339,7 +339,7 @@ export const NewFileDialog: React.FC<NewFileDialogProps> = ({
           </div>
           {error && (
             <div
-              className="new-file-error agent-elements-new-file-dialog-error text-[13px] mb-4 rounded-[var(--an-tool-border-radius)] border border-[var(--nim-error)] bg-[var(--nim-bg-secondary)] px-3 py-2 text-[var(--nim-error)]"
+              className="new-file-error agent-elements-new-file-dialog-error text-[13px] mb-4 rounded-[var(--an-tool-border-radius)] border border-[var(--an-diff-removed-text)] bg-[var(--an-diff-removed-bg)] px-3 py-2 text-[var(--an-diff-removed-text)]"
               data-testid="agent-elements-new-file-dialog-error"
               data-agent-elements-shell="new-file-dialog-error"
             >
@@ -360,7 +360,7 @@ export const NewFileDialog: React.FC<NewFileDialogProps> = ({
             </button>
             <button
               type="submit"
-              className="agent-elements-new-file-dialog-button px-4 py-1.5 text-[13px] rounded-[6px] cursor-pointer transition-colors duration-150 ease-out bg-[var(--an-send-button-bg)] border border-[var(--an-send-button-bg)] text-[var(--an-send-button-color)] hover:bg-[var(--nim-primary-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--an-input-focus-outline)]"
+              className="agent-elements-new-file-dialog-button px-4 py-1.5 text-[13px] rounded-[6px] cursor-pointer transition-colors duration-150 ease-out bg-[var(--an-send-button-bg)] border border-[var(--an-send-button-bg)] text-[var(--an-send-button-color)] hover:bg-[color-mix(in_srgb,var(--an-primary-color)_88%,var(--an-foreground))] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--an-input-focus-outline)]"
               data-agent-elements-shell="new-file-dialog-create"
             >
               Create

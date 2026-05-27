@@ -55,6 +55,14 @@ function codexTargetTriple(plat, arch) {
   return undefined;
 }
 
+function isExecutable(filePath) {
+  try {
+    return (fs.statSync(filePath).mode & 0o111) !== 0;
+  } catch {
+    return false;
+  }
+}
+
 function collectEntries() {
   const out = [];
   const top = packageJson.build?.extraResources;
@@ -185,16 +193,18 @@ for (const { entry, platformMacro } of allEntries) {
   if (rawFrom.endsWith('/node-pty')) {
     const dir = path.resolve(packageDir, expandMacros(rawFrom, platformMacro));
     const ptyTarget = `${targetPlatform}-${buildArch}`;
+    const candidatePaths = [
+      path.join(dir, 'build', 'Release', 'pty.node'),
+      path.join(dir, 'build', 'Debug', 'pty.node'),
+      path.join(dir, 'prebuilds', ptyTarget, 'pty.node'),
+    ];
     binaryChecks.push({
       label: `node-pty (${ptyTarget})`,
       dir,
-      candidatePaths: [
-        path.join(dir, 'build', 'Release', 'pty.node'),
-        path.join(dir, 'build', 'Debug', 'pty.node'),
-        path.join(dir, 'prebuilds', ptyTarget, 'pty.node'),
-      ],
-      cause: `no loadable pty.node found for ${ptyTarget}; @electron/rebuild ran with buildFromSource=false and the upstream npm package ships no prebuild for this platform`,
-      fix: `npx @electron/rebuild --force --module-dir node_modules/node-pty --types prod --version <electron-version>`,
+      candidatePaths,
+      requiresExecutableSibling: targetPlatform === 'win32' ? undefined : 'spawn-helper',
+      cause: `no loadable pty.node with executable spawn-helper found for ${ptyTarget}; @electron/rebuild ran with buildFromSource=false, the upstream npm package ships no prebuild for this platform, or npm unpacked spawn-helper without executable permissions`,
+      fix: `run \`npm run node-pty:fix-spawn-helper --prefix packages/electron\`, or rebuild with \`npx @electron/rebuild --force --module-dir node_modules/node-pty --types prod --version <electron-version>\``,
     });
   }
 }
@@ -203,7 +213,11 @@ const binaryFailures = [];
 for (const check of binaryChecks) {
   let hasBinary;
   if (check.candidatePaths) {
-    hasBinary = check.candidatePaths.some((p) => fs.existsSync(p));
+    hasBinary = check.candidatePaths.some((p) => {
+      if (!fs.existsSync(p)) return false;
+      if (!check.requiresExecutableSibling) return true;
+      return isExecutable(path.join(path.dirname(p), check.requiresExecutableSibling));
+    });
   } else {
     hasBinary = fs.existsSync(check.binDir)
       && fs.readdirSync(check.binDir).some(check.accept);

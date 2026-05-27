@@ -3,8 +3,10 @@
  * by the `smarty-server` provider.
  *
  * Raw output rows are the exact SDK stream chunks:
- * `{ id?, event, data }`. Nimbalyst owns projection; LangGraph remains the
- * runtime source for thread/run/tool state.
+ * `{ id?, event, data }`. The parser also accepts LangGraph Event Streaming
+ * protocol envelopes shaped as `{ method, params: { namespace, data } }`.
+ * Nimbalyst owns projection; LangGraph remains the runtime source for
+ * thread/run/tool state.
  */
 
 import type { RawMessage } from '../TranscriptTransformer';
@@ -15,12 +17,19 @@ import type {
   ParseContext,
 } from './IRawMessageParser';
 import type { InteractivePromptPayload } from '../types';
-
-interface LangGraphStreamChunk {
-  id?: string;
-  event?: string;
-  data?: unknown;
-}
+import {
+  frameworkNamespace,
+  isFrameworkStreamMethod,
+  type LangGraphStreamChunk,
+  normalizeEventStreamProtocolChunk,
+  toFrameworkStreamDescriptors,
+  toSubgraphMessageStreamChunk,
+  unwrapNamespaceTupleData,
+} from './SmartyServerFrameworkStream';
+import {
+  firstLangChainGenerationRecord,
+  turnEndedFromLangChainUsage,
+} from './SmartyServerUsage';
 
 interface LangGraphToolEvent {
   event?: string;
@@ -94,6 +103,8 @@ export class SmartyServerRawParser implements IRawMessageParser {
       return result ? [result] : [];
     }
 
+    chunk = normalizeEventStreamProtocolChunk(chunk) ?? chunk;
+
     switch (chunk.event) {
       case 'messages':
         return this.parseMessageTuple(msg, chunk);
@@ -104,6 +115,9 @@ export class SmartyServerRawParser implements IRawMessageParser {
       case 'error':
         return this.parseError(msg, chunk.data);
       default:
+        if (isFrameworkStreamMethod(chunk.event)) {
+          return toFrameworkStreamDescriptors(msg, chunk);
+        }
         return [];
     }
   }
@@ -112,7 +126,13 @@ export class SmartyServerRawParser implements IRawMessageParser {
     msg: RawMessage,
     chunk: LangGraphStreamChunk,
   ): CanonicalEventDescriptor[] {
-    const data = chunk.data;
+    const messageChannelDescriptors = this.parseEventStreamMessage(msg, chunk);
+    if (messageChannelDescriptors.length > 0) return messageChannelDescriptors;
+
+    const subgraphChunk = toSubgraphMessageStreamChunk(chunk);
+    if (subgraphChunk) return toFrameworkStreamDescriptors(msg, subgraphChunk);
+
+    const data = unwrapNamespaceTupleData(chunk.data);
     if (!Array.isArray(data) || data.length === 0) return [];
     const message = data[0];
     if (!isRecord(message)) return [];
@@ -126,6 +146,55 @@ export class SmartyServerRawParser implements IRawMessageParser {
       coalesceKey: getAssistantCoalesceKey(msg, chunk, message),
       createdAt: msg.createdAt,
     }];
+  }
+
+  private parseEventStreamMessage(
+    msg: RawMessage,
+    chunk: LangGraphStreamChunk,
+  ): CanonicalEventDescriptor[] {
+    const data = isRecord(chunk.data) ? chunk.data : null;
+    if (!data || typeof data.event !== 'string') return [];
+
+    const delta = isRecord(data.delta) ? data.delta : {};
+    const deltaType = firstString(delta.type, data.type);
+    const coalesceKey = getEventStreamMessageCoalesceKey(msg, chunk, data);
+
+    if (data.event === 'content-block-delta') {
+      if (deltaType === 'reasoning-delta' || deltaType === 'thinking-delta') {
+        const thinking = firstString(delta.reasoning, delta.thinking, delta.text, data.reasoning, data.thinking);
+        return thinking ? [{
+          type: 'assistant_message',
+          text: '',
+          thinking,
+          coalesceKey,
+          createdAt: msg.createdAt,
+        }] : [];
+      }
+
+      const text = firstString(delta.text, delta.content, data.text, data.content);
+      return text ? [{
+        type: 'assistant_message',
+        text,
+        coalesceKey,
+        createdAt: msg.createdAt,
+      }] : [];
+    }
+
+    if (data.event === 'message-finish') {
+      const message = isRecord(data.message) ? data.message : data;
+      const text = contentToText(message.content) || firstString(message.text, message.content);
+      const descriptors: CanonicalEventDescriptor[] = text ? [{
+        type: 'assistant_message',
+        text,
+        coalesceKey,
+        createdAt: msg.createdAt,
+      }] : [];
+      const usage = turnEndedFromLangChainUsage(msg, data, message);
+      if (usage) descriptors.push(usage);
+      return descriptors;
+    }
+
+    return [];
   }
 
   private parseToolEvent(
@@ -179,6 +248,15 @@ export class SmartyServerRawParser implements IRawMessageParser {
     context: ParseContext,
   ): CanonicalEventDescriptor[] {
     if (!isRecord(data) || typeof data.event !== 'string') return [];
+
+    if (data.event === 'on_chat_model_end' || data.event === 'on_llm_end') {
+      const payload = isRecord(data.data) ? data.data : {};
+      const output = isRecord(payload.output) ? payload.output : {};
+      const generation = firstLangChainGenerationRecord(payload, output);
+      const usage = turnEndedFromLangChainUsage(msg, payload, output, generation);
+      return usage ? [usage] : [];
+    }
+
     if (!data.event.startsWith('on_tool_')) return [];
 
     const payload = isRecord(data.data) ? data.data : {};
@@ -520,6 +598,43 @@ function getAssistantCoalesceKey(
   if (typeof chunk.id === 'string' && chunk.id) {
     return `smarty-server-event:${chunk.id}`;
   }
+  return undefined;
+}
+
+function getEventStreamMessageCoalesceKey(
+  msg: RawMessage,
+  chunk: LangGraphStreamChunk,
+  data: Record<string, unknown>,
+): string | undefined {
+  const message = isRecord(data.message) ? data.message : {};
+  const messageId = firstString(
+    data.messageId,
+    data.message_id,
+    message.id,
+    data.id,
+  );
+  if (messageId) {
+    return `smarty-server-message:${messageId}`;
+  }
+
+  const runId = firstString(
+    data.run_id,
+    data.runId,
+    msg.metadata?.runId,
+    msg.metadata?.run_id,
+  );
+  if (runId) {
+    const namespace = frameworkNamespace(chunk.namespace);
+    const namespaceKey = Array.isArray(namespace)
+      ? namespace.join('/')
+      : namespace;
+    return `smarty-server:${namespaceKey || 'root'}:${runId}`;
+  }
+
+  if (typeof chunk.id === 'string' && chunk.id) {
+    return `smarty-server-event:${chunk.id}`;
+  }
+
   return undefined;
 }
 

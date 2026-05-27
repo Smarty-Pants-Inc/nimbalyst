@@ -45,9 +45,53 @@ export function GutterContextMenu({ x, y, onClose, targetButton, workspacePath }
   });
 
   const hasHidden = hiddenButtons.length > 0;
-  const menuShellClasses = 'gutter-context-menu agent-elements-gutter-context-menu agent-elements-tool-card min-w-[180px] overflow-hidden rounded-[10px] border border-nim bg-nim-secondary p-1 text-[13px] shadow-[0_12px_32px_color-mix(in_srgb,var(--nim-text)_10%,transparent)] z-[10000]';
-  const menuItemClasses = 'agent-elements-gutter-context-menu-item flex w-full items-center gap-2.5 rounded-[8px] border-0 bg-transparent px-3 py-2 text-left text-[13px] leading-5 text-nim transition-[background-color,color] duration-150 cursor-pointer select-none hover:bg-nim-hover focus-visible:outline-2 focus-visible:outline-[var(--nim-primary)] focus-visible:outline-offset-2';
-  const separatorClasses = 'agent-elements-gutter-context-menu-separator mx-2 my-1 h-px bg-[var(--nim-border)]';
+  const floatingMenuCardGutters = [
+    '[--agent-elements-card-block-padding:var(--an-spacing-xs)]',
+    '[--agent-elements-card-inline-padding:var(--an-spacing-xs)]',
+    'px-[var(--agent-elements-card-inline-padding)]',
+    'py-[var(--agent-elements-card-block-padding)]',
+  ].join(' ');
+  const menuShellClasses = [
+    'gutter-context-menu',
+    'agent-elements-gutter-context-menu',
+    'agent-elements-tool-card',
+    'z-[10000]',
+    'min-w-[180px]',
+    'overflow-hidden',
+    'rounded-[var(--an-tool-border-radius)]',
+    'border',
+    'border-[var(--an-tool-border-color)]',
+    'bg-[var(--an-tool-background)]',
+    'text-[13px]',
+    'text-[var(--an-tool-color)]',
+    'shadow-[0_12px_32px_color-mix(in_srgb,var(--an-foreground)_10%,transparent)]',
+    floatingMenuCardGutters,
+  ].join(' ');
+  const menuItemClasses = [
+    'agent-elements-gutter-context-menu-item',
+    'flex',
+    'w-full',
+    'items-center',
+    'gap-2.5',
+    'rounded-[var(--an-tool-border-radius)]',
+    'border-0',
+    'bg-transparent',
+    'px-3',
+    'py-2',
+    'text-left',
+    'text-[13px]',
+    'leading-5',
+    'text-[var(--an-tool-color)]',
+    'transition-[background-color,color]',
+    'duration-150',
+    'cursor-pointer',
+    'select-none',
+    'hover:bg-[var(--an-background-tertiary)]',
+    'focus-visible:outline-2',
+    'focus-visible:outline-[var(--an-primary-color)]',
+    'focus-visible:outline-offset-2',
+  ].join(' ');
+  const separatorClasses = 'agent-elements-gutter-context-menu-separator mx-2 my-1 h-px bg-[var(--an-tool-border-color)]';
 
   const renderMenuItem = ({
     id,
@@ -72,7 +116,7 @@ export function GutterContextMenu({ x, y, onClose, targetButton, workspacePath }
       data-gutter-action={action}
       data-gutter-button={id}
     >
-      <span className="agent-elements-gutter-context-menu-icon flex h-5 w-5 shrink-0 items-center justify-center text-nim-muted">
+      <span className="agent-elements-gutter-context-menu-icon flex h-5 w-5 shrink-0 items-center justify-center text-[var(--an-tool-color-muted)]">
         <MaterialSymbol icon={icon} size={18} />
       </span>
       <span className="agent-elements-gutter-context-menu-label min-w-0 truncate">{label}</span>
@@ -89,6 +133,8 @@ export function GutterContextMenu({ x, y, onClose, targetButton, workspacePath }
         data-component="GutterContextMenu"
         data-testid="gutter-context-menu"
         data-agent-elements-shell="gutter-context-menu"
+        data-agent-elements-card-padding="symmetric-inline"
+        data-agent-elements-card-width="floating-menu"
       >
         {/* If right-clicked on a specific button, show hide option */}
         {targetButton && !hiddenButtons.includes(targetButton) && (
@@ -140,7 +186,7 @@ export function GutterContextMenu({ x, y, onClose, targetButton, workspacePath }
         {/* If nothing to show (no target, nothing hidden) */}
         {!targetButton && !hasHidden && (
           <div
-            className="agent-elements-gutter-context-menu-empty px-3 py-2 text-center text-[13px] leading-5 text-nim-muted"
+            className="agent-elements-gutter-context-menu-empty px-3 py-2 text-center text-[13px] leading-5 text-[var(--an-tool-color-muted)]"
             data-testid="agent-elements-gutter-context-menu-empty"
             data-agent-elements-shell="gutter-context-menu-empty"
           >

@@ -4,6 +4,8 @@ import '@testing-library/jest-dom/vitest';
 import React from 'react';
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { readFileSync } from 'node:fs';
+import path from 'node:path';
 
 const mockState = vi.hoisted(() => ({
   tokens: {
@@ -160,6 +162,9 @@ vi.mock('../../../../store/atoms/openProjects', () => ({
 
 import { AdvancedPanel } from '../AdvancedPanel';
 
+const advancedPanelSourcePath = path.join(__dirname, '../AdvancedPanel.tsx');
+const providerChromeSourcePath = path.join(__dirname, '../providerPanelChrome.ts');
+
 describe('AdvancedPanel Agent Elements shell', () => {
   beforeEach(() => {
     mockState.updateSettings.mockClear();
@@ -246,5 +251,22 @@ describe('AdvancedPanel Agent Elements shell', () => {
       expect(screen.getByTestId('agent-elements-advanced-path-output')).toHaveClass('agent-elements-tool-card');
       expect(screen.getByTestId('agent-elements-advanced-path-output')).toHaveTextContent('/opt/smarty/bin');
     });
+  });
+
+  it('keeps AdvancedPanel visual chrome on Agent Elements provider panel aliases', () => {
+    const source = readFileSync(advancedPanelSourcePath, 'utf8');
+    const providerChromeSource = readFileSync(providerChromeSourcePath, 'utf8');
+
+    expect(source).toContain("import { createProviderPanelChrome } from './providerPanelChrome';");
+    expect(source).toContain('const chrome = createProviderPanelChrome({');
+    expect(source).toContain('chrome.header');
+    expect(source).toContain('chrome.section');
+    expect(source).toContain('chrome.configCard');
+    expect(source).toContain('chrome.input');
+    expect(providerChromeSource).toContain('--agent-elements-card-inline-padding');
+    expect(source).not.toMatch(/bg-nim|text-nim|border-nim/);
+    expect(source).not.toMatch(/bg-\[var\(--nim|text-\[var\(--nim|border-\[var\(--nim|--nim-/);
+    expect(source).not.toMatch(/#[0-9a-fA-F]{3,8}\b|rgba\(/);
+    expect(source).not.toMatch(/bg-white|text-white|rounded-lg|transition-all/);
   });
 });

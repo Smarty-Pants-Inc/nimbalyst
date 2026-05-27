@@ -4,6 +4,8 @@ import '@testing-library/jest-dom/vitest';
 import React from 'react';
 import { fireEvent, render, screen, within } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import fs from 'node:fs';
+import path from 'node:path';
 import { FileContextMenu } from '../FileContextMenu';
 import type { ExtensionFileType } from '../NewFileMenu';
 
@@ -92,6 +94,11 @@ const extensionFileTypes: ExtensionFileType[] = [
   },
 ];
 
+const fileContextMenuSourcePath = path.join(
+  process.cwd(),
+  'packages/electron/src/renderer/components/FileContextMenu.tsx',
+);
+
 describe('FileContextMenu Agent Elements shell', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -124,6 +131,8 @@ describe('FileContextMenu Agent Elements shell', () => {
     const menu = screen.getByTestId('agent-elements-file-context-menu');
     expect(menu).toHaveClass('file-context-menu', 'agent-elements-file-context-menu', 'agent-elements-tool-card');
     expect(menu).toHaveAttribute('data-agent-elements-shell', 'file-context-menu');
+    expect(menu).toHaveAttribute('data-agent-elements-card-padding', 'symmetric-inline');
+    expect(menu).toHaveAttribute('data-agent-elements-card-width', 'floating-menu');
     expect(menu.className).not.toMatch(/backdrop.*blur/);
 
     const extensionItem = screen.getByTestId('agent-elements-file-context-menu-new-ext-.diagram');
@@ -165,6 +174,8 @@ describe('FileContextMenu Agent Elements shell', () => {
     const renameMenu = screen.getByTestId('agent-elements-file-context-menu-rename');
     expect(renameMenu).toHaveClass('file-context-menu-rename', 'agent-elements-file-context-menu-rename');
     expect(renameMenu).toHaveAttribute('data-agent-elements-shell', 'file-context-menu-rename');
+    expect(renameMenu).toHaveAttribute('data-agent-elements-card-padding', 'symmetric-inline');
+    expect(renameMenu).toHaveAttribute('data-agent-elements-card-width', 'floating-menu');
 
     const input = screen.getByTestId('agent-elements-file-context-menu-rename-input');
     expect(input).toHaveFocus();
@@ -206,5 +217,21 @@ describe('FileContextMenu Agent Elements shell', () => {
     expect(window.confirm).toHaveBeenCalledWith('Are you sure you want to delete 2 items?');
     expect(onDeleteMultiple).toHaveBeenCalledWith(['/workspace/docs/a.md', '/workspace/docs/b.md']);
     expect(onClose).toHaveBeenCalledTimes(1);
+  });
+
+  it('keeps file context menu chrome on Agent Elements visual aliases', () => {
+    const source = fs.readFileSync(fileContextMenuSourcePath, 'utf8');
+
+    expect(source).toContain('agent-elements-file-context-menu');
+    expect(source).toContain('var(--an-tool-background)');
+    expect(source).toContain('var(--an-tool-border-color)');
+    expect(source).toContain('var(--an-focus-ring)');
+    expect(source).toContain('data-agent-elements-card-width="floating-menu"');
+    expect(source).toContain('px-[var(--agent-elements-card-inline-padding)]');
+    expect(source).toContain('py-[var(--agent-elements-card-block-padding)]');
+    expect(source).not.toMatch(/(?:bg|text|border)-nim/);
+    expect(source).not.toMatch(/var\(--nim-[^)]+\)/);
+    expect(source).not.toMatch(/rounded-\[(?:8|10)px\]/);
+    expect(source).not.toMatch(/agent-elements-file-context-menu[^\n"]*\bp-[12]\b/);
   });
 });

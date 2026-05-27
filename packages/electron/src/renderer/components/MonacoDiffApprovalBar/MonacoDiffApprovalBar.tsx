@@ -25,6 +25,61 @@ export interface MonacoDiffApprovalBarProps {
   onGoToSession?: (sessionId: string) => void;
 }
 
+const barRootClasses =
+  'monaco-diff-approval-bar agent-elements-monaco-diff-approval-bar agent-elements-tool-card sticky top-0 left-0 right-0 z-[100] border-b border-[var(--an-border-color)] bg-[var(--an-background-secondary)] shadow-[0_12px_32px_color-mix(in_srgb,var(--an-foreground)_8%,transparent)] @container/monaco-diff-approval';
+
+const barContentClasses =
+  'monaco-diff-approval-bar-content agent-elements-monaco-diff-approval-content flex min-h-[48px] items-center justify-between gap-3 px-4 py-2 @max-[520px]/monaco-diff-approval:flex-wrap @max-[520px]/monaco-diff-approval:gap-2 @max-[520px]/monaco-diff-approval:px-3';
+
+const infoClasses =
+  'monaco-diff-approval-bar-info agent-elements-monaco-diff-approval-info flex min-w-0 items-center gap-3 overflow-hidden @max-[520px]/monaco-diff-approval:flex-[1_1_100%]';
+
+const sessionClasses =
+  'monaco-diff-approval-bar-session agent-elements-monaco-diff-approval-session flex min-w-0 items-center gap-2 overflow-hidden';
+
+const sessionIconClasses =
+  'monaco-diff-approval-bar-session-icon agent-elements-monaco-diff-approval-session-icon flex h-7 w-7 shrink-0 items-center justify-center rounded-[var(--an-small-border-radius)] border border-[var(--an-border-color)] bg-[var(--an-background)] text-[var(--an-primary-color)]';
+
+const labelClasses =
+  'monaco-diff-approval-bar-label agent-elements-monaco-diff-approval-label flex min-w-0 items-center gap-2 text-[13px] font-medium leading-5 text-[var(--an-foreground)]';
+
+const sessionNameClasses =
+  'monaco-diff-approval-bar-session-name overflow-hidden text-ellipsis whitespace-nowrap font-semibold text-[var(--an-primary-color)]';
+
+const timestampClasses =
+  'monaco-diff-approval-bar-timestamp text-[11px] leading-4 text-[var(--an-foreground-subtle)]';
+
+const gotoButtonClasses =
+  'monaco-diff-approval-bar-goto agent-elements-monaco-diff-approval-goto inline-flex h-8 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-[var(--an-input-border-radius)] border border-[var(--an-border-color)] bg-[var(--an-background)] px-2.5 text-xs font-medium leading-none text-[var(--an-foreground-muted)] transition-[background-color,border-color,color,opacity] duration-150 hover:border-[var(--an-border-color-strong)] hover:bg-[var(--an-background-tertiary)] hover:text-[var(--an-foreground)] focus-visible:outline-2 focus-visible:outline-[var(--an-focus-ring)] focus-visible:outline-offset-2';
+
+const actionsClasses =
+  'monaco-diff-approval-bar-actions agent-elements-monaco-diff-approval-actions ml-auto flex shrink-0 items-center gap-2 @max-[520px]/monaco-diff-approval:ml-0';
+
+const buttonBaseClasses =
+  'monaco-diff-approval-bar-button agent-elements-monaco-diff-approval-button inline-flex h-8 items-center justify-center rounded-[var(--an-input-border-radius)] border px-3.5 text-[13px] font-medium leading-none cursor-pointer whitespace-nowrap transition-[background-color,border-color,color,opacity] duration-150 disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-[var(--an-focus-ring)] focus-visible:outline-offset-2';
+
+const secondaryButtonClasses =
+  `${buttonBaseClasses} monaco-diff-approval-bar-button-reject border-[var(--an-border-color)] bg-[var(--an-background)] text-[var(--an-foreground)] hover:bg-[var(--an-background-tertiary)] hover:text-[var(--an-foreground)]`;
+
+const primaryButtonClasses =
+  `${buttonBaseClasses} monaco-diff-approval-bar-button-accept border-[var(--an-primary-color)] bg-[var(--an-primary-color)] text-[var(--an-background)] hover:opacity-90`;
+
+function DecorativeMaterialSymbol({
+  icon,
+  size,
+  className,
+}: {
+  icon: string;
+  size: number;
+  className?: string;
+}) {
+  return (
+    <span aria-hidden="true" className={className}>
+      <MaterialSymbol icon={icon} size={size} />
+    </span>
+  );
+}
+
 /**
  * Format a timestamp as a relative time string (e.g., "2 hours ago")
  */
@@ -78,15 +133,19 @@ export const MonacoDiffApprovalBar: React.FC<MonacoDiffApprovalBarProps> = ({
   const renderLabel = () => {
     if (sessionInfo?.sessionTitle) {
       return (
-        <div className="monaco-diff-approval-bar-session flex items-center gap-2">
-          <MaterialSymbol icon="smart_toy" size={18} className="monaco-diff-approval-bar-session-icon text-[var(--nim-primary)]" />
-          <div className="monaco-diff-approval-bar-session-details flex flex-col gap-0.5">
-            <span className="monaco-diff-approval-bar-label text-[13px] font-medium text-[var(--nim-text)]">
-              <span className="monaco-diff-approval-bar-session-name font-semibold text-[var(--nim-primary)]">{sessionInfo.sessionTitle}</span>
+        <div
+          className={sessionClasses}
+          data-testid="agent-elements-monaco-diff-approval-session"
+          data-agent-elements-shell="monaco-diff-approval-session"
+        >
+          <DecorativeMaterialSymbol icon="smart_toy" size={18} className={sessionIconClasses} />
+          <div className="monaco-diff-approval-bar-session-details flex min-w-0 flex-col gap-0.5">
+            <span className={labelClasses}>
+              <span className={sessionNameClasses}>{sessionInfo.sessionTitle}</span>
               {' '}edited {fileName || 'file'}
             </span>
             {sessionInfo.editedAt && (
-              <span className="monaco-diff-approval-bar-timestamp text-[11px] text-[var(--nim-text-faint)]">
+              <span className={timestampClasses}>
                 {formatRelativeTime(sessionInfo.editedAt)}
               </span>
             )}
@@ -97,33 +156,57 @@ export const MonacoDiffApprovalBar: React.FC<MonacoDiffApprovalBarProps> = ({
 
     // Fallback to original simple label
     return (
-      <span className="monaco-diff-approval-bar-label text-[13px] font-medium text-[var(--nim-text)]">
+      <span
+        className={labelClasses}
+        data-testid="agent-elements-monaco-diff-approval-label"
+        data-agent-elements-shell="monaco-diff-approval-label"
+      >
+        <DecorativeMaterialSymbol
+          icon="auto_awesome"
+          size={16}
+          className="agent-elements-monaco-diff-approval-label-icon flex h-5 w-5 shrink-0 items-center justify-center text-[var(--an-primary-color)]"
+        />
         AI changes to {fileName || 'file'}
       </span>
     );
   };
 
   return (
-    <div className="monaco-diff-approval-bar sticky top-0 left-0 right-0 z-[100] bg-[var(--nim-bg-secondary)] border-b border-[var(--nim-border)] shadow-[0_2px_4px_rgba(0,0,0,0.1)] dark:shadow-[0_2px_4px_rgba(0,0,0,0.3)]">
-      <div className="monaco-diff-approval-bar-content flex items-center justify-between px-4 py-2 gap-4">
-        <div className="monaco-diff-approval-bar-info flex items-center gap-3">
+    <div
+      className={barRootClasses}
+      data-testid="agent-elements-monaco-diff-approval-bar"
+      data-component="MonacoDiffApprovalBar"
+      data-agent-elements-shell="monaco-diff-approval-bar"
+    >
+      <div className={barContentClasses}>
+        <div className={infoClasses}>
           {renderLabel()}
           {sessionInfo?.sessionId && onGoToSession && (
             <button
-              className="monaco-diff-approval-bar-goto flex items-center gap-1 px-2.5 py-1 bg-transparent border border-[var(--nim-border)] rounded text-[var(--nim-text-muted)] text-xs font-medium cursor-pointer transition-all duration-150 font-inherit whitespace-nowrap hover:bg-[var(--nim-bg-hover)] hover:text-[var(--nim-text)] hover:border-[var(--nim-primary)]"
+              className={gotoButtonClasses}
               onClick={handleGoToSession}
               type="button"
               title="Open the AI session that made these changes"
+              data-testid="agent-elements-monaco-diff-approval-goto"
+              data-agent-elements-shell="monaco-diff-approval-goto"
             >
-              <MaterialSymbol icon="open_in_new" size={14} />
+              <DecorativeMaterialSymbol
+                icon="open_in_new"
+                size={14}
+                className="agent-elements-monaco-diff-approval-goto-icon flex h-4 w-4 shrink-0 items-center justify-center"
+              />
               Go to Session
             </button>
           )}
         </div>
-        <div className="monaco-diff-approval-bar-actions flex items-center gap-2">
+        <div
+          className={actionsClasses}
+          data-testid="agent-elements-monaco-diff-approval-actions"
+          data-agent-elements-shell="monaco-diff-approval-actions"
+        >
           <HelpTooltip testId="diff-revert-all-button">
             <button
-              className="monaco-diff-approval-bar-button monaco-diff-approval-bar-button-reject px-4 py-1.5 rounded text-[13px] font-medium cursor-pointer transition-all duration-150 border border-[var(--nim-border)] bg-[var(--nim-bg)] text-[var(--nim-text)] hover:opacity-85 hover:bg-[var(--nim-bg-hover)] active:scale-[0.98]"
+              className={secondaryButtonClasses}
               onClick={handleRejectClick}
               type="button"
               data-testid="diff-revert-all-button"
@@ -133,7 +216,7 @@ export const MonacoDiffApprovalBar: React.FC<MonacoDiffApprovalBarProps> = ({
           </HelpTooltip>
           <HelpTooltip testId="diff-keep-all-button">
             <button
-              className="monaco-diff-approval-bar-button monaco-diff-approval-bar-button-accept px-4 py-1.5 rounded text-[13px] font-medium cursor-pointer transition-all duration-150 border border-[var(--nim-primary)] bg-[var(--nim-primary)] text-white hover:opacity-90 active:scale-[0.98]"
+              className={primaryButtonClasses}
               onClick={handleAcceptClick}
               type="button"
               data-testid="diff-keep-all-button"

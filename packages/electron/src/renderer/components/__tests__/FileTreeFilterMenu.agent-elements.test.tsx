@@ -62,6 +62,8 @@ describe('FileTreeFilterMenu Agent Elements shell', () => {
     expect(menu).toHaveClass('file-tree-filter-menu', 'agent-elements-file-tree-filter-menu', 'agent-elements-tool-card');
     expect(menu).toHaveAttribute('data-component', 'FileTreeFilterMenu');
     expect(menu).toHaveAttribute('data-agent-elements-shell', 'file-tree-filter-menu');
+    expect(menu).toHaveAttribute('data-agent-elements-card-padding', 'symmetric-inline');
+    expect(menu).toHaveAttribute('data-agent-elements-card-width', 'floating-menu');
     expect(menu).toHaveAttribute('role', 'menu');
     expect(menu.className).not.toMatch(/backdrop.*blur/);
 
@@ -122,12 +124,16 @@ describe('FileTreeFilterMenu Agent Elements shell', () => {
     const source = readFileSync(sourcePath, 'utf8');
 
     expect(source).toContain('agent-elements-file-tree-filter-menu');
+    expect(source).toContain('data-agent-elements-card-width="floating-menu"');
+    expect(source).toContain('px-[var(--agent-elements-card-inline-padding)]');
+    expect(source).toContain('py-[var(--agent-elements-card-block-padding)]');
     expect(source).toContain('data-agent-elements-shell="file-tree-filter-menu-item"');
     expect(source).toContain('role="menuitemradio"');
     expect(source).toContain('role="menuitemcheckbox"');
     expect(source).not.toContain('backdrop-blur');
     expect(source).not.toContain('rgba(');
     expect(source).not.toContain('rounded-md');
+    expect(source).not.toMatch(/agent-elements-file-tree-filter-menu[^\n"]*\bp-1\b/);
     expect(source).not.toContain('bg-[var(--nim-bg-hover)]');
   });
 });

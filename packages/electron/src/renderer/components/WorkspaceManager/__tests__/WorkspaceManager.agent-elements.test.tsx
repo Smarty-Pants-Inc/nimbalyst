@@ -180,8 +180,12 @@ describe('WorkspaceManager Agent Elements shell', () => {
     expect(source).toContain('useFloatingMenu');
     expect(source).toContain('FloatingPortal');
     expect(source).toContain('virtualElement');
+    expect(source).toContain('--an-button-primary-text');
+    expect(source).toContain('--an-warning-color');
     expect(source).not.toMatch(/bg-gradient-to-br|radial-gradient|backdrop-blur|rounded-2xl/);
     expect(source).not.toMatch(/shadow-(lg|xl|2xl)|rgba\(|bg-black\/|text-white|bg-white/);
     expect(source).not.toMatch(/nim-btn-primary|nim-btn-secondary|nim-input/);
+    expect(source).not.toMatch(/var\(--nim-warning\)/);
+    expect(source).not.toContain('text-[var(--an-background)]');
   });
 });

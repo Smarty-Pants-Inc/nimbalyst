@@ -20,6 +20,25 @@ import { setSessionTabCountAtom } from '../../store';
 import { workstreamStateAtom, workstreamStatesLoadedAtom } from '../../store/atoms/workstreamState';
 import { fileDeletedAtomFamily } from '../../store/atoms/fileWatch';
 
+const editorTabsClass = [
+  'workstream-editor-tabs',
+  'agent-elements-workstream-editor-tabs',
+  'flex h-full flex-col overflow-hidden bg-[var(--an-background)] text-[var(--an-foreground)]',
+  '[container-type:inline-size]',
+].join(' ');
+
+const editorHeaderClass = [
+  'workstream-editor-header',
+  'agent-elements-workstream-editor-tabs-header',
+  'shrink-0 border-b border-[var(--an-border-color)] bg-[var(--an-background-secondary)]',
+].join(' ');
+
+const editorContentClass = [
+  'workstream-editor-tabs-content',
+  'agent-elements-workstream-editor-tabs-content',
+  'min-h-0 flex-1 overflow-hidden bg-[var(--an-background)]',
+].join(' ');
+
 // Current tab state - always kept up to date for sync flush on unmount
 const currentTabState = new Map<string, {
   workspacePath: string;
@@ -243,7 +262,7 @@ const WorkstreamEditorTabsInner = forwardRef<WorkstreamEditorTabsRef, Workstream
     // Wait for workstream states to finish loading from IPC before reading
     // openFilePaths. Without this gate the restore effect can read the
     // initial empty default, mark itself done, and let the persist effect
-    // overwrite the saved tab list with []. See nimbalyst#169.
+    // overwrite the saved tab list with []. See nimbalyst issue 169.
     useEffect(() => {
       if (restoreStateRef.current !== 'pending') {
         // console.log('[WorkstreamEditorTabs] Skipping restore, state:', restoreStateRef.current);
@@ -422,8 +441,21 @@ const WorkstreamEditorTabsInner = forwardRef<WorkstreamEditorTabsRef, Workstream
     }
 
     return (
-      <div className="workstream-editor-tabs flex flex-col h-full overflow-hidden">
-        <div className="workstream-editor-header shrink-0">
+      <div
+        className={editorTabsClass}
+        data-active={isActive ? 'true' : 'false'}
+        data-active-tab-id={activeTabId ?? ''}
+        data-agent-elements-shell="workstream-editor-tabs"
+        data-component="WorkstreamEditorTabs"
+        data-tab-count={tabs.length}
+        data-testid="agent-elements-workstream-editor-tabs"
+        data-workstream-id={workstreamId}
+      >
+        <div
+          className={editorHeaderClass}
+          data-agent-elements-shell="workstream-editor-tabs-header"
+          data-testid="agent-elements-workstream-editor-tabs-header"
+        >
           <TabManager
             onTabClose={handleTabClose}
             onNewTab={handleNewTab}
@@ -433,7 +465,11 @@ const WorkstreamEditorTabsInner = forwardRef<WorkstreamEditorTabsRef, Workstream
             <></>
           </TabManager>
         </div>
-        <div className="workstream-editor-tabs-content flex-1 min-h-0 overflow-hidden">
+        <div
+          className={editorContentClass}
+          data-agent-elements-shell="workstream-editor-tabs-content"
+          data-testid="agent-elements-workstream-editor-tabs-content"
+        >
           <TabContent workspaceId={basePath} onSwitchToAgentMode={onSwitchToAgentMode} onOpenSessionInChat={onOpenSessionInChat} />
         </div>
       </div>

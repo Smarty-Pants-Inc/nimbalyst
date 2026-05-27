@@ -40,6 +40,9 @@ interface ExtensionDevIndicatorProps {
   onOpenSettings?: () => void;
 }
 
+const floatingMenuCardGutters =
+  '[--agent-elements-card-block-padding:var(--an-spacing-xs)] [--agent-elements-card-inline-padding:var(--an-spacing-xs)] px-[var(--agent-elements-card-inline-padding)] py-[var(--agent-elements-card-block-padding)]';
+
 export const ExtensionDevIndicator: React.FC<ExtensionDevIndicatorProps> = ({
   onOpenSettings,
 }) => {
@@ -234,7 +237,7 @@ export const ExtensionDevIndicator: React.FC<ExtensionDevIndicatorProps> = ({
           <button
             ref={setButtonReference}
             {...menu.getReferenceProps()}
-            className="extension-dev-indicator agent-elements-extension-dev-button nav-button relative flex h-9 w-9 items-center justify-center rounded-[10px] border border-transparent bg-transparent p-0 text-nim-muted cursor-pointer transition-[background-color,border-color,color,box-shadow] duration-150 hover:border-[color-mix(in_srgb,var(--nim-info)_24%,transparent)] hover:bg-[color-mix(in_srgb,var(--nim-info)_8%,transparent)] hover:text-nim focus-visible:outline-2 focus-visible:outline-[var(--nim-primary)] focus-visible:outline-offset-2"
+            className="extension-dev-indicator agent-elements-extension-dev-button nav-button relative flex h-9 w-9 items-center justify-center rounded-[10px] border border-transparent bg-transparent p-0 text-[var(--an-foreground-muted)] cursor-pointer transition-[background-color,border-color,color,box-shadow] duration-150 hover:border-[color-mix(in_srgb,var(--an-primary-color)_24%,transparent)] hover:bg-[color-mix(in_srgb,var(--an-primary-color)_8%,transparent)] hover:text-[var(--an-foreground)] focus-visible:outline-2 focus-visible:outline-[var(--an-focus-ring)] focus-visible:outline-offset-2"
             onClick={() => menu.setIsOpen(!menu.isOpen)}
             aria-label="Extension Development Mode"
             aria-expanded={menuOpen}
@@ -243,7 +246,7 @@ export const ExtensionDevIndicator: React.FC<ExtensionDevIndicatorProps> = ({
             data-agent-elements-shell="extension-dev-button"
           >
             <MaterialSymbol icon="developer_mode" size={20} />
-            <span className="extension-dev-indicator-dot agent-elements-extension-dev-dot absolute bottom-1 right-1 h-2 w-2 rounded-[999px] border-2 border-[var(--nim-bg-secondary)] bg-[var(--nim-info)]" />
+            <span className="extension-dev-indicator-dot agent-elements-extension-dev-dot absolute bottom-1 right-1 h-2 w-2 rounded-[999px] border-2 border-[var(--an-background-secondary)] bg-[var(--an-primary-color)]" />
           </button>
         </HelpTooltip>
       </div>
@@ -254,17 +257,19 @@ export const ExtensionDevIndicator: React.FC<ExtensionDevIndicatorProps> = ({
             ref={menu.refs.setFloating}
             style={menu.floatingStyles}
             {...menu.getFloatingProps()}
-            className="extension-dev-menu agent-elements-extension-dev-menu agent-elements-tool-card z-[10000] w-60 rounded-[10px] border border-nim bg-nim-secondary p-1 text-[13px] shadow-[0_12px_32px_color-mix(in_srgb,var(--nim-text)_10%,transparent)] animate-[extension-dev-menu-appear_0.15s_ease-out]"
+            className={`extension-dev-menu agent-elements-extension-dev-menu agent-elements-tool-card z-[10000] w-60 rounded-[var(--an-tool-border-radius)] border border-[var(--an-border-color)] bg-[var(--an-tool-background)] text-[13px] text-[var(--an-foreground)] shadow-[0_12px_32px_color-mix(in_srgb,var(--an-foreground)_10%,transparent)] animate-[extension-dev-menu-appear_0.15s_ease-out] ${floatingMenuCardGutters}`}
             role="menu"
             data-testid="agent-elements-extension-dev-menu"
             data-agent-elements-shell="extension-dev-menu"
+            data-agent-elements-card-padding="symmetric-inline"
+            data-agent-elements-card-width="floating-menu"
           >
             <div className="extension-dev-menu-header agent-elements-extension-dev-header flex items-center justify-between px-2 py-2">
-              <span className="extension-dev-menu-title text-[13px] font-semibold leading-5 text-[var(--nim-text)]">Extension Dev Mode</span>
+              <span className="extension-dev-menu-title text-[13px] font-semibold leading-5 text-[var(--an-foreground)]">Extension Dev Mode</span>
             </div>
 
             <div
-              className="extension-dev-menu-status agent-elements-extension-dev-status mb-1 flex items-center gap-2 rounded-[8px] border border-[color-mix(in_srgb,var(--nim-info)_28%,var(--nim-border))] bg-[color-mix(in_srgb,var(--nim-info)_10%,transparent)] px-2.5 py-2 text-xs leading-4 text-[var(--nim-text-muted)] [&_.material-symbols-outlined]:text-[var(--nim-info)]"
+              className="extension-dev-menu-status agent-elements-extension-dev-status mb-1 flex items-center gap-2 rounded-[var(--an-tool-border-radius)] border border-[color-mix(in_srgb,var(--an-primary-color)_28%,var(--an-border-color))] bg-[color-mix(in_srgb,var(--an-primary-color)_10%,var(--an-background))] px-2.5 py-2 text-xs leading-4 text-[var(--an-foreground-muted)] [&_.material-symbols-outlined]:text-[var(--an-primary-color)]"
               data-testid="agent-elements-extension-dev-status"
               data-agent-elements-shell="extension-dev-status"
             >
@@ -273,13 +278,13 @@ export const ExtensionDevIndicator: React.FC<ExtensionDevIndicatorProps> = ({
             </div>
 
             {relativeTime && (
-              <div className="extension-dev-menu-uptime agent-elements-extension-dev-uptime mb-1 flex items-center gap-2 px-2 py-1.5 text-xs leading-4 text-[var(--nim-text-faint)] [&_.material-symbols-outlined]:text-[var(--nim-text-faint)]">
+              <div className="extension-dev-menu-uptime agent-elements-extension-dev-uptime mb-1 flex items-center gap-2 px-2 py-1.5 text-xs leading-4 text-[var(--an-foreground-subtle)] [&_.material-symbols-outlined]:text-[var(--an-foreground-subtle)]">
                 <MaterialSymbol icon="schedule" size={16} />
                 <span>Started {relativeTime}</span>
               </div>
             )}
 
-            <div className="extension-dev-menu-divider agent-elements-extension-dev-divider mx-2 my-1 h-px bg-[var(--nim-border)]" />
+            <div className="extension-dev-menu-divider agent-elements-extension-dev-divider mx-2 my-1 h-px bg-[var(--an-border-color)]" />
 
             <div
               className="extension-dev-menu-actions agent-elements-extension-dev-actions flex flex-col gap-0.5"
@@ -288,7 +293,7 @@ export const ExtensionDevIndicator: React.FC<ExtensionDevIndicatorProps> = ({
             >
               <button
                 type="button"
-                className="extension-dev-menu-action agent-elements-extension-dev-action flex w-full items-center gap-2.5 rounded-[8px] border-0 bg-transparent px-2.5 py-2 text-left text-[13px] leading-5 text-[var(--nim-text)] cursor-pointer transition-[background-color,color] duration-150 hover:bg-[var(--nim-bg-hover)] focus-visible:outline-2 focus-visible:outline-[var(--nim-primary)] focus-visible:outline-offset-2 [&_.material-symbols-outlined]:text-[var(--nim-text-muted)]"
+                className="extension-dev-menu-action agent-elements-extension-dev-action flex w-full items-center gap-2.5 rounded-[var(--an-tool-border-radius)] border-0 bg-transparent px-2.5 py-2 text-left text-[13px] leading-5 text-[var(--an-foreground)] cursor-pointer transition-[background-color,color] duration-150 hover:bg-[var(--an-background-tertiary)] focus-visible:outline-2 focus-visible:outline-[var(--an-focus-ring)] focus-visible:outline-offset-2 [&_.material-symbols-outlined]:text-[var(--an-foreground-muted)]"
                 onClick={handleOpenConsole}
                 role="menuitem"
               >
@@ -296,7 +301,7 @@ export const ExtensionDevIndicator: React.FC<ExtensionDevIndicatorProps> = ({
                 <span className="min-w-0 flex-1">
                   View Logs
                   {errorCount > 0 && (
-                    <span className="extension-dev-error-badge ml-2 inline-flex h-[18px] min-w-[18px] items-center justify-center rounded-[999px] bg-[var(--nim-error)] px-[5px] text-[11px] font-semibold leading-none text-[var(--nim-bg)]">{errorCount}</span>
+                    <span className="extension-dev-error-badge ml-2 inline-flex h-[18px] min-w-[18px] items-center justify-center rounded-[999px] bg-[var(--an-diff-removed-text)] px-[5px] text-[11px] font-semibold leading-none text-[var(--an-background)]">{errorCount}</span>
                   )}
                 </span>
               </button>
@@ -304,7 +309,7 @@ export const ExtensionDevIndicator: React.FC<ExtensionDevIndicatorProps> = ({
               {onOpenSettings && (
                 <button
                   type="button"
-                  className="extension-dev-menu-action agent-elements-extension-dev-action flex w-full items-center gap-2.5 rounded-[8px] border-0 bg-transparent px-2.5 py-2 text-left text-[13px] leading-5 text-[var(--nim-text)] cursor-pointer transition-[background-color,color] duration-150 hover:bg-[var(--nim-bg-hover)] focus-visible:outline-2 focus-visible:outline-[var(--nim-primary)] focus-visible:outline-offset-2 [&_.material-symbols-outlined]:text-[var(--nim-text-muted)]"
+                  className="extension-dev-menu-action agent-elements-extension-dev-action flex w-full items-center gap-2.5 rounded-[var(--an-tool-border-radius)] border-0 bg-transparent px-2.5 py-2 text-left text-[13px] leading-5 text-[var(--an-foreground)] cursor-pointer transition-[background-color,color] duration-150 hover:bg-[var(--an-background-tertiary)] focus-visible:outline-2 focus-visible:outline-[var(--an-focus-ring)] focus-visible:outline-offset-2 [&_.material-symbols-outlined]:text-[var(--an-foreground-muted)]"
                   onClick={handleOpenSettings}
                   role="menuitem"
                 >
@@ -317,7 +322,7 @@ export const ExtensionDevIndicator: React.FC<ExtensionDevIndicatorProps> = ({
                 type="button"
                 ref={rebuildMenu.refs.setReference}
                 {...rebuildMenu.getReferenceProps()}
-                className="extension-dev-menu-action agent-elements-extension-dev-action agent-elements-extension-dev-rebuild-trigger flex w-full items-center justify-between gap-2.5 rounded-[8px] border-0 bg-transparent px-2.5 py-2 text-left text-[13px] leading-5 text-[var(--nim-text)] cursor-pointer transition-[background-color,color] duration-150 hover:bg-[var(--nim-bg-hover)] focus-visible:outline-2 focus-visible:outline-[var(--nim-primary)] focus-visible:outline-offset-2 [&_.material-symbols-outlined]:text-[var(--nim-text-muted)]"
+                className="extension-dev-menu-action agent-elements-extension-dev-action agent-elements-extension-dev-rebuild-trigger flex w-full items-center justify-between gap-2.5 rounded-[var(--an-tool-border-radius)] border-0 bg-transparent px-2.5 py-2 text-left text-[13px] leading-5 text-[var(--an-foreground)] cursor-pointer transition-[background-color,color] duration-150 hover:bg-[var(--an-background-tertiary)] focus-visible:outline-2 focus-visible:outline-[var(--an-focus-ring)] focus-visible:outline-offset-2 [&_.material-symbols-outlined]:text-[var(--an-foreground-muted)]"
                 onClick={() => rebuildMenu.setIsOpen(!rebuildMenu.isOpen)}
                 role="menuitem"
                 aria-expanded={rebuildSubmenuOpen}
@@ -334,7 +339,7 @@ export const ExtensionDevIndicator: React.FC<ExtensionDevIndicatorProps> = ({
 
               <button
                 type="button"
-                className="extension-dev-menu-action agent-elements-extension-dev-action flex w-full items-center gap-2.5 rounded-[8px] border-0 bg-transparent px-2.5 py-2 text-left text-[13px] leading-5 text-[var(--nim-text)] cursor-pointer transition-[background-color,color] duration-150 hover:enabled:bg-[var(--nim-bg-hover)] disabled:cursor-not-allowed disabled:text-[var(--nim-text-faint)] focus-visible:outline-2 focus-visible:outline-[var(--nim-primary)] focus-visible:outline-offset-2 [&_.material-symbols-outlined]:text-[var(--nim-text-muted)] [&:disabled_.material-symbols-outlined]:text-[var(--nim-text-faint)]"
+                className="extension-dev-menu-action agent-elements-extension-dev-action flex w-full items-center gap-2.5 rounded-[var(--an-tool-border-radius)] border-0 bg-transparent px-2.5 py-2 text-left text-[13px] leading-5 text-[var(--an-foreground)] cursor-pointer transition-[background-color,color] duration-150 hover:enabled:bg-[var(--an-background-tertiary)] disabled:cursor-not-allowed disabled:text-[var(--an-foreground-subtle)] focus-visible:outline-2 focus-visible:outline-[var(--an-focus-ring)] focus-visible:outline-offset-2 [&_.material-symbols-outlined]:text-[var(--an-foreground-muted)] [&:disabled_.material-symbols-outlined]:text-[var(--an-foreground-subtle)]"
                 onClick={handleRestart}
                 disabled={isRestarting}
                 role="menuitem"
@@ -353,14 +358,16 @@ export const ExtensionDevIndicator: React.FC<ExtensionDevIndicatorProps> = ({
             ref={rebuildMenu.refs.setFloating}
             style={rebuildMenu.floatingStyles}
             {...rebuildMenu.getFloatingProps()}
-            className="extension-dev-rebuild-menu agent-elements-extension-dev-rebuild-menu agent-elements-tool-card z-[10001] w-56 max-h-[calc(100vh-32px)] overflow-y-auto rounded-[10px] border border-nim bg-nim-secondary p-1 text-[13px] shadow-[0_12px_32px_color-mix(in_srgb,var(--nim-text)_10%,transparent)] animate-[extension-dev-menu-appear_0.1s_ease-out]"
+            className={`extension-dev-rebuild-menu agent-elements-extension-dev-rebuild-menu agent-elements-tool-card z-[10001] w-56 max-h-[calc(100vh-32px)] overflow-y-auto rounded-[var(--an-tool-border-radius)] border border-[var(--an-border-color)] bg-[var(--an-tool-background)] text-[13px] text-[var(--an-foreground)] shadow-[0_12px_32px_color-mix(in_srgb,var(--an-foreground)_10%,transparent)] animate-[extension-dev-menu-appear_0.1s_ease-out] ${floatingMenuCardGutters}`}
             role="menu"
             data-testid="agent-elements-extension-dev-rebuild-menu"
             data-agent-elements-shell="extension-dev-rebuild-menu"
+            data-agent-elements-card-padding="symmetric-inline"
+            data-agent-elements-card-width="floating-menu"
           >
             <button
               type="button"
-              className="extension-dev-menu-action agent-elements-extension-dev-action flex w-full items-center gap-2.5 rounded-[8px] border-0 bg-transparent px-2.5 py-2 text-left text-[13px] leading-5 text-[var(--nim-text)] cursor-pointer transition-[background-color,color] duration-150 hover:enabled:bg-[var(--nim-bg-hover)] disabled:cursor-not-allowed disabled:text-[var(--nim-text-faint)] focus-visible:outline-2 focus-visible:outline-[var(--nim-primary)] focus-visible:outline-offset-2 [&_.material-symbols-outlined]:text-[var(--nim-text-muted)]"
+              className="extension-dev-menu-action agent-elements-extension-dev-action flex w-full items-center gap-2.5 rounded-[var(--an-tool-border-radius)] border-0 bg-transparent px-2.5 py-2 text-left text-[13px] leading-5 text-[var(--an-foreground)] cursor-pointer transition-[background-color,color] duration-150 hover:enabled:bg-[var(--an-background-tertiary)] disabled:cursor-not-allowed disabled:text-[var(--an-foreground-subtle)] focus-visible:outline-2 focus-visible:outline-[var(--an-focus-ring)] focus-visible:outline-offset-2 [&_.material-symbols-outlined]:text-[var(--an-foreground-muted)]"
               onClick={handleRebuildAll}
               disabled={rebuildingExtension !== null}
               role="menuitem"
@@ -370,14 +377,14 @@ export const ExtensionDevIndicator: React.FC<ExtensionDevIndicatorProps> = ({
             </button>
 
             {extensions.length > 0 && (
-              <div className="agent-elements-extension-dev-divider mx-2 my-1 h-px bg-[var(--nim-border)]" />
+              <div className="agent-elements-extension-dev-divider mx-2 my-1 h-px bg-[var(--an-border-color)]" />
             )}
 
             {extensions.map((ext) => (
               <button
                 key={ext.id}
                 type="button"
-                className="extension-dev-menu-action agent-elements-extension-dev-action flex w-full items-center gap-2.5 rounded-[8px] border-0 bg-transparent px-2.5 py-2 text-left text-[13px] leading-5 text-[var(--nim-text)] cursor-pointer transition-[background-color,color] duration-150 hover:enabled:bg-[var(--nim-bg-hover)] disabled:cursor-not-allowed disabled:text-[var(--nim-text-faint)] focus-visible:outline-2 focus-visible:outline-[var(--nim-primary)] focus-visible:outline-offset-2 [&_.material-symbols-outlined]:text-[var(--nim-text-muted)]"
+                className="extension-dev-menu-action agent-elements-extension-dev-action flex w-full items-center gap-2.5 rounded-[var(--an-tool-border-radius)] border-0 bg-transparent px-2.5 py-2 text-left text-[13px] leading-5 text-[var(--an-foreground)] cursor-pointer transition-[background-color,color] duration-150 hover:enabled:bg-[var(--an-background-tertiary)] disabled:cursor-not-allowed disabled:text-[var(--an-foreground-subtle)] focus-visible:outline-2 focus-visible:outline-[var(--an-focus-ring)] focus-visible:outline-offset-2 [&_.material-symbols-outlined]:text-[var(--an-foreground-muted)]"
                 onClick={() => handleRebuildExtension(ext)}
                 disabled={rebuildingExtension !== null}
                 role="menuitem"
@@ -390,7 +397,7 @@ export const ExtensionDevIndicator: React.FC<ExtensionDevIndicatorProps> = ({
             ))}
 
             {extensions.length === 0 && (
-              <div className="px-2.5 py-2 text-xs leading-4 text-[var(--nim-text-faint)]">
+              <div className="px-2.5 py-2 text-xs leading-4 text-[var(--an-foreground-subtle)]">
                 No buildable extensions found
               </div>
             )}

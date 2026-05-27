@@ -9,6 +9,8 @@ import React, { useMemo } from 'react';
 import { MaterialSymbol } from '@nimbalyst/runtime';
 import { useFloatingMenu, FloatingPortal, virtualElement } from '../../hooks/useFloatingMenu';
 
+const floatingMenuCardGutters = '[--agent-elements-card-block-padding:var(--an-spacing-xs)] [--agent-elements-card-inline-padding:var(--an-spacing-xs)] px-[var(--agent-elements-card-inline-padding)] py-[var(--agent-elements-card-block-padding)]';
+
 interface TerminalTabContextMenuProps {
   x: number;
   y: number;
@@ -52,9 +54,9 @@ export function TerminalTabContextMenu({
   };
 
   const menuItemClasses =
-    'terminal-tab-context-menu-item agent-elements-terminal-tab-menu-item flex w-full items-center gap-2.5 rounded-[8px] border-none bg-transparent px-3 py-2 text-left text-[13px] text-[var(--an-foreground)] transition-colors duration-150 hover:bg-[var(--an-background-secondary)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--an-primary-color)]';
+    'terminal-tab-context-menu-item agent-elements-terminal-tab-menu-item flex w-full items-center gap-2.5 rounded-[var(--an-small-border-radius)] border-none bg-transparent px-3 py-2 text-left text-[13px] text-[var(--an-foreground)] transition-colors duration-150 hover:bg-[var(--an-background-secondary)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--an-primary-color)]';
   const disabledMenuItemClasses =
-    'terminal-tab-context-menu-item agent-elements-terminal-tab-menu-item agent-elements-terminal-tab-menu-item-disabled flex w-full items-center gap-2.5 rounded-[8px] border-none bg-transparent px-3 py-2 text-left text-[13px] text-[var(--an-foreground-subtle)] opacity-60 cursor-not-allowed';
+    'terminal-tab-context-menu-item agent-elements-terminal-tab-menu-item agent-elements-terminal-tab-menu-item-disabled flex w-full items-center gap-2.5 rounded-[var(--an-small-border-radius)] border-none bg-transparent px-3 py-2 text-left text-[13px] text-[var(--an-foreground-subtle)] opacity-60 cursor-not-allowed';
 
   return (
     <FloatingPortal>
@@ -62,9 +64,11 @@ export function TerminalTabContextMenu({
         ref={menu.refs.setFloating}
         style={menu.floatingStyles}
         {...menu.getFloatingProps()}
-        className="terminal-tab-context-menu agent-elements-terminal-tab-menu agent-elements-tool-card z-[10000] min-w-[176px] rounded-[10px] border border-[var(--an-border-color)] bg-[var(--an-background)] p-1 text-[13px] text-[var(--an-foreground)] shadow-[0_12px_32px_color-mix(in_srgb,var(--an-foreground)_10%,transparent)]"
+        className={`terminal-tab-context-menu agent-elements-terminal-tab-menu agent-elements-tool-card z-[10000] min-w-[176px] rounded-[var(--an-tool-border-radius)] border border-[var(--an-border-color)] bg-[var(--an-background)] text-[13px] text-[var(--an-foreground)] shadow-[0_12px_32px_color-mix(in_srgb,var(--an-foreground)_10%,transparent)] ${floatingMenuCardGutters}`}
         data-agent-elements-shell="terminal-tab-context-menu"
         data-agent-elements-testid="agent-elements-terminal-tab-menu"
+        data-agent-elements-card-padding="symmetric-inline"
+        data-agent-elements-card-width="floating-menu"
         data-component="TerminalTabContextMenu"
         data-terminal-id={terminalId}
         data-testid="terminal-tab-context-menu"
@@ -110,7 +114,7 @@ export function TerminalTabContextMenu({
         </button>
 
         <div
-          className="agent-elements-terminal-menu-separator my-1 h-px bg-[var(--an-border-color)]"
+          className="agent-elements-terminal-menu-separator mx-2 my-1 h-px bg-[var(--an-border-color)]"
           data-agent-elements-shell="terminal-menu-separator"
         />
 

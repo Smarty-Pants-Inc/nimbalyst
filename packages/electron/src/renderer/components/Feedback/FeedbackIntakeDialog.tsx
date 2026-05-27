@@ -29,7 +29,7 @@ const feedbackButtonBase =
   'inline-flex items-center justify-center gap-2 rounded-[var(--an-input-border-radius)] border px-3 py-2 text-sm font-medium transition-[background-color,border-color,color,opacity] duration-150 ease-out focus:outline-none focus:ring-2 focus:ring-[var(--an-input-focus-outline)] disabled:cursor-not-allowed disabled:opacity-50';
 
 const feedbackPrimaryButton =
-  `${feedbackButtonBase} border-[var(--an-primary-color)] bg-[var(--an-primary-color)] text-[var(--an-background)] hover:border-[var(--nim-primary-hover)] hover:bg-[var(--nim-primary-hover)]`;
+  `${feedbackButtonBase} border-[var(--an-primary-color)] bg-[var(--an-primary-color)] text-[var(--an-button-primary-text)] hover:border-[color-mix(in_srgb,var(--an-primary-color)_86%,var(--an-foreground))] hover:bg-[color-mix(in_srgb,var(--an-primary-color)_86%,var(--an-foreground))]`;
 
 const feedbackDisabledButton =
   `${feedbackButtonBase} border-[var(--an-border-color)] bg-[var(--an-background)] text-[var(--an-foreground-subtle)]`;
@@ -97,13 +97,13 @@ export const FeedbackIntakeDialog: React.FC<FeedbackIntakeDialogProps> = ({
 
   return (
     <div
-      className="feedback-intake-overlay nim-overlay agent-elements-feedback-intake-backdrop nim-animate-fade-in fixed inset-0 z-50 flex items-center justify-center bg-[color-mix(in_srgb,var(--nim-text)_36%,transparent)] p-4"
+      className="feedback-intake-overlay nim-overlay agent-elements-feedback-intake-backdrop nim-animate-fade-in fixed inset-0 z-50 flex items-center justify-center bg-[color-mix(in_srgb,var(--an-foreground)_36%,transparent)] p-4"
       onClick={onClose}
       data-testid="agent-elements-feedback-intake-backdrop"
       data-agent-elements-shell="feedback-intake-backdrop"
     >
       <div
-        className="feedback-intake-dialog agent-elements-feedback-intake-dialog agent-elements-tool-card nim-animate-slide-up flex max-h-[86vh] w-[560px] max-w-[92vw] flex-col overflow-hidden rounded-[var(--an-border-radius)] border border-[var(--an-border-color)] bg-[var(--an-background)] text-[var(--an-foreground)] shadow-[0_20px_60px_color-mix(in_srgb,var(--nim-text)_18%,transparent)]"
+        className="feedback-intake-dialog agent-elements-feedback-intake-dialog agent-elements-tool-card nim-animate-slide-up flex max-h-[86vh] w-[560px] max-w-[92vw] flex-col !gap-0 !p-0 [--agent-elements-card-block-padding:var(--an-spacing-xl)] [--agent-elements-card-inline-padding:var(--an-spacing-xl)] overflow-hidden rounded-[var(--an-border-radius)] border border-[var(--an-border-color)] bg-[var(--an-background)] text-[var(--an-foreground)] shadow-[0_20px_60px_color-mix(in_srgb,var(--an-foreground)_18%,transparent)]"
         onClick={(e) => e.stopPropagation()}
         role="dialog"
         aria-modal="true"
@@ -113,7 +113,7 @@ export const FeedbackIntakeDialog: React.FC<FeedbackIntakeDialogProps> = ({
         data-agent-elements-shell="feedback-intake-dialog"
       >
         <header
-          className="feedback-intake-header agent-elements-feedback-intake-header flex items-start justify-between gap-3 border-b border-[var(--an-border-color)] p-[var(--an-spacing-xl)]"
+          className="feedback-intake-header agent-elements-feedback-intake-header flex items-start justify-between gap-3 border-b border-[var(--an-border-color)] px-[var(--agent-elements-card-inline-padding)] py-[var(--agent-elements-card-block-padding)]"
           data-testid="agent-elements-feedback-intake-header"
           data-agent-elements-shell="feedback-intake-header"
         >
@@ -150,7 +150,7 @@ export const FeedbackIntakeDialog: React.FC<FeedbackIntakeDialogProps> = ({
         </header>
 
         <div
-          className="feedback-intake-body agent-elements-feedback-intake-body flex flex-col gap-[var(--an-spacing-xl)] overflow-y-auto p-[var(--an-spacing-xl)]"
+          className="feedback-intake-body agent-elements-feedback-intake-body flex flex-col gap-[var(--an-spacing-xl)] overflow-y-auto px-[var(--agent-elements-card-inline-padding)] py-[var(--agent-elements-card-block-padding)]"
           data-agent-elements-shell="feedback-intake-body"
         >
           <section
@@ -173,7 +173,7 @@ export const FeedbackIntakeDialog: React.FC<FeedbackIntakeDialogProps> = ({
                 data-agent-elements-shell="feedback-intake-kind-card"
               >
                 <div className="flex items-center gap-2">
-                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[var(--an-tool-border-radius)] border border-[var(--an-border-color)] bg-[var(--an-background-secondary)] text-[var(--nim-error)]">
+                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[var(--an-tool-border-radius)] border border-[var(--an-border-color)] bg-[var(--an-background-secondary)] text-[var(--an-error-color)]">
                     <MaterialSymbol icon="bug_report" size={18} />
                   </span>
                   <span className="text-sm font-medium leading-snug text-[var(--an-foreground)]">Bug report</span>
@@ -191,7 +191,7 @@ export const FeedbackIntakeDialog: React.FC<FeedbackIntakeDialogProps> = ({
                 data-agent-elements-shell="feedback-intake-kind-card"
               >
                 <div className="flex items-center gap-2">
-                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[var(--an-tool-border-radius)] border border-[var(--an-border-color)] bg-[var(--an-background-secondary)] text-[var(--nim-warning)]">
+                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[var(--an-tool-border-radius)] border border-[var(--an-border-color)] bg-[var(--an-background-secondary)] text-[var(--an-warning-color)]">
                     <MaterialSymbol icon="lightbulb" size={18} />
                   </span>
                   <span className="text-sm font-medium leading-snug text-[var(--an-foreground)]">Feature request</span>
@@ -288,14 +288,14 @@ export const FeedbackIntakeDialog: React.FC<FeedbackIntakeDialogProps> = ({
               <MaterialSymbol
                 icon="arrow_forward"
                 size={18}
-                className={selectedKind ? 'text-[var(--an-background)]' : 'text-[var(--an-foreground-subtle)]'}
+                className={selectedKind ? 'text-[var(--an-button-primary-text)]' : 'text-[var(--an-foreground-subtle)]'}
               />
             </button>
           </div>
         </div>
 
         <footer
-          className="feedback-intake-footer agent-elements-feedback-intake-footer border-t border-[var(--an-border-color)] bg-[var(--an-background-secondary)] px-[var(--an-spacing-xl)] py-[var(--an-spacing-md)]"
+          className="feedback-intake-footer agent-elements-feedback-intake-footer border-t border-[var(--an-border-color)] bg-[var(--an-background-secondary)] px-[var(--agent-elements-card-inline-padding)] py-[var(--an-spacing-md)]"
           data-testid="agent-elements-feedback-intake-footer"
           data-agent-elements-shell="feedback-intake-footer"
         >

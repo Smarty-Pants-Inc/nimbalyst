@@ -117,18 +117,23 @@ async function fetchSystemStats(): Promise<SystemStats | null> {
 // ---------------------------------------------------------------------------
 
 const CHART_COLORS = {
-  rss: 'var(--nim-info)',
-  heap: 'var(--nim-success)',
-  rendererHeap: 'var(--nim-primary)',
-  handles: 'var(--nim-warning)',
-  ipcHandlers: 'var(--nim-link)',
-  workspaces: 'var(--nim-primary-hover)',
-  subscribers: 'var(--nim-error)',
-  families: 'var(--nim-info)',
-  instances: 'var(--nim-warning)',
-  dbReads: 'var(--nim-success)',
-  dbWrites: 'var(--nim-warning)',
+  rss: 'var(--an-primary-color)',
+  heap: 'var(--an-success-color)',
+  rendererHeap: 'var(--an-primary-color)',
+  handles: 'var(--an-warning-color)',
+  ipcHandlers: 'var(--an-primary-color)',
+  workspaces: 'color-mix(in srgb, var(--an-primary-color) 86%, var(--an-background))',
+  subscribers: 'var(--an-diff-removed-text)',
+  families: 'var(--an-primary-color)',
+  instances: 'var(--an-warning-color)',
+  dbReads: 'var(--an-success-color)',
+  dbWrites: 'var(--an-warning-color)',
 };
+
+const compactCardPaddingClass =
+  '[--agent-elements-card-block-padding:var(--an-spacing-sm)] [--agent-elements-card-inline-padding:var(--an-spacing-lg)]';
+const chartCardPaddingClass =
+  '[--agent-elements-card-block-padding:var(--an-spacing-lg)] [--agent-elements-card-inline-padding:var(--an-spacing-lg)]';
 
 // ---------------------------------------------------------------------------
 // Overview Panel
@@ -145,7 +150,7 @@ function OverviewPanel({
 }) {
   if (!systemStats) {
     return (
-      <div className="agent-elements-developer-dashboard-loading flex h-full items-center justify-center text-[var(--nim-text-muted)]">
+      <div className="agent-elements-developer-dashboard-loading flex h-full items-center justify-center text-[var(--an-foreground-muted)]">
         Loading...
       </div>
     );
@@ -193,15 +198,15 @@ function OverviewPanel({
           <ChartSection title="Memory">
             <ResponsiveContainer width="100%" height={200}>
               <LineChart data={history}>
-                <CartesianGrid strokeDasharray="3 3" stroke="var(--nim-border)" />
-                <XAxis dataKey="time" stroke="var(--nim-text-muted)" tick={{ fontSize: 11 }} />
-                <YAxis stroke="var(--nim-text-muted)" tick={{ fontSize: 11 }} unit=" MB" />
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--an-border-color)" />
+                <XAxis dataKey="time" stroke="var(--an-foreground-muted)" tick={{ fontSize: 11 }} />
+                <YAxis stroke="var(--an-foreground-muted)" tick={{ fontSize: 11 }} unit=" MB" />
                 <Tooltip
                   contentStyle={{
-                    backgroundColor: 'var(--nim-bg-secondary)',
-                    border: '1px solid var(--nim-border)',
+                    backgroundColor: 'var(--an-tool-background)',
+                    border: '1px solid var(--an-border-color)',
                     borderRadius: 8,
-                    color: 'var(--nim-text)',
+                    color: 'var(--an-foreground)',
                     fontSize: 12,
                   }}
                 />
@@ -216,15 +221,15 @@ function OverviewPanel({
           <ChartSection title="Handles and Watchers">
             <ResponsiveContainer width="100%" height={200}>
               <LineChart data={history}>
-                <CartesianGrid strokeDasharray="3 3" stroke="var(--nim-border)" />
-                <XAxis dataKey="time" stroke="var(--nim-text-muted)" tick={{ fontSize: 11 }} />
-                <YAxis stroke="var(--nim-text-muted)" tick={{ fontSize: 11 }} />
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--an-border-color)" />
+                <XAxis dataKey="time" stroke="var(--an-foreground-muted)" tick={{ fontSize: 11 }} />
+                <YAxis stroke="var(--an-foreground-muted)" tick={{ fontSize: 11 }} />
                 <Tooltip
                   contentStyle={{
-                    backgroundColor: 'var(--nim-bg-secondary)',
-                    border: '1px solid var(--nim-border)',
+                    backgroundColor: 'var(--an-tool-background)',
+                    border: '1px solid var(--an-border-color)',
                     borderRadius: 8,
-                    color: 'var(--nim-text)',
+                    color: 'var(--an-foreground)',
                     fontSize: 12,
                   }}
                 />
@@ -240,15 +245,15 @@ function OverviewPanel({
           <ChartSection title="Jotai Atom Families">
             <ResponsiveContainer width="100%" height={200}>
               <LineChart data={history}>
-                <CartesianGrid strokeDasharray="3 3" stroke="var(--nim-border)" />
-                <XAxis dataKey="time" stroke="var(--nim-text-muted)" tick={{ fontSize: 11 }} />
-                <YAxis stroke="var(--nim-text-muted)" tick={{ fontSize: 11 }} />
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--an-border-color)" />
+                <XAxis dataKey="time" stroke="var(--an-foreground-muted)" tick={{ fontSize: 11 }} />
+                <YAxis stroke="var(--an-foreground-muted)" tick={{ fontSize: 11 }} />
                 <Tooltip
                   contentStyle={{
-                    backgroundColor: 'var(--nim-bg-secondary)',
-                    border: '1px solid var(--nim-border)',
+                    backgroundColor: 'var(--an-tool-background)',
+                    border: '1px solid var(--an-border-color)',
                     borderRadius: 8,
-                    color: 'var(--nim-text)',
+                    color: 'var(--an-foreground)',
                     fontSize: 12,
                   }}
                 />
@@ -262,15 +267,15 @@ function OverviewPanel({
           <ChartSection title="Database Queries (rolling count per sample)">
             <ResponsiveContainer width="100%" height={200}>
               <LineChart data={history}>
-                <CartesianGrid strokeDasharray="3 3" stroke="var(--nim-border)" />
-                <XAxis dataKey="time" stroke="var(--nim-text-muted)" tick={{ fontSize: 11 }} />
-                <YAxis stroke="var(--nim-text-muted)" tick={{ fontSize: 11 }} />
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--an-border-color)" />
+                <XAxis dataKey="time" stroke="var(--an-foreground-muted)" tick={{ fontSize: 11 }} />
+                <YAxis stroke="var(--an-foreground-muted)" tick={{ fontSize: 11 }} />
                 <Tooltip
                   contentStyle={{
-                    backgroundColor: 'var(--nim-bg-secondary)',
-                    border: '1px solid var(--nim-border)',
+                    backgroundColor: 'var(--an-tool-background)',
+                    border: '1px solid var(--an-border-color)',
                     borderRadius: 8,
-                    color: 'var(--nim-text)',
+                    color: 'var(--an-foreground)',
                     fontSize: 12,
                   }}
                 />
@@ -286,11 +291,11 @@ function OverviewPanel({
       {/* Database query performance table */}
       {dbEntries.length > 0 && (
         <div>
-          <h3 className="text-sm font-medium text-[var(--nim-text)] mb-2">Database Query Performance (5m window)</h3>
+          <h3 className="text-sm font-medium text-[var(--an-foreground)] mb-2">Database Query Performance (5m window)</h3>
           <div className="overflow-auto">
             <table className="w-full text-xs font-mono border-collapse">
               <thead>
-                <tr className="text-left text-[var(--nim-text-muted)] border-b border-[var(--nim-border)]">
+                <tr className="text-left text-[var(--an-foreground-muted)] border-b border-[var(--an-border-color)]">
                   <th className="px-2 py-1.5">Table</th>
                   <th className="px-2 py-1.5 text-right">Op</th>
                   <th className="px-2 py-1.5 text-right">Count</th>
@@ -308,20 +313,20 @@ function OverviewPanel({
                     rows.push(
                       <tr
                         key={`${table}-r`}
-                        className="agent-elements-developer-dashboard-table-row border-b border-[var(--nim-border)] transition-colors hover:bg-[var(--nim-bg-hover)]"
+                        className="agent-elements-developer-dashboard-table-row border-b border-[var(--an-border-color)] transition-colors hover:bg-[var(--an-background-tertiary)]"
                         data-agent-elements-shell="developer-dashboard-table-row"
                       >
-                        <td className="px-2 py-1 text-[var(--nim-text)]">{table}</td>
-                        <td className="px-2 py-1 text-right text-[var(--nim-text-muted)]">R</td>
+                        <td className="px-2 py-1 text-[var(--an-foreground)]">{table}</td>
+                        <td className="px-2 py-1 text-right text-[var(--an-foreground-muted)]">R</td>
                         <td className="px-2 py-1 text-right">{stats.reads.count}</td>
                         <td className="px-2 py-1 text-right">{stats.reads.p50}ms</td>
                         <td className="px-2 py-1 text-right">{stats.reads.p95}ms</td>
                         <td className="px-2 py-1 text-right">{stats.reads.p99}ms</td>
                         <td className="px-2 py-1 text-right">
-                          <span className={stats.reads.max > 100 ? 'text-[var(--nim-error)]' : ''}>{stats.reads.max}ms</span>
+                          <span className={stats.reads.max > 100 ? 'text-[var(--an-diff-removed-text)]' : ''}>{stats.reads.max}ms</span>
                         </td>
                         <td className="px-2 py-1 text-right">
-                          {stats.reads.blockedP95 > 0 ? <span className="text-[var(--nim-warning)]">{stats.reads.blockedP95}ms</span> : '-'}
+                          {stats.reads.blockedP95 > 0 ? <span className="text-[var(--an-warning-color)]">{stats.reads.blockedP95}ms</span> : '-'}
                         </td>
                       </tr>
                     );
@@ -330,20 +335,20 @@ function OverviewPanel({
                     rows.push(
                       <tr
                         key={`${table}-w`}
-                        className="agent-elements-developer-dashboard-table-row border-b border-[var(--nim-border)] transition-colors hover:bg-[var(--nim-bg-hover)]"
+                        className="agent-elements-developer-dashboard-table-row border-b border-[var(--an-border-color)] transition-colors hover:bg-[var(--an-background-tertiary)]"
                         data-agent-elements-shell="developer-dashboard-table-row"
                       >
-                        <td className="px-2 py-1 text-[var(--nim-text)]">{table}</td>
-                        <td className="px-2 py-1 text-right text-[var(--nim-text-muted)]">W</td>
+                        <td className="px-2 py-1 text-[var(--an-foreground)]">{table}</td>
+                        <td className="px-2 py-1 text-right text-[var(--an-foreground-muted)]">W</td>
                         <td className="px-2 py-1 text-right">{stats.writes.count}</td>
                         <td className="px-2 py-1 text-right">{stats.writes.p50}ms</td>
                         <td className="px-2 py-1 text-right">{stats.writes.p95}ms</td>
                         <td className="px-2 py-1 text-right">{stats.writes.p99}ms</td>
                         <td className="px-2 py-1 text-right">
-                          <span className={stats.writes.max > 100 ? 'text-[var(--nim-error)]' : ''}>{stats.writes.max}ms</span>
+                          <span className={stats.writes.max > 100 ? 'text-[var(--an-diff-removed-text)]' : ''}>{stats.writes.max}ms</span>
                         </td>
                         <td className="px-2 py-1 text-right">
-                          {stats.writes.blockedP95 > 0 ? <span className="text-[var(--nim-warning)]">{stats.writes.blockedP95}ms</span> : '-'}
+                          {stats.writes.blockedP95 > 0 ? <span className="text-[var(--an-warning-color)]">{stats.writes.blockedP95}ms</span> : '-'}
                         </td>
                       </tr>
                     );
@@ -359,15 +364,15 @@ function OverviewPanel({
       {/* File watcher detail */}
       {fileWatchers.workspaces.length > 0 && (
         <div>
-          <h3 className="text-sm font-medium text-[var(--nim-text)] mb-2">Watched Workspaces</h3>
+          <h3 className="text-sm font-medium text-[var(--an-foreground)] mb-2">Watched Workspaces</h3>
           <div className="space-y-1">
             {fileWatchers.workspaces.map(ws => (
               <div
                 key={ws.workspacePath}
-                className="agent-elements-developer-dashboard-detail rounded-[8px] border border-[var(--nim-border)] bg-[var(--nim-bg-hover)] px-3 py-2 text-xs font-mono"
+                className="agent-elements-developer-dashboard-detail rounded-[8px] border border-[var(--an-border-color)] bg-[var(--an-background-tertiary)] px-3 py-2 text-xs font-mono"
               >
-                <div className="text-[var(--nim-text)]">{ws.workspacePath}</div>
-                <div className="text-[var(--nim-text-muted)] mt-0.5">
+                <div className="text-[var(--an-foreground)]">{ws.workspacePath}</div>
+                <div className="text-[var(--an-foreground-muted)] mt-0.5">
                   Subscribers ({ws.subscriberCount}): {ws.subscriberIds.join(', ')}
                 </div>
               </div>
@@ -379,20 +384,20 @@ function OverviewPanel({
       {/* Window state detail */}
       {systemStats.windows.length > 0 && (
         <div>
-          <h3 className="text-sm font-medium text-[var(--nim-text)] mb-2">Windows</h3>
+          <h3 className="text-sm font-medium text-[var(--an-foreground)] mb-2">Windows</h3>
           <div className="space-y-1">
             {systemStats.windows.map(win => (
               <div
                 key={win.id}
-                className="agent-elements-developer-dashboard-detail flex items-center gap-3 rounded-[8px] border border-[var(--nim-border)] bg-[var(--nim-bg-hover)] px-3 py-2 text-xs font-mono"
+                className="agent-elements-developer-dashboard-detail flex items-center gap-3 rounded-[8px] border border-[var(--an-border-color)] bg-[var(--an-background-tertiary)] px-3 py-2 text-xs font-mono"
               >
-                <span className="text-[var(--nim-text-muted)]">#{win.id}</span>
-                <span className="text-[var(--nim-text)]">{win.mode}</span>
-                <span className="text-[var(--nim-text-muted)] truncate flex-1">
+                <span className="text-[var(--an-foreground-muted)]">#{win.id}</span>
+                <span className="text-[var(--an-foreground)]">{win.mode}</span>
+                <span className="text-[var(--an-foreground-muted)] truncate flex-1">
                   {win.workspacePath || win.filePath || '(none)'}
                 </span>
                 {win.documentEdited && (
-                  <span className="text-[var(--nim-warning)] text-[10px]">edited</span>
+                  <span className="text-[var(--an-warning-color)] text-[10px]">edited</span>
                 )}
               </div>
             ))}
@@ -401,7 +406,7 @@ function OverviewPanel({
       )}
 
       {/* System info */}
-      <div className="text-xs text-[var(--nim-text-muted)] pb-2">
+      <div className="text-xs text-[var(--an-foreground-muted)] pb-2">
         {proc.platform} | Node {proc.nodeVersion} | Electron {proc.electronVersion}
       </div>
     </div>
@@ -411,12 +416,14 @@ function OverviewPanel({
 function StatCard({ label, value }: { label: string; value: string }) {
   return (
     <div
-      className="agent-elements-developer-dashboard-stat-card rounded-[10px] border border-[var(--nim-border)] bg-[var(--nim-bg-secondary)] px-3 py-2"
+      className={`agent-elements-developer-dashboard-stat-card agent-elements-tool-card gap-0 ${compactCardPaddingClass}`}
+      data-agent-elements-card-padding="symmetric-inline"
+      data-agent-elements-card-width="grid-cell"
       data-testid="agent-elements-developer-dashboard-stat-card"
       data-agent-elements-shell="developer-dashboard-stat-card"
     >
-      <div className="mb-0.5 text-[11px] font-medium leading-4 text-[var(--nim-text-muted)]">{label}</div>
-      <div className="text-sm font-mono text-[var(--nim-text)]">{value}</div>
+      <div className="mb-0.5 text-[11px] font-medium leading-4 text-[var(--an-foreground-muted)]">{label}</div>
+      <div className="text-sm font-mono text-[var(--an-foreground)]">{value}</div>
     </div>
   );
 }
@@ -424,10 +431,12 @@ function StatCard({ label, value }: { label: string; value: string }) {
 function ChartSection({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div
-      className="agent-elements-developer-dashboard-chart rounded-[10px] border border-[var(--nim-border)] bg-[var(--nim-bg-secondary)] p-3"
+      className={`agent-elements-developer-dashboard-chart agent-elements-tool-card gap-0 ${chartCardPaddingClass}`}
+      data-agent-elements-card-padding="symmetric-inline"
+      data-agent-elements-card-width="section-row"
       data-agent-elements-shell="developer-dashboard-chart"
     >
-      <h3 className="text-sm font-medium text-[var(--nim-text)] mb-2">{title}</h3>
+      <h3 className="text-sm font-medium text-[var(--an-foreground)] mb-2">{title}</h3>
       {children}
     </div>
   );
@@ -451,28 +460,28 @@ function AtomFamilyPanel({ stats, loading, refresh }: { stats: AtomFamilyStat[];
       data-agent-elements-shell="developer-dashboard-atom-panel"
     >
       {/* Summary bar */}
-      <div className="flex items-center gap-4 px-4 py-3 border-b border-[var(--nim-border)] text-sm">
-        <span className="text-[var(--nim-text-muted)]">
+      <div className="flex items-center gap-4 px-4 py-3 border-b border-[var(--an-border-color)] text-sm">
+        <span className="text-[var(--an-foreground-muted)]">
           {stats.length} families registered
         </span>
-        <span className="text-[var(--nim-text-muted)]">|</span>
-        <span className="text-[var(--nim-text)]">
+        <span className="text-[var(--an-foreground-muted)]">|</span>
+        <span className="text-[var(--an-foreground)]">
           <strong>{totalInstances}</strong> live instances across <strong>{nonEmptyCount}</strong> families
         </span>
         <div className="flex-1" />
-        <label className="flex items-center gap-1.5 cursor-pointer text-[var(--nim-text-muted)]">
+        <label className="flex items-center gap-1.5 cursor-pointer text-[var(--an-foreground-muted)]">
           <input
             type="checkbox"
             checked={filterEmpty}
             onChange={e => setFilterEmpty(e.target.checked)}
-            className="accent-[var(--nim-primary)]"
+            className="accent-[var(--an-primary-color)]"
           />
           Hide empty
         </label>
         <button
           onClick={refresh}
           disabled={loading}
-          className="rounded-[8px] border border-[var(--nim-border)] bg-[var(--nim-bg-hover)] px-3 py-1 text-xs text-[var(--nim-text)] transition-colors hover:bg-[var(--nim-bg-active)] disabled:opacity-50"
+          className="rounded-[8px] border border-[var(--an-border-color)] bg-[var(--an-background-tertiary)] px-3 py-1 text-xs text-[var(--an-foreground)] transition-colors hover:bg-[color-mix(in_srgb,var(--an-primary-color)_12%,var(--an-background))] disabled:opacity-50"
         >
           {loading ? 'Loading...' : 'Refresh'}
         </button>
@@ -481,8 +490,8 @@ function AtomFamilyPanel({ stats, loading, refresh }: { stats: AtomFamilyStat[];
       {/* Table */}
       <div className="flex-1 overflow-auto">
         <table className="w-full text-sm border-collapse">
-          <thead className="sticky top-0 z-10 bg-[var(--nim-bg-secondary)]">
-            <tr className="text-left text-[var(--nim-text-muted)] border-b border-[var(--nim-border)]">
+          <thead className="sticky top-0 z-10 bg-[var(--an-tool-background)]">
+            <tr className="text-left text-[var(--an-foreground-muted)] border-b border-[var(--an-border-color)]">
               <th className="px-4 py-2 font-medium">Name</th>
               <th className="px-4 py-2 font-medium w-20">File</th>
               <th className="px-4 py-2 font-medium w-24 text-right">Instances</th>
@@ -495,32 +504,32 @@ function AtomFamilyPanel({ stats, loading, refresh }: { stats: AtomFamilyStat[];
               return (
                 <React.Fragment key={key}>
                   <tr
-                    className="agent-elements-developer-dashboard-table-row cursor-pointer border-b border-[var(--nim-border)] transition-colors hover:bg-[var(--nim-bg-hover)]"
+                    className="agent-elements-developer-dashboard-table-row cursor-pointer border-b border-[var(--an-border-color)] transition-colors hover:bg-[var(--an-background-tertiary)]"
                     data-agent-elements-shell="developer-dashboard-table-row"
                     onClick={() => setExpandedRow(isExpanded ? null : key)}
                   >
-                    <td className="px-4 py-2 font-mono text-[var(--nim-text)]">
-                      <span className="mr-1.5 text-[var(--nim-text-muted)] text-xs">
+                    <td className="px-4 py-2 font-mono text-[var(--an-foreground)]">
+                      <span className="mr-1.5 text-[var(--an-foreground-muted)] text-xs">
                         {isExpanded ? '\u25BC' : '\u25B6'}
                       </span>
                       {s.name}
                     </td>
-                    <td className="px-4 py-2 text-[var(--nim-text-muted)]">{s.file}</td>
+                    <td className="px-4 py-2 text-[var(--an-foreground-muted)]">{s.file}</td>
                     <td className="px-4 py-2 text-right font-mono">
                       <CountBadge count={s.count} />
                     </td>
                   </tr>
                   {isExpanded && s.params.length > 0 && (
-                    <tr className="bg-[var(--nim-bg-secondary)]">
+                    <tr className="bg-[var(--an-tool-background)]">
                       <td colSpan={3} className="px-8 py-2">
-                        <div className="text-xs text-[var(--nim-text-muted)] mb-1">
+                        <div className="text-xs text-[var(--an-foreground-muted)] mb-1">
                           Live params ({s.params.length}):
                         </div>
                         <div className="flex flex-wrap gap-1.5 max-h-40 overflow-auto">
                           {s.params.map((p, i) => (
                             <span
                               key={i}
-                              className="rounded-[6px] bg-[var(--nim-bg-hover)] px-2 py-0.5 text-xs font-mono text-[var(--nim-text)]"
+                              className="rounded-[6px] bg-[var(--an-background-tertiary)] px-2 py-0.5 text-xs font-mono text-[var(--an-foreground)]"
                               title={p}
                             >
                               {p.length > 40 ? p.slice(0, 37) + '...' : p}
@@ -535,7 +544,7 @@ function AtomFamilyPanel({ stats, loading, refresh }: { stats: AtomFamilyStat[];
             })}
             {displayed.length === 0 && (
               <tr>
-                <td colSpan={3} className="px-4 py-8 text-center text-[var(--nim-text-muted)]">
+                <td colSpan={3} className="px-4 py-8 text-center text-[var(--an-foreground-muted)]">
                   {filterEmpty ? 'No families with live instances' : 'No families registered'}
                 </td>
               </tr>
@@ -549,10 +558,10 @@ function AtomFamilyPanel({ stats, loading, refresh }: { stats: AtomFamilyStat[];
 
 function CountBadge({ count }: { count: number }) {
   const color = count === 0
-    ? 'text-[var(--nim-text-muted)]'
+    ? 'text-[var(--an-foreground-muted)]'
     : count > 50
-      ? 'text-[var(--nim-error)] font-bold'
-      : 'text-[var(--nim-text)]';
+      ? 'text-[var(--an-diff-removed-text)] font-bold'
+      : 'text-[var(--an-foreground)]';
   return <span className={color}>{count}</span>;
 }
 
@@ -632,7 +641,7 @@ export function DeveloperDashboard() {
 
   return (
     <div
-      className="developer-dashboard agent-elements-developer-dashboard flex h-screen flex-col bg-[var(--nim-bg-secondary)] text-[var(--nim-text)] select-text"
+      className="developer-dashboard agent-elements-developer-dashboard flex h-screen flex-col bg-[var(--an-background)] text-[var(--an-foreground)] select-text"
       data-testid="agent-elements-developer-dashboard"
       data-agent-elements-shell="developer-dashboard"
     >
@@ -641,7 +650,7 @@ export function DeveloperDashboard() {
 
       {/* Tab bar */}
       <div
-        className="developer-dashboard-tabs agent-elements-developer-dashboard-tabs flex items-center gap-1 border-b border-[var(--nim-border)] px-4"
+        className="developer-dashboard-tabs agent-elements-developer-dashboard-tabs flex items-center gap-1 border-b border-[var(--an-border-color)] px-4"
         data-testid="agent-elements-developer-dashboard-tabs"
         data-agent-elements-shell="developer-dashboard-tabs"
       >
@@ -649,10 +658,10 @@ export function DeveloperDashboard() {
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
-            className={`agent-elements-developer-dashboard-tab border-b-2 px-3 py-2 text-sm transition-colors focus-visible:outline-2 focus-visible:outline-[var(--nim-primary)] focus-visible:outline-offset-2 ${
+            className={`agent-elements-developer-dashboard-tab border-b-2 px-3 py-2 text-sm transition-colors focus-visible:outline-2 focus-visible:outline-[var(--an-focus-ring)] focus-visible:outline-offset-2 ${
               activeTab === tab.id
-                ? 'border-[var(--nim-primary)] text-[var(--nim-text)]'
-                : 'border-transparent text-[var(--nim-text-muted)] hover:text-[var(--nim-text)]'
+                ? 'border-[var(--an-primary-color)] text-[var(--an-foreground)]'
+                : 'border-transparent text-[var(--an-foreground-muted)] hover:text-[var(--an-foreground)]'
             }`}
             data-testid="agent-elements-developer-dashboard-tab"
             data-agent-elements-shell="developer-dashboard-tab"
@@ -661,7 +670,7 @@ export function DeveloperDashboard() {
           </button>
         ))}
         <div className="flex-1" />
-        <div className="flex items-center gap-2 text-xs text-[var(--nim-text-muted)]">
+        <div className="flex items-center gap-2 text-xs text-[var(--an-foreground-muted)]">
           {loading && <span className="animate-pulse">Refreshing...</span>}
           {lastRefresh && !loading && (
             <span>Last: {formatTime(lastRefresh)}</span>

@@ -9,6 +9,9 @@
 import React, { Component, ErrorInfo, ReactNode } from 'react';
 import { logger } from '../../utils/logger';
 
+const TAB_EDITOR_ERROR_CARD_PADDING_CLASS =
+  '[--agent-elements-card-block-padding:var(--an-spacing-xxl)] [--agent-elements-card-inline-padding:var(--an-spacing-xxl)] px-[var(--agent-elements-card-inline-padding)] py-[var(--agent-elements-card-block-padding)]';
+
 interface Props {
   children: ReactNode;
   filePath: string;
@@ -57,12 +60,14 @@ export class TabEditorErrorBoundary extends Component<Props, State> {
     if (this.state.hasError) {
       return (
         <div
-          className="tab-editor-error-fallback agent-elements-tab-editor-error-boundary agent-elements-tool-card flex h-full w-full items-center justify-center rounded-[var(--an-tool-border-radius)] border border-[var(--an-border-color)] bg-[var(--an-background-secondary)] p-[var(--an-spacing-xxl)] text-[var(--an-foreground)] [container-type:inline-size]"
+          className={`tab-editor-error-fallback agent-elements-tab-editor-error-boundary agent-elements-tool-card flex h-full w-full items-center justify-center rounded-[var(--an-tool-border-radius)] border border-[var(--an-border-color)] bg-[var(--an-tool-background)] text-[var(--an-foreground)] [container-type:inline-size] ${TAB_EDITOR_ERROR_CARD_PADDING_CLASS}`}
           role="alert"
           aria-live="assertive"
           data-testid="agent-elements-tab-editor-error-boundary"
           data-component="TabEditorErrorBoundary"
           data-agent-elements-shell="tab-editor-error-boundary"
+          data-agent-elements-card-padding="symmetric-inline"
+          data-agent-elements-card-width="bounded-fallback"
         >
           <div
             className="agent-elements-tab-editor-error-boundary-content flex w-full max-w-[540px] flex-col items-start gap-[var(--an-spacing-lg)] text-left"
@@ -70,7 +75,7 @@ export class TabEditorErrorBoundary extends Component<Props, State> {
           >
             <div className="flex items-start gap-3">
               <span
-                className="agent-elements-tab-editor-error-boundary-icon inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-[var(--an-tool-border-radius)] border border-[color-mix(in_srgb,var(--nim-error)_30%,var(--an-border-color))] bg-[color-mix(in_srgb,var(--nim-error)_10%,var(--an-background))] text-[var(--nim-error)]"
+                className="agent-elements-tab-editor-error-boundary-icon inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-[var(--an-tool-border-radius)] border border-[color-mix(in_srgb,var(--an-diff-removed-text)_30%,var(--an-border-color))] bg-[color-mix(in_srgb,var(--an-diff-removed-text)_10%,var(--an-background))] text-[var(--an-diff-removed-text)]"
                 aria-hidden="true"
                 data-agent-elements-shell="tab-editor-error-boundary-icon"
               >
@@ -111,7 +116,7 @@ export class TabEditorErrorBoundary extends Component<Props, State> {
             >
               <button
                 onClick={this.handleRetry}
-                className="agent-elements-tab-editor-error-boundary-retry rounded-[var(--an-input-border-radius)] border border-[var(--an-send-button-bg)] bg-[var(--an-send-button-bg)] px-4 py-2 text-sm font-medium text-[var(--an-send-button-color)] transition-colors duration-150 ease-out hover:bg-[var(--nim-primary-hover)] focus:outline-none focus:ring-2 focus:ring-[var(--an-input-focus-outline)]"
+                className="agent-elements-tab-editor-error-boundary-retry rounded-[var(--an-input-border-radius)] border border-[var(--an-send-button-bg)] bg-[var(--an-send-button-bg)] px-4 py-2 text-sm font-medium text-[var(--an-send-button-color)] transition-colors duration-150 ease-out hover:bg-[color-mix(in_srgb,var(--an-primary-color)_88%,var(--an-foreground))] focus:outline-none focus:ring-2 focus:ring-[var(--an-input-focus-outline)]"
                 data-testid="agent-elements-tab-editor-error-boundary-retry"
                 data-agent-elements-shell="tab-editor-error-boundary-retry"
               >

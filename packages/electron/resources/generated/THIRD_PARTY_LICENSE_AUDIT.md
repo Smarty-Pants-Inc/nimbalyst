@@ -2,22 +2,22 @@
 
 Generated from `package-lock.json` and installed package legal files.
 
-- Packages scanned: 844
+- Packages scanned: 969
 - Review required: 0
 - Approved exceptions: 3
 
 ## License Counts
 
 - 0BSD: 1
-- Apache-2.0: 37
+- Apache-2.0: 40
 - BlueOak-1.0.0: 9
 - BSD-2-Clause: 6
 - BSD-3-Clause: 28
-- CC0-1.0: 2
+- CC0-1.0: 3
 - EPL-2.0: 1
-- ISC: 56
+- ISC: 58
 - LGPL-3.0: 1
-- MIT: 700
+- MIT: 819
 - Python-2.0: 1
 - SEE LICENSE IN README.md: 1
 - Unlicense: 1

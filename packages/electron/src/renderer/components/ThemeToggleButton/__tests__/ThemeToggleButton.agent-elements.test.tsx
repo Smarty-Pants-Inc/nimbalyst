@@ -124,7 +124,10 @@ describe('ThemeToggleButton Agent Elements shell', () => {
 
     const menu = await screen.findByTestId('agent-elements-theme-toggle-menu');
     expect(menu).toHaveClass('theme-menu', 'agent-elements-theme-toggle-menu', 'agent-elements-tool-card');
+    expect(menu).toHaveClass('w-52', 'max-w-[calc(100vw-24px)]');
     expect(menu).toHaveAttribute('data-agent-elements-shell', 'theme-toggle-menu');
+    expect(menu).toHaveAttribute('data-agent-elements-card-padding', 'symmetric-inline');
+    expect(menu).toHaveAttribute('data-agent-elements-card-width', 'floating-menu');
     expect(menu).toHaveAttribute('role', 'menu');
     expect(button).toHaveAttribute('aria-expanded', 'true');
 
@@ -144,6 +147,10 @@ describe('ThemeToggleButton Agent Elements shell', () => {
     expect(source).toContain('agent-elements-theme-toggle');
     expect(source).toContain('data-agent-elements-shell="theme-toggle-button"');
     expect(source).toContain('data-agent-elements-shell="theme-toggle-menu"');
+    expect(source).toContain('data-agent-elements-card-padding="symmetric-inline"');
+    expect(source).toContain('data-agent-elements-card-width="floating-menu"');
+    expect(source).toContain('w-52 max-w-[calc(100vw-24px)]');
+    expect(source).toContain('--agent-elements-card-inline-padding');
     expect(source).toContain('FloatingPortal');
     expect(source).not.toContain('rounded-md');
     expect(source).not.toContain('shadow-lg');
@@ -151,5 +158,6 @@ describe('ThemeToggleButton Agent Elements shell', () => {
     expect(source).not.toContain('bg-nim-secondary');
     expect(source).not.toContain('hover:bg-nim-hover');
     expect(source).not.toContain('border-none');
+    expect(source).not.toMatch(/var\(--nim-/);
   });
 });

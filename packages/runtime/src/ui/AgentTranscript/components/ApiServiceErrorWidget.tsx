@@ -1,52 +1,10 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
+import { AgentStatusPill, AgentToolCard } from '../../AgentElements';
+import { SPECIAL_STATUS_BODY_CLASS } from './SpecialStatusWidgetChrome';
 
-// Inject api-service-error widget styles once. Color treatment matches
-// the rate-limit widget's "warning" variant (not "blocked") because these
-// errors are transient and clear when the upstream incident resolves.
-const injectApiServiceErrorStyles = () => {
-  const styleId = 'api-service-error-widget-styles';
-  if (typeof document === 'undefined') return;
-  if (document.getElementById(styleId)) return;
-
-  const style = document.createElement('style');
-  style.id = styleId;
-  style.textContent = `
-    .api-service-error-widget {
-      background-color: color-mix(in srgb, var(--nim-warning) 8%, transparent);
-      border: 1px solid color-mix(in srgb, var(--nim-warning) 25%, transparent);
-    }
-    .api-service-error-widget code.req-id {
-      background-color: var(--nim-bg-tertiary);
-      color: var(--nim-text);
-      padding: 0.1rem 0.35rem;
-      border-radius: 0.2rem;
-      font-size: 0.8em;
-      font-family: var(--font-mono, monospace);
-      user-select: all;
-    }
-    .api-service-error-widget details > summary {
-      cursor: pointer;
-      user-select: none;
-      color: var(--nim-text-muted);
-      font-size: 0.75rem;
-    }
-    .api-service-error-widget details[open] > summary {
-      margin-bottom: 0.4rem;
-    }
-    .api-service-error-widget details pre {
-      background-color: var(--nim-bg-tertiary);
-      color: var(--nim-text-muted);
-      padding: 0.5rem;
-      border-radius: 0.3rem;
-      font-size: 0.72rem;
-      white-space: pre-wrap;
-      word-break: break-all;
-      max-height: 8rem;
-      overflow-y: auto;
-    }
-  `;
-  document.head.appendChild(style);
-};
+const LIST_CLASS = 'm-0 flex list-disc flex-col gap-[var(--an-spacing-xs)] pl-5 text-[0.8125rem] leading-relaxed text-[var(--an-tool-color-muted)] select-text';
+const LINK_CLASS = 'text-[var(--an-primary-color)] underline-offset-2 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--an-input-focus-outline)]';
+const COPY_BUTTON_CLASS = 'ml-1 cursor-pointer border-0 bg-transparent p-0 text-[0.75rem] text-[var(--an-foreground-subtle)] underline-offset-2 hover:text-[var(--an-tool-color-muted)] hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--an-input-focus-outline)]';
 
 interface ApiServiceErrorInfo {
   /** The HTTP status the upstream API returned (500, 529, etc.). */
@@ -152,7 +110,6 @@ interface ApiServiceErrorWidgetProps {
  * widget is intended to neutralise.
  */
 export const ApiServiceErrorWidget: React.FC<ApiServiceErrorWidgetProps> = ({ content }) => {
-  useEffect(() => { injectApiServiceErrorStyles(); }, []);
   const [copied, setCopied] = useState(false);
   const info = parseApiServiceError(content);
 
@@ -173,39 +130,37 @@ export const ApiServiceErrorWidget: React.FC<ApiServiceErrorWidgetProps> = ({ co
     }
   };
 
-  return (
-    <div className="api-service-error-widget my-3 p-3 rounded-lg flex flex-col gap-2">
-      <div className="flex items-center gap-2">
-        <span
-          className="flex items-center justify-center w-5 h-5 rounded-full text-white text-xs font-bold"
-          style={{ backgroundColor: 'var(--nim-warning)' }}
-        >
-          !
-        </span>
-        <span className="text-sm font-semibold" style={{ color: 'var(--nim-warning)' }}>
-          {title}
-        </span>
-        {info.status != null && (
-          <span className="text-[0.7rem] text-[var(--nim-text-faint)]">
-            HTTP {info.status}{info.errorType ? ` · ${info.errorType}` : ''}
-          </span>
-        )}
-      </div>
+  const subtitle = info.status != null
+    ? `HTTP ${info.status}${info.errorType ? ` / ${info.errorType}` : ''}`
+    : info.errorType ?? 'upstream service error';
 
-      <div className="text-[var(--nim-text-muted)] text-[0.85rem] leading-relaxed">
+  return (
+    <AgentToolCard
+      className="api-service-error-widget"
+      data-agent-elements-shell="api-service-error"
+      data-component="ApiServiceErrorWidget"
+      data-testid="agent-elements-api-service-error-widget"
+      debugPayload={info.raw}
+      icon={<span className="text-[var(--an-warning-color)]">!</span>}
+      status="error"
+      subtitle={subtitle}
+      title={title}
+      trailing={<AgentStatusPill tone="warning">Upstream</AgentStatusPill>}
+    >
+      <div className={SPECIAL_STATUS_BODY_CLASS}>
         {isOverloaded
           ? 'This is an upstream capacity error on the API side, not a bug in Nimbalyst. The API will accept new requests once load eases. Retrying in a minute usually works; switching to a less-loaded model also helps.'
           : 'This is a transient upstream error on the API side, not a bug in Nimbalyst. Most cases clear within a few minutes.'}
       </div>
 
-      <ul className="text-[var(--nim-text-muted)] text-[0.8rem] leading-relaxed list-disc pl-5 m-0">
+      <ul className={LIST_CLASS}>
         <li>
           Check the status page at{' '}
           <a
             href="https://status.claude.com"
             target="_blank"
             rel="noopener noreferrer"
-            className="text-[var(--nim-primary)] hover:underline"
+            className={LINK_CLASS}
           >
             status.claude.com
           </a>{' '}
@@ -217,22 +172,19 @@ export const ApiServiceErrorWidget: React.FC<ApiServiceErrorWidgetProps> = ({ co
           <li>
             If the error keeps firing for more than a few minutes on the same prompt and model,
             include the request id when contacting support:{' '}
-            <code className="req-id">{info.requestId}</code>{' '}
+            <code className="req-id agent-elements-api-service-request-id rounded-[var(--an-spacing-xs)] bg-[var(--an-background-tertiary)] px-1.5 py-0.5 font-mono text-[0.75rem] text-[var(--an-tool-color)] select-all">
+              {info.requestId}
+            </code>{' '}
             <button
               type="button"
               onClick={copyRequestId}
-              className="ml-1 text-[0.7rem] text-[var(--nim-text-faint)] hover:text-[var(--nim-text-muted)] underline-offset-2 hover:underline"
+              className={COPY_BUTTON_CLASS}
             >
               {copied ? 'copied' : 'copy'}
             </button>
           </li>
         )}
       </ul>
-
-      <details>
-        <summary>Show raw error payload</summary>
-        <pre>{info.raw}</pre>
-      </details>
-    </div>
+    </AgentToolCard>
   );
 };

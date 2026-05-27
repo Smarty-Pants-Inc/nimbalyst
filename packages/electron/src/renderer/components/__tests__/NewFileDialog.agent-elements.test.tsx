@@ -2,6 +2,8 @@
 
 import '@testing-library/jest-dom/vitest';
 import React from 'react';
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { NewFileDialog } from '../NewFileDialog';
@@ -56,6 +58,17 @@ describe('NewFileDialog Agent Elements shell', () => {
         getFolderContents: vi.fn().mockResolvedValue(folderTree),
       },
     });
+  });
+
+  it('keeps dialog chrome on Agent Elements aliases instead of legacy Nimbalyst visual tokens', () => {
+    const source = readFileSync(
+      resolve(process.cwd(), 'packages/electron/src/renderer/components/NewFileDialog.tsx'),
+      'utf8'
+    );
+
+    expect(source).toContain('--an-');
+    expect(source).not.toMatch(/\b(?:text|border|bg)-nim(?:\b|-)/);
+    expect(source).not.toMatch(/--nim-(?:text|primary|border|bg|error)/);
   });
 
   it('renders an Agent Elements dialog shell while preserving folder selection and markdown create behavior', async () => {

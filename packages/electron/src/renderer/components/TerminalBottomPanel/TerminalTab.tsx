@@ -119,10 +119,10 @@ export const TerminalTab: React.FC<TerminalTabProps> = ({
   // - isActiveWorktree: the terminal belongs to the worktree currently being viewed
   // - isFocusFlashing: brief animation when terminal is focused via worktree button
   const agentElementsId = toAgentElementsId(terminal.id);
-  const baseClasses = 'terminal-tab agent-elements-terminal-tab group flex items-center gap-1 px-2 py-1 border-none text-xs cursor-pointer rounded whitespace-nowrap max-w-[200px] transition-colors duration-150 hover:bg-[var(--nim-bg-hover)] hover:text-[var(--nim-text)]';
+  const baseClasses = 'terminal-tab agent-elements-terminal-tab group flex max-w-[200px] cursor-pointer items-center gap-[var(--an-spacing-xs)] whitespace-nowrap rounded-[var(--an-radius-sm)] border-none px-[var(--an-spacing-sm)] py-[var(--an-spacing-xs)] text-xs transition-colors duration-150 hover:bg-[var(--an-background-tertiary)] hover:text-[var(--an-foreground)]';
   const activeClasses = isActive
-    ? 'active bg-[var(--nim-bg)] text-[var(--nim-text)] font-medium'
-    : 'bg-transparent text-[var(--nim-text-muted)]';
+    ? 'active bg-[var(--an-background)] text-[var(--an-foreground)] font-medium'
+    : 'bg-transparent text-[var(--an-foreground-muted)]';
   const flashClasses = isFocusFlashing ? 'animate-focus-flash' : '';
 
   return (
@@ -148,14 +148,14 @@ export const TerminalTab: React.FC<TerminalTabProps> = ({
           icon="alt_route"
           size={14}
           title={isActiveWorktree ? 'Current worktree terminal' : 'Worktree terminal'}
-          className={isActiveWorktree ? 'text-[var(--nim-primary)]' : undefined}
+          className={isActiveWorktree ? 'text-[var(--an-primary-color)]' : undefined}
         />
       ) : (
         <MaterialSymbol icon={getShellIcon(terminal.shellName)} size={14} />
       )}
       {isCommandRunning && (
         <div
-          className="agent-elements-terminal-command-running w-1.5 h-1.5 rounded-full bg-yellow-400 animate-pulse shrink-0"
+          className="agent-elements-terminal-command-running h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--an-warning-color)] animate-pulse"
           data-agent-elements-shell="terminal-command-running"
           data-state="running"
           data-testid={`agent-elements-terminal-command-running-${agentElementsId}`}
@@ -164,10 +164,10 @@ export const TerminalTab: React.FC<TerminalTabProps> = ({
       )}
       <span className="terminal-tab-title overflow-hidden text-ellipsis shrink min-w-0">{getDisplayName()}</span>
       {!terminal.worktreeId && (
-        <span className={`terminal-tab-cwd text-[10px] overflow-hidden text-ellipsis shrink min-w-0 ${isActive ? 'text-[var(--nim-text-muted)]' : 'text-[var(--nim-text-faint)]'}`}>{getAbbreviatedCwd(terminal.cwd)}</span>
+        <span className={`terminal-tab-cwd min-w-0 shrink overflow-hidden text-ellipsis text-[10px] ${isActive ? 'text-[var(--an-foreground-muted)]' : 'text-[var(--an-foreground-subtle)]'}`}>{getAbbreviatedCwd(terminal.cwd)}</span>
       )}
       <button
-        className="terminal-tab-close agent-elements-terminal-tab-close hidden group-hover:flex items-center justify-center w-4 h-4 p-0 bg-transparent border-none text-[var(--nim-text-faint)] cursor-pointer rounded-sm shrink-0 ml-0.5 transition-colors duration-150 hover:bg-[var(--nim-bg-tertiary)] hover:text-[var(--nim-text)]"
+        className="terminal-tab-close agent-elements-terminal-tab-close ml-0.5 hidden h-4 w-4 shrink-0 cursor-pointer items-center justify-center rounded-[var(--an-radius-xs)] border-none bg-transparent p-0 text-[var(--an-foreground-subtle)] transition-colors duration-150 hover:bg-[var(--an-background-secondary)] hover:text-[var(--an-foreground)] group-hover:flex"
         data-agent-elements-shell="terminal-tab-close"
         data-testid={`agent-elements-terminal-tab-close-${agentElementsId}`}
         onClick={handleCloseClick}

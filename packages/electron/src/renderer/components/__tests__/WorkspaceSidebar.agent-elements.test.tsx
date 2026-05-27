@@ -12,6 +12,10 @@ const workspaceSidebarSourcePath = resolve(
   process.cwd(),
   'packages/electron/src/renderer/components/WorkspaceSidebar.tsx'
 );
+const flatFileTreeSourcePath = resolve(
+  process.cwd(),
+  'packages/electron/src/renderer/components/FlatFileTree.tsx'
+);
 
 const mockState = vi.hoisted(() => ({
   rawFileTree: [] as Array<{ name: string; path: string; type: 'file' | 'directory'; children?: unknown[] }>,
@@ -302,5 +306,18 @@ describe('WorkspaceSidebar Agent Elements shell', () => {
     expect(source).not.toMatch(/--nim-accent-subtle|nim-section-label|nim-btn-primary/);
     expect(source).not.toMatch(/transition-all|duration-200|hover:-translate-y-px|bg-gradient-to-b/);
     expect(source).not.toMatch(/bg-white|text-white|shadow-(lg|xl|2xl)|rounded-2xl/);
+  });
+
+  it('keeps FlatFileTree drag-image chrome on Agent Elements aliases', () => {
+    const source = readFileSync(flatFileTreeSourcePath, 'utf8');
+
+    expect(source).toContain("dragImage.style.backgroundColor = 'var(--an-background)'");
+    expect(source).toContain("dragImage.style.border = '1px solid var(--an-border-color)'");
+    expect(source).toContain("dragImage.style.borderRadius = 'var(--an-message-radius-inner)'");
+    expect(source).toContain("dragImage.style.color = 'var(--an-foreground)'");
+    expect(source).toContain("dragImage.style.boxShadow = '0 2px 4px color-mix(in srgb, var(--an-foreground) 10%, transparent)'");
+    expect(source).not.toMatch(
+      /dragImage\.style\.(?:backgroundColor|border|borderRadius|color|boxShadow)\s*=\s*['"][^'"]*(?:#[0-9a-fA-F]{3,8}|rgba\()/
+    );
   });
 });

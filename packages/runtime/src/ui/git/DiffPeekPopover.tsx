@@ -39,7 +39,10 @@ const DEFAULT_HEIGHT = 380;
 const RESIZE_DEBOUNCE_MS = 150;
 
 const KBD_CLASS =
-  'inline-block py-px px-1 mr-0.5 rounded-sm border border-[var(--nim-border)] bg-[var(--nim-bg-tertiary)] text-[var(--nim-text-muted)] font-mono text-[9px] leading-none';
+  'inline-block rounded-[var(--an-radius-xs)] border border-[var(--an-border-color)] bg-[var(--an-background-tertiary)] px-1 py-px mr-0.5 font-mono text-[9px] leading-none text-[var(--an-foreground-muted)]';
+
+const DIFF_PEEK_CARD_GUTTERS =
+  '[--agent-elements-card-block-padding:var(--an-spacing-sm)] [--agent-elements-card-inline-padding:var(--an-spacing-lg)]';
 
 export function DiffPeekPopover({
   anchorRect,
@@ -139,10 +142,10 @@ export function DiffPeekPopover({
     height: height ?? DEFAULT_HEIGHT,
   };
 
-  const containerClass = `flex flex-col overflow-hidden outline-none z-[1000] bg-[var(--nim-bg-secondary)] rounded-lg shadow-[0_12px_32px_rgba(0,0,0,0.4),0_2px_8px_rgba(0,0,0,0.2)] resize min-w-[320px] min-h-[160px] max-w-[calc(100vw-32px)] max-h-[calc(100vh-32px)] border ${
+  const containerClass = `diff-peek-popover agent-elements-diff-peek-popover agent-elements-tool-card z-[1000] flex min-h-[160px] min-w-[320px] max-w-[calc(100vw-32px)] max-h-[calc(100vh-32px)] resize flex-col overflow-hidden rounded-[var(--an-tool-border-radius)] border bg-[var(--an-tool-background)] text-[var(--an-tool-color)] shadow-[0_12px_32px_color-mix(in_srgb,var(--an-foreground)_12%,transparent)] outline-none focus-visible:ring-2 focus-visible:ring-[var(--an-focus-ring)] ${DIFF_PEEK_CARD_GUTTERS} ${
     mode === 'peek'
-      ? 'border-dashed border-[var(--nim-primary)]'
-      : 'border-[var(--nim-primary)]'
+      ? 'border-dashed border-[var(--an-primary-color)]'
+      : 'border-[var(--an-primary-color)]'
   }`;
 
   return (
@@ -151,34 +154,58 @@ export function DiffPeekPopover({
         ref={refs.setFloating}
         style={sizedStyle}
         className={containerClass}
+        data-testid="agent-elements-diff-peek-popover"
+        data-component="DiffPeekPopover"
+        data-agent-elements-shell="diff-peek-popover"
+        data-agent-elements-card-padding="sectioned-symmetric"
+        data-agent-elements-card-width="floating-popover"
+        data-popover-mode={mode}
         {...getFloatingProps()}
       >
-        <div className="flex items-center gap-2 py-2 px-3 border-b border-[var(--nim-border)] bg-[var(--nim-bg)] text-xs">
+        <div
+          className="diff-peek-header flex items-center gap-[var(--an-spacing-sm)] border-b border-[var(--an-border-color)] bg-[var(--an-background)] px-[var(--agent-elements-card-inline-padding)] py-[var(--agent-elements-card-block-padding)] text-xs"
+          data-testid="agent-elements-diff-peek-header"
+          data-agent-elements-shell="diff-peek-header"
+        >
           <span
-            className="flex-1 flex items-baseline gap-0 overflow-hidden text-ellipsis whitespace-nowrap font-mono"
+            className="flex flex-1 items-baseline gap-0 overflow-hidden text-ellipsis whitespace-nowrap font-mono"
             title={filePath}
           >
-            {dir && <span className="text-[var(--nim-text-faint)] text-[11px]">{dir}/</span>}
-            <span className="text-[var(--nim-text)] font-semibold">{filename}</span>
+            {dir && <span className="text-[11px] text-[var(--an-foreground-subtle)]">{dir}/</span>}
+            <span className="font-semibold text-[var(--an-foreground)]">{filename}</span>
           </span>
-          <span className="flex gap-1.5 font-mono text-[11px] font-semibold">
-            {stats.added > 0 && <span className="text-[var(--nim-success)]">+{stats.added}</span>}
-            {stats.removed > 0 && <span className="text-[var(--nim-error)]">−{stats.removed}</span>}
+          <span
+            className="diff-peek-stats flex gap-1.5 font-mono text-[11px] font-semibold"
+            data-testid="agent-elements-diff-peek-stats"
+            data-agent-elements-shell="diff-peek-stats"
+          >
+            {stats.added > 0 && <span className="text-[var(--an-diff-added-text)]">+{stats.added}</span>}
+            {stats.removed > 0 && <span className="text-[var(--an-diff-removed-text)]">−{stats.removed}</span>}
           </span>
           {mode === 'peek' && (
-            <span className="text-[10px] tracking-[0.06em] uppercase py-0.5 px-1.5 rounded-sm bg-[var(--nim-bg-tertiary)] text-[var(--nim-text-faint)]">
+            <span
+              className="diff-peek-mode rounded-[var(--an-radius-sm)] bg-[var(--an-background-tertiary)] px-1.5 py-0.5 text-[10px] text-[var(--an-foreground-subtle)]"
+              data-testid="agent-elements-diff-peek-mode"
+              data-agent-elements-shell="diff-peek-mode"
+            >
               Peeking
             </span>
           )}
           {mode === 'pinned' && (
-            <span className="text-[10px] tracking-[0.06em] uppercase py-0.5 px-1.5 rounded-sm bg-[color-mix(in_srgb,var(--nim-primary)_25%,transparent)] text-[var(--nim-primary)]">
+            <span
+              className="diff-peek-mode rounded-[var(--an-radius-sm)] bg-[color-mix(in_srgb,var(--an-primary-color)_14%,transparent)] px-1.5 py-0.5 text-[10px] text-[var(--an-primary-color)]"
+              data-testid="agent-elements-diff-peek-mode"
+              data-agent-elements-shell="diff-peek-mode"
+            >
               Pinned
             </span>
           )}
           {onOpenInEditor && (
             <button
               type="button"
-              className="bg-transparent border-0 cursor-pointer text-[var(--nim-primary)] text-[11px] py-0.5 px-1 hover:underline"
+              className="diff-peek-open-editor cursor-pointer rounded-[var(--an-radius-sm)] border-0 bg-transparent px-1 py-0.5 text-[11px] text-[var(--an-primary-color)] hover:bg-[var(--an-background-tertiary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--an-focus-ring)]"
+              data-testid="agent-elements-diff-peek-open-editor"
+              data-agent-elements-shell="diff-peek-open-editor"
               onClick={(e) => { e.stopPropagation(); onOpenInEditor(); }}
             >
               Open in editor
@@ -186,11 +213,18 @@ export function DiffPeekPopover({
           )}
         </div>
 
-        <div className="flex-1 overflow-auto bg-[var(--nim-bg)]">
+        <div
+          className="diff-peek-body flex-1 overflow-auto bg-[var(--an-background)]"
+          data-agent-elements-shell="diff-peek-body"
+        >
           <UnifiedDiffView diff={diff} isBinary={isBinary} loading={loading} error={error} />
         </div>
 
-        <div className="flex gap-3 py-1.5 px-3 border-t border-[var(--nim-border)] bg-[var(--nim-bg-secondary)] text-[10px] text-[var(--nim-text-faint)]">
+        <div
+          className="diff-peek-footer flex gap-[var(--an-spacing-lg)] border-t border-[var(--an-border-color)] bg-[var(--an-tool-background)] px-[var(--agent-elements-card-inline-padding)] py-[var(--agent-elements-card-block-padding)] text-[10px] text-[var(--an-foreground-subtle)]"
+          data-testid="agent-elements-diff-peek-footer"
+          data-agent-elements-shell="diff-peek-footer"
+        >
           <span><kbd className={KBD_CLASS}>Esc</kbd> close</span>
           {mode === 'peek' && <span><kbd className={KBD_CLASS}>Enter</kbd> pin</span>}
         </div>

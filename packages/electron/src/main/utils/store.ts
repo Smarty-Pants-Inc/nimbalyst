@@ -1148,6 +1148,7 @@ export function dismissRosettaWarning(): void {
 export function shouldShowRosettaWarning(): boolean {
   if (process.platform !== 'darwin') return false;
   if (isRosettaWarningDismissed()) return false;
+  if (process.arch !== 'x64') return false;
   try {
     const result = execSync('sysctl -n sysctl.proc_translated', {
       encoding: 'utf-8',

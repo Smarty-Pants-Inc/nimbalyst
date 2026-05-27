@@ -174,10 +174,15 @@ export function closeSplashScreen(): void {
     const win = splashWindow;
     splashWindow = null;
 
-    // Brief delay before closing to avoid abrupt disappearance
+    if (win.isVisible()) {
+        win.hide();
+    }
+
+    // Brief delay before destroying to avoid abrupt disappearance. Use destroy
+    // instead of close so the splash cannot linger if close is intercepted.
     setTimeout(() => {
         if (!win.isDestroyed()) {
-            win.close();
+            win.destroy();
         }
     }, 200);
 }

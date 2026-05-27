@@ -54,6 +54,122 @@ const SCOPE_MODE_LABELS: Record<AgentFileScopeMode, { title: string; description
   }
 };
 
+interface FilesScopeOptionProps {
+  checked: boolean;
+  children: React.ReactNode;
+  description?: string;
+  inputClassName?: string;
+  label: string;
+  name?: string;
+  onChange: (checked: boolean) => void;
+  shell: string;
+  type: 'checkbox' | 'radio';
+  value?: string;
+}
+
+const triggerBaseClass = [
+  'files-scope-dropdown__trigger',
+  'agent-elements-files-scope-dropdown-trigger',
+  '-mx-2 -my-1 flex max-w-full cursor-pointer flex-col items-start gap-0',
+  'rounded-[calc(var(--an-tool-border-radius)_-_4px)] border border-transparent bg-transparent',
+  'px-[var(--an-spacing-sm)] py-[var(--an-spacing-xs)] text-left outline-none',
+  'transition-[background-color,border-color,color] duration-150 ease-out',
+  'focus-visible:ring-2 focus-visible:ring-[var(--an-input-focus-outline)]',
+].join(' ');
+
+const triggerOpenClass = 'border-[var(--an-border-color)] bg-[var(--an-background-tertiary)]';
+const triggerClosedClass = 'hover:border-[var(--an-border-color)] hover:bg-[var(--an-background-tertiary)]';
+
+const menuClass = [
+  'files-scope-dropdown__menu',
+  'agent-elements-files-scope-dropdown-menu',
+  'nim-scrollbar z-[1000] min-w-[276px] max-w-[360px] overflow-hidden',
+  'rounded-[var(--an-tool-border-radius)] border border-[var(--an-border-color)]',
+  'bg-[var(--an-background)] p-[var(--an-spacing-xxs)] text-[13px] text-[var(--an-foreground)]',
+  'shadow-[0_12px_32px_color-mix(in_srgb,var(--an-foreground)_10%,transparent)]',
+].join(' ');
+
+const sectionClass = [
+  'files-scope-dropdown__section',
+  'agent-elements-files-scope-dropdown-section',
+  'px-[var(--an-spacing-xxs)] py-[var(--an-spacing-xs)]',
+].join(' ');
+
+const dividedSectionClass = `${sectionClass} border-b border-[var(--an-border-color)]`;
+
+const sectionHeaderClass = [
+  'files-scope-dropdown__section-header',
+  'agent-elements-files-scope-dropdown-section-header',
+  'px-[var(--an-spacing-sm)] pb-[var(--an-spacing-xxs)] pt-[var(--an-spacing-xs)]',
+  'text-[10px] font-medium text-[var(--an-foreground-subtle)]',
+].join(' ');
+
+const optionInputClass = [
+  'mt-0.5 h-3.5 w-3.5 shrink-0 cursor-pointer accent-[var(--an-primary-color)]',
+  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--an-input-focus-outline)]',
+].join(' ');
+
+const inlineOptionInputClass = [
+  'h-3.5 w-3.5 shrink-0 cursor-pointer accent-[var(--an-primary-color)]',
+  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--an-input-focus-outline)]',
+].join(' ');
+
+function getOptionClass(checked: boolean): string {
+  const stateClass = checked
+    ? 'border-[color-mix(in_srgb,var(--an-primary-color)_24%,var(--an-border-color))] bg-[color-mix(in_srgb,var(--an-primary-color)_10%,var(--an-background))]'
+    : 'border-transparent bg-transparent hover:border-[var(--an-border-color)] hover:bg-[var(--an-background-tertiary)]';
+
+  return [
+    'files-scope-dropdown__option',
+    'agent-elements-files-scope-dropdown-option',
+    'flex cursor-pointer items-start gap-[var(--an-spacing-sm)] rounded-[calc(var(--an-tool-border-radius)_-_2px)]',
+    'border px-[var(--an-spacing-sm)] py-[var(--an-spacing-xs)] text-[var(--an-foreground)]',
+    'transition-[background-color,border-color,color] duration-150 ease-out',
+    stateClass,
+  ].join(' ');
+}
+
+function FilesScopeOption({
+  checked,
+  children,
+  description,
+  inputClassName = optionInputClass,
+  label,
+  name,
+  onChange,
+  shell,
+  type,
+  value,
+}: FilesScopeOptionProps) {
+  return (
+    <label
+      className={getOptionClass(checked)}
+      data-agent-elements-shell={shell}
+      data-selected={checked ? 'true' : 'false'}
+      data-value={value}
+    >
+      <input
+        aria-label={label}
+        checked={checked}
+        className={inputClassName}
+        name={name}
+        onChange={(event) => onChange(event.target.checked)}
+        type={type}
+      />
+      <span className="files-scope-dropdown__option-content flex min-w-0 flex-1 flex-col">
+        <span className="files-scope-dropdown__option-title text-xs font-medium leading-snug text-[var(--an-foreground)]">
+          {children}
+        </span>
+        {description ? (
+          <span className="files-scope-dropdown__option-description mt-0.5 text-[10px] leading-snug text-[var(--an-foreground-subtle)]">
+            {description}
+          </span>
+        ) : null}
+      </span>
+    </label>
+  );
+}
+
 /** Get context subtitle based on current state */
 function getScopeContext(
   mode: AgentFileScopeMode,
@@ -97,133 +213,148 @@ export const FilesScopeDropdown: React.FC<FilesScopeDropdownProps> = ({
 
   const currentLabel = SCOPE_MODE_LABELS[fileScopeMode];
   const contextSubtitle = getScopeContext(fileScopeMode, isWorktree, workstreamSessionCount, filterToCurrentSession, worktreeName);
+  const menuId = 'files-scope-dropdown-menu';
 
   return (
-    <div className="files-scope-dropdown min-w-60">
-      {/* Dropdown trigger - acts as the title */}
+    <div
+      className="files-scope-dropdown agent-elements-files-scope-dropdown min-w-60 max-w-full text-[var(--an-foreground)]"
+      data-agent-elements-shell="files-scope-dropdown"
+      data-component="FilesScopeDropdown"
+      data-testid="agent-elements-files-scope-dropdown"
+    >
       <button
         ref={menu.refs.setReference}
         {...menu.getReferenceProps()}
+        aria-controls={menu.isOpen ? menuId : undefined}
+        aria-expanded={menu.isOpen}
+        aria-haspopup="menu"
         onClick={() => menu.setIsOpen(!menu.isOpen)}
         data-testid="files-scope-dropdown"
-        className={`files-scope-dropdown__trigger flex flex-col items-start gap-0 px-2 py-1 -mx-2 -my-1 border-none rounded cursor-pointer transition-colors max-w-full ${
-          menu.isOpen ? 'bg-[var(--nim-bg-tertiary)]' : 'bg-transparent hover:bg-[var(--nim-bg-hover)]'
-        }`}
+        data-agent-elements-shell="files-scope-dropdown-trigger"
+        type="button"
+        className={`${triggerBaseClass} ${menu.isOpen ? triggerOpenClass : triggerClosedClass}`}
       >
-        <div className="files-scope-dropdown__title-row flex items-center gap-1 max-w-full">
-          <MaterialSymbol icon="description" size={16} className="text-[var(--nim-text-muted)] shrink-0" />
-          <span className="files-scope-dropdown__title text-sm font-medium text-[var(--nim-text)] truncate min-w-0">
+        <div className="files-scope-dropdown__title-row flex max-w-full items-center gap-[var(--an-spacing-xs)]">
+          <MaterialSymbol icon="description" size={16} className="shrink-0 text-[var(--an-foreground-muted)]" />
+          <span className="files-scope-dropdown__title min-w-0 truncate text-sm font-medium leading-tight text-[var(--an-foreground)]">
             {currentLabel.title}
           </span>
           <MaterialSymbol
             icon="expand_more"
             size={16}
-            className={`files-scope-dropdown__chevron text-[var(--nim-text-muted)] transition-transform duration-200 shrink-0 ${
+            className={`files-scope-dropdown__chevron shrink-0 text-[var(--an-foreground-muted)] transition-transform duration-150 ease-out ${
               menu.isOpen ? 'rotate-180' : ''
             }`}
           />
         </div>
-        <span className="files-scope-dropdown__subtitle text-xs text-[var(--nim-text-muted)] pl-5">
+        <span className="files-scope-dropdown__subtitle pl-5 text-xs leading-snug text-[var(--an-foreground-subtle)]">
           {contextSubtitle}
         </span>
       </button>
 
-      {/* Dropdown panel */}
       {menu.isOpen && (
         <FloatingPortal>
           <div
             ref={menu.refs.setFloating}
             style={menu.floatingStyles}
             {...menu.getFloatingProps()}
-            className="files-scope-dropdown__menu min-w-[260px] bg-[var(--nim-bg)] border border-[var(--nim-border)] rounded-lg shadow-lg z-[1000] overflow-hidden"
+            aria-label="Files edited scope"
+            className={menuClass}
+            data-agent-elements-shell="files-scope-dropdown-menu"
+            data-component="FilesScopeDropdownMenu"
+            data-testid="agent-elements-files-scope-dropdown-menu"
+            id={menuId}
+            role="menu"
           >
-            {/* Show Files section */}
-            <div className="files-scope-dropdown__section px-3 py-2 border-b border-[var(--nim-border)]">
-              <div className="files-scope-dropdown__section-header text-[10px] font-semibold text-[var(--nim-text-faint)] uppercase tracking-wide mb-1.5">
+            <div
+              className={dividedSectionClass}
+              data-agent-elements-shell="files-scope-dropdown-section"
+            >
+              <div className={sectionHeaderClass}>
                 Show Files
               </div>
               {(Object.entries(SCOPE_MODE_LABELS) as [AgentFileScopeMode, { title: string; description: string }][]).map(
                 ([mode, { title, description }]) => {
-                  // Customize description for all-changes mode when in a worktree
                   const displayDescription = mode === 'all-changes' && isWorktree && worktreeName
                     ? `All uncommitted files in worktree ${worktreeName}`
                     : description;
 
                   return (
-                    <label
+                    <FilesScopeOption
+                      checked={fileScopeMode === mode}
                       key={mode}
-                      className="files-scope-dropdown__option flex items-start gap-2 px-2 py-1.5 rounded cursor-pointer hover:bg-[var(--nim-bg-hover)]"
+                      label={title}
+                      name="fileScopeMode"
+                      onChange={() => {
+                        onFileScopeModeChange(mode);
+                      }}
+                      shell="files-scope-dropdown-scope-mode"
+                      type="radio"
+                      value={mode}
+                      description={displayDescription}
                     >
-                      <input
-                        type="radio"
-                        name="fileScopeMode"
-                        checked={fileScopeMode === mode}
-                        onChange={() => {
-                          onFileScopeModeChange(mode);
-                        }}
-                        className="cursor-pointer mt-0.5"
-                      />
-                      <div className="files-scope-dropdown__option-content flex flex-col">
-                        <span className="files-scope-dropdown__option-title text-xs font-medium text-[var(--nim-text)]">
-                          {title}
-                        </span>
-                        <span className="files-scope-dropdown__option-description text-[10px] text-[var(--nim-text-muted)]">
-                          {displayDescription}
-                        </span>
-                      </div>
-                    </label>
+                      {title}
+                    </FilesScopeOption>
                   );
                 }
               )}
             </div>
 
-            {/* Scope section - only show if multiple sessions and not in all-changes mode */}
             {hasMultipleSessions && fileScopeMode !== 'all-changes' && (
-              <div className="files-scope-dropdown__section px-3 py-2 border-b border-[var(--nim-border)]">
-                <div className="files-scope-dropdown__section-header text-[10px] font-semibold text-[var(--nim-text-faint)] uppercase tracking-wide mb-1.5">
+              <div
+                className={dividedSectionClass}
+                data-agent-elements-shell="files-scope-dropdown-section"
+              >
+                <div className={sectionHeaderClass}>
                   Scope
                 </div>
-                <label className="files-scope-dropdown__option flex items-center gap-2 px-2 py-1.5 rounded cursor-pointer hover:bg-[var(--nim-bg-hover)]">
-                  <input
-                    type="radio"
-                    name="sessionFilter"
-                    checked={!filterToCurrentSession}
-                    onChange={() => onFilterToCurrentSessionChange(false)}
-                    className="cursor-pointer"
-                  />
-                  <span className="text-xs text-[var(--nim-text)]">
+                <FilesScopeOption
+                  checked={!filterToCurrentSession}
+                  inputClassName={inlineOptionInputClass}
+                  label={`All sessions (${workstreamSessionCount})`}
+                  name="sessionFilter"
+                  onChange={() => onFilterToCurrentSessionChange(false)}
+                  shell="files-scope-dropdown-session-filter"
+                  type="radio"
+                  value="all-sessions"
+                >
+                  <span>
                     All sessions ({workstreamSessionCount})
                   </span>
-                </label>
-                <label className="files-scope-dropdown__option flex items-center gap-2 px-2 py-1.5 rounded cursor-pointer hover:bg-[var(--nim-bg-hover)]">
-                  <input
-                    type="radio"
-                    name="sessionFilter"
-                    checked={filterToCurrentSession}
-                    onChange={() => onFilterToCurrentSessionChange(true)}
-                    className="cursor-pointer"
-                  />
-                  <span className="text-xs text-[var(--nim-text)]">
-                    Current session only
-                  </span>
-                </label>
+                </FilesScopeOption>
+                <FilesScopeOption
+                  checked={filterToCurrentSession}
+                  inputClassName={inlineOptionInputClass}
+                  label="Current session only"
+                  name="sessionFilter"
+                  onChange={() => onFilterToCurrentSessionChange(true)}
+                  shell="files-scope-dropdown-session-filter"
+                  type="radio"
+                  value="current-session"
+                >
+                  Current session only
+                </FilesScopeOption>
               </div>
             )}
 
-            {/* Display section */}
-            <div className="files-scope-dropdown__section px-3 py-2">
-              <div className="files-scope-dropdown__section-header text-[10px] font-semibold text-[var(--nim-text-faint)] uppercase tracking-wide mb-1.5">
+            <div
+              className={sectionClass}
+              data-agent-elements-shell="files-scope-dropdown-section"
+            >
+              <div className={sectionHeaderClass}>
                 Display
               </div>
-              <label className="files-scope-dropdown__option flex items-center gap-2 px-2 py-1.5 rounded cursor-pointer hover:bg-[var(--nim-bg-hover)]">
-                <input
-                  type="checkbox"
-                  checked={groupByDirectory}
-                  onChange={(e) => onGroupByDirectoryChange(e.target.checked)}
-                  className="cursor-pointer"
-                />
-                <span className="text-xs text-[var(--nim-text)]">Group by directory</span>
-              </label>
+              <FilesScopeOption
+                checked={groupByDirectory}
+                inputClassName={inlineOptionInputClass}
+                label="Group by directory"
+                onChange={(checked) => onGroupByDirectoryChange(checked)}
+                shell="files-scope-dropdown-display-option"
+                type="checkbox"
+                value="group-by-directory"
+              >
+                Group by directory
+              </FilesScopeOption>
             </div>
           </div>
         </FloatingPortal>

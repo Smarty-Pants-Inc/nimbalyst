@@ -28,6 +28,11 @@ const MAX_VISIBLE_LINES = 15;
  */
 const MAX_COLLAPSED_COMMAND_LENGTH = 60;
 
+const AGENT_ELEMENTS_CARD_INLINE_PADDING_CLASS =
+  'px-[var(--agent-elements-card-inline-padding,var(--an-spacing-md))]';
+const AGENT_ELEMENTS_CARD_ROW_BLOCK_PADDING_CLASS = 'py-[var(--an-spacing-sm)]';
+const AGENT_ELEMENTS_CARD_COMPACT_BLOCK_PADDING_CLASS = 'py-[var(--an-spacing-xs)]';
+
 /**
  * Extract the command from tool arguments
  */
@@ -129,6 +134,8 @@ function getExitCode(result: any): number | null {
  */
 function isToolError(result: any, message: any): boolean {
   if (message.isError) return true;
+  if (message.toolCall?.isError === true) return true;
+  if (message.toolCall?.status === 'error') return true;
   if (result?.isError === true) return true;
   if (typeof result?.success === 'boolean' && result.success === false) return true;
   const exitCode = getExitCode(result);
@@ -253,7 +260,7 @@ export const BashWidget: React.FC<CustomToolWidgetProps> = ({ message, isExpande
 
     return (
       <button
-        className={`${shellClassName} rounded-md bg-nim-tertiary ${getBorderClass()} border overflow-hidden font-mono flex items-center justify-between w-full py-1.5 px-2 cursor-pointer transition-colors duration-150 text-left hover:bg-nim-hover`}
+        className={`${shellClassName} rounded-md bg-nim-tertiary ${getBorderClass()} border overflow-hidden font-mono flex items-center justify-between w-full ${AGENT_ELEMENTS_CARD_ROW_BLOCK_PADDING_CLASS} ${AGENT_ELEMENTS_CARD_INLINE_PADDING_CLASS} cursor-pointer transition-colors duration-150 text-left hover:bg-nim-hover`}
         {...shellMarkerProps}
         onClick={onToggle}
         type="button"
@@ -317,7 +324,7 @@ export const BashWidget: React.FC<CustomToolWidgetProps> = ({ message, isExpande
       {...shellMarkerProps}
     >
       {/* Header with terminal icon and status */}
-      <button className="agent-elements-tool-header flex items-center justify-between w-full py-1.5 px-2 bg-nim-secondary border-b border-nim gap-2 cursor-pointer transition-colors duration-150 text-left hover:bg-nim-hover" onClick={onToggle} type="button">
+      <button className={`agent-elements-tool-header flex items-center justify-between w-full ${AGENT_ELEMENTS_CARD_ROW_BLOCK_PADDING_CLASS} ${AGENT_ELEMENTS_CARD_INLINE_PADDING_CLASS} bg-nim-secondary border-b border-nim gap-2 cursor-pointer transition-colors duration-150 text-left hover:bg-nim-hover`} onClick={onToggle} type="button">
         <div className="agent-elements-bash-tool-title-row flex items-center gap-1.5 min-w-0">
           <div className="agent-elements-tool-icon flex items-center justify-center text-nim-faint" aria-hidden="true">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -357,14 +364,14 @@ export const BashWidget: React.FC<CustomToolWidgetProps> = ({ message, isExpande
 
       {/* Description if present */}
       {description && (
-        <div className="py-1.5 px-2 text-xs text-nim-muted bg-[color-mix(in_srgb,var(--nim-primary)_5%,var(--nim-bg-secondary))] border-b border-nim font-sans leading-relaxed">
+        <div className={`${AGENT_ELEMENTS_CARD_ROW_BLOCK_PADDING_CLASS} ${AGENT_ELEMENTS_CARD_INLINE_PADDING_CLASS} text-xs text-nim-muted bg-[color-mix(in_srgb,var(--nim-primary)_5%,var(--nim-bg-secondary))] border-b border-nim font-sans leading-relaxed`}>
           {description}
         </div>
       )}
 
       {/* Command display */}
       {command && (
-        <div className="flex items-start gap-2 p-2 bg-nim-tertiary">
+        <div className={`flex items-start gap-2 ${AGENT_ELEMENTS_CARD_ROW_BLOCK_PADDING_CLASS} ${AGENT_ELEMENTS_CARD_INLINE_PADDING_CLASS} bg-nim-tertiary`}>
           <div className="flex-1 flex items-start gap-1.5 min-w-0">
             <span className="text-nim-success font-semibold shrink-0 select-none">$</span>
             <code className="text-nim text-[0.8125rem] leading-normal break-words whitespace-pre-wrap">{command}</code>
@@ -396,12 +403,12 @@ export const BashWidget: React.FC<CustomToolWidgetProps> = ({ message, isExpande
       {/* Output display */}
       {displayOutput && (
         <div className="relative border-t border-nim">
-          <pre className={`m-0 p-2 text-xs leading-normal ${hasError ? 'text-nim-error' : 'text-nim-muted'} bg-nim overflow-x-auto whitespace-pre-wrap break-words max-h-80 overflow-y-auto`}>
+          <pre className={`m-0 ${AGENT_ELEMENTS_CARD_ROW_BLOCK_PADDING_CLASS} ${AGENT_ELEMENTS_CARD_INLINE_PADDING_CLASS} text-xs leading-normal ${hasError ? 'text-nim-error' : 'text-nim-muted'} bg-nim overflow-x-auto whitespace-pre-wrap break-words max-h-80 overflow-y-auto`}>
             {displayOutput}
           </pre>
           {needsTruncation && (
             <button
-              className="block w-full py-1.5 px-2 bg-nim-secondary border-t border-nim text-nim-faint text-[0.7rem] font-sans cursor-pointer text-center transition-all duration-150 hover:bg-nim-hover hover:text-nim-muted"
+              className={`block w-full ${AGENT_ELEMENTS_CARD_COMPACT_BLOCK_PADDING_CLASS} ${AGENT_ELEMENTS_CARD_INLINE_PADDING_CLASS} bg-nim-secondary border-t border-nim text-nim-faint text-[0.7rem] font-sans cursor-pointer text-center transition-all duration-150 hover:bg-nim-hover hover:text-nim-muted`}
               onClick={() => setOutputExpanded(!outputExpanded)}
               type="button"
             >
@@ -427,7 +434,7 @@ export const BashWidget: React.FC<CustomToolWidgetProps> = ({ message, isExpande
 
       {/* File changes caused by this tool call */}
       {getToolCallDiffs && tool.providerToolCallId && (
-        <div className="px-2 pb-2">
+        <div className={`${AGENT_ELEMENTS_CARD_INLINE_PADDING_CLASS} pb-[var(--an-spacing-sm)]`}>
           <ToolCallChanges
             toolCallItemId={tool.providerToolCallId}
             toolCallTimestamp={message.createdAt?.getTime()}

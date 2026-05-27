@@ -2,6 +2,8 @@ import React from 'react';
 import '@testing-library/jest-dom/vitest';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import fs from 'node:fs';
+import path from 'node:path';
 import type { TranscriptViewMessage } from '../../../../ai/server/transcript/TranscriptProjector';
 
 vi.mock('virtua', async () => {
@@ -47,6 +49,11 @@ import { RichTranscriptView } from '../RichTranscriptView';
 import { copyToClipboard } from '../../../../utils/clipboard';
 import { TranscriptProjector } from '../../../../ai/server/transcript/TranscriptProjector';
 import type { TranscriptEvent } from '../../../../ai/server/transcript/types';
+
+const richTranscriptSourcePath = path.join(
+  process.cwd(),
+  'packages/runtime/src/ui/AgentTranscript/components/RichTranscriptView.tsx',
+);
 
 function makeToolMessage(toolName: string, overrides: Partial<NonNullable<TranscriptViewMessage['toolCall']>> = {}): TranscriptViewMessage {
   return {
@@ -118,18 +125,68 @@ describe('RichTranscriptView Agent Elements live bridge', () => {
   });
 
   it('routes generic non-interactive tool rows through the Agent Elements renderer without primary raw JSON', () => {
-    renderTranscript([makeToolMessage('Read')]);
+    const { container } = renderTranscript([makeToolMessage('Read')]);
 
     expect(screen.getByTestId('rich-transcript-agent-elements-tool-bridge')).toHaveAttribute(
       'data-component',
       'rich-transcript-agent-elements-tool-bridge',
     );
     expect(screen.getByTestId('rich-transcript-agent-elements-tool-bridge')).toHaveClass('agent-elements-live-bridge');
+    expect(screen.getByTestId('rich-transcript-agent-elements-tool-bridge')).toHaveAttribute('data-agent-elements-width', 'wide');
+    expect(screen.getByTestId('rich-transcript-agent-elements-tool-bridge')).toHaveAttribute('data-agent-elements-padding', 'aligned');
     expect(screen.getByTestId('agent-elements-renderer-boundary')).toHaveAttribute('data-renderer-kind', 'search');
     expect(screen.getByTestId('agent-elements-renderer-boundary')).toHaveAttribute('data-fallback-class', 'known');
     expect(screen.getByTestId('agent-elements-search-tool-card')).toHaveTextContent('/repo/src/app.ts');
     expect(screen.getByTestId('agent-elements-tool-primary')).not.toHaveTextContent('"file_path"');
     expect(screen.getByTestId('agent-elements-debug-disclosure')).toHaveAttribute('data-debug-only', 'true');
+    expect(container.querySelector('.rich-transcript-tool-container.orphan')).not.toHaveClass('ml-6');
+  });
+
+  it('keeps transcript card chrome free of side-stripe borders', () => {
+    const source = fs.readFileSync(richTranscriptSourcePath, 'utf8');
+
+    expect(source).not.toMatch(/border-left:\s*[2-9]/);
+    expect(source).not.toMatch(/border-right:\s*[2-9]/);
+  });
+
+  it('caps the transcript rail to the wide card width instead of a wider incidental lane', () => {
+    const source = fs.readFileSync(richTranscriptSourcePath, 'utf8');
+
+    expect(source).toContain('max-width: calc(var(--agent-elements-wide-max-width, 44rem) + 1.5rem);');
+    expect(source).toContain('box-sizing: border-box;');
+    expect(source).toContain('width: 100%;');
+    expect(source).not.toContain('max-width: 64rem;');
+    expect(source).not.toContain('max-width: 72rem;');
+  });
+
+  it('reserves a top gutter so floating actions do not cover the first wide card edge', () => {
+    const source = fs.readFileSync(richTranscriptSourcePath, 'utf8');
+
+    expect(source).toContain('.agent-transcript-panel[data-floating-transcript-actions="true"] .rich-transcript-vlist > div');
+    expect(source).toContain('.agent-transcript-panel[data-floating-transcript-actions="true"] .rich-transcript-scroll-container');
+    expect(source).toContain('padding-top: var(--agent-elements-floating-action-clearance, 3rem);');
+    expect(source).toContain('height: calc(100% - var(--agent-elements-floating-action-clearance, 3rem));');
+  });
+
+  it('renders structured read results as Agent Elements search rows without primary raw JSON', () => {
+    renderTranscript([
+      makeToolMessage('Read', {
+        arguments: { file_path: '/repo/src/app.ts' },
+        result: JSON.stringify({
+          path: '/repo/src/app.ts',
+          content: 'export const value = 1;\nexport const next = 2;',
+        }),
+      }),
+    ]);
+
+    expect(screen.getByTestId('rich-transcript-agent-elements-tool-bridge')).toHaveClass('agent-elements-live-bridge');
+    expect(screen.getByTestId('agent-elements-renderer-boundary')).toHaveAttribute('data-renderer-kind', 'search');
+    expect(screen.getByTestId('agent-elements-search-results')).toHaveTextContent('app.ts');
+    expect(screen.getByTestId('agent-elements-search-results')).toHaveTextContent('/repo/src/app.ts');
+    expect(screen.getByTestId('agent-elements-search-results')).toHaveTextContent('export const value = 1;');
+    expect(screen.getByTestId('agent-elements-tool-primary')).not.toHaveTextContent('"content"');
+    expect(screen.getByTestId('agent-elements-tool-primary')).not.toHaveTextContent('"path"');
+    expect(screen.getByTestId('agent-elements-debug-payload')).toHaveTextContent('content');
   });
 
   it('proves live MCP, generic, and non-built-in shell rows use first-class Agent Elements tool renderers', () => {
@@ -150,7 +207,7 @@ describe('RichTranscriptView Agent Elements live bridge', () => {
           arguments: { query: 'is:issue is:open', limit: 2 },
           mcpServer: 'github',
           mcpTool: 'list_issues',
-          result: JSON.stringify({ rows: [{ title: 'raw mcp row' }] }),
+          result: JSON.stringify({ rows: [{ title: 'Issue 42', status: 'open' }] }),
         }),
         id: 42,
         sequence: 42,
@@ -160,7 +217,7 @@ describe('RichTranscriptView Agent Elements live bridge', () => {
           toolDisplayName: 'Workspace summary',
           description: 'Summarize workspace metadata',
           arguments: { includeFiles: true },
-          result: JSON.stringify({ rows: [{ title: 'raw generic row' }] }),
+          result: JSON.stringify({ rows: [{ title: 'Changed files', count: 3 }] }),
         }),
         id: 43,
         sequence: 43,
@@ -172,6 +229,7 @@ describe('RichTranscriptView Agent Elements live bridge', () => {
     for (const bridge of bridges) {
       expect(bridge).toHaveClass('agent-elements-live-bridge');
       expect(bridge).toHaveAttribute('data-component', 'rich-transcript-agent-elements-tool-bridge');
+      expect(bridge).toHaveAttribute('data-agent-elements-width', 'wide');
     }
 
     const boundaries = screen.getAllByTestId('agent-elements-renderer-boundary');
@@ -181,14 +239,69 @@ describe('RichTranscriptView Agent Elements live bridge', () => {
     expect(screen.getByTestId('agent-elements-command-terminal')).toHaveTextContent('Typecheck passed.');
     expect(screen.getByTestId('agent-elements-mcp-tool-card')).toHaveTextContent('github');
     expect(screen.getByTestId('agent-elements-mcp-tool-card')).toHaveTextContent('list_issues');
-    expect(screen.getByTestId('agent-elements-mcp-result')).toHaveTextContent('Structured result available in debug details.');
+    expect(screen.getByTestId('agent-elements-mcp-result')).toHaveTextContent('1 result: Issue 42 (open)');
     expect(screen.getByTestId('agent-elements-generic-tool-card')).toHaveTextContent('Workspace summary');
-    expect(screen.getByTestId('agent-elements-generic-result')).toHaveTextContent('Structured result available in debug details.');
+    expect(screen.getByTestId('agent-elements-generic-result')).toHaveTextContent('1 result: Changed files');
     for (const primary of screen.getAllByTestId('agent-elements-tool-primary')) {
-      expect(primary).not.toHaveTextContent('raw mcp row');
-      expect(primary).not.toHaveTextContent('raw generic row');
+      expect(primary).not.toHaveTextContent('"rows"');
       expect(primary).not.toHaveTextContent('"includeFiles"');
     }
+  });
+
+  it('renders parented live tool progress inside Agent Elements tool cards', () => {
+    renderTranscript([
+      {
+        ...makeToolMessage('exec_command', {
+          status: 'running',
+          description: 'Run focused validation',
+          arguments: { cmd: 'npm run typecheck --workspace @nimbalyst/runtime', workdir: '/repo' },
+          result: undefined,
+          progress: [
+            { elapsedSeconds: 2, progressContent: 'Resolving runtime workspace graph' },
+          ],
+        }),
+        id: 44,
+        sequence: 44,
+      },
+      {
+        ...makeToolMessage('mcp__github__list_issues', {
+          status: 'running',
+          description: 'List open issues',
+          arguments: { query: 'is:issue is:open', limit: 2 },
+          mcpServer: 'github',
+          mcpTool: 'list_issues',
+          result: undefined,
+          progress: [
+            { elapsedSeconds: 5, progressContent: 'Waiting for GitHub issues response' },
+          ],
+        }),
+        id: 45,
+        sequence: 45,
+      },
+      {
+        ...makeToolMessage('workspace_summary', {
+          status: 'running',
+          toolDisplayName: 'Workspace summary',
+          description: 'Summarize workspace metadata',
+          arguments: { includeFiles: true },
+          result: undefined,
+          progress: [
+            { elapsedSeconds: 8, progressContent: 'Collecting changed-file metadata' },
+          ],
+        }),
+        id: 46,
+        sequence: 46,
+      },
+    ]);
+
+    expect(screen.getAllByTestId('agent-elements-renderer-boundary').map((boundary) =>
+      boundary.getAttribute('data-renderer-kind')
+    )).toEqual(['bash', 'mcp', 'genericTool']);
+    expect(screen.getByTestId('agent-elements-command-tool-card')).toHaveTextContent('Resolving runtime workspace graph');
+    expect(screen.getByTestId('agent-elements-mcp-tool-card')).toHaveTextContent('Waiting for GitHub issues response');
+    expect(screen.getByTestId('agent-elements-generic-tool-card')).toHaveTextContent('Collecting changed-file metadata');
+    expect(screen.getAllByTestId('agent-elements-progress-update')).toHaveLength(3);
+    expect(screen.queryByText('Running repository checks')).not.toBeInTheDocument();
   });
 
   it('preserves ToolCallChanges diffs for Agent Elements generic tool rows', async () => {
@@ -212,12 +325,14 @@ describe('RichTranscriptView Agent Elements live bridge', () => {
       }),
     ], { getToolCallDiffs, onOpenFile, workspacePath: '/repo' });
 
-    await waitFor(() => expect(screen.getByText('File Changes')).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByTestId('agent-elements-tool-call-changes')).toBeInTheDocument());
     expect(getToolCallDiffs).toHaveBeenCalledWith('tool-workspace-summary', expect.any(Number));
     expect(screen.getByTestId('rich-transcript-agent-elements-tool-bridge')).toHaveClass('agent-elements-live-bridge');
     expect(screen.getByTestId('agent-elements-renderer-boundary')).toHaveAttribute('data-renderer-kind', 'genericTool');
+    expect(screen.getByTestId('agent-elements-tool-call-changes')).toHaveTextContent('File changes');
+    expect(screen.getByTestId('agent-elements-tool-call-changes-summary')).toHaveTextContent('1 file changed +1 -1');
 
-    fireEvent.click(screen.getByText('File Changes').closest('button')!);
+    fireEvent.click(screen.getByTestId('agent-elements-tool-call-changes-toggle'));
     expect(container.querySelector('.diff-viewer')).toBeInTheDocument();
     fireEvent.click(screen.getByTitle('Open src/app.ts'));
     expect(onOpenFile).toHaveBeenCalledWith('/repo/src/app.ts');
@@ -233,6 +348,13 @@ describe('RichTranscriptView Agent Elements live bridge', () => {
     ]);
 
     expect(container.querySelector('.bash-widget')).toBeInTheDocument();
+    expect(screen.getByTestId('rich-transcript-agent-elements-custom-widget-bridge')).toHaveAttribute(
+      'data-component',
+      'rich-transcript-agent-elements-custom-widget-bridge',
+    );
+    expect(screen.getByTestId('rich-transcript-agent-elements-custom-widget-bridge')).toHaveClass('agent-elements-live-bridge');
+    expect(screen.getByTestId('rich-transcript-agent-elements-custom-widget-bridge')).toHaveAttribute('data-agent-elements-padding', 'aligned');
+    expect(screen.getByTestId('rich-transcript-agent-elements-custom-widget-bridge')).toHaveAttribute('data-agent-elements-width', 'wide');
     expect(screen.getByTestId('rich-transcript-agent-elements-bash-shell')).toHaveAttribute(
       'data-component',
       'RichTranscriptAgentElementsBashShell',
@@ -241,6 +363,33 @@ describe('RichTranscriptView Agent Elements live bridge', () => {
     expect(screen.getByTestId('rich-transcript-agent-elements-bash-shell')).toHaveClass('agent-elements-bash-tool-card');
     expect(screen.getByTestId('rich-transcript-agent-elements-bash-shell')).not.toHaveClass('agent-elements-tool-card');
     expect(screen.getByTestId('rich-transcript-agent-elements-bash-shell')).toHaveAttribute('data-bash-state', 'collapsed');
+    expect(screen.queryByTestId('agent-elements-renderer-boundary')).not.toBeInTheDocument();
+  });
+
+  it('keeps custom widget cards on the same wide rail as other tool cards', () => {
+    renderTranscript([
+      makeToolMessage('tracker_update', {
+        arguments: { type: 'task', id: 'TASK-42', title: 'Normalize card gutters' },
+        result: JSON.stringify({
+          summary: 'Updated tracker item TASK-42',
+          structured: {
+            action: 'updated',
+            id: 'TASK-42',
+            type: 'task',
+            title: 'Normalize card gutters',
+            changes: {
+              status: { from: 'triage', to: 'in-progress' },
+            },
+          },
+        }),
+      }),
+    ]);
+
+    expect(screen.getByTestId('rich-transcript-agent-elements-custom-widget-bridge')).toHaveClass('agent-elements-live-bridge');
+    expect(screen.getByTestId('rich-transcript-agent-elements-custom-widget-bridge')).toHaveAttribute('data-agent-elements-padding', 'aligned');
+    expect(screen.getByTestId('rich-transcript-agent-elements-custom-widget-bridge')).toHaveAttribute('data-agent-elements-width', 'wide');
+    expect(screen.getByTestId('agent-elements-tracker-tool-card')).toHaveClass('agent-elements-tool-card');
+    expect(screen.getByTestId('agent-elements-tracker-tool-card')).toHaveTextContent('Tracker Updated');
     expect(screen.queryByTestId('agent-elements-renderer-boundary')).not.toBeInTheDocument();
   });
 
@@ -465,10 +614,33 @@ describe('RichTranscriptView Agent Elements live bridge', () => {
       'data-component',
       'rich-transcript-agent-elements-message-bridge',
     );
+    expect(screen.getByTestId('rich-transcript-agent-elements-message-bridge')).toHaveAttribute('data-agent-elements-width', 'content');
+    expect(screen.getByTestId('rich-transcript-agent-elements-message-bridge')).toHaveAttribute('data-agent-elements-padding', 'aligned');
     expect(screen.getByTestId('agent-elements-transcript-row')).toHaveAttribute('data-agent-align', 'left');
     expect(screen.getByTestId('agent-elements-transcript-row')).toHaveAttribute('data-agent-role', 'user');
     expect(screen.getByTestId('agent-elements-identity-row')).toHaveTextContent('You');
     expect(screen.getByText('Please inspect the renderer.')).toBeInTheDocument();
+  });
+
+  it('keeps grouped Agent Elements tool cards on the same horizontal grid as the message shell', () => {
+    const { container } = renderTranscript([
+      makeToolMessage('Read'),
+      {
+        id: 12,
+        sequence: 12,
+        createdAt: new Date('2026-05-23T15:11:00Z'),
+        type: 'assistant_message',
+        subagentId: null,
+        text: 'Read complete.',
+      },
+    ]);
+
+    const groupedTools = container.querySelector('.rich-transcript-tool-messages');
+    expect(groupedTools).toBeInTheDocument();
+    expect(groupedTools).not.toHaveClass('ml-6');
+    expect(groupedTools).not.toHaveClass('indented');
+    expect(screen.getByTestId('rich-transcript-agent-elements-tool-bridge')).toHaveAttribute('data-agent-elements-width', 'wide');
+    expect(screen.getByTestId('rich-transcript-agent-elements-message-bridge')).toHaveAttribute('data-agent-elements-width', 'content');
   });
 
   it('renders assistant thinking through the Agent Elements thinking card inside the live transcript row', () => {
@@ -596,6 +768,7 @@ describe('RichTranscriptView Agent Elements live bridge', () => {
       'rich-transcript-agent-elements-system-bridge',
     );
     expect(screen.getByTestId('rich-transcript-agent-elements-system-bridge')).toHaveClass('agent-elements-live-bridge');
+    expect(screen.getByTestId('rich-transcript-agent-elements-system-bridge')).toHaveAttribute('data-agent-elements-width', 'wide');
     expect(screen.getByTestId('agent-elements-renderer-boundary')).toHaveAttribute('data-renderer-kind', 'systemStatus');
     expect(screen.getByTestId('agent-elements-error-message-card')).toHaveAttribute('data-error-kind', 'service_error');
     expect(screen.getByTestId('agent-elements-error-message-body')).toHaveTextContent('unclassified service failure');
@@ -624,6 +797,7 @@ describe('RichTranscriptView Agent Elements live bridge', () => {
       'data-component',
       'rich-transcript-agent-elements-system-bridge',
     );
+    expect(screen.getByTestId('rich-transcript-agent-elements-system-bridge')).toHaveAttribute('data-agent-elements-width', 'wide');
     expect(screen.getByTestId('agent-elements-renderer-boundary')).toHaveAttribute('data-renderer-kind', 'systemStatus');
     expect(screen.getByTestId('agent-elements-error-message-card')).toHaveAttribute('data-error-kind', 'info');
     expect(screen.getByTestId('agent-elements-error-message-body')).toHaveTextContent('Runtime connected to smarty-server.');
@@ -672,6 +846,61 @@ describe('RichTranscriptView Agent Elements live bridge', () => {
     expect(screen.getByTestId('agent-elements-subagent-card')).toHaveTextContent('Running subagent');
     expect(screen.getByTestId('agent-elements-subagent-toggle')).toHaveTextContent('Ada');
     expect(screen.getByTestId('agent-elements-subagent-list')).toHaveTextContent('Inspecting the renderer contract.');
+  });
+
+  it('keeps nested wide tool bridge cards inside the right transcript edge', () => {
+    renderTranscript([
+      {
+        id: 180,
+        sequence: 180,
+        createdAt: new Date('2026-05-23T15:46:00Z'),
+        type: 'subagent',
+        subagentId: 'subagent-nested-width',
+        toolCall: {
+          toolName: 'Task',
+          toolDisplayName: 'Task',
+          status: 'completed',
+          description: 'Run nested validation',
+          arguments: {
+            description: 'Run nested validation',
+            prompt: 'Inspect nested card geometry.',
+          },
+          targetFilePath: null,
+          mcpServer: null,
+          mcpTool: null,
+          providerToolCallId: 'tool-subagent-nested-width',
+          progress: [],
+          result: 'Nested validation finished.',
+        },
+        subagent: {
+          agentType: 'reviewer',
+          status: 'completed',
+          teammateName: null,
+          teamName: null,
+          teammateMode: null,
+          model: 'gpt-5.5',
+          color: null,
+          isBackground: false,
+          prompt: 'Inspect nested card geometry.',
+          resultSummary: 'Nested validation finished.',
+          durationMs: 1500,
+          childEvents: [
+            makeToolMessage('Read', {
+              arguments: { file_path: '/repo/src/app.ts' },
+              providerToolCallId: 'tool-nested-read',
+              result: 'export const value = 1;',
+            }),
+          ],
+        },
+      },
+    ]);
+
+    const subagentToggle = document.querySelector('.rich-transcript-tool-button');
+    expect(subagentToggle).toBeInstanceOf(HTMLButtonElement);
+    fireEvent.click(subagentToggle as HTMLButtonElement);
+    const nestedBridge = screen.getByTestId('rich-transcript-agent-elements-tool-bridge');
+    expect(nestedBridge).toHaveAttribute('data-agent-elements-width', 'wide');
+    expect(nestedBridge).toHaveStyle({ marginLeft: '1rem', width: 'calc(100% - 1rem)' });
   });
 
   it('preserves grouped canonical subagent rows before assistant responses', () => {
@@ -750,8 +979,8 @@ describe('RichTranscriptView Agent Elements live bridge', () => {
     expect(screen.queryByRole('button', { name: /deny/i })).not.toBeInTheDocument();
   });
 
-  it('renders standalone stream metadata rows through Agent Elements stream cards', () => {
-    renderTranscript([
+  it('hides standalone stream metadata rows in the normal transcript', () => {
+    const { container } = renderTranscript([
       {
         id: 35,
         sequence: 35,
@@ -788,19 +1017,15 @@ describe('RichTranscriptView Agent Elements live bridge', () => {
       },
     ]);
 
-    const streamBridges = screen.getAllByTestId('rich-transcript-agent-elements-stream-bridge');
-    expect(streamBridges).toHaveLength(2);
-    expect(streamBridges[0]).toHaveAttribute('data-component', 'rich-transcript-agent-elements-stream-bridge');
-    expect(screen.getAllByTestId('agent-elements-renderer-boundary')[0]).toHaveAttribute('data-renderer-kind', 'toolProgress');
-    expect(screen.getByTestId('agent-elements-progress-card')).toHaveTextContent('Running repository checks');
-    expect(screen.getAllByTestId('agent-elements-renderer-boundary')[1]).toHaveAttribute('data-renderer-kind', 'turnSummary');
-    expect(screen.getByTestId('agent-elements-turn-summary-card')).toHaveAttribute('data-component', 'AgentTurnSummaryCard');
-    expect(screen.getByTestId('agent-elements-turn-summary-metrics')).toHaveTextContent('7,600');
-    expect(screen.getByTestId('agent-elements-turn-summary-metrics')).toHaveTextContent('50% context');
-    expect(screen.getByTestId('agent-elements-turn-summary-warnings')).toHaveTextContent('Context was compacted');
+    expect(screen.queryByTestId('rich-transcript-agent-elements-stream-bridge')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('agent-elements-progress-card')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('agent-elements-turn-summary-card')).not.toBeInTheDocument();
+    expect(screen.queryByText('Running repository checks')).not.toBeInTheDocument();
+    expect(screen.queryByText('Context was compacted')).not.toBeInTheDocument();
+    expect(container.querySelector('.rich-transcript-tool-container.orphan')).not.toBeInTheDocument();
   });
 
-  it('renders projected canonical turn_ended rows through the Agent Elements turn summary bridge', () => {
+  it('hides projected canonical turn_ended rows in the normal transcript', () => {
     const events: TranscriptEvent[] = [
       {
         id: 71,
@@ -852,12 +1077,12 @@ describe('RichTranscriptView Agent Elements live bridge', () => {
 
     renderTranscript(TranscriptProjector.project(events).messages);
 
-    expect(screen.getByTestId('rich-transcript-agent-elements-stream-bridge')).toBeInTheDocument();
-    expect(screen.getByTestId('agent-elements-renderer-boundary')).toHaveAttribute('data-renderer-kind', 'turnSummary');
-    expect(screen.getByTestId('agent-elements-turn-summary-card')).toHaveAttribute('data-component', 'AgentTurnSummaryCard');
-    expect(screen.getByTestId('agent-elements-turn-summary-metrics')).toHaveTextContent('2,600');
-    expect(screen.getByTestId('agent-elements-turn-summary-metrics')).toHaveTextContent('50% context');
-    expect(screen.getByTestId('agent-elements-tool-primary')).not.toHaveTextContent('"contextFill"');
+    expect(screen.getByTestId('rich-transcript-agent-elements-message-bridge')).toBeInTheDocument();
+    expect(screen.getByText('Done.')).toBeInTheDocument();
+    expect(screen.queryByTestId('rich-transcript-agent-elements-stream-bridge')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('agent-elements-turn-summary-card')).not.toBeInTheDocument();
+    expect(screen.queryByText('50% context')).not.toBeInTheDocument();
+    expect(screen.queryByText('contextFill')).not.toBeInTheDocument();
   });
 
   it('renders live todo and plan tool rows through Agent Elements todo and plan cards', () => {
@@ -901,6 +1126,8 @@ describe('RichTranscriptView Agent Elements live bridge', () => {
 
     const bridges = screen.getAllByTestId('rich-transcript-agent-elements-tool-bridge');
     expect(bridges).toHaveLength(2);
+    expect(bridges[0]).toHaveAttribute('data-agent-elements-width', 'wide');
+    expect(bridges[1]).toHaveAttribute('data-agent-elements-width', 'wide');
     expect(screen.getAllByTestId('agent-elements-renderer-boundary')[0]).toHaveAttribute('data-renderer-kind', 'todo');
     const todoList = screen.getAllByTestId('agent-elements-todo-list')[0];
     expect(todoList).toHaveTextContent('Replace raw todo JSON');
@@ -911,6 +1138,120 @@ describe('RichTranscriptView Agent Elements live bridge', () => {
     expect(planCard).toHaveTextContent('Patch projection adapter');
     expect(todoList).not.toHaveTextContent('"todos"');
     expect(planCard).not.toHaveTextContent('"steps"');
+  });
+
+  it('suppresses raw TodoWrite update echoes when the polished todo card is rendered', () => {
+    const todos = [
+      {
+        content: 'Fanout decision: no fanout - this is a small demo of the visible todo tool and does not need delegation',
+        status: 'in_progress',
+      },
+      { content: 'Show a simple example task as completed', status: 'pending' },
+      { content: 'Reply with what the demo showed', status: 'pending' },
+    ];
+    const rawTodoEcho = "Updated todo list to [{'content': 'Fanout decision: no fanout - this is a small demo of the visible todo tool and does not need delegation', 'status': 'in_progress'}, {'content': 'Show a simple example task as completed', 'status': 'pending'}, {'content': 'Reply with what the demo showed', 'status': 'pending'}]";
+
+    renderTranscript([
+      {
+        id: 21,
+        sequence: 21,
+        createdAt: new Date('2026-05-23T14:24:00Z'),
+        type: 'user_message',
+        subagentId: null,
+        text: 'demo your todo list tool for me',
+      },
+      {
+        ...makeToolMessage('TodoWrite', {
+          description: 'Update task list',
+          arguments: { todos },
+          result: rawTodoEcho,
+        }),
+        id: 22,
+        sequence: 22,
+      },
+      {
+        id: 23,
+        sequence: 23,
+        createdAt: new Date('2026-05-23T14:25:00Z'),
+        type: 'assistant_message',
+        subagentId: null,
+        text: rawTodoEcho,
+        mode: 'agent',
+      },
+    ]);
+
+    const todoCard = screen.getByTestId('agent-elements-todo-card');
+    expect(todoCard).toHaveTextContent('Todo update');
+    const todoList = screen.getByTestId('agent-elements-todo-list');
+    expect(todoList).toHaveTextContent(todos[0].content);
+    expect(todoList).toHaveTextContent(todos[1].content);
+    expect(todoList).toHaveTextContent(todos[2].content);
+    expect(screen.getAllByText(todos[0].content)).toHaveLength(1);
+    const visibleRawEchoMatches = screen
+      .queryAllByText(/Updated todo list to/)
+      .filter(element => !element.closest('[data-testid="agent-elements-debug-payload"]'));
+    expect(visibleRawEchoMatches).toHaveLength(0);
+  });
+
+  it('hides Smarty Server framework stream internals in the normal transcript', () => {
+    const { container } = renderTranscript([
+      makeToolMessage('langgraph_updates', {
+        toolDisplayName: 'LangGraph update',
+        description: null,
+        arguments: {
+          frameworkStreamEvent: {
+            method: 'updates',
+            namespace: ['planner'],
+            source: 'smarty-server',
+            data: {
+              plan: { status: 'running' },
+              next: 'write_tests',
+            },
+          },
+        },
+        result: 'LangGraph update stream event',
+      }),
+    ]);
+
+    expect(screen.queryByTestId('rich-transcript-agent-elements-tool-bridge')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('agent-elements-renderer-boundary')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('agent-elements-state-snapshot-card')).not.toBeInTheDocument();
+    expect(screen.queryByText('Graph update')).not.toBeInTheDocument();
+    expect(screen.queryByText('LangGraph update stream event')).not.toBeInTheDocument();
+    expect(container.querySelector('.rich-transcript-tool-container.orphan')).not.toBeInTheDocument();
+  });
+
+  it('renders Smarty Server subagent framework rows through the live Agent Elements subagent bridge', () => {
+    renderTranscript([
+      makeToolMessage('deepagents_subagents', {
+        toolDisplayName: 'DeepAgents subagent',
+        description: null,
+        arguments: {
+          frameworkStreamEvent: {
+            method: 'subagents',
+            namespace: ['tools:call_researcher'],
+            source: 'smarty-server',
+            data: {
+              name: 'researcher',
+              status: 'running',
+              taskInput: 'Inspect DeepAgents event streaming.',
+              messages: [{ role: 'assistant', content: 'Reading subagent projection docs.' }],
+              toolCalls: [{ id: 'tool-1', name: 'search_docs', status: 'finished' }],
+              values: { documents: 3 },
+            },
+          },
+        },
+        result: 'DeepAgents subagent stream event',
+      }),
+    ]);
+
+    expect(screen.getByTestId('rich-transcript-agent-elements-tool-bridge')).toHaveClass('agent-elements-live-bridge');
+    expect(screen.getByTestId('agent-elements-renderer-boundary')).toHaveAttribute('data-renderer-kind', 'subagent');
+    expect(screen.getByTestId('agent-elements-subagent-card')).toHaveTextContent('researcher');
+    expect(screen.getByTestId('agent-elements-subagent-card')).toHaveTextContent('Inspect DeepAgents event streaming.');
+    expect(screen.getByTestId('agent-elements-subagent-list')).toHaveTextContent('search_docs');
+    expect(screen.getByTestId('agent-elements-tool-primary')).not.toHaveTextContent('"toolCalls"');
+    expect(screen.getByTestId('agent-elements-debug-disclosure')).toHaveAttribute('data-debug-only', 'true');
   });
 
   it('preserves grouped canonical interactive prompt rows before assistant responses', () => {

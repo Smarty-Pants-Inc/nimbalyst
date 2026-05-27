@@ -1,4 +1,10 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { AgentStatusPill, AgentToolCard } from '../../AgentElements';
+import {
+  SPECIAL_STATUS_ACTIONS_CLASS,
+  SPECIAL_STATUS_INLINE_PRIMARY_BUTTON_CLASS,
+  SPECIAL_STATUS_INLINE_SECONDARY_BUTTON_CLASS,
+} from './SpecialStatusWidgetChrome';
 
 const CODEX_DOCS_URL = 'https://developers.openai.com/codex';
 
@@ -10,33 +16,10 @@ interface CodexLoginStatus {
   error?: string;
 }
 
-const injectOpenAIAuthWidgetStyles = () => {
-  const styleId = 'openai-auth-widget-styles';
-  if (document.getElementById(styleId)) return;
-
-  const style = document.createElement('style');
-  style.id = styleId;
-  style.textContent = `
-    .openai-auth-widget {
-      background-color: color-mix(in srgb, var(--nim-error) 8%, transparent);
-      border: 1px solid color-mix(in srgb, var(--nim-error) 25%, transparent);
-    }
-    .openai-auth-widget.logged-in {
-      background-color: color-mix(in srgb, var(--nim-success) 10%, transparent);
-      border-color: color-mix(in srgb, var(--nim-success) 35%, transparent);
-    }
-  `;
-  document.head.appendChild(style);
-};
-
 export const OpenAIAuthWidget: React.FC = () => {
   const [status, setStatus] = useState<CodexLoginStatus | null>(null);
   const [isChecking, setIsChecking] = useState(false);
   const [isLoggingIn, setIsLoggingIn] = useState(false);
-
-  useEffect(() => {
-    injectOpenAIAuthWidgetStyles();
-  }, []);
 
   const handleCheckStatus = useCallback(async () => {
     setIsChecking(true);
@@ -127,51 +110,59 @@ export const OpenAIAuthWidget: React.FC = () => {
 
   const statusBoxClassName = useMemo(() => {
     if (status?.isLoggedIn) {
-      return 'border-[var(--nim-success)] text-[var(--nim-success)]';
+      return 'border-[var(--an-diff-added-text)] bg-[var(--an-diff-added-bg)] text-[var(--an-diff-added-text)]';
     }
     if (status?.error) {
-      return 'border-[var(--nim-error)] text-[var(--nim-error)]';
+      return 'border-[var(--an-diff-removed-text)] bg-[var(--an-diff-removed-bg)] text-[var(--an-diff-removed-text)]';
     }
-    return 'border-[var(--nim-border)] text-[var(--nim-text-muted)]';
+    return 'border-[var(--an-tool-border-color)] bg-[var(--an-background)] text-[var(--an-tool-color-muted)]';
   }, [status]);
 
+  const shell = status?.isLoggedIn ? 'openai-auth-ready' : 'openai-auth-required';
+
   return (
-    <div className={`openai-auth-widget my-4 p-4 rounded-lg flex flex-col gap-3 ${status?.isLoggedIn ? 'logged-in' : ''}`}>
-      <div className={`text-sm font-medium ${status?.isLoggedIn ? 'text-[var(--nim-success)]' : 'text-[var(--nim-text)]'}`}>
-        {title}
-      </div>
-      <p className="text-[13px] text-[var(--nim-text-muted)] leading-relaxed">
+    <AgentToolCard
+      className={`openai-auth-widget ${status?.isLoggedIn ? 'logged-in' : ''}`}
+      data-agent-elements-shell={shell}
+      data-component="OpenAIAuthWidget"
+      data-testid="agent-elements-openai-auth-widget"
+      icon={<span className={status?.isLoggedIn ? 'text-[var(--an-diff-added-text)]' : 'text-[var(--an-diff-removed-text)]'}>!</span>}
+      status={status?.isLoggedIn ? 'completed' : 'error'}
+      title={title}
+      trailing={<AgentStatusPill tone={status?.isLoggedIn ? 'success' : 'error'}>{status?.isLoggedIn ? 'Ready' : 'Auth required'}</AgentStatusPill>}
+    >
+      <p className="m-0 select-text text-[13px] leading-relaxed text-[var(--an-tool-color-muted)]">
         {description}
       </p>
 
       {status && (
-        <div className={`rounded-md border p-3 text-[13px] leading-relaxed ${statusBoxClassName}`}>
+        <div className={`select-text rounded-[calc(var(--an-tool-border-radius)-4px)] border p-[var(--an-spacing-sm)] text-[13px] leading-relaxed ${statusBoxClassName}`}>
           {status.error || status.message}
         </div>
       )}
 
-      <div className="flex flex-wrap gap-2">
+      <div className={SPECIAL_STATUS_ACTIONS_CLASS} data-interactive="true">
         <button
           onClick={handleLogin}
           disabled={isLoggingIn}
-          className="inline-flex items-center justify-center py-2 px-4 rounded-md text-sm font-medium cursor-pointer transition-all bg-[var(--nim-primary)] text-white hover:bg-[var(--nim-primary-hover)] disabled:opacity-60 disabled:cursor-not-allowed"
+          className={SPECIAL_STATUS_INLINE_PRIMARY_BUTTON_CLASS}
         >
           {isLoggingIn ? 'Opening Login...' : status?.isLoggedIn ? 'Log In Again' : 'Log In'}
         </button>
         <button
           onClick={() => void handleCheckStatus()}
           disabled={isChecking}
-          className="inline-flex items-center justify-center py-2 px-4 rounded-md text-sm font-medium cursor-pointer transition-all bg-[var(--nim-bg-secondary)] text-[var(--nim-text)] border border-[var(--nim-border)] hover:bg-[var(--nim-bg-hover)] disabled:opacity-60 disabled:cursor-not-allowed"
+          className={SPECIAL_STATUS_INLINE_SECONDARY_BUTTON_CLASS}
         >
           {isChecking ? 'Checking...' : 'Check Status'}
         </button>
         <button
           onClick={handleOpenDocs}
-          className="inline-flex items-center justify-center py-2 px-4 rounded-md text-sm font-medium cursor-pointer transition-all bg-[var(--nim-bg-secondary)] text-[var(--nim-text)] border border-[var(--nim-border)] hover:bg-[var(--nim-bg-hover)]"
+          className={SPECIAL_STATUS_INLINE_SECONDARY_BUTTON_CLASS}
         >
           Open Setup Docs
         </button>
       </div>
-    </div>
+    </AgentToolCard>
   );
 };
