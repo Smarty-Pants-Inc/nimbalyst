@@ -23,6 +23,7 @@ import { setSessionIsAtBottom, getSessionIsAtBottom } from '../../../store/atoms
 import { isAppleMobileWebKit } from '../../../utils/platform';
 import {
   AgentElementsEventRenderer,
+  AgentThinkingCard,
   AgentTranscriptRow,
   filterAgentElementsModelsForNormalTranscript,
   getAgentElementsBridgeWidth,
@@ -526,6 +527,7 @@ const defaultSettings: TranscriptSettings = {
 const EDIT_TOOL_NAMES = new Set([
   'edit', 'write', 'multi-edit', 'multiedit', 'multi_edit',
   'applypatch', 'apply_patch',
+  'edit_file', 'write_file',
 ]);
 
 const TRANSCRIPT_BOTTOM_THRESHOLD_PX = 50;
@@ -562,7 +564,55 @@ const isTodoUpdateEchoText = (text?: string | null): boolean => {
   return /^Updated todo list to\s+\[/i.test(trimmed) || /^Todo list updated\.?$/i.test(trimmed);
 };
 
-const WRITE_TOOL_NAMES = new Set(['write', 'notebookedit']);
+const WRITE_TOOL_NAMES = new Set(['write', 'write_file', 'notebookedit']);
+const SUPPORTING_FILE_FLOW_TOOL_NAMES = new Set([
+  'find',
+  'glob',
+  'grep',
+  'list',
+  'list_files',
+  'ls',
+  'read',
+  'read_file',
+  'search',
+]);
+const SHELL_TOOL_NAMES = new Set(['bash', 'command_execution', 'shell', 'execute', 'exec', 'exec_command', 'run_shell_command', 'run_command']);
+
+const normalizeTranscriptToolName = (name?: string): string => (name ?? '').trim().toLowerCase();
+
+const commandTextFromTool = (tool: TranscriptViewMessage['toolCall']): string | undefined => {
+  if (!tool?.arguments) return undefined;
+  const command = tool.arguments.command ?? tool.arguments.cmd ?? tool.arguments.rawCommand ?? tool.arguments.script;
+  return typeof command === 'string' && command.trim().length > 0 ? command : undefined;
+};
+
+const fileDeletionPathFromCommand = (command: string | undefined): string | undefined => {
+  if (!command) return undefined;
+  const match = command.match(/(?:^|[;&]\s*)rm\s+(?:-[A-Za-z]+\s+)*(?:"([^"]+)"|'([^']+)'|([^\s;&|]+))/);
+  return match?.[1] ?? match?.[2] ?? match?.[3] ?? undefined;
+};
+
+const isFileDeletionShellTool = (tool: TranscriptViewMessage['toolCall']): boolean => {
+  if (!tool?.toolName) return false;
+  const normalized = normalizeTranscriptToolName(tool.toolName);
+  return SHELL_TOOL_NAMES.has(normalized) && Boolean(fileDeletionPathFromCommand(commandTextFromTool(tool)));
+};
+
+const isFileMutationPermissionTool = (tool: TranscriptViewMessage['toolCall']): boolean => {
+  if (!tool?.toolName || normalizeTranscriptToolName(tool.toolName) !== 'toolpermission') return false;
+
+  const requestedToolName = typeof tool.arguments?.toolName === 'string' ? tool.arguments.toolName : undefined;
+  if (isFileModifyingTool(requestedToolName)) return true;
+
+  const requestedNormalized = normalizeTranscriptToolName(requestedToolName);
+  if (SHELL_TOOL_NAMES.has(requestedNormalized)) {
+    const rawCommand = typeof tool.arguments?.rawCommand === 'string' ? tool.arguments.rawCommand : undefined;
+    return Boolean(fileDeletionPathFromCommand(rawCommand));
+  }
+
+  const pattern = typeof tool.arguments?.pattern === 'string' ? tool.arguments.pattern : undefined;
+  return isFileModifyingTool(pattern);
+};
 
 /**
  * Interactive tool widgets that require the user to act. These render even when
@@ -583,7 +633,7 @@ const INTERACTIVE_WIDGET_TOOLS = new Set([
 
 const isFileModifyingTool = (name?: string): boolean => {
   if (!name) return false;
-  const normalized = name.toLowerCase();
+  const normalized = normalizeTranscriptToolName(name);
   if (EDIT_TOOL_NAMES.has(normalized)) return true;
   if (WRITE_TOOL_NAMES.has(normalized)) return true;
   if (normalized.endsWith('__edit')) return true;
@@ -592,6 +642,17 @@ const isFileModifyingTool = (name?: string): boolean => {
   if (normalized.endsWith(':write')) return true;
   return false;
 };
+
+const isSupportingFileFlowTool = (message: TranscriptViewMessage): boolean => {
+  const normalized = normalizeTranscriptToolName(message.toolCall?.toolName);
+  return SUPPORTING_FILE_FLOW_TOOL_NAMES.has(normalized);
+};
+
+const isFileFlowMutationTool = (message: TranscriptViewMessage): boolean => (
+  isFileModifyingTool(message.toolCall?.toolName) ||
+  isFileDeletionShellTool(message.toolCall) ||
+  isFileMutationPermissionTool(message.toolCall)
+);
 
 const countLines = (s: string | undefined | null): number => {
   if (!s) return 0;
@@ -711,6 +772,14 @@ const AGENT_ELEMENTS_TOOL_BRIDGE_MARKERS = {
 
 const AGENT_ELEMENTS_EDIT_BRIDGE_MARKER = 'rich-transcript-agent-elements-edit-bridge';
 const AGENT_ELEMENTS_CUSTOM_WIDGET_BRIDGE_MARKER = 'rich-transcript-agent-elements-custom-widget-bridge';
+
+const stripAgentElementsDebugPayloads = (
+  agentElementsModels: ReturnType<typeof projectTranscriptViewMessageToAgentElementsModels>,
+): ReturnType<typeof projectTranscriptViewMessageToAgentElementsModels> => (
+  agentElementsModels.map((model) => (
+    model.rawPayload === undefined ? model : { ...model, rawPayload: undefined }
+  ))
+);
 
 const stableSerialize = (value: unknown): string => {
   if (value === null || value === undefined) return String(value);
@@ -1422,6 +1491,62 @@ export const RichTranscriptView = React.forwardRef<
     return indices;
   }, [messages]);
 
+  const latestTodoToolIndex = useMemo(() => {
+    let latestIndex = -1;
+    for (let i = 0; i < messages.length; i++) {
+      const message = messages[i];
+      if (isToolLikeMessage(message) && isTodoToolName(message.toolCall?.toolName)) {
+        latestIndex = i;
+      }
+    }
+    return latestIndex;
+  }, [messages]);
+
+  const isSupersededTodoTool = useCallback((toolIndex: number, toolMessage: TranscriptViewMessage): boolean => (
+    isTodoToolName(toolMessage.toolCall?.toolName) && latestTodoToolIndex >= 0 && toolIndex !== latestTodoToolIndex
+  ), [latestTodoToolIndex]);
+
+  const hasFileMutationInTurn = useCallback((messageIndex: number): boolean => {
+    let turnStart = messageIndex;
+    while (turnStart > 0 && messages[turnStart].type !== 'user_message') {
+      turnStart--;
+    }
+
+    let turnEnd = messages.length - 1;
+    for (let i = turnStart + 1; i < messages.length; i++) {
+      if (messages[i].type === 'user_message') {
+        turnEnd = i - 1;
+        break;
+      }
+    }
+
+    for (let i = turnStart; i <= turnEnd; i++) {
+      if (isToolLikeMessage(messages[i]) && isFileFlowMutationTool(messages[i])) {
+        return true;
+      }
+    }
+    return false;
+  }, [messages]);
+
+  const getVisibleToolMessages = useCallback((
+    toolMessages: { message: TranscriptViewMessage, index: number }[],
+  ): { message: TranscriptViewMessage, index: number }[] => {
+    const hasFileMutation = toolMessages.some(({ message: toolMsg, index: toolIndex }) => (
+      isFileFlowMutationTool(toolMsg) || hasFileMutationInTurn(toolIndex)
+    ));
+    return toolMessages.filter(({ message: toolMsg, index: toolIndex }) => {
+      if (isSupersededTodoTool(toolIndex, toolMsg)) return false;
+      if (hasFileMutation && isSupportingFileFlowTool(toolMsg)) return false;
+
+      if (settings.showToolCalls) return true;
+
+      return (
+        (toolMsg.type === 'interactive_prompt' && !!toolMsg.interactivePrompt) ||
+        (!!toolMsg.toolCall?.toolName && INTERACTIVE_WIDGET_TOOLS.has(toolMsg.toolCall.toolName))
+      );
+    });
+  }, [hasFileMutationInTurn, isSupersededTodoTool, settings.showToolCalls]);
+
   // Find pending (unresolved) ToolPermission widgets and the VList indices where they're actually rendered.
   // Tool messages are hidden (display:none) and rendered inside the next assistant message via toolMessagesBefore,
   // so we need to find the assistant message index for scroll targeting.
@@ -1816,7 +1941,9 @@ export const RichTranscriptView = React.forwardRef<
       bridgeKind: 'tool' | 'prompt' | 'subagent',
       trailingContent?: React.ReactNode,
     ) => {
-      const visibleModels = filterAgentElementsModelsForNormalTranscript(agentElementsModels);
+      const visibleModels = stripAgentElementsDebugPayloads(
+        filterAgentElementsModelsForNormalTranscript(agentElementsModels)
+      );
       if (visibleModels.length === 0) {
         return null;
       }
@@ -2232,6 +2359,12 @@ export const RichTranscriptView = React.forwardRef<
     if (supersededToolIndices.has(index)) {
       return <div key={messageKey} style={{ display: 'none' }} />;
     }
+    if (isToolLikeMessage(message) && isSupersededTodoTool(index, message)) {
+      return <div key={messageKey} style={{ display: 'none' }} />;
+    }
+    if (isToolLikeMessage(message) && isSupportingFileFlowTool(message) && hasFileMutationInTurn(index)) {
+      return <div key={messageKey} style={{ display: 'none' }} />;
+    }
 
     const isUser = message.type === 'user_message';
     const isTool = isToolLikeMessage(message);
@@ -2310,13 +2443,7 @@ export const RichTranscriptView = React.forwardRef<
       isTodoUpdateEchoText(message.text) &&
       toolMessagesBefore.some(({ message: toolMsg }) => isTodoToolName(toolMsg.toolCall?.toolName))
     ) {
-      const visibleToolMessages = settings.showToolCalls
-        ? toolMessagesBefore
-        : toolMessagesBefore.filter(
-            ({ message: toolMsg }) =>
-              (toolMsg.type === 'interactive_prompt' && !!toolMsg.interactivePrompt) ||
-              (!!toolMsg.toolCall?.toolName && INTERACTIVE_WIDGET_TOOLS.has(toolMsg.toolCall.toolName))
-          );
+      const visibleToolMessages = getVisibleToolMessages(toolMessagesBefore);
 
       if (visibleToolMessages.length === 0) {
         return <div key={messageKey} style={{ display: 'none' }} />;
@@ -2390,8 +2517,10 @@ export const RichTranscriptView = React.forwardRef<
     }
 
     if (message.type === 'tool_progress' || message.type === 'turn_ended') {
-      const agentElementsModels = filterAgentElementsModelsForNormalTranscript(
-        projectTranscriptViewMessageToAgentElementsModels(message)
+      const agentElementsModels = stripAgentElementsDebugPayloads(
+        filterAgentElementsModelsForNormalTranscript(
+          projectTranscriptViewMessageToAgentElementsModels(message)
+        )
       );
       if (agentElementsModels.length > 0) {
         const streamBridgeWidth = getAgentElementsBridgeWidth(agentElementsModels, 'wide');
@@ -2487,7 +2616,9 @@ export const RichTranscriptView = React.forwardRef<
     }
 
     if (message.type === 'system_message' && !shouldKeepSystemMessageOnSpecialWidgetPath(message)) {
-      const agentElementsModels = projectTranscriptViewMessageToAgentElementsModels(message);
+      const agentElementsModels = stripAgentElementsDebugPayloads(
+        projectTranscriptViewMessageToAgentElementsModels(message)
+      );
       if (agentElementsModels.length > 0) {
         const systemBridgeWidth = getAgentElementsBridgeWidth(agentElementsModels, 'wide');
         return (
@@ -2546,7 +2677,9 @@ export const RichTranscriptView = React.forwardRef<
       options: { useAgentElementsThinkingBridge?: boolean } = {},
     ) => {
       const agentElementsThinkingModels = options.useAgentElementsThinkingBridge && settings.showThinking
-        ? projectTranscriptViewMessageToAgentElementsModels(message).filter((model) => model.kind === 'thinking')
+        ? stripAgentElementsDebugPayloads(
+            projectTranscriptViewMessageToAgentElementsModels(message).filter((model) => model.kind === 'thinking')
+          )
         : [];
       const messageForSegment: TranscriptViewMessage = agentElementsThinkingModels.length > 0
         ? (() => {
@@ -2665,13 +2798,7 @@ export const RichTranscriptView = React.forwardRef<
         {toolMessagesBefore.length > 0 && (() => {
           // Filter out non-interactive tool messages when settings.showToolCalls
           // is off; always keep interactive widgets so the user can act on prompts.
-          const visibleToolMessages = settings.showToolCalls
-            ? toolMessagesBefore
-            : toolMessagesBefore.filter(
-                ({ message: toolMsg }) =>
-                  (toolMsg.type === 'interactive_prompt' && !!toolMsg.interactivePrompt) ||
-                  (!!toolMsg.toolCall?.toolName && INTERACTIVE_WIDGET_TOOLS.has(toolMsg.toolCall.toolName))
-              );
+          const visibleToolMessages = getVisibleToolMessages(toolMessagesBefore);
           if (visibleToolMessages.length === 0) return null;
           return (
             <div className={`rich-transcript-tool-messages flex flex-col gap-2 mb-1.5 ${isNewGroup && !useAgentElementsRowShell ? 'indented ml-6' : ''}`}>
@@ -2879,13 +3006,19 @@ export const RichTranscriptView = React.forwardRef<
                     </div>
                   )}
                   {isWaitingForResponse && (
-                    <div key="waiting" className="rich-transcript-waiting flex items-center gap-2 text-[var(--nim-text-muted)] italic py-2 px-4 mb-2">
-                      <div className="rich-transcript-waiting-dots flex gap-1">
-                        <div className="rich-transcript-waiting-dot w-2 h-2 rounded-full bg-[var(--nim-primary)]" />
-                        <div className="rich-transcript-waiting-dot w-2 h-2 rounded-full bg-[var(--nim-primary)]" />
-                        <div className="rich-transcript-waiting-dot w-2 h-2 rounded-full bg-[var(--nim-primary)]" />
-                      </div>
-                      <span className="rich-transcript-waiting-text">{waitingText}</span>
+                    <div
+                      key="waiting"
+                      className="rich-transcript-waiting rich-transcript-agent-elements-waiting-bridge agent-elements-live-bridge mb-2"
+                      data-agent-elements-padding="aligned"
+                      data-agent-elements-width="content"
+                      data-component="rich-transcript-agent-elements-waiting-bridge"
+                      data-testid="rich-transcript-agent-elements-waiting-bridge"
+                    >
+                      <AgentThinkingCard
+                        detail={waitingText}
+                        status="running"
+                        data-testid="agent-elements-waiting-thinking-card"
+                      />
                     </div>
                   )}
               </VList>

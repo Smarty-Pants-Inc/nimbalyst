@@ -114,6 +114,7 @@ export interface AgentElementsRendererModel {
   deniedReason?: ReactNode;
   filePath?: string;
   editStatus?: AgentEditStatus;
+  editOperation?: 'create' | 'edit' | 'delete' | 'read';
   diffLines?: AgentDiffLine[];
   query?: string;
   source?: ReactNode;
@@ -423,6 +424,7 @@ function renderKnownModel(kind: AgentElementsRendererKind, model: AgentElementsR
         <AgentEditToolCard
           debugPayload={model.rawPayload}
           diffLines={model.diffLines}
+          operation={model.editOperation}
           filePath={model.filePath ?? text(model.title, 'unknown-file')}
           status={model.editStatus ?? (model.status === 'pending' ? 'pending_approval' : undefined)}
           summary={model.body}

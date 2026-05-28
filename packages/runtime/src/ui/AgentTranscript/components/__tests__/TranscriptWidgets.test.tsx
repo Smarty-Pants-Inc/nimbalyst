@@ -755,6 +755,40 @@ describe('ToolPermissionWidget', () => {
     expect(screen.getByText('This Session')).toBeDefined();
   });
 
+  it('renders granted file writes as structured edit previews without raw argument JSON', () => {
+    const message = makeToolMessage(
+      'ToolPermission',
+      {
+        requestId: 'req-file-write',
+        toolName: 'write_file',
+        rawCommand: JSON.stringify({
+          file_path: '/workspace/tmp/file-edit-demo.txt',
+          content: 'Initial demo content\n',
+        }),
+        pattern: 'Write(tmp/file-edit-demo.txt)',
+        patternDisplayName: 'Write(tmp/file-edit-demo.txt)',
+      },
+      JSON.stringify({ decision: 'allow', scope: 'once' })
+    );
+    const { container } = render(
+      <Wrapper>
+        <ToolPermissionWidget
+          message={message}
+          isExpanded={false}
+          onToggle={() => {}}
+          sessionId="completed-file-write-session"
+        />
+      </Wrapper>
+    );
+
+    expect(screen.getByTestId('tool-permission-widget').dataset.state).toBe('granted');
+    expect(screen.getByTestId('agent-elements-edit-tool-card')).toBeDefined();
+    expect(screen.getByTestId('agent-elements-diff').textContent).toContain('Initial demo content');
+    expect(screen.queryByTestId('tool-permission-command')).toBeNull();
+    expect(container.textContent).not.toContain('"file_path"');
+    expect(container.textContent).not.toContain('"content"');
+  });
+
   it('renders denied state from tool result', () => {
     const message = makeToolMessage(
       'ToolPermission',
@@ -829,7 +863,7 @@ describe('ToolPermissionWidget', () => {
     );
     expect(screen.getByTestId('tool-permission-outside-paths')).toBeDefined();
     expect(screen.getByText('Outside active workspace/worktree')).toBeDefined();
-    expect(screen.getByText(outsidePath)).toBeDefined();
+    expect(screen.getAllByText(outsidePath).length).toBeGreaterThanOrEqual(1);
   });
 
   it('keeps ToolPermissionWidget source on Agent Elements-compatible visual rules', () => {

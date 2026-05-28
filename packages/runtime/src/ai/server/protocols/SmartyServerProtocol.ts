@@ -18,6 +18,7 @@ import type {
   ToolResult,
 } from './ProtocolInterface';
 import { normalizeLoopbackHttpUrl } from '../utils/loopbackHttpUrl';
+import { isAssistantLangGraphMessage } from '../utils/langGraphMessages';
 
 export interface LangGraphClientLike {
   threads: {
@@ -384,6 +385,7 @@ function extractLangGraphMessageText(data: unknown): string {
   if (!Array.isArray(data) || data.length === 0) return '';
   const message = data[0];
   if (!isRecord(message)) return '';
+  if (!isAssistantLangGraphMessage(message)) return '';
   return contentToText(message.content);
 }
 

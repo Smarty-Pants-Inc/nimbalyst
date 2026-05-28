@@ -2,7 +2,7 @@
 
 import '@testing-library/jest-dom/vitest';
 import React from 'react';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -108,7 +108,15 @@ vi.mock('@nimbalyst/runtime', async () => {
 });
 
 vi.mock('@nimbalyst/runtime/ui/AgentTranscript/components/RichTranscriptView', () => ({
-  RichTranscriptView: ({ sessionId }: any) => <div data-testid="mock-rich-transcript-view" data-session-id={sessionId} />,
+  RichTranscriptView: ({ sessionId, settings, messages }: any) => (
+    <div
+      data-testid="mock-rich-transcript-view"
+      data-session-id={sessionId}
+      data-show-tool-calls={String(settings?.showToolCalls)}
+      data-collapse-tools={String(settings?.collapseTools)}
+      data-message-count={String(messages?.length ?? 0)}
+    />
+  ),
 }));
 
 vi.mock('../../AgenticCoding/SessionContextMenu', () => ({
@@ -177,6 +185,21 @@ vi.mock('../../../store/atoms/sessionTranscript', () => ({
 describe('SessionKanbanBoard Agent Elements shell', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    (window as any).electronAPI = {
+      ai: {
+        getTailMessages: vi.fn().mockResolvedValue([
+          {
+            id: 1,
+            sequence: 1,
+            createdAt: new Date('2026-05-28T05:00:00Z'),
+            type: 'assistant_message',
+            subagentId: null,
+            text: 'Recent useful assistant response',
+            attachments: [],
+          },
+        ]),
+      },
+    };
   });
 
   it('renders kanban board cards with Agent Elements chrome and preserves session open behavior', () => {
@@ -222,5 +245,21 @@ describe('SessionKanbanBoard Agent Elements shell', () => {
     expect(source).not.toMatch(/bg-nim|text-nim|border-nim/);
     expect(source).not.toMatch(/#[0-9a-fA-F]{3,8}|rgba\(/);
     expect(source).not.toMatch(/<svg|text-white|bg-white|bg-black|tracking-wide|transition-all/);
+  });
+
+  it('keeps transcript peek on normal-use projection settings without raw tool-call leakage', async () => {
+    render(<SessionKanbanBoard onSessionOpen={mockState.onSessionOpen} />);
+
+    fireEvent.click(screen.getByTestId('session-kanban-peek'));
+
+    const transcript = await screen.findByTestId('mock-rich-transcript-view');
+    await waitFor(() => expect(transcript).toHaveAttribute('data-message-count', '1'));
+    expect(transcript).toHaveAttribute('data-session-id', 'session-1');
+    expect(transcript).toHaveAttribute('data-show-tool-calls', 'false');
+    expect(transcript).toHaveAttribute('data-collapse-tools', 'true');
+    expect((window as any).electronAPI.ai.getTailMessages).toHaveBeenCalledWith('session-1', 100);
+
+    const source = readFileSync(sourcePath, 'utf8');
+    expect(source).toMatch(/const PEEK_SETTINGS[\s\S]*showToolCalls:\s*false/);
   });
 });

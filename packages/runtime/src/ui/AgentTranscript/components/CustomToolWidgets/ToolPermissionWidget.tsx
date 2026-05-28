@@ -32,6 +32,7 @@ import { interactiveWidgetHostAtom, getInteractiveWidgetHost } from '../../../..
 import type { PermissionScope } from './InteractiveWidgetHost';
 import { unwrapShellCommand } from '../../utils/unwrapShellCommand';
 import { AgentStatusPill, type AgentStatusTone } from '../../../AgentElements/AgentElementsPrimitives';
+import type { AgentDiffLine } from '../../../AgentElements/AgentElementsToolRenderers';
 
 /**
  * Get a human-readable display name for a tool pattern
@@ -105,6 +106,13 @@ const permissionSecondaryButtonClass =
 const permissionPrimaryButtonClass =
   'cursor-pointer whitespace-nowrap rounded-[var(--an-input-border-radius)] border-none bg-[var(--an-primary-color)] px-3 py-1.5 text-[11px] font-medium text-[var(--an-button-primary-text)] transition-[background-color,border-color,color,opacity] duration-150 hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50';
 const permissionSeparatorClass = 'w-px h-5 bg-[var(--an-border-color)] mx-1';
+
+interface FilePermissionPreviewModel {
+  filePath: string;
+  operation: 'create' | 'edit';
+  diffLines: AgentDiffLine[];
+  title: string;
+}
 
 function getApprovalState(
   displayResult: { decision: 'allow' | 'deny'; scope: PermissionScope; cancelled?: boolean } | null | undefined,
@@ -186,6 +194,118 @@ function PermissionStatusIcon({
   );
 }
 
+function parseRawCommandObject(rawCommand: string): Record<string, unknown> {
+  if (!rawCommand.trim().startsWith('{')) return {};
+  try {
+    const parsed = JSON.parse(rawCommand);
+    return parsed && typeof parsed === 'object' && !Array.isArray(parsed)
+      ? parsed as Record<string, unknown>
+      : {};
+  } catch {
+    return {};
+  }
+}
+
+function stringField(record: Record<string, unknown>, keys: string[]): string | undefined {
+  for (const key of keys) {
+    const value = record[key];
+    if (typeof value === 'string') return value;
+  }
+  return undefined;
+}
+
+function contentLines(content: string | undefined): string[] {
+  if (!content) return [];
+  const lines = content.replace(/\r\n/g, '\n').split('\n');
+  if (lines[lines.length - 1] === '') lines.pop();
+  return lines.length > 0 ? lines : [''];
+}
+
+function buildFilePermissionPreview(
+  toolName: string,
+  rawCommand: string,
+): FilePermissionPreviewModel | null {
+  if (toolName !== 'write_file' && toolName !== 'edit_file') return null;
+
+  const input = parseRawCommandObject(rawCommand);
+  const filePath = stringField(input, ['file_path', 'filePath', 'path']);
+  if (!filePath) return null;
+
+  if (toolName === 'write_file') {
+    const diffLines = contentLines(stringField(input, ['content'])).map((content, index) => ({
+      type: 'add' as const,
+      content,
+      lineNumber: index + 1,
+    }));
+    return {
+      filePath,
+      operation: 'create',
+      diffLines,
+      title: 'Write file',
+    };
+  }
+
+  const oldLines = contentLines(stringField(input, ['old_string', 'oldString']));
+  const newLines = contentLines(stringField(input, ['new_string', 'newString']));
+  return {
+    filePath,
+    operation: 'edit',
+    diffLines: [
+      ...oldLines.map((content, index) => ({
+        type: 'remove' as const,
+        content,
+        lineNumber: index + 1,
+      })),
+      ...newLines.map((content, index) => ({
+        type: 'add' as const,
+        content,
+        lineNumber: index + 1,
+      })),
+    ],
+    title: 'Edit file',
+  };
+}
+
+function FilePermissionPreview({ preview }: { preview: FilePermissionPreviewModel }) {
+  const addCount = preview.diffLines.filter((line) => line.type === 'add').length;
+  const removeCount = preview.diffLines.filter((line) => line.type === 'remove').length;
+
+  return (
+    <div
+      className="agent-elements-edit-panel"
+      data-permission-file-preview="true"
+      data-testid="agent-elements-edit-tool-card"
+    >
+      <div className="agent-elements-edit-header-button">
+        <span className="agent-elements-tool-title">{preview.title}</span>
+        <span className="agent-elements-tool-subtitle">{preview.filePath}</span>
+        <span className="agent-elements-edit-stats" data-testid="agent-elements-edit-stats">
+          <span data-diff-tone="add">+{addCount}</span>
+          <span data-diff-tone="remove">-{removeCount}</span>
+        </span>
+      </div>
+      {preview.diffLines.length > 0 ? (
+        <pre className="agent-elements-diff" data-testid="agent-elements-diff">
+          {preview.diffLines.map((line, index) => (
+            <span
+              className="agent-elements-diff-line"
+              data-diff-line={line.type}
+              key={`${line.type}-${line.lineNumber ?? index}-${line.content}`}
+            >
+              <span className="agent-elements-diff-marker" aria-hidden="true">
+                {line.type === 'add' ? '+' : line.type === 'remove' ? '-' : ' '}
+              </span>
+              <span className="agent-elements-diff-content">{line.content}</span>
+            </span>
+          ))}
+        </pre>
+      ) : (
+        <div className="agent-elements-edit-summary">No diff preview available.</div>
+      )}
+    </div>
+  );
+}
+
 // ============================================================
 // Widget Component
 // ============================================================
@@ -212,6 +332,7 @@ export const ToolPermissionWidget: React.FC<CustomToolWidgetProps> = ({
   const outsidePaths: string[] = Array.isArray(args.outsidePaths) ? args.outsidePaths : [];
   const sensitivePaths: string[] = Array.isArray(args.sensitivePaths) ? args.sensitivePaths : [];
   const workspacePath = (args.workspacePath || '') as string;
+  const filePermissionPreview = buildFilePermissionPreview(toolName, rawCommand);
 
   const teammateName = (args.teammateName || '') as string;
 
@@ -432,14 +553,18 @@ export const ToolPermissionWidget: React.FC<CustomToolWidgetProps> = ({
         </div>
 
         <div className="agent-elements-tool-primary">
-          <div className={permissionCommandBlockClass}>
-            <code
-              className={permissionCommandCodeClass}
-              data-testid="tool-permission-command"
-            >
-              {rawCommand || toolName}
-            </code>
-          </div>
+          {filePermissionPreview ? (
+            <FilePermissionPreview preview={filePermissionPreview} />
+          ) : (
+            <div className={permissionCommandBlockClass}>
+              <code
+                className={permissionCommandCodeClass}
+                data-testid="tool-permission-command"
+              >
+                {rawCommand || toolName}
+              </code>
+            </div>
+          )}
         </div>
 
         <div className="agent-elements-tool-footer">
@@ -585,15 +710,19 @@ export const ToolPermissionWidget: React.FC<CustomToolWidgetProps> = ({
           </div>
         )}
 
-        {/* Command display */}
-        <div className={permissionCommandBlockClass}>
-          <code
-            className={permissionCommandCodeClass}
-            data-testid="tool-permission-command"
-          >
-            {rawCommand || toolName}
-          </code>
-        </div>
+        {/* Operation display */}
+        {filePermissionPreview ? (
+          <FilePermissionPreview preview={filePermissionPreview} />
+        ) : (
+          <div className={permissionCommandBlockClass}>
+            <code
+              className={permissionCommandCodeClass}
+              data-testid="tool-permission-command"
+            >
+              {rawCommand || toolName}
+            </code>
+          </div>
+        )}
 
         {/* Host-unavailable note: shown when useAtomValue captured a null
             host. Click handlers fall back to getInteractiveWidgetHost at

@@ -138,7 +138,7 @@ describe('RichTranscriptView Agent Elements live bridge', () => {
     expect(screen.getByTestId('agent-elements-renderer-boundary')).toHaveAttribute('data-fallback-class', 'known');
     expect(screen.getByTestId('agent-elements-search-tool-card')).toHaveTextContent('/repo/src/app.ts');
     expect(screen.getByTestId('agent-elements-tool-primary')).not.toHaveTextContent('"file_path"');
-    expect(screen.getByTestId('agent-elements-debug-disclosure')).toHaveAttribute('data-debug-only', 'true');
+    expect(screen.queryByTestId('agent-elements-debug-disclosure')).not.toBeInTheDocument();
     expect(container.querySelector('.rich-transcript-tool-container.orphan')).not.toHaveClass('ml-6');
   });
 
@@ -186,7 +186,382 @@ describe('RichTranscriptView Agent Elements live bridge', () => {
     expect(screen.getByTestId('agent-elements-search-results')).toHaveTextContent('export const value = 1;');
     expect(screen.getByTestId('agent-elements-tool-primary')).not.toHaveTextContent('"content"');
     expect(screen.getByTestId('agent-elements-tool-primary')).not.toHaveTextContent('"path"');
-    expect(screen.getByTestId('agent-elements-debug-payload')).toHaveTextContent('content');
+    expect(screen.queryByTestId('agent-elements-debug-payload')).not.toBeInTheDocument();
+  });
+
+  it('coalesces repeated todo updates to one current card at the latest transcript position', () => {
+    renderTranscript([
+      {
+        ...makeToolMessage('write_todos', {
+          arguments: {
+            todos: [
+              { content: 'Old planning item', status: 'in_progress' },
+              { content: 'Old verification item', status: 'pending' },
+            ],
+          },
+          result: "Updated todo list to [{'content':'Old planning item','status':'in_progress'}]",
+        }),
+        id: 101,
+        sequence: 101,
+      },
+      {
+        id: 102,
+        sequence: 102,
+        createdAt: new Date('2026-05-23T14:25:01Z'),
+        type: 'assistant_message',
+        subagentId: null,
+        text: "Updated todo list to [{'content':'Old planning item','status':'in_progress'}]",
+        attachments: [],
+      },
+      {
+        ...makeToolMessage('write_todos', {
+          arguments: {
+            todos: [
+              { content: 'Create demo file', status: 'completed' },
+              { content: 'Update demo file', status: 'completed' },
+              { content: 'Delete demo file', status: 'in_progress' },
+            ],
+          },
+          result: "Updated todo list to [{'content':'Create demo file','status':'completed'}]",
+        }),
+        id: 103,
+        sequence: 103,
+      },
+      {
+        id: 104,
+        sequence: 104,
+        createdAt: new Date('2026-05-23T14:25:02Z'),
+        type: 'assistant_message',
+        subagentId: null,
+        text: "Updated todo list to [{'content':'Create demo file','status':'completed'}]",
+        attachments: [],
+      },
+    ]);
+
+    expect(screen.getAllByTestId('agent-elements-todo-card')).toHaveLength(1);
+    expect(screen.getAllByTestId('agent-elements-todo-item')).toHaveLength(3);
+    expect(screen.getByTestId('agent-elements-todo-card')).toHaveTextContent('Create demo file');
+    expect(screen.getByTestId('agent-elements-todo-card')).toHaveTextContent('Delete demo file');
+    expect(screen.queryByText('Old planning item')).not.toBeInTheDocument();
+    expect(screen.queryByText(/Updated todo list to/)).not.toBeInTheDocument();
+  });
+
+  it('suppresses supporting search and list probes when a file mutation card is rendered', () => {
+    renderTranscript([
+      {
+        ...makeToolMessage('search', {
+          arguments: { query: '/workspace/tmp/daily-driver-m1-runtime/edit-001' },
+          result: JSON.stringify({
+            matches: [
+              {
+                file_path: '/workspace/tmp/daily-driver-m1-runtime',
+                line_number: 1,
+                content: 'edit-001',
+              },
+            ],
+          }),
+        }),
+        id: 110,
+        sequence: 110,
+      },
+      {
+        ...makeToolMessage('ls', {
+          arguments: { path: '/workspace/tmp/daily-driver-m1-runtime/edit-001' },
+          result: '[]',
+        }),
+        id: 111,
+        sequence: 111,
+      },
+      {
+        ...makeToolMessage('write_file', {
+          arguments: {
+            file_path: '/workspace/tmp/daily-driver-m1-runtime/edit-001/agent-created.txt',
+            content: 'SMARTY_EDIT_APPROVAL_20260522\n',
+          },
+          result: JSON.stringify({ success: true }),
+        }),
+        id: 112,
+        sequence: 112,
+      },
+      {
+        id: 113,
+        sequence: 113,
+        createdAt: new Date('2026-05-23T14:25:02Z'),
+        type: 'assistant_message',
+        subagentId: null,
+        text: 'Wrote exactly: /workspace/tmp/daily-driver-m1-runtime/edit-001/agent-created.txt',
+        attachments: [],
+      },
+    ]);
+
+    expect(screen.queryByTestId('agent-elements-search-tool-card')).not.toBeInTheDocument();
+    expect(screen.queryByText(/Searched for/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Found 1 result/)).not.toBeInTheDocument();
+    expect(screen.getByTestId('rich-transcript-agent-elements-edit-card')).toHaveTextContent('agent-created.txt');
+    expect(screen.getByText(/Wrote exactly/)).toBeInTheDocument();
+  });
+
+  it('suppresses supporting probes when the visible file mutation is an approval widget', () => {
+    const { container } = renderTranscript([
+      {
+        ...makeToolMessage('search', {
+          arguments: { query: '/workspace/tmp/daily-driver-m1-runtime/edit-001' },
+          result: JSON.stringify({
+            matches: [
+              {
+                file_path: '/workspace/tmp/daily-driver-m1-runtime',
+                line_number: 1,
+                content: 'edit-001',
+              },
+            ],
+          }),
+        }),
+        id: 114,
+        sequence: 114,
+      },
+      {
+        ...makeToolMessage('ls', {
+          arguments: { path: '/workspace/tmp/daily-driver-m1-runtime/edit-001' },
+          result: '[]',
+        }),
+        id: 115,
+        sequence: 115,
+      },
+      {
+        ...makeToolMessage('ToolPermission', {
+          arguments: {
+            requestId: 'permission-write-file',
+            toolName: 'write_file',
+            rawCommand: JSON.stringify({
+              file_path: '/workspace/tmp/daily-driver-m1-runtime/edit-001/agent-created.txt',
+              content: 'SMARTY_EDIT_APPROVAL_20260522\n',
+            }),
+            pattern: 'write_file',
+            patternDisplayName: 'Write files',
+            workspacePath: '/workspace',
+          },
+          result: JSON.stringify({ decision: 'allow', scope: 'once' }),
+        }),
+        id: 116,
+        sequence: 116,
+      },
+      {
+        id: 117,
+        sequence: 117,
+        createdAt: new Date('2026-05-23T14:25:02Z'),
+        type: 'assistant_message',
+        subagentId: null,
+        text: 'Wrote /workspace/tmp/daily-driver-m1-runtime/edit-001/agent-created.txt.',
+        attachments: [],
+      },
+    ]);
+
+    expect(screen.queryByTestId('agent-elements-search-tool-card')).not.toBeInTheDocument();
+    expect(screen.queryByText(/Searched for/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Found 1 result/)).not.toBeInTheDocument();
+    expect(container).not.toHaveTextContent('ls[]');
+    expect(screen.getByTestId('agent-elements-edit-tool-card')).toHaveTextContent('Write file');
+    expect(screen.getByText(/Wrote \/workspace\/tmp\/daily-driver-m1-runtime\/edit-001\/agent-created\.txt/)).toBeInTheDocument();
+  });
+
+  it('suppresses supporting probes across the whole file-edit turn when they are split from approval', () => {
+    const { container } = renderTranscript([
+      {
+        id: 118,
+        sequence: 118,
+        createdAt: new Date('2026-05-23T14:25:00Z'),
+        type: 'user_message',
+        subagentId: null,
+        text: 'Create or overwrite /workspace/tmp/daily-driver-m1-runtime/edit-001/agent-created.txt',
+        attachments: [],
+      },
+      {
+        ...makeToolMessage('search', {
+          arguments: { query: '/workspace/tmp/daily-driver-m1-runtime/edit-001' },
+          result: JSON.stringify({
+            matches: [
+              {
+                file_path: '/workspace/tmp/daily-driver-m1-runtime',
+                line_number: 1,
+                content: 'edit-001',
+              },
+            ],
+          }),
+        }),
+        id: 119,
+        sequence: 119,
+      },
+      {
+        ...makeToolMessage('ls', {
+          arguments: { path: '/workspace/tmp/daily-driver-m1-runtime/edit-001' },
+          result: '[]',
+        }),
+        id: 120,
+        sequence: 120,
+      },
+      {
+        id: 121,
+        sequence: 121,
+        createdAt: new Date('2026-05-23T14:25:01Z'),
+        type: 'assistant_message',
+        subagentId: null,
+        text: '',
+        attachments: [],
+      },
+      {
+        ...makeToolMessage('ToolPermission', {
+          arguments: {
+            requestId: 'permission-write-file-split',
+            toolName: 'write_file',
+            rawCommand: JSON.stringify({
+              file_path: '/workspace/tmp/daily-driver-m1-runtime/edit-001/agent-created.txt',
+              content: 'SMARTY_EDIT_APPROVAL_20260522\n',
+            }),
+            pattern: 'write_file',
+            patternDisplayName: 'Write files',
+            workspacePath: '/workspace',
+          },
+          result: JSON.stringify({ decision: 'allow', scope: 'once' }),
+        }),
+        id: 122,
+        sequence: 122,
+      },
+      {
+        id: 123,
+        sequence: 123,
+        createdAt: new Date('2026-05-23T14:25:02Z'),
+        type: 'assistant_message',
+        subagentId: null,
+        text: 'Wrote /workspace/tmp/daily-driver-m1-runtime/edit-001/agent-created.txt.',
+        attachments: [],
+      },
+    ]);
+
+    expect(screen.queryByTestId('agent-elements-search-tool-card')).not.toBeInTheDocument();
+    expect(container).not.toHaveTextContent('Searched for');
+    expect(container).not.toHaveTextContent('ls[]');
+    expect(screen.getByTestId('agent-elements-edit-tool-card')).toHaveTextContent('Write file');
+  });
+
+  it('uses the Agent Elements thinking card for the live waiting shimmer', () => {
+    const { container } = renderTranscript([
+      {
+        id: 120,
+        sequence: 120,
+        createdAt: new Date('2026-05-23T14:25:00Z'),
+        type: 'user_message',
+        subagentId: null,
+        text: 'demo a quick edit',
+        attachments: [],
+      },
+    ], {
+      isProcessing: true,
+      sessionStatus: 'running',
+    });
+
+    expect(screen.getByTestId('rich-transcript-agent-elements-waiting-bridge')).toHaveAttribute(
+      'data-component',
+      'rich-transcript-agent-elements-waiting-bridge',
+    );
+    expect(screen.getByTestId('agent-elements-waiting-thinking-card')).toHaveAttribute('data-thinking-streaming', 'true');
+    expect(container.querySelector('.rich-transcript-waiting-dot')).not.toBeInTheDocument();
+  });
+
+  it('renders create update delete file demos as edit surfaces without read list or command payload noise', () => {
+    const { container } = renderTranscript([
+      {
+        id: 201,
+        sequence: 201,
+        createdAt: new Date('2026-05-23T14:25:00Z'),
+        type: 'user_message',
+        subagentId: null,
+        text: 'please demo for me a file edit. create a new file, then update it, then delete it',
+        attachments: [],
+      },
+      {
+        ...makeToolMessage('list', {
+          arguments: { path: '/workspace' },
+          result: "['/.git', '/AGENTS.md', '/tmp/']",
+        }),
+        id: 202,
+        sequence: 202,
+      },
+      {
+        ...makeToolMessage('write_file', {
+          arguments: {
+            file_path: '/workspace/tmp/file-edit-demo.txt',
+            content: 'Initial demo content\n',
+          },
+          result: 'Updated file /workspace/tmp/file-edit-demo.txt',
+        }),
+        id: 203,
+        sequence: 203,
+      },
+      {
+        ...makeToolMessage('read_file', {
+          arguments: { file_path: '/workspace/tmp/file-edit-demo.txt' },
+          result: 'content 1 Initial demo content; type tool; name read_file; id read-1',
+        }),
+        id: 204,
+        sequence: 204,
+      },
+      {
+        ...makeToolMessage('edit_file', {
+          arguments: {
+            file_path: '/workspace/tmp/file-edit-demo.txt',
+            old_string: 'Initial demo content\n',
+            new_string: 'Initial demo content\nUpdated demo content\n',
+            replace_all: false,
+          },
+          result: 'Updated file /workspace/tmp/file-edit-demo.txt',
+        }),
+        id: 205,
+        sequence: 205,
+      },
+      {
+        ...makeToolMessage('read_file', {
+          arguments: { file_path: '/workspace/tmp/file-edit-demo.txt' },
+          result: 'content 1 Initial demo content 2 Updated demo content; type tool; name read_file; id read-2',
+        }),
+        id: 206,
+        sequence: 206,
+      },
+      {
+        ...makeToolMessage('execute', {
+          arguments: {
+            command: 'rm "tmp/file-edit-demo.txt" && test ! -e "tmp/file-edit-demo.txt" && echo "deleted tmp/file-edit-demo.txt"',
+            timeout: 30,
+          },
+          result: JSON.stringify({
+            content: 'deleted tmp/file-edit-demo.txt\n\n[Command succeeded with exit code 0]',
+            status: 'success',
+          }),
+          exitCode: 0,
+        }),
+        id: 207,
+        sequence: 207,
+      },
+      {
+        id: 208,
+        sequence: 208,
+        createdAt: new Date('2026-05-23T14:25:08Z'),
+        type: 'assistant_message',
+        subagentId: null,
+        text: 'File edit demo complete.',
+        attachments: [],
+      },
+    ]);
+
+    expect(screen.getAllByTestId('rich-transcript-agent-elements-edit-card')).toHaveLength(2);
+    expect(screen.getByTestId('agent-elements-new-file-preview')).toHaveTextContent('Initial demo content');
+    expect(screen.getByTestId('agent-elements-diff-viewer')).toHaveTextContent('Updated demo content');
+    expect(screen.getByTestId('agent-elements-edit-tool-card')).toHaveTextContent('Deleted file');
+    expect(screen.queryByTestId('agent-elements-search-tool-card')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('agent-elements-command-terminal')).not.toBeInTheDocument();
+    expect(container).not.toHaveTextContent("['/.git'");
+    expect(container).not.toHaveTextContent('"file_path"');
+    expect(container).not.toHaveTextContent('content 1 Initial demo content; type tool; name read_file');
+    expect(container).not.toHaveTextContent('"command":"rm');
   });
 
   it('proves live MCP, generic, and non-built-in shell rows use first-class Agent Elements tool renderers', () => {
@@ -1187,6 +1562,8 @@ describe('RichTranscriptView Agent Elements live bridge', () => {
     expect(todoList).toHaveTextContent(todos[1].content);
     expect(todoList).toHaveTextContent(todos[2].content);
     expect(screen.getAllByText(todos[0].content)).toHaveLength(1);
+    expect(screen.queryByTestId('agent-elements-debug-disclosure')).not.toBeInTheDocument();
+    expect(screen.queryByText('Debug payload')).not.toBeInTheDocument();
     const visibleRawEchoMatches = screen
       .queryAllByText(/Updated todo list to/)
       .filter(element => !element.closest('[data-testid="agent-elements-debug-payload"]'));
@@ -1251,7 +1628,7 @@ describe('RichTranscriptView Agent Elements live bridge', () => {
     expect(screen.getByTestId('agent-elements-subagent-card')).toHaveTextContent('Inspect DeepAgents event streaming.');
     expect(screen.getByTestId('agent-elements-subagent-list')).toHaveTextContent('search_docs');
     expect(screen.getByTestId('agent-elements-tool-primary')).not.toHaveTextContent('"toolCalls"');
-    expect(screen.getByTestId('agent-elements-debug-disclosure')).toHaveAttribute('data-debug-only', 'true');
+    expect(screen.queryByTestId('agent-elements-debug-disclosure')).not.toBeInTheDocument();
   });
 
   it('preserves grouped canonical interactive prompt rows before assistant responses', () => {

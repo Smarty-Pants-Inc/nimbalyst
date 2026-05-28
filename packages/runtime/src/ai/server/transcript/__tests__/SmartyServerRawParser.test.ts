@@ -45,6 +45,56 @@ describe('SmartyServerRawParser', () => {
     expect(events[1]).toMatchObject({ eventType: 'assistant_message', searchableText: 'Hello from LangGraph' });
   });
 
+  it('does not project LangGraph tool-result messages as assistant prose', async () => {
+    const events = await rawMessagesToCanonicalEvents([
+      raw({
+        id: 1,
+        content: JSON.stringify({
+          id: 'evt-tool-message-1',
+          event: 'messages',
+          data: [{
+            type: 'tool',
+            name: 'read_file',
+            content: '1 Simple file edit demo\n2 \n3 This file was created by Smarty Code.',
+            tool_call_id: 'call-read-file-1',
+          }, { langgraph_node: 'tools' }],
+        }),
+        metadata: { eventType: 'messages', smartyServerProvider: true },
+      }),
+      raw({
+        id: 2,
+        content: JSON.stringify({
+          id: 'evt-tool-message-2',
+          event: 'messages',
+          data: [{
+            type: 'ToolMessage',
+            name: 'write_todos',
+            content: "Updated todo list to [{'content': 'Demo file edit', 'status': 'in_progress'}]",
+            tool_call_id: 'call-todos-1',
+          }, { langgraph_node: 'tools' }],
+        }),
+        metadata: { eventType: 'messages', smartyServerProvider: true },
+      }),
+      raw({
+        id: 3,
+        content: JSON.stringify({
+          id: 'evt-ai-message-1',
+          event: 'messages',
+          data: [{ type: 'ai', content: 'Created and verified the file.' }, { langgraph_node: 'agent' }],
+        }),
+        metadata: { eventType: 'messages', smartyServerProvider: true },
+      }),
+    ], 'smarty-server');
+
+    expect(events).toHaveLength(1);
+    expect(events[0]).toMatchObject({
+      eventType: 'assistant_message',
+      searchableText: 'Created and verified the file.',
+    });
+    expect(JSON.stringify(events)).not.toContain('Updated todo list to');
+    expect(JSON.stringify(events)).not.toContain('Simple file edit demo');
+  });
+
   it('projects LangGraph tool lifecycle events', async () => {
     const events = await rawMessagesToCanonicalEvents([
       raw({

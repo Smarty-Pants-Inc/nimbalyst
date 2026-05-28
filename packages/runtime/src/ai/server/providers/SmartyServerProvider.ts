@@ -40,6 +40,7 @@ import type {
   TrustChecker,
 } from './ProviderPermissionMixin';
 import {
+  isApprovalGatedFileMutationTool,
   isApprovalGatedSmartyTool,
   isFailedValidationToolResult,
   shouldContinueAfterApprovedInterruptResume,
@@ -290,7 +291,12 @@ export class SmartyServerProvider extends BaseAgentProvider {
                 }
               }
             }
-            eventStream = this.resumeInterruptedSessionWithContinuation(protocolSession, approval.decisions, sessionId);
+            eventStream = this.resumeInterruptedSessionWithContinuation(
+              protocolSession,
+              approval.decisions,
+              sessionId,
+              approval.approvedActions,
+            );
             interrupted = true;
             break;
           }
@@ -590,6 +596,7 @@ export class SmartyServerProvider extends BaseAgentProvider {
         options.workspacePath,
         options.permissionsPath || options.workspacePath,
         abortController.signal,
+        persistedApprovedFileAction ? [persistedApprovedFileAction.action] : [],
       )) {
         if (event.type === 'raw_event') {
           await storeSmartyServerRawEvent(
@@ -643,6 +650,7 @@ export class SmartyServerProvider extends BaseAgentProvider {
     protocolSession: ProtocolSession,
     decisions: LangGraphReviewDecision[],
     sessionId: string,
+    approvedActions: LangGraphActionRequest[] = [],
   ): AsyncIterable<ProtocolEvent> {
     const canAutoContinue = decisions.every((decision) => decision.type === 'approve');
     let continuationCount = 0;
@@ -652,6 +660,9 @@ export class SmartyServerProvider extends BaseAgentProvider {
     for (;;) {
       let sawToolActivity = false;
       let sawApprovalGatedToolActivity = false;
+      let sawApprovalGatedFileMutationToolActivity = approvedActions.some((action) => (
+        isApprovalGatedFileMutationTool(action.name, action.args)
+      ));
       let sawFailedValidationToolResult = false;
       let sawAssistantText = false;
       let assistantText = '';
@@ -673,6 +684,9 @@ export class SmartyServerProvider extends BaseAgentProvider {
             sawApprovalGatedToolActivity = true;
           }
           if (event.type === 'tool_call') {
+            if (isApprovalGatedFileMutationTool(toolName, event.toolCall?.arguments)) {
+              sawApprovalGatedFileMutationToolActivity = true;
+            }
             const id = event.toolCall?.id;
             if (id) {
               toolCallsById.set(id, {
@@ -682,6 +696,9 @@ export class SmartyServerProvider extends BaseAgentProvider {
             }
           } else if (event.type === 'tool_result') {
             const relatedToolCall = event.toolResult?.id ? toolCallsById.get(event.toolResult.id) : undefined;
+            if (isApprovalGatedFileMutationTool(toolName, relatedToolCall?.arguments)) {
+              sawApprovalGatedFileMutationToolActivity = true;
+            }
             if (isFailedValidationToolResult(
               event.toolResult?.name,
               event.toolResult?.result,
@@ -709,6 +726,7 @@ export class SmartyServerProvider extends BaseAgentProvider {
       if (!shouldContinueApprovedResume || !shouldContinueAfterApprovedInterruptResume(assistantText, {
         sawToolActivity,
         sawApprovalGatedToolActivity,
+        sawApprovalGatedFileMutationToolActivity,
         sawFailedValidationToolResult,
         sawAssistantText,
       })) {
@@ -736,8 +754,14 @@ export class SmartyServerProvider extends BaseAgentProvider {
     workspacePath: string,
     permissionsPath: string,
     signal: AbortSignal,
+    approvedActions: LangGraphActionRequest[] = [],
   ): AsyncIterable<ProtocolEvent> {
-    let stream = this.resumeInterruptedSessionWithContinuation(protocolSession, decisions, sessionId);
+    let stream = this.resumeInterruptedSessionWithContinuation(
+      protocolSession,
+      decisions,
+      sessionId,
+      approvedActions,
+    );
 
     for (;;) {
       let interrupted = false;
@@ -757,7 +781,12 @@ export class SmartyServerProvider extends BaseAgentProvider {
           for (const approvedEvent of buildApprovedFileActionToolEvents(approval.approvedFileActions)) {
             yield approvedEvent;
           }
-          stream = this.resumeInterruptedSessionWithContinuation(protocolSession, approval.decisions, sessionId);
+          stream = this.resumeInterruptedSessionWithContinuation(
+            protocolSession,
+            approval.decisions,
+            sessionId,
+            approval.approvedActions,
+          );
           interrupted = true;
           break;
         }
@@ -782,6 +811,7 @@ export class SmartyServerProvider extends BaseAgentProvider {
     }
 
     const decisions: LangGraphReviewDecision[] = [];
+    const approvedActions: LangGraphActionRequest[] = [];
     const approvedFileActions: ApprovedLangGraphFileAction[] = [];
     for (const [index, action] of actions.entries()) {
       const requestId = `langgraph-${event.interrupt?.id ?? Date.now()}-${index}`;
@@ -807,11 +837,14 @@ export class SmartyServerProvider extends BaseAgentProvider {
         );
       }
       decisions.push({ type: reviewDecision });
-      if (reviewDecision === 'approve' && isSmartyFileWriteTool(action.name)) {
-        approvedFileActions.push({ requestId, action });
+      if (reviewDecision === 'approve') {
+        approvedActions.push(action);
+        if (isSmartyFileWriteTool(action.name)) {
+          approvedFileActions.push({ requestId, action });
+        }
       }
     }
-    return { decisions, approvedFileActions };
+    return { decisions, approvedActions, approvedFileActions };
   }
 
   private async persistPermissionResultOnce(

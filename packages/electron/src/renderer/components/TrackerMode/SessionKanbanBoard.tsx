@@ -286,7 +286,7 @@ function CardStatusBadge({ info }: { info: CardStateInfo }) {
 const tailMessageCache = new Map<string, TranscriptViewMessage[]>();
 
 const PEEK_SETTINGS = {
-  showToolCalls: true,
+  showToolCalls: false,
   compactMode: true,
   collapseTools: true,
   showThinking: false,
