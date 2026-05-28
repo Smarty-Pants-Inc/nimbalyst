@@ -1,5 +1,6 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
+import tailwindcss from '@tailwindcss/postcss';
 import { resolve } from 'path';
 
 const PROCESS_SHIM_BANNER = `
@@ -25,6 +26,11 @@ export default defineConfig({
     'process.env.NODE_ENV': JSON.stringify('production'),
   },
   mode: 'production',
+  css: {
+    postcss: {
+      plugins: [tailwindcss()],
+    },
+  },
   build: {
     lib: {
       entry: resolve(__dirname, 'src/index.tsx'),

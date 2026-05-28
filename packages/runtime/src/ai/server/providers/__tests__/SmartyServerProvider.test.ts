@@ -634,6 +634,51 @@ describe('SmartyServerProvider', () => {
     expect(approval.outsidePaths).toEqual([]);
   });
 
+  it('normalizes /workspace virtual file approvals before deriving permission patterns', async () => {
+    const workspace = await fs.mkdtemp(path.join(os.tmpdir(), 'smarty-provider-workspace-virtual-pattern-'));
+    const protocol = createMockProtocol([
+      {
+        type: 'interrupt',
+        interrupt: {
+          id: 'interrupt-workspace-virtual-pattern',
+          value: {
+            action_requests: [{
+              name: 'write_file',
+              args: { file_path: '/workspace/tmp/demo.txt', content: 'ok' },
+              description: 'Write workspace virtual file',
+            }],
+            review_configs: [{ action_name: 'write_file', allowed_decisions: ['approve', 'reject'] }],
+          },
+        },
+        metadata: { runId: 'run-workspace-virtual-pattern', threadId: 'lg-thread-workspace-virtual-pattern' },
+      },
+    ]);
+    protocol.resumeInterruptedSession = vi.fn(async function* () {
+      yield { type: 'complete', content: '' };
+    });
+
+    const provider = new SmartyServerProvider({ protocol });
+    const pendingEvents: any[] = [];
+    provider.on('toolPermission:pending', (event) => {
+      pendingEvents.push(event);
+      provider.resolveToolPermission(event.requestId, { decision: 'deny', scope: 'once' }, event.sessionId);
+    });
+    await provider.initialize({ model: 'smarty-server:smarty_coding_agent' });
+
+    try {
+      for await (const _chunk of provider.sendMessage('write virtual workspace file', undefined, 'session-workspace-virtual-pattern', [], workspace)) {
+        // drain
+      }
+    } finally {
+      await fs.rm(workspace, { recursive: true, force: true });
+    }
+
+    expect(pendingEvents).toHaveLength(1);
+    const approval = pendingEvents[0].request.actionsNeedingApproval[0];
+    expect(approval.action.pattern).toBe('Write(tmp/demo.txt)');
+    expect(approval.outsidePaths).toEqual([]);
+  });
+
   it('keeps outside-workspace file approval patterns distinct by raw target', async () => {
     const workspace = await fs.mkdtemp(path.join(os.tmpdir(), 'smarty-provider-outside-pattern-'));
     const outsideA = path.join(path.dirname(workspace), `outside-a-${Date.now()}.ts`);
@@ -846,6 +891,209 @@ describe('SmartyServerProvider', () => {
       }),
     );
     expect(chunks).toContainEqual({ type: 'text', content: 'continued after approved tool result' });
+  });
+
+  it('does not auto-continue after an approved file write has completed', async () => {
+    const interruptEvent = {
+      type: 'interrupt',
+      interrupt: {
+        id: 'interrupt-write-complete',
+        value: {
+          action_requests: [{
+            name: 'write_file',
+            args: {
+              file_path: '/repo/demo.txt',
+              content: 'Simple file edit demo\n',
+            },
+            description: 'Write demo file',
+          }],
+          review_configs: [{ action_name: 'write_file', allowed_decisions: ['approve', 'reject'] }],
+        },
+      },
+      metadata: { runId: 'run-write-complete', threadId: 'lg-thread-write-complete' },
+    };
+    const protocol = {
+      platform: 'langgraph-agent-server',
+      createSession: vi.fn(async () => ({
+        id: 'lg-thread-write-complete',
+        platform: 'langgraph-agent-server',
+        raw: {},
+      })),
+      resumeSession: vi.fn(),
+      forkSession: vi.fn(),
+      sendMessage: vi.fn(async function* (_session: any, message: any) {
+        if (message.content === 'demo file edit') {
+          yield interruptEvent;
+          return;
+        }
+        yield { type: 'text', content: 'unexpected continuation' };
+        yield { type: 'complete', content: '' };
+      }),
+      resumeInterruptedSession: vi.fn(async function* () {
+        yield {
+          type: 'tool_call',
+          toolCall: {
+            id: 'write-1',
+            name: 'write_file',
+            arguments: {
+              file_path: '/repo/demo.txt',
+              content: 'Simple file edit demo\n',
+            },
+          },
+        };
+        yield {
+          type: 'tool_result',
+          toolResult: {
+            id: 'write-1',
+            name: 'write_file',
+            result: { success: true, result: 'Updated file /repo/demo.txt' },
+          },
+        };
+        yield { type: 'complete', content: '' };
+      }),
+      abortSession: vi.fn(),
+      cancelSessionRuns: vi.fn(async () => ({ requested: true, method: 'run', runId: 'run-1' })),
+      cleanupSession: vi.fn(),
+    } as any;
+
+    const provider = new SmartyServerProvider({ protocol });
+    provider.on('toolPermission:pending', (event) => {
+      provider.resolveToolPermission(
+        event.requestId,
+        { decision: 'allow', scope: 'once' },
+        event.sessionId,
+      );
+    });
+    await provider.initialize({ model: 'smarty-server:smarty_coding_agent' });
+
+    const chunks: any[] = [];
+    for await (const chunk of provider.sendMessage('demo file edit', undefined, 'session-write-complete', [], '/repo')) {
+      chunks.push(chunk);
+    }
+
+    expect(protocol.resumeInterruptedSession).toHaveBeenCalledWith(
+      expect.objectContaining({ id: 'lg-thread-write-complete' }),
+      [{ type: 'approve' }],
+      { sessionId: 'session-write-complete' },
+    );
+    expect(protocol.sendMessage).toHaveBeenCalledTimes(1);
+    expect(chunks).toContainEqual(expect.objectContaining({
+      type: 'tool_call',
+      toolCall: expect.objectContaining({
+        id: 'langgraph-interrupt-write-complete-0',
+        name: 'file_change',
+        result: expect.objectContaining({ success: true }),
+      }),
+    }));
+    expect(chunks).not.toContainEqual({ type: 'text', content: 'unexpected continuation' });
+    expect(chunks.some((chunk) => chunk.type === 'complete')).toBe(true);
+  });
+
+  it('does not auto-continue after an approved file-delete execute has completed', async () => {
+    const interruptEvent = {
+      type: 'interrupt',
+      interrupt: {
+        id: 'interrupt-execute-delete-complete',
+        value: {
+          action_requests: [{
+            name: 'execute',
+            args: {
+              command: 'rm "tmp/file-edit-demo.txt" && test ! -e "tmp/file-edit-demo.txt"',
+            },
+            description: 'Delete demo file',
+          }],
+          review_configs: [{ action_name: 'execute', allowed_decisions: ['approve', 'reject'] }],
+        },
+      },
+      metadata: { runId: 'run-execute-delete-complete', threadId: 'lg-thread-execute-delete-complete' },
+    };
+    let continuationCalls = 0;
+    const protocol = {
+      platform: 'langgraph-agent-server',
+      createSession: vi.fn(async () => ({
+        id: 'lg-thread-execute-delete-complete',
+        platform: 'langgraph-agent-server',
+        raw: {},
+      })),
+      resumeSession: vi.fn(),
+      forkSession: vi.fn(),
+      sendMessage: vi.fn(async function* (_session: any, message: any) {
+        if (message.content === 'demo file edit') {
+          yield interruptEvent;
+          return;
+        }
+        continuationCalls += 1;
+        if (continuationCalls === 1) {
+          yield {
+            type: 'tool_call',
+            toolCall: {
+              id: 'todos-after-delete',
+              name: 'write_todos',
+              arguments: {
+                todos: [
+                  { content: 'Create demo file', status: 'completed' },
+                  { content: 'Update demo file', status: 'completed' },
+                  { content: 'Delete demo file', status: 'completed' },
+                ],
+              },
+            },
+          };
+          yield {
+            type: 'tool_result',
+            toolResult: {
+              id: 'todos-after-delete',
+              name: 'write_todos',
+              result: { success: true },
+            },
+          };
+          yield {
+            type: 'text',
+            content: 'The prior file-edit demo is already complete. No further approval-gated action remains.',
+          };
+          yield { type: 'complete', content: '' };
+          return;
+        }
+        yield { type: 'text', content: 'unexpected repeated status continuation' };
+        yield { type: 'complete', content: '' };
+      }),
+      resumeInterruptedSession: vi.fn(async function* () {
+        yield {
+          type: 'tool_result',
+          toolResult: {
+            id: 'execute-delete-1',
+            name: 'execute',
+            result: { exitCode: 0, output: 'deleted tmp/file-edit-demo.txt\n' },
+          },
+        };
+        yield { type: 'complete', content: '' };
+      }),
+      abortSession: vi.fn(),
+      cancelSessionRuns: vi.fn(async () => ({ requested: true, method: 'run', runId: 'run-1' })),
+      cleanupSession: vi.fn(),
+    } as any;
+
+    const provider = new SmartyServerProvider({ protocol });
+    provider.on('toolPermission:pending', (event) => {
+      provider.resolveToolPermission(
+        event.requestId,
+        { decision: 'allow', scope: 'once' },
+        event.sessionId,
+      );
+    });
+    await provider.initialize({ model: 'smarty-server:smarty_coding_agent' });
+
+    const chunks: any[] = [];
+    for await (const chunk of provider.sendMessage('demo file edit', undefined, 'session-execute-delete-complete', [], '/repo')) {
+      chunks.push(chunk);
+    }
+
+    expect(protocol.sendMessage).toHaveBeenCalledTimes(1);
+    expect(chunks).not.toContainEqual({
+      type: 'text',
+      content: 'The prior file-edit demo is already complete. No further approval-gated action remains.',
+    });
+    expect(chunks).not.toContainEqual({ type: 'text', content: 'unexpected repeated status continuation' });
+    expect(chunks.some((chunk) => chunk.type === 'complete')).toBe(true);
   });
 
   it('continues when the agent asks for approval in prose instead of triggering the permission UI', async () => {

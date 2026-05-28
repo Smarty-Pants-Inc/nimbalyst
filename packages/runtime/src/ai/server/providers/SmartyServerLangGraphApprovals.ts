@@ -11,6 +11,7 @@ export interface ApprovedLangGraphFileAction {
 
 export interface LangGraphApprovalResult {
   decisions: LangGraphReviewDecision[];
+  approvedActions: LangGraphActionRequest[];
   approvedFileActions: ApprovedLangGraphFileAction[];
 }
 

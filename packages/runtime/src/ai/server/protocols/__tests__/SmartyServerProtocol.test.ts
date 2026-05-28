@@ -197,6 +197,55 @@ describe('SmartyServerProtocol', () => {
     });
   });
 
+  it('does not stream LangGraph ToolMessage payloads as assistant text', async () => {
+    const events = [
+      { id: 'evt-1', event: 'metadata', data: { run_id: 'run-1', thread_id: 'lg-thread-1' } },
+      {
+        id: 'evt-2',
+        event: 'messages',
+        data: [{
+          type: 'tool',
+          name: 'read_file',
+          content: '1 Simple file edit demo\n2 \n3 This file was created by Smarty Code.',
+          tool_call_id: 'call-read-file-1',
+        }, { langgraph_node: 'tools' }],
+      },
+      {
+        id: 'evt-3',
+        event: 'messages',
+        data: [{
+          type: 'ToolMessage',
+          name: 'write_todos',
+          content: "Updated todo list to [{'content': 'Demo file edit', 'status': 'in_progress'}]",
+          tool_call_id: 'call-todos-1',
+        }, { langgraph_node: 'tools' }],
+      },
+      { id: 'evt-4', event: 'messages', data: [{ type: 'ai', content: 'Created and verified the file.' }, { langgraph_node: 'agent' }] },
+    ];
+    const { client } = createMockClient(events);
+    const protocol = new SmartyServerProtocol(() => client);
+    const session = await protocol.resumeSession('lg-thread-1', {
+      workspacePath: '/repo',
+      raw: {
+        baseUrl: 'http://127.0.0.1:8788',
+        assistantId: 'smarty_coding_agent',
+        apiKey: null,
+      },
+    });
+
+    const emitted = [];
+    for await (const event of protocol.sendMessage(session, { content: 'demo file edit', sessionId: 'nim-session-1' })) {
+      emitted.push(event);
+    }
+
+    const textEvents = emitted.filter((event) => event.type === 'text');
+    expect(textEvents).toEqual([
+      { type: 'text', content: 'Created and verified the file.' },
+    ]);
+    expect(JSON.stringify(textEvents)).not.toContain('Updated todo list to');
+    expect(JSON.stringify(textEvents)).not.toContain('Simple file edit demo');
+  });
+
   it('sets a daily-driver recursion limit above short proof-slice defaults', async () => {
     const { client, streamRun } = createMockClient([
       { id: 'evt-1', event: 'metadata', data: { run_id: 'run-1', thread_id: 'lg-thread-1' } },

@@ -54,6 +54,7 @@ export function AgentThinkingCard({
       {...rest}
       className={classNames('agent-elements-thinking-card', className)}
       data-component="AgentThinkingCard"
+      data-thinking-streaming={isRunning ? 'true' : undefined}
       data-testid={dataTestId}
       debugPayload={debugPayload}
       icon={<MaterialSymbol icon={isRunning ? 'psychology' : 'lightbulb'} size={14} />}

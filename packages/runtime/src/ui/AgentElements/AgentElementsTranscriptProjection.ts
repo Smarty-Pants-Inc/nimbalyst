@@ -45,7 +45,9 @@ export function filterAgentElementsModelsForNormalTranscript(
 
 const EDIT_TOOL_NAMES = new Set([
   'edit',
+  'edit_file',
   'write',
+  'write_file',
   'multi-edit',
   'multiedit',
   'multi_edit',
@@ -114,6 +116,21 @@ function firstString(record: Record<string, unknown> | undefined, keys: string[]
     }
   }
   return undefined;
+}
+
+function commandText(tool: TranscriptToolCall): string | undefined {
+  return firstString(tool.arguments, ['command', 'cmd', 'rawCommand', 'script']);
+}
+
+function fileDeletionPathFromCommand(command: string | undefined): string | undefined {
+  if (!command) return undefined;
+  const match = command.match(/(?:^|[;&]\s*)rm\s+(?:-[A-Za-z]+\s+)*(?:"([^"]+)"|'([^']+)'|([^\s;&|]+))/);
+  return match?.[1] ?? match?.[2] ?? match?.[3] ?? undefined;
+}
+
+function shellDeletionTargetPath(normalizedToolName: string, tool: TranscriptToolCall): string | undefined {
+  if (!BASH_TOOL_NAMES.has(normalizedToolName)) return undefined;
+  return fileDeletionPathFromCommand(commandText(tool));
 }
 
 function formatScalar(value: unknown): string {
@@ -622,6 +639,20 @@ function mapToolCall(message: TranscriptViewMessage, tool: TranscriptToolCall): 
     };
   }
 
+  const deletionTargetPath = shellDeletionTargetPath(normalized, tool);
+  if (deletionTargetPath) {
+    return {
+      kind: 'fileEdit',
+      title: 'Deleted file',
+      status: tool.status,
+      editStatus: tool.status === 'running' ? 'streaming' : tool.status === 'error' || tool.isError ? 'error' : 'completed',
+      editOperation: 'delete',
+      filePath: deletionTargetPath,
+      body: primaryResultText(tool) ?? 'File deleted.',
+      rawPayload,
+    };
+  }
+
   if (BASH_TOOL_NAMES.has(normalized)) {
     return {
       kind: 'bash',
@@ -663,6 +694,7 @@ function mapToolCall(message: TranscriptViewMessage, tool: TranscriptToolCall): 
       title: tool.toolDisplayName,
       status: tool.status,
       editStatus: tool.status === 'running' ? 'streaming' : tool.status === 'error' || tool.isError ? 'error' : 'completed',
+      editOperation: normalized.includes('write') ? 'create' : 'edit',
       filePath: filePath ?? tool.toolDisplayName,
       diffLines,
       body: tool.description ?? primaryResultText(tool),

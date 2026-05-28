@@ -67,6 +67,30 @@
   white-space: nowrap;
 }
 
+.agent-elements-thinking-card[data-thinking-streaming="true"] .agent-elements-tool-title,
+.agent-elements-thinking-card[data-thinking-streaming="true"] .agent-elements-framework-label {
+  color: var(--an-tool-color);
+  animation: an-text-shimmer var(--an-shimmer-duration, 1.2s) ease-in-out infinite;
+}
+
+@keyframes an-text-shimmer {
+  0%,
+  100% {
+    opacity: 0.55;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .agent-elements-thinking-card[data-thinking-streaming="true"] .agent-elements-tool-title,
+  .agent-elements-thinking-card[data-thinking-streaming="true"] .agent-elements-framework-label {
+    color: var(--an-tool-color);
+    animation: none;
+  }
+}
+
 .agent-elements-thinking-content {
   max-height: 175px;
   padding-block: var(--an-spacing-sm);

@@ -30,6 +30,7 @@ import {
   firstLangChainGenerationRecord,
   turnEndedFromLangChainUsage,
 } from './SmartyServerUsage';
+import { isAssistantLangGraphMessage } from '../../utils/langGraphMessages';
 
 interface LangGraphToolEvent {
   event?: string;
@@ -136,6 +137,7 @@ export class SmartyServerRawParser implements IRawMessageParser {
     if (!Array.isArray(data) || data.length === 0) return [];
     const message = data[0];
     if (!isRecord(message)) return [];
+    if (!isAssistantLangGraphMessage(message)) return [];
 
     const text = contentToText(message.content);
     if (!text) return [];
@@ -182,6 +184,7 @@ export class SmartyServerRawParser implements IRawMessageParser {
 
     if (data.event === 'message-finish') {
       const message = isRecord(data.message) ? data.message : data;
+      if (!isAssistantLangGraphMessage(message, { allowUntypedAssistant: true })) return [];
       const text = contentToText(message.content) || firstString(message.text, message.content);
       const descriptors: CanonicalEventDescriptor[] = text ? [{
         type: 'assistant_message',

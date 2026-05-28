@@ -35,15 +35,19 @@ export function shouldContinueAfterApprovedInterruptResume(
   activity: {
     sawToolActivity: boolean;
     sawApprovalGatedToolActivity: boolean;
+    sawApprovalGatedFileMutationToolActivity: boolean;
     sawFailedValidationToolResult: boolean;
     sawAssistantText: boolean;
   },
 ): boolean {
   if (!activity.sawToolActivity) return false;
   if (activity.sawFailedValidationToolResult) return true;
+  if (activity.sawApprovalGatedFileMutationToolActivity) return false;
   if (!activity.sawAssistantText) return true;
 
   const normalizedAssistantText = assistantText.toLowerCase();
+  if (assistantTextStatesNoRemainingWork(normalizedAssistantText)) return false;
+
   const textIndicatesIncompleteCodingWork = /\b(next|reading|inspect(?:ing)?|found|confirmed|will|going to|need to|plan|test|validation|fail(?:ed|ing)?|passing|edit|write|diff|changed files?)\b/.test(
     normalizedAssistantText,
   );
@@ -55,8 +59,23 @@ export function shouldContinueAfterApprovedInterruptResume(
     );
 }
 
+function assistantTextStatesNoRemainingWork(normalizedAssistantText: string): boolean {
+  return /\b(already complete|already completed|task is complete|task remains complete|no (?:further|additional|remaining)\b.{0,80}\b(?:action|work|step|tool|approval-gated)|no .*approval-gated action remains|nothing remains|no continuation action|did not repeat)\b/.test(
+    normalizedAssistantText,
+  );
+}
+
 export function isApprovalGatedSmartyTool(toolName: string | undefined): boolean {
   return toolName === 'execute' || toolName === 'write_file' || toolName === 'edit_file';
+}
+
+export function isApprovalGatedFileMutationTool(
+  toolName: string | undefined,
+  toolArguments?: Record<string, unknown>,
+): boolean {
+  if (toolName === 'write_file' || toolName === 'edit_file') return true;
+  if (toolName !== 'execute') return false;
+  return isFileDeletingExecuteCommand(toolArguments);
 }
 
 export function isFailedValidationToolResult(
@@ -100,6 +119,15 @@ function hasFailedToolResult(result: unknown): boolean {
   if (result.error !== undefined && result.error !== null && result.error !== '') return true;
 
   return hasFailedToolResult(result.result) || hasFailedToolResult(result.output);
+}
+
+function isFileDeletingExecuteCommand(toolArguments: Record<string, unknown> | undefined): boolean {
+  const command = typeof toolArguments?.command === 'string'
+    ? toolArguments.command
+    : typeof toolArguments?.cmd === 'string'
+      ? toolArguments.cmd
+      : '';
+  return /(?:^|[;&]\s*)rm\s+(?:-[A-Za-z]+\s+)*(?:"[^"]+"|'[^']+'|[^\s;&|]+)/.test(command);
 }
 
 function numericField(value: unknown): number | null {
